@@ -52,4 +52,4 @@ with app.app_context():
 "
 
 echo "Starting Flask application with Gunicorn..."
-exec gosu appuser gunicorn --config gunicorn.conf.py workout_app:app
+exec gosu appuser /usr/local/bin/gunicorn --config gunicorn.conf.py workout_app:app
