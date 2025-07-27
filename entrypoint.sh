@@ -13,11 +13,11 @@ echo "PostgreSQL is ready!"
 
 # Initialize database
 echo "Initializing database..."
-su appuser -c "flask db upgrade"
+runuser -u appuser -- flask db upgrade
 
 # Create admin user if no users exist and credentials are provided
 echo "Checking for admin user..."
-su appuser -c "python3 -c '
+runuser -u appuser -- python3 -c "
 import os
 from app import create_app, db
 from app.models import User
@@ -50,7 +50,7 @@ with app.app_context():
     else:
         print(f'Found {user_count} existing users - preserving existing user accounts')
         print('No new admin user will be created')
-'"
+"
 
 echo "Starting Flask application..."
-exec su appuser -c "python3 workout_app.py"
+exec runuser -u appuser -- python3 workout_app.py
