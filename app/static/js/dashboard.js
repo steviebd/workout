@@ -49,13 +49,16 @@ function showTab(tabName) {
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    // Set initial active button state
+    // Set initial active button state and show workout tab
     const workoutButton = document.querySelector('.btn-group .btn[onclick="showTab(\'workouts\')"]');
     if (workoutButton) {
         workoutButton.classList.remove('btn-outline-primary');
         workoutButton.classList.add('btn-primary');
     }
-    showTab('workouts');
+    
+    // Show workouts tab and load data immediately
+    document.getElementById('workouts-tab').style.display = 'block';
+    loadWorkoutTemplates();
     
     // Profile form handler
     document.getElementById('profileForm').addEventListener('submit', async function(e) {
@@ -371,19 +374,39 @@ async function deleteTemplate(templateId) {
 
 // Workouts functions
 async function loadWorkoutTemplates() {
+    console.log('Loading workout templates...');
     try {
         const response = await fetch('/templates/templates');
+        console.log('Templates response status:', response.status);
+        
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 401) {
+                console.log('Authentication failed, redirecting to login');
+                window.location.href = '/auth/login';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const responseData = await response.json();
         const templates = responseData.data || responseData; // Handle both new and old format
+        console.log('Loaded templates:', templates);
         
         const container = document.getElementById('workout-templates-list');
+        if (!container) {
+            console.error('workout-templates-list container not found!');
+            return;
+        }
+        
         container.innerHTML = '';
         
         if (!templates || templates.length === 0) {
+            console.log('No templates found, showing empty message');
             container.innerHTML = '<p class="text-muted">No templates available. Create a template first.</p>';
             return;
         }
         
+        console.log(`Rendering ${templates.length} templates`);
         templates.forEach(template => {
             const card = document.createElement('div');
             card.className = 'card mb-3';
@@ -398,8 +421,13 @@ async function loadWorkoutTemplates() {
             `;
             container.appendChild(card);
         });
+        console.log('Templates rendered successfully');
     } catch (error) {
         console.error('Error loading workout templates:', error);
+        const container = document.getElementById('workout-templates-list');
+        if (container) {
+            container.innerHTML = '<p class="text-danger">Error loading templates. Please refresh the page.</p>';
+        }
     }
 }
 
