@@ -51,5 +51,5 @@ with app.app_context():
         print('No new admin user will be created')
 "
 
-echo "Starting Flask application..."
-exec gosu appuser python3 workout_app.py
+echo "Starting Flask application with Gunicorn..."
+exec gosu appuser gunicorn --config gunicorn.conf.py workout_app:app
