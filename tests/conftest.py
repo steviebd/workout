@@ -4,10 +4,12 @@ Pytest configuration and fixtures for testing.
 import pytest
 import tempfile
 import os
+from datetime import datetime, timedelta
 
 from app import create_app
 from app.core import db
-from app.models import User
+from app.models import User, Template, Workout
+from tests.factories import UserFactory, TemplateFactory, WorkoutFactory
 
 @pytest.fixture
 def app():
@@ -45,18 +47,61 @@ def auth_headers(app):
 def test_user(app):
     """Create a test user."""
     with app.app_context():
-        user = User(username='testuser', email='test@example.com')
-        user.set_password('testpassword')
-        db.session.add(user)
+        user = UserFactory.create()
         db.session.commit()
-        return user
+        # Return the user ID instead of the user object to avoid session issues
+        user_id = user.id
+        return user_id
 
-@pytest.fixture
+@pytest.fixture  
 def admin_user(app):
     """Create an admin test user."""
     with app.app_context():
-        user = User(username='admin', email='admin@example.com', is_admin=True)
-        user.set_password('adminpassword')
-        db.session.add(user)
+        user = UserFactory.create_admin()
         db.session.commit()
-        return user
+        user_id = user.id
+        return user_id
+
+@pytest.fixture
+def test_template(app, test_user):
+    """Create a test template with exercises."""
+    with app.app_context():
+        user = User.query.get(test_user)
+        template = TemplateFactory.create(user=user)
+        db.session.commit()
+        template_id = template.id
+        return template_id
+
+@pytest.fixture
+def test_workout(app, test_user, test_template):
+    """Create a test workout."""
+    with app.app_context():
+        user = User.query.get(test_user)
+        template = Template.query.get(test_template)
+        workout = WorkoutFactory.create(user=user, template=template)
+        db.session.commit()
+        workout_id = workout.id
+        return workout_id
+
+@pytest.fixture
+def multiple_users(app):
+    """Create multiple test users."""
+    with app.app_context():
+        users = [
+            UserFactory.create(username=f'user{i}', email=f'user{i}@example.com')
+            for i in range(3)
+        ]
+        db.session.commit()
+        user_ids = [user.id for user in users]
+        return user_ids
+
+@pytest.fixture
+def authenticated_client(app, test_user):
+    """Create a test client with authenticated user."""
+    with app.test_client() as client:
+        with app.app_context():
+            # Simulate login using user ID
+            with client.session_transaction() as sess:
+                sess['_user_id'] = str(test_user)
+                sess['_fresh'] = True
+        yield client

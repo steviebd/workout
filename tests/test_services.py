@@ -34,8 +34,9 @@ class TestWorkoutTemplateService:
     def test_get_user_templates_empty(self, app, test_user):
         """Test getting templates for user with no templates."""
         with app.app_context():
+            user = User.query.get(test_user)
             template_service = WorkoutTemplateService()
-            templates = template_service.get_user_templates(test_user)
+            templates = template_service.get_user_templates(user)
             
             assert isinstance(templates, list)
             assert len(templates) == 0
@@ -46,8 +47,9 @@ class TestWorkoutService:
     def test_get_user_workouts_empty(self, app, test_user):
         """Test getting workouts for user with no workouts."""
         with app.app_context():
+            user = User.query.get(test_user)
             workout_service = WorkoutService()
-            workouts = workout_service.get_user_workouts(test_user)
+            workouts = workout_service.get_user_workouts(user)
             
             assert isinstance(workouts, list)
             assert len(workouts) == 0
