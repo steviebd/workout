@@ -45,6 +45,35 @@ def change_password():
     except Exception as e:
         return jsonify({'error': 'Password change failed'}), 500
 
+@bp.route('/profile', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute")
+@csrf.exempt
+def update_profile():
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update email if provided
+        email = data.get('email', '').strip().lower() if data.get('email') else None
+        
+        # Check if email is already in use by another user
+        if email:
+            existing_user = User.query.filter(User.email == email, User.id != current_user.id).first()
+            if existing_user:
+                return jsonify({'error': 'Email address is already in use'}), 400
+        
+        # Update current user's email
+        current_user.email = email
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Profile updated successfully'})
+    
+    except Exception as e:
+        return jsonify({'error': 'Profile update failed'}), 500
+
 # Admin routes
 @bp.route('/admin/users', methods=['GET'])
 @login_required
@@ -57,6 +86,7 @@ def get_users():
     return jsonify([{
         'id': u.id,
         'username': u.username,
+        'email': u.email,
         'is_admin': u.is_admin
     } for u in users])
 
@@ -75,11 +105,17 @@ def create_user():
     if User.query.filter_by(username=data['username']).first():
         return jsonify({'error': 'Username already exists'}), 400
     
+    # Check email uniqueness if provided
+    email = data.get('email', '').strip().lower() if data.get('email') else None
+    if email and User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email address already exists'}), 400
+    
     if len(data['password']) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
     
     user = User(
         username=data['username'],
+        email=email,
         is_admin=data.get('is_admin', False),
         force_password_change=data.get('force_password_change', False)
     )
@@ -91,6 +127,7 @@ def create_user():
     return jsonify({
         'id': user.id,
         'username': user.username,
+        'email': user.email,
         'is_admin': user.is_admin
     }), 201
 
@@ -116,6 +153,14 @@ def update_user(user_id):
                 return jsonify({'error': 'Username already exists'}), 400
             user.username = data['username']
     
+    # Update email if provided
+    if 'email' in data:
+        email = data['email'].strip().lower() if data['email'] else None
+        if email != user.email:
+            if email and User.query.filter(User.email == email, User.id != user.id).first():
+                return jsonify({'error': 'Email address already exists'}), 400
+            user.email = email
+    
     # Update admin status if provided
     if 'is_admin' in data:
         user.is_admin = data['is_admin']
@@ -135,6 +180,7 @@ def update_user(user_id):
     return jsonify({
         'id': user.id,
         'username': user.username,
+        'email': user.email,
         'is_admin': user.is_admin
     })
 

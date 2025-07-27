@@ -57,6 +57,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     showTab('workouts');
     
+    // Profile form handler
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const data = {
+            email: document.getElementById('profileEmail').value
+        };
+        
+        try {
+            const response = await fetch('/settings/profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Profile updated successfully');
+            } else {
+                alert(result.error || 'Failed to update profile');
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+    
     // Password form handler
     document.getElementById('passwordForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -559,6 +586,7 @@ async function loadUsers() {
             row.innerHTML = `
                 <div>
                     <strong>${user.username}</strong>
+                    ${user.email ? `<br><small class="text-muted">${user.email}</small>` : ''}
                     ${user.is_admin ? '<span class="badge bg-primary ms-2">Admin</span>' : ''}
                 </div>
                 <div>
@@ -591,6 +619,7 @@ async function editUser(userId) {
         currentUserId = userId;
         document.querySelector('#userModal .modal-title').textContent = 'Edit User';
         document.getElementById('userUsername').value = user.username;
+        document.getElementById('userEmail').value = user.email || '';
         document.getElementById('userPassword').value = '';
         document.getElementById('userIsAdmin').checked = user.is_admin;
         
@@ -603,6 +632,7 @@ async function editUser(userId) {
 async function saveUser() {
     const data = {
         username: document.getElementById('userUsername').value,
+        email: document.getElementById('userEmail').value,
         is_admin: document.getElementById('userIsAdmin').checked,
         force_password_change: document.getElementById('userForcePasswordChange').checked
     };

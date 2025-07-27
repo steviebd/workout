@@ -4,6 +4,8 @@
 - **Run App**: `python3 workout_app.py` or `docker-compose up --build`
 - **Database migrations**: `flask db upgrade` (or `docker-compose exec web flask db upgrade`)
 - **Security setup**: `./setup_security.sh` (required for first run)
+- **Email setup**: `./setup_email.sh` (optional - enables password reset via email)
+- **Test email**: `python3 test_email_config.py` (test email configuration)
 - **Database access**: `./db_access.sh` or `docker-compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
 - **Reset database**: `./reset_database.sh`
 - **Check security**: `./check_security.sh`

@@ -40,6 +40,21 @@
 <div id="settings-tab" class="tab-content" style="display: none;">
     <h2 class="mb-3">Settings</h2>
     
+    <!-- Profile Settings -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Profile Settings</h5>
+            <form id="profileForm">
+                <div class="mb-3">
+                    <label for="profileEmail" class="form-label">Email Address (Optional)</label>
+                    <input type="email" class="form-control" id="profileEmail" value="{{ current_user.email or '' }}" placeholder="Enter your email for password reset">
+                    <div class="form-text">Email is optional but required for password reset functionality.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+            </form>
+        </div>
+    </div>
+    
     <!-- Change Password -->
     <div class="card mb-3">
         <div class="card-body">
@@ -149,6 +164,10 @@
                     <div class="mb-3">
                         <label for="userUsername" class="form-label">Username</label>
                         <input type="text" class="form-control" id="userUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">Email Address (Optional)</label>
+                        <input type="email" class="form-control" id="userEmail" placeholder="Optional - for password reset">
                     </div>
                     <div class="mb-3">
                         <label for="userPassword" class="form-label">Password</label>
