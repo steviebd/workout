@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Fix .env file permissions for mounted volume
-chown appuser:appuser /app/.env 2>/dev/null || true
-chmod 644 /app/.env 2>/dev/null || true
+# Fix ownership of mounted volume
+chown -R appuser:appuser /app 2>/dev/null || true
 
 echo "Waiting for PostgreSQL to be ready..."
 while ! pg_isready -h ${DB_HOST:-db} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres}; do
@@ -13,11 +12,11 @@ echo "PostgreSQL is ready!"
 
 # Initialize database
 echo "Initializing database..."
-runuser -u appuser -- flask db upgrade
+gosu appuser flask db upgrade
 
 # Create admin user if no users exist and credentials are provided
 echo "Checking for admin user..."
-runuser -u appuser -- python3 -c "
+gosu appuser python3 -c "
 import os
 from app import create_app, db
 from app.models import User
@@ -53,4 +52,4 @@ with app.app_context():
 "
 
 echo "Starting Flask application..."
-exec runuser -u appuser -- python3 workout_app.py
+exec gosu appuser python3 workout_app.py
