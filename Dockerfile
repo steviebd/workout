@@ -24,6 +24,9 @@ RUN chmod +x entrypoint.sh
 # Change ownership of the app directory to appuser
 RUN chown -R appuser:appuser /app
 
+# Don't switch to appuser yet - entrypoint needs root to switch users
+# USER appuser
+
 # Expose port
 EXPOSE 5000
 
