@@ -33,6 +33,7 @@ EXPOSE 5000
 # Set environment variables
 ENV FLASK_APP=workout_app.py
 ENV PYTHONPATH=/app
+ENV GUNICORN_CMD_ARGS="--config gunicorn.conf.py"
 
 # Run entrypoint script
 ENTRYPOINT ["./entrypoint.sh"]
