@@ -4,81 +4,34 @@ from app.workout_templates import bp
 from app.models import Template, TemplateExercise
 from app.core import db, csrf
 from app.validators import validate_template_data, ValidationError, validation_error_response
+from app.services import WorkoutTemplateService, ResponseService
 
 @bp.route('/templates', methods=['GET'])
 @login_required
 def get_templates():
-    templates = Template.query.filter_by(user_id=current_user.id).order_by(Template.created_at.desc()).all()
-    return jsonify([{
-        'id': t.id,
-        'name': t.name,
-        'created_at': t.created_at.isoformat(),
-        'exercises': [{
-            'id': e.id,
-            'exercise_name': e.exercise_name,
-            'default_weight': e.default_weight,
-            'default_reps': e.default_reps,
-            'default_sets': e.default_sets,
-            'order_index': e.order_index
-        } for e in t.exercises]
-    } for t in templates])
+    template_service = WorkoutTemplateService()
+    templates = template_service.get_user_templates(current_user)
+    return ResponseService.success_response(data=templates)
 
 @bp.route('/templates', methods=['POST'])
 @login_required
 @csrf.exempt
 def create_template():
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        # Validate input data
-        validated_data = validate_template_data(data)
-        
-        if 'name' not in validated_data:
-            return jsonify({'error': 'Template name is required'}), 400
-        
-        template = Template(
-            user_id=current_user.id,
-            name=validated_data['name']
-        )
-        db.session.add(template)
-        db.session.flush()  # Get the template ID
-        
-        # Add exercises
-        exercises = validated_data.get('exercises', [])
-        for i, exercise_data in enumerate(exercises):
-            exercise = TemplateExercise(
-                template_id=template.id,
-                exercise_name=exercise_data.get('exercise_name', ''),
-                default_weight=exercise_data.get('default_weight', 0),
-                default_reps=exercise_data.get('default_reps', 0),
-                default_sets=exercise_data.get('default_sets', 0),
-                order_index=i
-            )
-            db.session.add(exercise)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'id': template.id,
-            'name': template.name,
-            'created_at': template.created_at.isoformat(),
-            'exercises': [{
-                'id': e.id,
-                'exercise_name': e.exercise_name,
-                'default_weight': e.default_weight,
-                'default_reps': e.default_reps,
-                'default_sets': e.default_sets,
-                'order_index': e.order_index
-            } for e in template.exercises]
-        }), 201
+    data = request.get_json()
+    if not data:
+        return ResponseService.error_response('No data provided')
     
-    except ValidationError as e:
-        return validation_error_response(str(e))
-    except Exception as e:
-        return jsonify({'error': 'Template creation failed'}), 500
+    template_service = WorkoutTemplateService()
+    success, template_data, message = template_service.create_template(current_user, data)
+    
+    if success:
+        return ResponseService.success_response(
+            data=template_data,
+            message=message,
+            status_code=201
+        )
+    else:
+        return ResponseService.error_response(message)
 
 @bp.route('/templates/<int:template_id>', methods=['PUT'])
 @login_required
@@ -143,11 +96,10 @@ def update_template(template_id):
 @login_required
 @csrf.exempt
 def delete_template(template_id):
-    template = Template.query.filter_by(id=template_id, user_id=current_user.id).first()
-    if not template:
-        return jsonify({'error': 'Template not found'}), 404
+    template_service = WorkoutTemplateService()
+    success, message = template_service.delete_template(template_id, current_user)
     
-    db.session.delete(template)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+    if success:
+        return ResponseService.success_response(message=message)
+    else:
+        return ResponseService.error_response(message, status_code=404)
