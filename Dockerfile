@@ -8,6 +8,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    su-exec \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -22,9 +23,6 @@ RUN chmod +x entrypoint.sh
 
 # Change ownership of the app directory to appuser
 RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
 
 # Expose port
 EXPOSE 5000

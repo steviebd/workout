@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Fix .env file permissions for mounted volume
+chown appuser:appuser /app/.env 2>/dev/null || true
+
 echo "Waiting for PostgreSQL to be ready..."
 while ! pg_isready -h ${DB_HOST:-db} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres}; do
     sleep 1
@@ -49,4 +52,4 @@ with app.app_context():
 "
 
 echo "Starting Flask application..."
-python3 workout_app.py
+exec su-exec appuser python3 workout_app.py
