@@ -2,6 +2,7 @@
 
 # Fix .env file permissions for mounted volume
 chown appuser:appuser /app/.env 2>/dev/null || true
+chmod 644 /app/.env 2>/dev/null || true
 
 echo "Waiting for PostgreSQL to be ready..."
 while ! pg_isready -h ${DB_HOST:-db} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres}; do
@@ -12,11 +13,11 @@ echo "PostgreSQL is ready!"
 
 # Initialize database
 echo "Initializing database..."
-flask db upgrade
+su appuser -c "flask db upgrade"
 
 # Create admin user if no users exist and credentials are provided
 echo "Checking for admin user..."
-python3 -c "
+su appuser -c "python3 -c '
 import os
 from app import create_app, db
 from app.models import User
@@ -49,7 +50,7 @@ with app.app_context():
     else:
         print(f'Found {user_count} existing users - preserving existing user accounts')
         print('No new admin user will be created')
-"
+'"
 
 echo "Starting Flask application..."
-exec su-exec appuser python3 workout_app.py
+exec su appuser -c "python3 workout_app.py"
