@@ -1,31 +1,40 @@
-version: '3.8'
+# Docker Compose file for Workout Tracker
+# Secure configuration with internal networking
+
+networks:
+  workout-internal:
+    driver: bridge
 
 services:
   db:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: workout_tracker
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - workout-internal
+    # Database is NOT exposed to host network for security
 
   web:
     build: .
     restart: always
     ports:
       - "8080:5000"
-    environment:
-      - SECRET_KEY=your-secret-key-change-this-in-production
-      - DATABASE_URL=postgresql://postgres:password@db:5432/workout_tracker
-      - FLASK_DEBUG=False
+    env_file:
+      - .env
     depends_on:
       - db
     volumes:
       - .:/app
+    networks:
+      - workout-internal
 
 volumes:
   pgdata:

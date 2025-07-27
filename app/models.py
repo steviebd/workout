@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    force_password_change = db.Column(db.Boolean, default=False, nullable=False)
     
     # Relationships
     templates = db.relationship('Template', backref='user', lazy=True, cascade='all, delete-orphan')

@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         try {
-            const response = await fetch('/settings/settings/password', {
+            const response = await fetch('/settings/password', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
@@ -91,6 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadTemplates() {
     try {
         const response = await fetch('/templates/templates');
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 401) {
+                window.location.href = '/auth/login';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const templates = await response.json();
         
         const container = document.getElementById('templates-list');
@@ -142,26 +149,51 @@ function showCreateTemplate() {
 
 async function editTemplate(templateId) {
     try {
+        console.log('=== EDIT TEMPLATE DEBUG ===');
+        console.log(`Loading template ${templateId} for editing`);
+        
         const response = await fetch(`/templates/templates`);
         const templates = await response.json();
         const template = templates.find(t => t.id === templateId);
         
         if (!template) return;
         
+        console.log('Template data:', template);
+        console.log(`Template has ${template.exercises.length} exercises`);
+        
         currentTemplateId = templateId;
         document.querySelector('#templateModal .modal-title').textContent = 'Edit Template';
         document.getElementById('templateName').value = template.name;
         
         const container = document.getElementById('exercises-container');
-        container.innerHTML = '';
+        console.log('Clearing exercises container');
+        console.log(`Container has ${container.children.length} children before clearing`);
         
-        template.exercises.forEach(exercise => {
+        // More aggressive clearing
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        
+        console.log(`Container has ${container.children.length} children after clearing`);
+        
+        // Double-check no duplicate containers exist
+        const allContainers = document.querySelectorAll('#exercises-container, .exercise-item');
+        console.log(`Found ${allContainers.length} total exercise-related elements in document`);
+        
+        console.log('Adding exercises to DOM:');
+        template.exercises.forEach((exercise, index) => {
+            console.log(`  Adding exercise ${index}:`, exercise);
             addExercise(exercise);
         });
         
         if (template.exercises.length === 0) {
+            console.log('No exercises found, adding empty exercise');
             addExercise();
         }
+        
+        const finalCount = document.querySelectorAll('.exercise-item').length;
+        console.log(`Final DOM has ${finalCount} exercise items`);
+        console.log('=== END EDIT DEBUG ===');
         
         new bootstrap.Modal(document.getElementById('templateModal')).show();
     } catch (error) {
@@ -170,8 +202,10 @@ async function editTemplate(templateId) {
 }
 
 function addExercise(exercise = null) {
+    console.log('addExercise called with:', exercise);
     const container = document.getElementById('exercises-container');
     const index = container.children.length;
+    console.log(`Adding exercise at index ${index}`);
     
     const exerciseDiv = document.createElement('div');
     exerciseDiv.className = 'exercise-item';
@@ -220,12 +254,19 @@ async function saveTemplate() {
         return;
     }
     
+    console.log('=== SAVE TEMPLATE DEBUG ===');
+    const container = document.getElementById('exercises-container');
+    const exerciseItems = container.querySelectorAll('.exercise-item');
+    console.log(`Found ${exerciseItems.length} exercise items in template container`);
+    
     const exercises = [];
-    document.querySelectorAll('.exercise-item').forEach(item => {
+    exerciseItems.forEach((item, index) => {
+        console.log(`Processing exercise item ${index}:`);
         const exercise = {};
         item.querySelectorAll('[data-field]').forEach(input => {
             const field = input.dataset.field;
             const value = input.value;
+            console.log(`  ${field}: ${value}`);
             if (field === 'exercise_name') {
                 exercise[field] = value;
             } else {
@@ -233,11 +274,16 @@ async function saveTemplate() {
             }
         });
         if (exercise.exercise_name) {
+            console.log(`  Adding exercise:`, exercise);
             exercises.push(exercise);
+        } else {
+            console.log(`  Skipping empty exercise`);
         }
     });
     
     const data = { name, exercises };
+    console.log('Final template data to send:', data);
+    console.log('=== END DEBUG ===');
     
     try {
         const url = currentTemplateId ? 
@@ -255,8 +301,21 @@ async function saveTemplate() {
             bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
             loadTemplates();
         } else {
-            const result = await response.json();
-            alert(result.error || 'Failed to save template');
+            let errorMessage = 'Failed to save template';
+            try {
+                const text = await response.text();
+                try {
+                    const result = JSON.parse(text);
+                    errorMessage = result.error || errorMessage;
+                } catch (e) {
+                    // Response is not JSON, use text content
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+            } catch (e) {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            console.error('Template save error:', errorMessage);
+            alert(errorMessage);
         }
     } catch (error) {
         alert('Error: ' + error.message);
@@ -544,7 +603,8 @@ async function editUser(userId) {
 async function saveUser() {
     const data = {
         username: document.getElementById('userUsername').value,
-        is_admin: document.getElementById('userIsAdmin').checked
+        is_admin: document.getElementById('userIsAdmin').checked,
+        force_password_change: document.getElementById('userForcePasswordChange').checked
     };
     
     const password = document.getElementById('userPassword').value;

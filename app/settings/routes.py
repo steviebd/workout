@@ -1,31 +1,54 @@
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 from flask_login import login_required, current_user
 from app.settings import bp
 from app.models import User
-from app import db
+from app import db, limiter, csrf
+from app.validators import validate_user_data, ValidationError, validation_error_response
 
-@bp.route('/settings/password', methods=['POST'])
+@bp.route('/change-password', methods=['GET'])
 @login_required
+def change_password_page():
+    return render_template('settings/change_password.html')
+
+@bp.route('/password', methods=['POST'])
+@login_required
+@limiter.limit("5 per minute")
+@csrf.exempt
 def change_password():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Validate input data
+        validated_data = validate_user_data(data)
+        
+        if 'current_password' not in validated_data or 'new_password' not in validated_data:
+            return jsonify({'error': 'Current password and new password are required'}), 400
+        
+        if not current_user.check_password(validated_data['current_password']):
+            return jsonify({'error': 'Current password is incorrect'}), 400
+        
+        current_user.set_password(validated_data['new_password'])
+        
+        # Reset force password change flag if it was set
+        if hasattr(current_user, 'force_password_change'):
+            current_user.force_password_change = False
+        
+        db.session.commit()
+        
+        return jsonify({'success': True})
     
-    if not data or not data.get('current_password') or not data.get('new_password'):
-        return jsonify({'error': 'Current password and new password are required'}), 400
-    
-    if not current_user.check_password(data['current_password']):
-        return jsonify({'error': 'Current password is incorrect'}), 400
-    
-    if len(data['new_password']) < 6:
-        return jsonify({'error': 'New password must be at least 6 characters'}), 400
-    
-    current_user.set_password(data['new_password'])
-    db.session.commit()
-    
-    return jsonify({'success': True})
+    except ValidationError as e:
+        return validation_error_response(str(e))
+    except Exception as e:
+        return jsonify({'error': 'Password change failed'}), 500
 
 # Admin routes
 @bp.route('/admin/users', methods=['GET'])
 @login_required
+@csrf.exempt
 def get_users():
     if not current_user.is_admin:
         return jsonify({'error': 'Admin access required'}), 403
@@ -39,6 +62,7 @@ def get_users():
 
 @bp.route('/admin/users', methods=['POST'])
 @login_required
+@csrf.exempt
 def create_user():
     if not current_user.is_admin:
         return jsonify({'error': 'Admin access required'}), 403
@@ -56,7 +80,8 @@ def create_user():
     
     user = User(
         username=data['username'],
-        is_admin=data.get('is_admin', False)
+        is_admin=data.get('is_admin', False),
+        force_password_change=data.get('force_password_change', False)
     )
     user.set_password(data['password'])
     
@@ -71,6 +96,7 @@ def create_user():
 
 @bp.route('/admin/users/<int:user_id>', methods=['PUT'])
 @login_required
+@csrf.exempt
 def update_user(user_id):
     if not current_user.is_admin:
         return jsonify({'error': 'Admin access required'}), 403
@@ -94,6 +120,10 @@ def update_user(user_id):
     if 'is_admin' in data:
         user.is_admin = data['is_admin']
     
+    # Update force password change flag if provided
+    if 'force_password_change' in data:
+        user.force_password_change = data['force_password_change']
+    
     # Update password if provided
     if 'password' in data:
         if len(data['password']) < 6:
@@ -110,6 +140,7 @@ def update_user(user_id):
 
 @bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
 @login_required
+@csrf.exempt
 def delete_user(user_id):
     if not current_user.is_admin:
         return jsonify({'error': 'Admin access required'}), 403

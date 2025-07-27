@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 WORKDIR /app
 
 # Install system dependencies
@@ -16,6 +19,12 @@ COPY . .
 
 # Make entrypoint script executable
 RUN chmod +x entrypoint.sh
+
+# Change ownership of the app directory to appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 5000

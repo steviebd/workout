@@ -3,10 +3,11 @@ from flask_login import login_required, current_user
 from sqlalchemy import desc
 from app.workouts import bp
 from app.models import Workout, WorkoutExercise, Template, TemplateExercise
-from app import db
+from app import db, csrf
 
 @bp.route('/workouts/start', methods=['POST'])
 @login_required
+@csrf.exempt
 def start_workout():
     data = request.get_json()
     template_id = data.get('template_id') if data else None
@@ -88,6 +89,7 @@ def get_workout(workout_id):
 
 @bp.route('/workouts/<int:workout_id>', methods=['PUT'])
 @login_required
+@csrf.exempt
 def update_workout(workout_id):
     workout = Workout.query.filter_by(id=workout_id, user_id=current_user.id).first()
     if not workout:
