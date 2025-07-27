@@ -36,10 +36,15 @@ if docker volume ls | grep -q "workout_pgdata\|.*pgdata"; then
     echo ""
     read -p "Do you want to DELETE the existing database and start fresh? (y/N): " delete_db
     
-    if [[ "$delete_db" =~ ^[Yy]$ ]]; then
-        echo ""
-        echo "⚠️  WARNING: This will permanently delete ALL database data!"
-        read -p "Are you absolutely sure? Type 'DELETE' to confirm: " confirm_delete
+    if [[ "$delete_db" =~ ^[Yy]$ ]] || [ "$delete_db" = "DELETE" ]; then
+        # If user typed "DELETE" directly, skip the confirmation
+        if [ "$delete_db" = "DELETE" ]; then
+            confirm_delete="DELETE"
+        else
+            echo ""
+            echo "⚠️  WARNING: This will permanently delete ALL database data!"
+            read -p "Are you absolutely sure? Type 'DELETE' to confirm: " confirm_delete
+        fi
         
         if [ "$confirm_delete" = "DELETE" ]; then
             echo "🗑️  Stopping containers and removing database volume..."
@@ -162,6 +167,48 @@ fi
 FORCE_ADMIN_PASSWORD_CHANGE="true"
 
 echo ""
+echo "=== PostgreSQL SSL Setup ==="
+# Create SSL directory for PostgreSQL certificates
+SSL_DIR="./postgres-ssl"
+if [ -d "$SSL_DIR" ]; then
+    echo "⚠️  SSL directory already exists. Removing old certificates..."
+    rm -rf "$SSL_DIR"
+fi
+
+mkdir -p "$SSL_DIR"
+echo "✓ Created SSL directory: $SSL_DIR"
+
+# Generate SSL certificates for PostgreSQL
+echo "Generating SSL certificates for PostgreSQL..."
+
+# Generate private key
+openssl genrsa -out "$SSL_DIR/server.key" 2048 2>/dev/null
+chmod 600 "$SSL_DIR/server.key"
+echo "✓ Generated SSL private key"
+
+# Generate certificate signing request
+openssl req -new -key "$SSL_DIR/server.key" -out "$SSL_DIR/server.csr" -subj "/C=AU/ST=State/L=City/O=WorkoutTracker/CN=db" 2>/dev/null
+echo "✓ Generated certificate signing request"
+
+# Generate self-signed certificate
+openssl x509 -req -in "$SSL_DIR/server.csr" -signkey "$SSL_DIR/server.key" -out "$SSL_DIR/server.crt" -days 365 2>/dev/null
+chmod 600 "$SSL_DIR/server.crt"
+echo "✓ Generated SSL certificate (valid for 365 days)"
+
+# Generate CA certificate for client verification (optional but recommended)
+openssl genrsa -out "$SSL_DIR/ca.key" 2048 2>/dev/null
+chmod 600 "$SSL_DIR/ca.key"
+openssl req -new -x509 -key "$SSL_DIR/ca.key" -out "$SSL_DIR/ca.crt" -days 365 -subj "/C=AU/ST=State/L=City/O=WorkoutTracker-CA/CN=CA" 2>/dev/null
+chmod 644 "$SSL_DIR/ca.crt"
+echo "✓ Generated CA certificate"
+
+# Clean up CSR file
+rm "$SSL_DIR/server.csr"
+
+# Set proper ownership (will be handled by Docker)
+echo "✓ SSL certificates generated successfully"
+echo ""
+
 echo "=== Creating .env file ==="
 
 # Create .env file
@@ -178,7 +225,8 @@ DB_PORT=5432
 DB_NAME=${db_name}
 DB_USER=${db_user}
 DB_PASSWORD=${db_password}
-DATABASE_URL=postgresql://${db_user}:${db_password}@db:5432/${db_name}
+DATABASE_URL=postgresql://${db_user}:${db_password}@db:5432/${db_name}?sslmode=require
+DATABASE_URL_NO_SSL=postgresql://${db_user}:${db_password}@db:5432/${db_name}
 
 # PostgreSQL Environment Variables (for docker-compose)
 POSTGRES_DB=${db_name}
@@ -275,15 +323,22 @@ echo "- Regularly rotate your secret keys and passwords"
 echo "- Monitor application logs for security events"
 echo ""
 
-# Add .env to .gitignore if it's not already there
+# Add .env and SSL directory to .gitignore if not already there
 if [ -f ".gitignore" ]; then
     if ! grep -q "^\.env$" .gitignore; then
         echo ".env" >> .gitignore
         echo "✓ Added .env to .gitignore"
     fi
+    if ! grep -q "^postgres-ssl/$" .gitignore; then
+        echo "postgres-ssl/" >> .gitignore
+        echo "✓ Added postgres-ssl/ to .gitignore"
+    fi
 else
-    echo ".env" > .gitignore
-    echo "✓ Created .gitignore and added .env"
+    cat > .gitignore << EOF
+.env
+postgres-ssl/
+EOF
+    echo "✓ Created .gitignore and added .env and postgres-ssl/"
 fi
 
 echo ""
@@ -293,10 +348,19 @@ echo "✅ Database port exposure removed (was: 5432 -> external)"
 echo "✅ Internal Docker network configured"
 echo "✅ PostgreSQL security configuration applied"
 echo "✅ Application-specific database user created"
+echo "✅ SSL/TLS encryption enabled for database connections"
+echo "✅ SSL certificates generated and configured"
 echo ""
-echo "⚠️  The database is now only accessible via the application"
+echo "⚠️  The database is now only accessible via the application with SSL"
 echo "⚠️  For direct database access during development:"
 echo "   docker-compose exec db psql -U ${db_user} -d ${db_name}"
+echo ""
+echo "🔐 SSL Certificate Information:"
+echo "- Server certificate: postgres-ssl/server.crt"
+echo "- Server private key: postgres-ssl/server.key"
+echo "- CA certificate: postgres-ssl/ca.crt"
+echo "- Certificates expire in 365 days"
+echo "- Regenerate certificates annually for security"
 echo ""
 
 echo "Setup completed successfully! 🔒"

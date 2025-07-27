@@ -17,7 +17,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./postgres-ssl:/var/lib/postgresql/ssl:ro
+      - ./postgres-init.sh:/usr/local/bin/postgres-init.sh:ro
+    command: /usr/local/bin/postgres-init.sh
     networks:
       - workout-internal
     # Database is NOT exposed to host network for security

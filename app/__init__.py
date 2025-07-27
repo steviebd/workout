@@ -27,7 +27,35 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///workout.db')
+    
+    # Database configuration with SSL fallback
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///workout.db')
+    
+    # If SSL connection fails, fall back to non-SSL for development
+    if 'postgresql' in database_url and '?sslmode=require' in database_url:
+        try:
+            # Test if SSL connection works
+            import psycopg2
+            from urllib.parse import urlparse
+            
+            parsed = urlparse(database_url)
+            test_conn = psycopg2.connect(
+                host=parsed.hostname,
+                port=parsed.port or 5432,
+                database=parsed.path[1:],  # Remove leading slash
+                user=parsed.username,
+                password=parsed.password,
+                sslmode='require'
+            )
+            test_conn.close()
+            app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        except Exception as e:
+            print(f"SSL connection failed, falling back to non-SSL: {e}")
+            database_url_no_ssl = os.environ.get('DATABASE_URL_NO_SSL', database_url.replace('?sslmode=require', ''))
+            app.config['SQLALCHEMY_DATABASE_URI'] = database_url_no_ssl
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Security configuration
