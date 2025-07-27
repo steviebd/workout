@@ -13,6 +13,7 @@
 - **Run tests with coverage**: `pytest --cov=app --cov-report=term-missing`
 - **Run specific test types**: `pytest -m unit` (unit tests only), `pytest -m integration` (integration tests only)
 - **Run tests verbosely**: `pytest -v`
+- **Check code quality**: `python3 check_code_quality.py` (check for missing type hints, docstrings, etc.)
 
 ## Architecture
 - **Stack**: Flask app with PostgreSQL, deployed via Docker Compose

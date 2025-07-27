@@ -1,5 +1,8 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from typing import Union
+
+from flask import render_template, redirect, url_for, flash, request, jsonify, Response
 from flask_login import current_user
+
 from app.auth import bp
 from app.core import limiter, csrf
 from app.services import AuthService, ResponseService
@@ -7,7 +10,17 @@ from app.services import AuthService, ResponseService
 @bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 @csrf.exempt
-def login():
+def login() -> Union[str, Response]:
+    """
+    Handle user login with support for both HTML forms and JSON API.
+    
+    Rate limited to 10 attempts per minute for security.
+    
+    Returns:
+        For successful login: Redirect to dashboard or next page
+        For failed login: Login form with error message
+        For JSON requests: JSON response with success/error status
+    """
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     
@@ -58,7 +71,14 @@ def login():
 
 @bp.route('/logout', methods=['POST'])
 @csrf.exempt
-def logout():
+def logout() -> Union[str, Response]:
+    """
+    Handle user logout for both HTML and JSON requests.
+    
+    Returns:
+        For HTML requests: Redirect to login page
+        For JSON requests: JSON response confirming logout
+    """
     auth_service = AuthService()
     success = auth_service.logout_user()
     

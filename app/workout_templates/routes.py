@@ -1,5 +1,8 @@
-from flask import request, jsonify
+from typing import Union
+
+from flask import request, jsonify, Response
 from flask_login import login_required, current_user
+
 from app.workout_templates import bp
 from app.models import Template, TemplateExercise
 from app.core import db, csrf
@@ -8,7 +11,13 @@ from app.services import WorkoutTemplateService, ResponseService
 
 @bp.route('/templates', methods=['GET'])
 @login_required
-def get_templates():
+def get_templates() -> Union[Response, tuple]:
+    """
+    Retrieve all workout templates for the current user.
+    
+    Returns:
+        JSON response containing user's templates with exercises
+    """
     template_service = WorkoutTemplateService()
     templates = template_service.get_user_templates(current_user)
     return ResponseService.success_response(data=templates)

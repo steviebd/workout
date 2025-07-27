@@ -4,11 +4,15 @@ Flask application factory for the workout tracker.
 This module creates and configures the Flask application with all necessary
 extensions, blueprints, and configuration.
 """
+from typing import Optional
+
 from flask import Flask
 
 from app.core import init_extensions, login_manager
 from app.config import get_config
 from app.config.security import SecurityConfig
+from app.utils.logging import setup_logging
+from app.middleware.request_logging import setup_request_logging
 
 def create_app(config_name: str = None) -> Flask:
     """
@@ -30,6 +34,12 @@ def create_app(config_name: str = None) -> Flask:
     # Initialize extensions
     init_extensions(app)
     
+    # Set up logging
+    setup_logging(app)
+    
+    # Set up request logging middleware
+    setup_request_logging(app)
+    
     # Configure security
     SecurityConfig.configure_talisman(app)
     
@@ -38,7 +48,7 @@ def create_app(config_name: str = None) -> Flask:
     
     # User loader for Flask-Login
     @login_manager.user_loader
-    def load_user(user_id: str):
+    def load_user(user_id: str) -> Optional['User']:
         """Load user by ID for Flask-Login."""
         return User.query.get(int(user_id))
     
