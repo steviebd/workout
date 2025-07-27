@@ -18,7 +18,7 @@ graceful_timeout = int(os.environ.get('GUNICORN_GRACEFUL_TIMEOUT', 30))
 accesslog = "-"
 errorlog = "-"
 loglevel = os.environ.get('GUNICORN_LOG_LEVEL', 'info')
-access_log_format = '%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D'
+access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
 # Process naming
 proc_name = 'workout-tracker'
