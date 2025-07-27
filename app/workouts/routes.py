@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import desc
 from app.workouts import bp
 from app.models import Workout, WorkoutExercise, Template, TemplateExercise
-from app import db, csrf
+from app.core import db, csrf
 
 @bp.route('/workouts/start', methods=['POST'])
 @login_required

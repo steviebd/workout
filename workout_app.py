@@ -1,5 +1,6 @@
 import os
-from app import create_app, db
+from app import create_app
+from app.core import db
 from app.models import User, Template, TemplateExercise, Workout, WorkoutExercise
 
 app = create_app()

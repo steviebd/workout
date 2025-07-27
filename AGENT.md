@@ -9,11 +9,14 @@
 - **Database access**: `./db_access.sh` or `docker-compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
 - **Reset database**: `./reset_database.sh`
 - **Check security**: `./check_security.sh`
-- **No test commands** - project has no test framework setup
+- **Run tests**: `pytest` (run all tests)
+- **Run tests with coverage**: `pytest --cov=app --cov-report=term-missing`
+- **Run specific test types**: `pytest -m unit` (unit tests only), `pytest -m integration` (integration tests only)
+- **Run tests verbosely**: `pytest -v`
 
 ## Architecture
 - **Stack**: Flask app with PostgreSQL, deployed via Docker Compose
-- **Structure**: Blueprint-based modular Flask app (auth, templates, workouts, settings, main)
+- **Structure**: Blueprint-based modular Flask app (auth, workout_templates, workouts, settings, main) with separated models and config packages
 - **Database**: PostgreSQL with SQLAlchemy ORM, Flask-Migrate for migrations
 - **Security**: Flask-Talisman (headers), Flask-Limiter (rate limiting), Flask-WTF (CSRF), Flask-Login (auth)
 - **Frontend**: Bootstrap 5 dark theme, vanilla JS, mobile-first design

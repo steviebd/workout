@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, current_user
 from app.auth import bp
 from app.models import User, PasswordResetToken
-from app import db, limiter, csrf
+from app.core import db, limiter, csrf
 from app.validators import validate_user_data, ValidationError, validation_error_response
 from app.email import send_password_reset_email
 

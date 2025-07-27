@@ -1,8 +1,8 @@
 from flask import request, jsonify
 from flask_login import login_required, current_user
-from app.templates import bp
+from app.workout_templates import bp
 from app.models import Template, TemplateExercise
-from app import db, csrf
+from app.core import db, csrf
 from app.validators import validate_template_data, ValidationError, validation_error_response
 
 @bp.route('/templates', methods=['GET'])
