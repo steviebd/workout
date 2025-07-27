@@ -74,3 +74,4 @@ migrations/versions/__pycache__/e162cd7213a8_initial_migration.cpython-311.pyc
 app/__pycache__/__init__.cpython-311.pyc
 postgres-ssl/
 app/__pycache__/__init__.cpython-311.pyc
+*.pyc
