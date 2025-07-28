@@ -2,7 +2,7 @@ from flask import request, jsonify, render_template
 from flask_login import login_required, current_user
 from app.settings import bp
 from app.models import User
-from app import db, limiter, csrf
+from app.core import db, limiter, csrf
 from app.validators import validate_user_data, ValidationError, validation_error_response
 
 @bp.route('/change-password', methods=['GET'])

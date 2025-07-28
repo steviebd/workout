@@ -49,13 +49,16 @@ function showTab(tabName) {
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    // Set initial active button state
+    // Set initial active button state and show workout tab
     const workoutButton = document.querySelector('.btn-group .btn[onclick="showTab(\'workouts\')"]');
     if (workoutButton) {
         workoutButton.classList.remove('btn-outline-primary');
         workoutButton.classList.add('btn-primary');
     }
-    showTab('workouts');
+    
+    // Show workouts tab and load data immediately
+    document.getElementById('workouts-tab').style.display = 'block';
+    loadWorkoutTemplates();
     
     // Profile form handler
     document.getElementById('profileForm').addEventListener('submit', async function(e) {
@@ -125,12 +128,13 @@ async function loadTemplates() {
             }
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        const templates = await response.json();
+        const responseData = await response.json();
+        const templates = responseData.data || responseData; // Handle both new and old format
         
         const container = document.getElementById('templates-list');
         container.innerHTML = '';
         
-        if (templates.length === 0) {
+        if (!templates || templates.length === 0) {
             container.innerHTML = '<p class="text-muted">No templates created yet.</p>';
             return;
         }
@@ -180,7 +184,8 @@ async function editTemplate(templateId) {
         console.log(`Loading template ${templateId} for editing`);
         
         const response = await fetch(`/templates/templates`);
-        const templates = await response.json();
+        const responseData = await response.json();
+        const templates = responseData.data || responseData; // Handle both new and old format
         const template = templates.find(t => t.id === templateId);
         
         if (!template) return;
@@ -333,7 +338,7 @@ async function saveTemplate() {
                 const text = await response.text();
                 try {
                     const result = JSON.parse(text);
-                    errorMessage = result.error || errorMessage;
+                    errorMessage = result.message || result.error || errorMessage;
                 } catch (e) {
                     // Response is not JSON, use text content
                     errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
@@ -369,18 +374,39 @@ async function deleteTemplate(templateId) {
 
 // Workouts functions
 async function loadWorkoutTemplates() {
+    console.log('Loading workout templates...');
     try {
         const response = await fetch('/templates/templates');
-        const templates = await response.json();
+        console.log('Templates response status:', response.status);
+        
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 401) {
+                console.log('Authentication failed, redirecting to login');
+                window.location.href = '/auth/login';
+                return;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const responseData = await response.json();
+        const templates = responseData.data || responseData; // Handle both new and old format
+        console.log('Loaded templates:', templates);
         
         const container = document.getElementById('workout-templates-list');
+        if (!container) {
+            console.error('workout-templates-list container not found!');
+            return;
+        }
+        
         container.innerHTML = '';
         
-        if (templates.length === 0) {
+        if (!templates || templates.length === 0) {
+            console.log('No templates found, showing empty message');
             container.innerHTML = '<p class="text-muted">No templates available. Create a template first.</p>';
             return;
         }
         
+        console.log(`Rendering ${templates.length} templates`);
         templates.forEach(template => {
             const card = document.createElement('div');
             card.className = 'card mb-3';
@@ -395,26 +421,33 @@ async function loadWorkoutTemplates() {
             `;
             container.appendChild(card);
         });
+        console.log('Templates rendered successfully');
     } catch (error) {
         console.error('Error loading workout templates:', error);
+        const container = document.getElementById('workout-templates-list');
+        if (container) {
+            container.innerHTML = '<p class="text-danger">Error loading templates. Please refresh the page.</p>';
+        }
     }
 }
 
 async function startWorkout(templateId) {
     try {
-        const response = await fetch('/workouts/workouts/start', {
+        const response = await fetch('/workouts/start', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({template_id: templateId})
         });
         
-        const workout = await response.json();
+        const responseData = await response.json();
         
         if (response.ok) {
+            const workout = responseData.data || responseData; // Handle both new and old format
             currentWorkoutId = workout.id;
             showWorkoutModal(workout);
         } else {
-            alert(workout.error || 'Failed to start workout');
+            const error = responseData.message || responseData.error || 'Failed to start workout';
+            alert(error);
         }
     } catch (error) {
         alert('Error: ' + error.message);
@@ -499,7 +532,7 @@ async function saveWorkout() {
     };
     
     try {
-        const response = await fetch(`/workouts/workouts/${currentWorkoutId}`, {
+        const response = await fetch(`/workouts/${currentWorkoutId}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
@@ -520,7 +553,7 @@ async function saveWorkout() {
 // History functions
 async function loadHistory() {
     try {
-        const response = await fetch('/workouts/workouts/history');
+        const response = await fetch('/workouts/history');
         const data = await response.json();
         
         const container = document.getElementById('history-list');
@@ -557,7 +590,7 @@ async function loadHistory() {
 
 async function viewWorkout(workoutId) {
     try {
-        const response = await fetch(`/workouts/workouts/${workoutId}`);
+        const response = await fetch(`/workouts/${workoutId}`);
         const workout = await response.json();
         
         if (response.ok) {

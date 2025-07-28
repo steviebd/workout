@@ -1,11 +1,13 @@
+import os
 import smtplib
 import ssl
+from typing import Optional
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import current_app, url_for
-import os
 
-def send_email(to_email, subject, html_content, text_content=None):
+from flask import current_app, url_for
+
+def send_email(to_email: str, subject: str, html_content: str, text_content: Optional[str] = None) -> bool:
     """Send email using configured SMTP settings"""
     
     # Get email configuration from environment variables
@@ -49,8 +51,17 @@ def send_email(to_email, subject, html_content, text_content=None):
         current_app.logger.error(f"Failed to send email: {str(e)}")
         return False
 
-def send_password_reset_email(user, token):
-    """Send password reset email to user"""
+def send_password_reset_email(user, token) -> bool:
+    """
+    Send password reset email to user.
+    
+    Args:
+        user: User model instance
+        token: PasswordResetToken instance
+        
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
     
     reset_url = url_for('auth.reset_password', token=token.token, _external=True)
     

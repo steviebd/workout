@@ -3,69 +3,29 @@ from flask_login import login_required, current_user
 from sqlalchemy import desc
 from app.workouts import bp
 from app.models import Workout, WorkoutExercise, Template, TemplateExercise
-from app import db, csrf
+from app.core import db, csrf
+from app.services import WorkoutService, ResponseService
 
-@bp.route('/workouts/start', methods=['POST'])
+@bp.route('/start', methods=['POST'])
 @login_required
 @csrf.exempt
 def start_workout():
     data = request.get_json()
     template_id = data.get('template_id') if data else None
     
-    # Create new workout
-    workout = Workout(
-        user_id=current_user.id,
-        template_id=template_id,
-        notes=''
-    )
-    db.session.add(workout)
-    db.session.flush()  # Get the workout ID
+    workout_service = WorkoutService()
+    success, workout_data, message = workout_service.start_workout(current_user, template_id)
     
-    if template_id:
-        # Copy exercises from template
-        template = Template.query.filter_by(id=template_id, user_id=current_user.id).first()
-        if template:
-            for template_exercise in template.exercises:
-                # Get last recorded values for this exercise
-                last_workout_exercise = WorkoutExercise.query.join(Workout)\
-                    .filter(Workout.user_id == current_user.id)\
-                    .filter(WorkoutExercise.exercise_name == template_exercise.exercise_name)\
-                    .order_by(desc(Workout.performed_at))\
-                    .first()
-                
-                # Use last recorded values or template defaults
-                weight = last_workout_exercise.weight if last_workout_exercise else template_exercise.default_weight
-                reps = last_workout_exercise.reps if last_workout_exercise else template_exercise.default_reps
-                sets = last_workout_exercise.sets if last_workout_exercise else template_exercise.default_sets
-                
-                workout_exercise = WorkoutExercise(
-                    workout_id=workout.id,
-                    exercise_name=template_exercise.exercise_name,
-                    weight=weight,
-                    reps=reps,
-                    sets=sets,
-                    order_index=template_exercise.order_index
-                )
-                db.session.add(workout_exercise)
-    
-    db.session.commit()
-    
-    return jsonify({
-        'id': workout.id,
-        'template_id': workout.template_id,
-        'performed_at': workout.performed_at.isoformat(),
-        'notes': workout.notes,
-        'exercises': [{
-            'id': e.id,
-            'exercise_name': e.exercise_name,
-            'weight': e.weight,
-            'reps': e.reps,
-            'sets': e.sets,
-            'order_index': e.order_index
-        } for e in workout.exercises]
-    }), 201
+    if success:
+        return ResponseService.success_response(
+            data=workout_data,
+            message=message,
+            status_code=201
+        )
+    else:
+        return ResponseService.error_response(message)
 
-@bp.route('/workouts/<int:workout_id>', methods=['GET'])
+@bp.route('/<int:workout_id>', methods=['GET'])
 @login_required
 def get_workout(workout_id):
     workout = Workout.query.filter_by(id=workout_id, user_id=current_user.id).first()
@@ -87,7 +47,7 @@ def get_workout(workout_id):
         } for e in workout.exercises]
     })
 
-@bp.route('/workouts/<int:workout_id>', methods=['PUT'])
+@bp.route('/<int:workout_id>', methods=['PUT'])
 @login_required
 @csrf.exempt
 def update_workout(workout_id):
@@ -137,7 +97,7 @@ def update_workout(workout_id):
         } for e in workout.exercises]
     })
 
-@bp.route('/workouts/history', methods=['GET'])
+@bp.route('/history', methods=['GET'])
 @login_required
 def get_workout_history():
     page = request.args.get('page', 1, type=int)
