@@ -35,6 +35,31 @@
 
 **Deliverable:** ✓ App shell with navigation, auth state, and protected routes
 
+### 1.4 E2E TEST
+- [ ] Install Playwright and configure for project
+- [ ] Create `.env.test` with test credentials from Infisical
+- [ ] Create `tests/e2e/auth.spec.ts` with login/logout flow test
+
+**Test Flow:**
+1. Visit `/` (home) as unauthenticated user - verify "Sign In" link visible
+2. Navigate to protected route (e.g., `/exercises`) - verify redirect to `/auth/signin`
+3. Click "Sign In" - verify redirect to WorkOS AuthKit
+4. Enter test credentials (email/password) on WorkOS login form
+5. After successful login - verify redirected back and user name displayed
+6. Verify protected routes are accessible (e.g., `/exercises`, `/templates`, `/workouts/new`, `/history`)
+7. Click "Sign Out" - verify logged out state
+8. Navigate to protected route (e.g., `/workouts/new`) - verify redirect to WorkOS login
+9. Verify login form is displayed (email/password fields)
+
+**Configuration:**
+- `BASE_URL`: http://localhost:8787 (dev server)
+- `TEST_USERNAME`: from Infisical (`example@email.com`)
+- `TEST_PASSWORD`: from Infisical (`test123`)
+- `PLAYWRIGHT_TEST_USERNAME`: env var for test email input selector
+- `PLAYWRIGHT_TEST_PASSWORD`: env var for test password input selector
+
+**Deliverable:** ✓ Playwright E2E test covering full auth flow (login, protected routes access, logout, re-authentication)
+
 ---
 
 ## Phase 2: Core Features (Week 2)

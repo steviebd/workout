@@ -4,11 +4,13 @@
 	"type": "module",
 	"scripts": {
 		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; scripts/generate-wrangler-config.sh --env dev && infisical run --env dev -- sh -c 'bun run build && bun run wrangler dev'",
-"deploy:staging": "scripts/generate-wrangler-config.sh --env staging && infisical run --environment staging -- sh -c 'bun run build && wrangler deploy'",
-"deploy:prod": "scripts/generate-wrangler-config.sh --env prod && infisical run --environment prod -- sh -c 'bun run build && wrangler deploy'",
+		"deploy:staging": "scripts/generate-wrangler-config.sh --env staging && infisical run --environment staging -- sh -c 'bun run build && wrangler deploy'",
+		"deploy:prod": "scripts/generate-wrangler-config.sh --env prod && infisical run --environment prod -- sh -c 'bun run build && wrangler deploy'",
 		"build": "vite build",
 		"serve": "vite preview",
 		"test": "vitest run",
+		"test:e2e": "infisical run --env dev -- npx playwright test",
+		"test:e2e:ui": "infisical run --env dev -- npx playwright test --ui",
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
@@ -31,6 +33,7 @@
 		"vite-tsconfig-paths": "^5.1.4"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.57.0",
 		"@tanstack/devtools-vite": "^0.3.11",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/react": "^16.2.0",
@@ -40,6 +43,7 @@
 		"@vitejs/plugin-react": "^5.0.4",
 		"drizzle-kit": "^0.31.8",
 		"jsdom": "^27.0.0",
+		"playwright": "^1.57.0",
 		"typescript": "^5.7.2",
 		"vite": "^7.1.7",
 		"vitest": "^3.0.5",
