@@ -36,9 +36,11 @@
 **Deliverable:** ✓ App shell with navigation, auth state, and protected routes
 
 ### 1.4 E2E TEST
-- [ ] Install Playwright and configure for project
-- [ ] Create `.env.test` with test credentials from Infisical
-- [ ] Create `tests/e2e/auth.spec.ts` with login/logout flow test
+- [x] Install Playwright and configure for project
+- [x] Create `.env.test` with test credentials from Infisical
+- [x] Create `tests/e2e/auth.spec.ts` with login/logout flow test
+
+**Deliverable:** ✓ E2E test for now with playwright
 
 **Test Flow:**
 1. Visit `/` (home) as unauthenticated user - verify "Sign In" link visible
