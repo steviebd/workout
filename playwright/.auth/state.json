@@ -1,0 +1,85 @@
+{
+  "cookies": [
+    {
+      "name": "_cfuvid",
+      "value": "tqamFrrEOBszGoJPOC2afzQH_mszV3Fa5N1xV8DTd68-1768779964815-0.0.1.1-604800000",
+      "domain": ".workos.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "__wuid",
+      "value": "Fe26.2*1*c6a3c15132f249641a504d52daad6b83e32b57337696cb1c60e4b910567d0059*hImSFtEFPSIepj2KoOit3g*wYkmijgCkwdLROclsaC10DKLJ8qcZjrCIOwUuqbEgG17tD12nCLmEVSCWbFCYwtFvQCQNbxSdhLyi_P4ppr9rjizObR6tyWsGY-h3suKTPw*1773963967739*6e491074d07b3fa2d9e3fd1d6159ded4c802cceb04b7e2d0cbd01dab079ca038*fnvk-XjV2kbGv1Jkt-bpcfYTJZkfIYrsTSN1TToLeb4~2",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": 1773963967,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_dd_s",
+      "value": "aid=7c3f7289-56d9-4e17-b349-5c4cc7c37916&rum=0&expire=1768780868168",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": 1800315968,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "session",
+      "value": "CAragAg3ZjD1BCtddS1dGXfi6",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "access-token",
+      "value": "eyJhbGciOiJSUzI1NiIsImtpZCI6InNzb19vaWRjX2tleV9wYWlyXzAxSzJINURFTUZUVlBEWlNLSFpWQ0RHWkM4In0.eyJhdWQiOiJodHRwczovL2FwaS53b3Jrb3MuY29tL3gvYXV0aGtpdCIsImlzcyI6Imh0dHBzOi8vYXBpLndvcmtvcy5jb20veC9hdXRoa2l0Iiwic3ViIjoidXNlcl8wMUs5Q0ZROTNZQ0EwRDhBUDg1QVNEUVdLUiIsInNpZCI6InNlc3Npb25fMDFLRjlSMFdBRkswMUhNU0M5OTI5TlRWR1QiLCJqdGkiOiIwMUtGOVIwV0JSUU5RSjA4Q0g0N1I5UlA1MCIsImV4cCI6MTc2ODc4MDI2OCwiaWF0IjoxNzY4Nzc5OTY4fQ.MuTUvcjNV2Mk8mDsg7XwljGk_-BNWaR3qnyX6wOrkCQhqR0WyaN_QGgQTDROTFz96cx0KkHghyoSnoP5DcUdLSWbFYQlPGoQmOCocL4nPGP1J0i46QMTOjGWV0iQgnU8oR9Kld_JPGO2m4czFAUmbQYHwC1Ys28Gm0O7GPBye4SNNlSj51ovSsyMLi1fZk2oyLiRQtGDAXKXQzng--gGDKMyyVxuQNs8wnkIm5ebB9rmHaPoGnhAimhvYo8BmT-ZU77uSvnwYAwEvu0nGCBAM5A4DURe_Wr5kU4ZQcLkQ3Rzwh3Eq6zh5zymTIgG7d6xWG7whKrv3KzxSzyEWX_2rw",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": 1768780268.207647,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__kduid",
+      "value": "Fe26.2*1*4e8423c4f18215d208504857d7374e7117634ba427715ddf25b4ea66ae34642c*JCY3X-0AEt766rsrCh_0pQ*RUJITvEpDNODMcdNoiRCLaKSqPvBLoG5_MHtC6pivNIbERaXtoEBseSTFXwiKiHBi3E0LJKuXMKFV8VJ_OA3ZdG6sQpQVm4_QZv6g3R9DZ5lbyE25R90iV63sAAuN_a3*1800315968959*a92de1e4893d7f4ba51488d81e058953cee21a8ca5d1e711716f02058b0acd25*c7bsU94DnN5Um8bIu8Qcxd3YATfEjGnWaj8wfcJ-6f4~2",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": 1800315968.207668,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__recent_auth",
+      "value": "Fe26.2*1*9e696f8d65701d1d2f4b864d9c4220460f1bd012e5ee4015c170ba62c93bd2a6*W3DMTdQCQDnO-WRcxceILQ*sh8eEsVr8KIc4gnm1nw4KU9IyTpznkywbihYRO_HdMK7eWsFWD6DWetLiRCw5SCqhU5IGQpP06UiLDSFQ585KA*1769384769087*d4084bde10d36b8599b510f5eb4c73c25b160dec2a7d5ef02347c8e09f801ef0*LpASottbzSrxbvasrlPgDnD91DZwAXEyfkQ3btOIGQk~2",
+      "domain": "fastidious-fuchsia-08-staging.authkit.app",
+      "path": "/",
+      "expires": 1769384769.207682,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "session_token",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzAxSzlDRlE5M1lDQTBEOEFQODVBU0RRV0tSIiwidXNlcklkIjoiNDYxYTYxNjgtZDQzNC00MTllLThjNzctYzM2YWI5N2EyMzQwIiwiZW1haWwiOiJzdGV2aW8ud29uZGVyQGdtYWlsLmNvbSIsIndvcmtvc1Nlc3Npb25JZCI6InNlc3Npb25fMDFLRjlSMFdBRkswMUhNU0M5OTI5TlRWR1QiLCJpYXQiOjE3Njg3Nzk5NjksImV4cCI6MTc2OTM4NDc2OX0.rexFdjIg5jnXuy94zhNPF9KFRyp_5j54ui1Y6g842m8",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1769384769.584999,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

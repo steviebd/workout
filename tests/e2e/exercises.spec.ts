@@ -1,46 +1,27 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
-const TEST_USERNAME = process.env.TEST_USERNAME || '';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
-const AUTH_EMAIL_SELECTOR = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR || 'input[name="email"]';
-const AUTH_PASSWORD_SELECTOR = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR || 'input[name="password"]';
-const AUTH_SUBMIT_SELECTOR = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR || 'button[name="intent"]:not([data-method])';
-const AUTH_CONTINUE_SELECTOR = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR || 'button:has-text("Continue")';
 
 function isAuthKitUrl(url: URL): boolean {
 	return url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin');
 }
 
-async function login(page: any) {
-	await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-
-	const signInButton = page.locator('text=Sign In').first();
-	await expect(signInButton).toBeVisible();
-	await signInButton.click();
-
-	await expect(page).toHaveURL(isAuthKitUrl, { timeout: 10000 });
-
-	await page.locator(AUTH_EMAIL_SELECTOR).fill(TEST_USERNAME);
-	await page.locator(AUTH_CONTINUE_SELECTOR).click();
-
-	await expect(page.locator(AUTH_PASSWORD_SELECTOR)).toBeVisible({ timeout: 10000 });
-	await page.locator(AUTH_PASSWORD_SELECTOR).fill(TEST_PASSWORD);
-	await page.locator(AUTH_SUBMIT_SELECTOR).click();
-
-	await page.waitForURL(`${BASE_URL}/`, { timeout: 30000 });
-
-	await expect(page.locator('text=Sign Out').first()).toBeVisible({ timeout: 10000 });
+async function deleteExercise(page: any, exerciseName: string) {
+	await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+	const exerciseCard = page.locator(`text=${exerciseName}`).first();
+	if (await exerciseCard.isVisible()) {
+		await exerciseCard.click();
+		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+		const deleteButton = page.locator('text=Delete').first();
+		await expect(deleteButton).toBeVisible();
+		page.on('dialog', async (dialog: any) => await dialog.accept());
+		await deleteButton.click();
+		await page.waitForURL(`${BASE_URL}/exercises`, { timeout: 10000 });
+	}
 }
 
 test.describe('Exercise List Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('login and navigate to exercises list', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 		await expect(page).not.toHaveURL(isAuthKitUrl);
 
@@ -48,8 +29,6 @@ test.describe('Exercise List Flow', () => {
 	});
 
 	test('verify empty state on exercises list', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 		await expect(page).not.toHaveURL(isAuthKitUrl);
 
@@ -58,8 +37,6 @@ test.describe('Exercise List Flow', () => {
 	});
 
 	test('click new exercise button from empty state', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
 		const newExerciseButton = page.locator('text=New Exercise').first();
@@ -71,13 +48,7 @@ test.describe('Exercise List Flow', () => {
 });
 
 test.describe('Create Exercise Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('create new exercise with all fields', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 		await expect(page).not.toHaveURL(isAuthKitUrl);
 
@@ -99,11 +70,11 @@ test.describe('Create Exercise Flow', () => {
 
 		await expect(page.locator(`text=${testMuscleGroup}`).first()).toBeVisible();
 		await expect(page.locator(`text=${testDescription}`).first()).toBeVisible();
+
+		await deleteExercise(page, testExerciseName);
 	});
 
 	test('create exercise with required fields only', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Minimal Exercise ${Date.now()}`;
@@ -117,17 +88,13 @@ test.describe('Create Exercise Flow', () => {
 		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
 		await expect(page.locator(`h1:has-text("${testExerciseName}")`).first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, testExerciseName);
 	});
 });
 
 test.describe('View Exercise Detail', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('view exercise detail and verify all fields', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Detail Test ${Date.now()}`;
@@ -149,11 +116,11 @@ test.describe('View Exercise Detail', () => {
 
 		const createdText = page.locator('text=Created');
 		await expect(createdText.first()).toBeVisible();
+
+		await deleteExercise(page, testExerciseName);
 	});
 
 	test('navigate to edit page from detail page', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Edit Navigation Test ${Date.now()}`;
@@ -173,17 +140,13 @@ test.describe('View Exercise Detail', () => {
 		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+\/edit/, { timeout: 10000 });
 
 		await expect(page.locator('h1:has-text("Edit Exercise")').first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, testExerciseName);
 	});
 });
 
 test.describe('Edit Exercise Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('edit exercise and verify updated fields', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const originalName = `Original Name ${Date.now()}`;
@@ -215,17 +178,13 @@ test.describe('Edit Exercise Flow', () => {
 		await expect(page.locator(`h1:has-text("${updatedName}")`).first()).toBeVisible({ timeout: 10000 });
 		await expect(page.locator(`text=Triceps`).first()).toBeVisible();
 		await expect(page.locator(`text=Updated description`).first()).toBeVisible();
+
+		await deleteExercise(page, updatedName);
 	});
 });
 
 test.describe('Delete Exercise Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('delete exercise and verify redirected to list', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Delete Test ${Date.now()}`;
@@ -253,8 +212,6 @@ test.describe('Delete Exercise Flow', () => {
 	});
 
 	test('exercise not in list after deletion', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Delete Verify Test ${Date.now()}`;
@@ -280,13 +237,7 @@ test.describe('Delete Exercise Flow', () => {
 });
 
 test.describe('Copy from Library Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('copy exercise from library', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const libraryButton = page.locator('text=Choose from Library');
@@ -314,11 +265,11 @@ test.describe('Copy from Library Flow', () => {
 		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
 		await expect(page.locator('h1:has-text("Barbell Bench Press")').first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, 'Barbell Bench Press');
 	});
 
 	test('search library and select different exercise', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
 		const libraryButton = page.locator('text=Choose from Library');
@@ -337,17 +288,13 @@ test.describe('Copy from Library Flow', () => {
 
 		await expect(page.locator('input#name')).toHaveValue('Barbell Squat');
 		await expect(page.locator('select#muscleGroup')).toHaveValue('Quads');
+
+		await deleteExercise(page, 'Barbell Squat');
 	});
 });
 
 test.describe('Search and Filter Flow', () => {
-	test.beforeEach(async ({ context }) => {
-		await context.clearCookies();
-	});
-
 	test('create multiple exercises with different muscle groups', async ({ page }) => {
-		await login(page);
-
 		const exercises = [
 			{ name: 'Chest Test Alpha', muscleGroup: 'Chest' },
 			{ name: 'Back Test Beta', muscleGroup: 'Back' },
@@ -372,11 +319,13 @@ test.describe('Search and Filter Flow', () => {
 		for (const exercise of exercises) {
 			await expect(page.locator(`text=${exercise.name}`).first()).toBeVisible({ timeout: 10000 });
 		}
+
+		for (const exercise of exercises) {
+			await deleteExercise(page, exercise.name);
+		}
 	});
 
 	test('search filters exercises by name', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 		await page.locator('input#name').fill('Unique Searchable Exercise 12345');
 		await page.locator('select#muscleGroup').selectOption('Glutes');
@@ -392,11 +341,11 @@ test.describe('Search and Filter Flow', () => {
 
 		const exerciseCard = page.locator('text=Unique Searchable Exercise 12345');
 		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, 'Unique Searchable Exercise 12345');
 	});
 
 	test('muscle group dropdown filters exercises', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 		await page.locator('input#name').fill('Filter Test Chest Exercise');
 		await page.locator('select#muscleGroup').selectOption('Chest');
@@ -412,11 +361,11 @@ test.describe('Search and Filter Flow', () => {
 
 		const exerciseCard = page.locator('text=Filter Test Chest Exercise');
 		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, 'Filter Test Chest Exercise');
 	});
 
 	test('combined search and filter', async ({ page }) => {
-		await login(page);
-
 		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 		await page.locator('input#name').fill('Combo Test Exercise XYZ');
 		await page.locator('select#muscleGroup').selectOption('Biceps');
@@ -430,5 +379,7 @@ test.describe('Search and Filter Flow', () => {
 
 		const exerciseCard = page.locator('text=Combo Test Exercise XYZ');
 		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+
+		await deleteExercise(page, 'Combo Test Exercise XYZ');
 	});
 });
