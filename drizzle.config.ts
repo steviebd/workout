@@ -1,10 +1,13 @@
-import { defineConfig } from 'drizzle-kit';
+import { type Config } from "drizzle-kit";
 
-export default defineConfig({
-  schema: './src/lib/db/schema.ts',
-  out: './drizzle',
-  dialect: 'sqlite',
+export default {
+  schema: "./src/lib/db/schema.ts",
+  out: "./drizzle",
+  dialect: "sqlite",
+  driver: "d1-http",
   dbCredentials: {
-    url: 'file:local.sqlite',
+    accountId: process.env["CLOUDFLARE_ACCOUNT_ID"] ?? "",
+    databaseId: process.env["CLOUDFLARE_D1_DATABASE_ID"] ?? "",
+    token: process.env["CLOUDFLARE_API_TOKEN"] ?? "",
   },
-});
+} satisfies Config;

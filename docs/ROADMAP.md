@@ -66,15 +66,73 @@
 
 ## Phase 2: Core Features (Week 2)
 
-### 2.1 Exercise Management
-- [ ] Create Exercise model
-- [ ] Build `/exercises` list view
-- [ ] Build `/exercises/new` create form
-- [ ] Build `/exercises/:id` detail view
-- [ ] Write unit tests for CRUD operations
-- [ ] Add Playwright E2E tests
+### 2.1 Exercise Management ✓ COMPLETE
 
-**Deliverable:** Users can create and manage exercises
+**Schema Updates:**
+- [x] Add `description` (optional text field) to exercises table
+- [x] Add `isDeleted` (soft-delete boolean, default false) to exercises table
+- [x] Predefined muscle groups list + custom option for free text
+
+**Muscle Groups (predefined list):**
+- Chest, Back, Shoulders, Biceps, Triceps, Forearms, Core, Quads, Hamstrings, Glutes, Calves, Full Body, Cardio, Other
+- Custom field available for any muscle group not in list
+
+**Pre-populated Exercise Library:**
+- [x] Common barbell, dumbbell, and machine lifts (55 exercises)
+- [x] Users can copy exercises from library to their personal collection
+- [x] Library is read-only, users own their copied versions
+
+**Routes & Views:**
+
+| Route | Purpose | Features |
+|-------|---------|----------|
+| `/exercises` | List view | [x] Search by name, [x] filter by muscle group, [x] sort options, [x] pagination |
+| `/exercises/new` | Create form | [x] Choose from library OR create custom, [x] muscle group dropdown + custom, [x] description |
+| `/exercises/$id` | Detail view | [x] Read-only display of all exercise fields, [x] created date, [x] usage count |
+| `/exercises/$id/edit` | Edit form | [x] Modify name, muscle group, description |
+
+**Features:**
+- [x] Soft delete (preserves data in templates/workouts)
+- [x] Search by exercise name
+- [x] Filter by muscle group (dropdown)
+- [x] Sort by name, muscle group, created date
+- [x] Copy from exercise library functionality
+- [x] Full CRUD operations
+
+**Database Operations (src/lib/db/exercise.ts):**
+- [x] createExercise
+- [x] getExerciseById (with ownership check)
+- [x] getExercisesByUserId (search, filter, sort, pagination)
+- [x] updateExercise
+- [x] softDeleteExercise
+- [x] copyExerciseFromLibrary
+
+**API Routes:**
+- [x] GET /api/exercises - List exercises with query params
+- [x] POST /api/exercises - Create new exercise
+- [x] GET /api/exercises/$id - Get single exercise
+- [x] PUT /api/exercises/$id - Update exercise
+- [x] DELETE /api/exercises/$id - Soft delete exercise
+- [x] POST /api/exercises/copy-from-library - Copy from library
+
+**Tests:**
+- [x] Unit tests (17 tests) - tests/unit/exercise.spec.ts
+- [x] E2E tests (16 tests) - tests/e2e/exercises.spec.ts
+
+**Files Created:**
+- src/lib/db/exercise.ts - CRUD operations
+- src/lib/exercise-library.ts - Pre-populated exercise library (55 exercises)
+- src/routes/exercises._index.tsx - List view
+- src/routes/exercises.new.tsx - Create form with library picker
+- src/routes/exercises.$id.tsx - Detail view
+- src/routes/exercises.$id.edit.tsx - Edit form
+- src/routes/api/exercises.ts - List + Create API
+- src/routes/api/exercises.$id.ts - Get + Update + Delete API
+- src/routes/api/exercises.copy-from-library.ts - Copy from library API
+- tests/unit/exercise.spec.ts - Unit tests
+- tests/e2e/exercises.spec.ts - E2E tests
+
+**Deliverable:** ✓ Users can create, view, edit, and soft-delete exercises with search/filter capabilities
 
 ### 2.2 Template System
 - [ ] Create Template model

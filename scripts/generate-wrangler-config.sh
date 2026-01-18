@@ -27,12 +27,18 @@ if [ -z "$TARGET_ENV" ]; then
 fi
 
 case "$TARGET_ENV" in
-  dev|staging|production) ;;
+  dev|staging|production|prod) ;;
   *)
-    echo "Error: Unknown environment '$TARGET_ENV'. Use dev, staging, or production."
+    echo "Error: Unknown environment '$TARGET_ENV'. Use dev, staging, production, or prod."
     exit 1
     ;;
 esac
+
+# Map 'prod' to 'production' for wrangler compatibility
+WRANGLER_ENV="$TARGET_ENV"
+if [ "$TARGET_ENV" = "prod" ]; then
+  WRANGLER_ENV="production"
+fi
 
 CONFIG_FILE="wrangler.toml"
 TEMPLATE_FILE="wrangler.template.toml"
@@ -55,7 +61,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
   echo "Seeded $CONFIG_FILE from $TEMPLATE_FILE"
 fi
 
-echo "Updating $CONFIG_FILE for env '$TARGET_ENV' with Infisical secrets..."
+echo "Updating $CONFIG_FILE for env '$WRANGLER_ENV' with Infisical secrets..."
 
 SECRETS_JSON=$(infisical secrets --env "$TARGET_ENV" --output json 2>/dev/null || echo "[]")
 
@@ -66,7 +72,7 @@ if [ -z "$D1_DB_ID" ]; then
 fi
 
 if [ -z "$D1_DB_ID" ]; then
-  echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID from Infisical for '$TARGET_ENV'"
+  echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID from Infisical for '$TARGET_ENV' (wrangler env: '$WRANGLER_ENV')"
   exit 1
 fi
 
@@ -134,6 +140,26 @@ if vars_match:
     block_lines.append("")
     block = "\n".join(block_lines)
     content = content[:vars_match.start(1)] + block + content[vars_match.end(1):]
+
+# Add top-level D1 binding for Cloudflare Vite plugin (it only reads top-level config)
+# Find the position after compatibility_flags and before [observability]
+top_level_d1 = f'''
+[[d1_databases]]
+binding = "DB"
+database_name = "workout-{target_env}-db"
+database_id = "{db_id}"
+'''
+
+# Check if top-level d1_databases already exists
+if not re.search(r'^\[\[d1_databases\]\]', content, re.MULTILINE):
+    # Insert before [observability]
+    obs_match = re.search(r'\n\[observability\]', content)
+    if obs_match:
+        content = content[:obs_match.start()] + top_level_d1 + content[obs_match.start():]
+else:
+    # Update existing top-level D1 config
+    top_level_db_pattern = re.compile(r'(\[\[d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
+    content = top_level_db_pattern.sub(lambda m: f"{m.group(1)}{db_id}{m.group(3)}", content)
 
 with open(config_path, "w", encoding="utf-8") as f:
     f.write(content)

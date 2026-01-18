@@ -19,3 +19,4 @@ todos.json
 wrangler.jsonc
 wrangler.toml
 test-results/
+wrangler.toml.backup

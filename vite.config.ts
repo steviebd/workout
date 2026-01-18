@@ -13,8 +13,10 @@ const config = defineConfig({
   },
   plugins: [
     devtools(),
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    // this is the plugin that enables path aliases
+    cloudflare({ 
+      viteEnvironment: { name: 'ssr' },
+      wranglerEnvironment: process.env.WRANGLER_ENV || 'dev',
+    }),
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),

@@ -18,6 +18,8 @@ export const exercises = sqliteTable('exercises', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   muscleGroup: text('muscle_group'),
+  description: text('description'),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
