@@ -85,23 +85,27 @@ jobs:
       - name: Setup Infisical
         uses: Infisical/github-action@latest
         with:
-          instrumentkt-command: |
-            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_CLIENT_ID }} --client-secret ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          instrument-command: |
+            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }} --client-secret ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
             infisical secrets pull --projectId 5676c8fb-7089-43cf-91d2-9d1cb8b7e966 --env staging --output dotenv --path .env.staging
 
-      - name: Export Staging Environment Variables
+      - name: Export Environment Variables
         run: |
           set -a
           source .env.staging
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           set +a
 
+      - name: Generate Wrangler Config
+        run: scripts/generate-wrangler-config.sh --env staging
+
       - name: Deploy to Staging
-        run: wrangler deploy -c wrangler.staging.toml
+        run: bun run build && wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_D1_DATABASE_ID: ${{ env.CLOUDFLARE_D1_DATABASE_ID }}
+          WORKOS_API_KEY: ${{ env.WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID: ${{ env.WORKOS_CLIENT_ID }}
 
   deploy-production:
     name: Deploy to Production
@@ -124,20 +128,24 @@ jobs:
       - name: Setup Infisical
         uses: Infisical/github-action@latest
         with:
-          instrumentkt-command: |
-            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_CLIENT_ID }} --client-secret ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          instrument-command: |
+            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }} --client-secret ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
             infisical secrets pull --projectId 5676c8fb-7089-43cf-91d2-9d1cb8b7e966 --env prod --output dotenv --path .env.production
 
-      - name: Export Production Environment Variables
+      - name: Export Environment Variables
         run: |
           set -a
           source .env.production
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           set +a
 
+      - name: Generate Wrangler Config
+        run: scripts/generate-wrangler-config.sh --env prod
+
       - name: Deploy to Production
-        run: wrangler deploy -c wrangler.prod.toml
+        run: bun run build && wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_D1_DATABASE_ID: ${{ env.CLOUDFLARE_D1_DATABASE_ID }}
+          WORKOS_API_KEY: ${{ env.WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID: ${{ env.WORKOS_CLIENT_ID }}

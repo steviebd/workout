@@ -157,20 +157,20 @@ workoutExercises (1) ──► (many) workoutSets
 | File | Path | Description |
 |------|------|-------------|
 | `_root.tsx` | `/` | Root layout with auth state |
-| `index.tsx` | `/` | Dashboard |
-| `auth.callback.tsx` | `/auth/callback` | WorkOS OAuth callback |
-| `auth.signin.tsx` | `/auth/signin` | Sign in page |
-| `auth.signout.tsx` | `/auth/signout` | Sign out action |
-| `exercises._index.tsx` | `/exercises` | List exercises |
-| `exercises.new.tsx` | `/exercises/new` | Create exercise |
-| `exercises.$id.tsx` | `/exercises/:id` | Exercise details |
-| `templates._index.tsx` | `/templates` | List templates |
-| `templates.new.tsx` | `/templates/new` | Create template |
-| `templates.$id.tsx` | `/templates/:id` | Template details |
-| `workouts.new.tsx` | `/workouts/new` | Start new workout |
-| `workouts.$id.tsx` | `/workouts/:id` | Workout details |
-| `history._index.tsx` | `/history` | All workout history |
-| `history.$exerciseId.tsx` | `/history/:exerciseId` | History filtered by exercise |
+| `index.tsx` | `/` | Dashboard (requires auth) |
+| `auth.signin.tsx` | `/auth/signin` | Initiates WorkOS OAuth |
+| `auth.callback.tsx` | `/auth/callback` | Handles OAuth callback, creates session |
+| `auth.signout.tsx` | `/auth/signout` | Clears session, redirects home |
+| `exercises._index.tsx` | `/exercises` | List exercises (requires auth) |
+| `exercises.new.tsx` | `/exercises/new` | Create exercise (requires auth) |
+| `exercises.$id.tsx` | `/exercises/:id` | Exercise details (requires auth) |
+| `templates._index.tsx` | `/templates` | List templates (requires auth) |
+| `templates.new.tsx` | `/templates/new` | Create template (requires auth) |
+| `templates.$id.tsx` | `/templates/:id` | Template details (requires auth) |
+| `workouts.new.tsx` | `/workouts/new` | Start new workout (requires auth) |
+| `workouts.$id.tsx` | `/workouts/:id` | Workout details (requires auth) |
+| `history._index.tsx` | `/history` | All workout history (requires auth) |
+| `history.$exerciseId.tsx` | `/history/:exerciseId` | History filtered by exercise (requires auth) |
 
 ## Infisical Environment Configuration
 
@@ -374,18 +374,91 @@ The script:
 3. Get API Key and Client ID
 4. Store in Infisical per environment
 
-### Auth Flow
+### Auth Flow (JWT-Based)
 
 ```
 1. User clicks "Sign In"
-2. Redirect to WorkOS hosted auth page
-3. User completes auth
-4. WorkOS redirects to /auth/callback with code
-5. Exchange code for user profile
-6. Create/sync user in local DB
-7. Create session
-8. Redirect to dashboard
+2. Redirect to WorkOS hosted auth page (or SSO provider)
+3. User completes auth with their identity provider
+4. WorkOS redirects to /auth/callback with authorization code
+5. Server exchanges code for user profile using WorkOS SDK
+6. User is synced to local D1 database (getOrCreateUser)
+7. JWT token generated with user claims (userId, email, workosId)
+8. JWT stored in HTTP-only, Secure cookie
+9. Redirect to dashboard
+10. Subsequent requests: verify JWT from cookie, extract userId
+11. All D1 queries filtered by session.userId (row-level security)
 ```
+
+### JWT Configuration
+
+| Setting | Value |
+|---------|-------|
+| Algorithm | HS256 |
+| Secret | WorkOS API Key |
+| Expiration | 7 days (604800 seconds) |
+| Storage | HTTP-only, Secure, SameSite=Lax cookie |
+| Library | `jose` |
+
+### JWT Payload
+
+```typescript
+{
+  sub: string;      // WorkOS user ID
+  userId: string;   // Local D1 user ID
+  email: string;    // User email
+  iat: number;      // Issued at timestamp
+  exp: number;      // Expiration timestamp
+}
+```
+
+### Session Management
+
+| Function | Purpose |
+|----------|---------|
+| `getSession(request)` | Extract and verify JWT from cookie, return session or null |
+| `createSession(user, response)` | Generate JWT, set cookie on response |
+| `destroySession(response)` | Clear session cookie, redirect to home |
+
+### Row-Level Security
+
+All database queries must filter by the authenticated user's ID:
+
+```typescript
+// Example: Get exercises for current user
+const session = await getSession(request);
+if (!session) throw new Response('Unauthorized', { status: 401 });
+
+const userExercises = await db
+  .select()
+  .from(exercises)
+  .where(eq(exercises.userId, session.userId));
+```
+
+### User Sync
+
+Users are synced from WorkOS to D1 on first login:
+
+```typescript
+async function getOrCreateUser(profile: UserProfile) {
+  // Try to find existing user by workos_id
+  const existing = await db
+    .select()
+    .from(users)
+    .where(eq(users.workosId, profile.id))
+    .get();
+
+  if (existing) return existing;
+
+  // Create new user
+  const newUser = await db.insert(users).values({
+    workosId: profile.id,
+    email: profile.email,
+    name: profile.firstName + ' ' + profile.lastName,
+  }).returning().get();
+
+  return newUser;
+}
 
 ## Posthog Integration
 

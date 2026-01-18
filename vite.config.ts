@@ -7,6 +7,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
 const config = defineConfig({
+  define: {
+    'process.env.WORKOS_CLIENT_ID': JSON.stringify(process.env.WORKOS_CLIENT_ID),
+    'process.env.WORKOS_API_KEY': JSON.stringify(process.env.WORKOS_API_KEY),
+  },
   plugins: [
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),

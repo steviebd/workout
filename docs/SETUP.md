@@ -43,9 +43,43 @@ bun run deploy:staging # Deploy to staging
 bun run deploy:prod   # Deploy to production
 ```
 
-### 7. Documentation ✓
+### 7. Dependencies ✓
+- `@workos-inc/node` - WorkOS SDK for auth
+- `jose` - JWT utilities for session management
+
+### 8. Documentation ✓
 - ✓ `docs/PDR.md` - Product Design Document
 - ✓ `docs/SPECSHEET.md` - Technical Specifications
 - ✓ `docs/AGENTS.md` - AI Agent Instructions
 - ✓ `docs/ROADMAP.md` - Implementation Plan
 - ✓ `docs/SETUP.md` - This file
+- ✓ `README.md` - Project documentation
+
+### 1.2 Authentication (WorkOS + JWT) ✓ COMPLETE
+- [x] Add @workos-inc/node SDK dependency
+- [x] Add jose library for JWT
+- [x] Create JWT utilities (src/lib/auth.ts)
+- [x] Create session management (src/lib/session.ts)
+- [x] Create user sync from WorkOS (src/lib/db/user.ts)
+- [x] Create `/auth/signin` route
+- [x] Create `/auth/callback` route
+- [x] Create `/auth/signout` route
+- [x] Create API routes for auth operations
+- [x] Update root layout with auth state
+- [x] Add route protection to all protected routes
+
+**Deliverable:** ✓ Working authentication system with JWT-based sessions
+
+### 1.3 Basic Routing & Layout ✓ COMPLETE
+- [x] Set up root layout with auth state
+- [x] Create navigation header with auth-aware links
+- [x] Create dashboard (`/`)
+- [x] Create placeholder routes:
+  - `/exercises` - Exercises list (protected)
+  - `/templates` - Templates list (protected)
+  - `/workouts/new` - Start workout (protected)
+  - `/history` - Workout history (protected)
+- [x] Add client-side route protection (redirects to `/auth/signin` if not authenticated)
+- [x] Add Tailwind styling foundation
+
+**Deliverable:** ✓ App shell with navigation, auth state, and protected routes

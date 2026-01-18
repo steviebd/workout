@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/connect';
+import { drizzle } from 'drizzle-orm/d1';
 import * as schema from './schema';
 
 export { schema };

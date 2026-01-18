@@ -1,4 +1,4 @@
-name = "workout-${ENVIRONMENT}"
+name = "workout"
 main = "@tanstack/react-start/server-entry"
 compatibility_date = "2025-09-02"
 compatibility_flags = ["nodejs_compat"]
@@ -6,14 +6,42 @@ compatibility_flags = ["nodejs_compat"]
 [observability]
 enabled = true
 
-[vars]
-ENVIRONMENT = "${ENVIRONMENT}"
+[env.dev]
+name = "workout-dev"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "workout-${ENVIRONMENT}-db"
-database_id = "${CLOUDFLARE_D1_DATABASE_ID}"
+  [env.dev.vars]
+  ENVIRONMENT = "dev"
+  WORKOS_CLIENT_ID = ""
+  WORKOS_API_KEY = ""
 
-[[routes]]
-pattern = "*.workout.${ENVIRONMENT}.example.com/*"
-zone_name = "workout.example.com"
+    [[env.dev.d1_databases]]
+    binding = "DB"
+    database_name = "workout-dev-db"
+    database_id = "{{ D1_DB_ID }}"
+    remote = true
+
+[env.staging]
+name = "workout-staging"
+
+  [env.staging.vars]
+  ENVIRONMENT = "staging"
+  WORKOS_CLIENT_ID = ""
+  WORKOS_API_KEY = ""
+
+    [[env.staging.d1_databases]]
+    binding = "DB"
+    database_name = "workout-staging-db"
+    database_id = "{{ D1_DB_ID }}"
+
+[env.production]
+name = "workout-prod"
+
+  [env.production.vars]
+  ENVIRONMENT = "production"
+  WORKOS_CLIENT_ID = ""
+  WORKOS_API_KEY = ""
+
+    [[env.production.d1_databases]]
+    binding = "DB"
+    database_name = "workout-prod-db"
+    database_id = "{{ D1_DB_ID }}"

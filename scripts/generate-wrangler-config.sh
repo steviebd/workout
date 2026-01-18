@@ -1,68 +1,147 @@
 #!/bin/bash
-set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+set -euo pipefail
 
-ENV=""
+TARGET_ENV=""
 
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --env)
-            ENV="$2"
-            shift 2
-            ;;
-        dev|staging|prod)
-            ENV="$1"
-            shift
-            ;;
-        *)
-            echo "Error: Unknown argument: $1"
-            echo "Usage: $0 [--env dev|staging|prod]"
-            exit 1
-            ;;
-    esac
+  case "$1" in
+    --env)
+      TARGET_ENV="$2"
+      shift 2
+      ;;
+    dev|staging|production)
+      TARGET_ENV="$1"
+      shift
+      ;;
+    *)
+      echo "Error: Unknown argument: $1"
+      echo "Usage: $0 [--env dev|staging|production]"
+      exit 1
+      ;;
+  esac
 done
 
-if [ -z "$ENV" ]; then
-    ENV="${ENVIRONMENT}"
+if [ -z "$TARGET_ENV" ]; then
+  TARGET_ENV="dev"
 fi
 
-if [ -z "$ENV" ]; then
-    echo "Error: ENVIRONMENT env var not set and no environment argument provided"
-    echo "Usage: $0 [--env dev|staging|prod]"
+case "$TARGET_ENV" in
+  dev|staging|production) ;;
+  *)
+    echo "Error: Unknown environment '$TARGET_ENV'. Use dev, staging, or production."
     exit 1
-fi
-
-case "$ENV" in
-    dev|staging|prod)
-        ;;
-    *)
-        echo "Error: Invalid environment '$ENV'. Must be one of: dev, staging, prod"
-        exit 1
-        ;;
+    ;;
 esac
 
-echo "Generating wrangler.toml for environment: $ENV"
-
-CLOUDFLARE_D1_DATABASE_ID=$(infisical secrets get CLOUDFLARE_D1_DATABASE_ID --env "$ENV" --plain 2>/dev/null)
-
-if [ -z "$CLOUDFLARE_D1_DATABASE_ID" ]; then
-    echo "Error: Could not get CLOUDFLARE_D1_DATABASE_ID from Infisical for env: $ENV"
-    exit 1
-fi
-
-TEMPLATE_FILE="$PROJECT_DIR/wrangler.template.toml"
-OUTPUT_FILE="$PROJECT_DIR/wrangler.toml"
+CONFIG_FILE="wrangler.toml"
+TEMPLATE_FILE="wrangler.template.toml"
+BACKUP_FILE="${CONFIG_FILE}.backup"
 
 if [ ! -f "$TEMPLATE_FILE" ]; then
-    echo "Error: Template file not found: $TEMPLATE_FILE"
-    exit 1
+  echo "Error: Template file not found: $TEMPLATE_FILE"
+  exit 1
 fi
 
-sed -e "s/\${ENVIRONMENT}/$ENV/g" \
-    -e "s/\${CLOUDFLARE_D1_DATABASE_ID}/$CLOUDFLARE_D1_DATABASE_ID/g" \
-    "$TEMPLATE_FILE" > "$OUTPUT_FILE"
+if [ -f "$CONFIG_FILE" ]; then
+  if ! grep -q '^\[env\.' "$CONFIG_FILE" 2>/dev/null; then
+    rm -f "$CONFIG_FILE"
+    echo "Removed old-format $CONFIG_FILE"
+  fi
+fi
 
-echo "Generated: $OUTPUT_FILE"
-echo "Database: workout-$ENV-db"
+if [ ! -f "$CONFIG_FILE" ]; then
+  cp "$TEMPLATE_FILE" "$CONFIG_FILE"
+  echo "Seeded $CONFIG_FILE from $TEMPLATE_FILE"
+fi
+
+echo "Updating $CONFIG_FILE for env '$TARGET_ENV' with Infisical secrets..."
+
+SECRETS_JSON=$(infisical secrets --env "$TARGET_ENV" --output json 2>/dev/null || echo "[]")
+
+D1_DB_ID="${CLOUDFLARE_D1_DATABASE_ID:-}"
+
+if [ -z "$D1_DB_ID" ]; then
+  D1_DB_ID=$(echo "$SECRETS_JSON" | python3 -c "import json, sys; data=json.load(sys.stdin); print(next((item['secretValue'] for item in data if item.get('secretKey')=='CLOUDFLARE_D1_DATABASE_ID'), ''))" 2>/dev/null || true)
+fi
+
+if [ -z "$D1_DB_ID" ]; then
+  echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID from Infisical for '$TARGET_ENV'"
+  exit 1
+fi
+
+cp "$CONFIG_FILE" "$BACKUP_FILE"
+
+SECRETS_JSON=$(infisical secrets --env "$TARGET_ENV" --output json 2>/dev/null || echo "[]")
+
+python3 - "$CONFIG_FILE" "$TARGET_ENV" "$D1_DB_ID" "$SECRETS_JSON" <<'PYTHON'
+import json
+import os
+import re
+import sys
+
+config_path, target_env, db_id, secrets_json = sys.argv[1:5]
+
+secrets = {}
+try:
+    secrets_list = json.loads(secrets_json) if secrets_json else []
+    for item in secrets_list:
+        if isinstance(item, dict) and "secretKey" in item and "secretValue" in item:
+            secrets[item["secretKey"]] = item["secretValue"]
+except json.JSONDecodeError:
+    pass
+
+with open(config_path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+placeholder_pattern = re.compile(r"\{\{\s*([A-Z0-9_]+)\s*\}\}")
+
+def replace_placeholder(match):
+    key = match.group(1)
+    env_value = os.environ.get(key)
+    if env_value is not None:
+        return env_value
+    return secrets.get(key, match.group(0))
+
+content = placeholder_pattern.sub(replace_placeholder, content)
+
+db_pattern = re.compile(rf'(\[\[env\.{re.escape(target_env)}\.d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
+if not db_pattern.search(content):
+    raise SystemExit(f"Could not locate env.{target_env} D1 configuration in {config_path}")
+
+content = db_pattern.sub(lambda m: f"{m.group(1)}{db_id}{m.group(3)}", content)
+
+var_names = ["WORKOS_API_KEY", "WORKOS_CLIENT_ID"]
+
+missing_vars = []
+for name in var_names:
+    value = os.environ.get(name) or secrets.get(name, "")
+    if not value:
+        missing_vars.append(name)
+    
+    var_pattern = re.compile(rf'^({re.escape(name)}\s*=\s*).*$', re.MULTILINE)
+    if var_pattern.search(content):
+        content = var_pattern.sub(rf'\1{json.dumps(value)}', content)
+
+vars_pattern = re.compile(rf'(  \[env\.{re.escape(target_env)}\.vars\]\n(?:  [^\n]*\n)*)', re.MULTILINE)
+vars_match = vars_pattern.search(content)
+
+if vars_match:
+    block_lines = [f"  [env.{target_env}.vars]"]
+    for name in var_names:
+        value = os.environ.get(name) or secrets.get(name, "")
+        block_lines.append(f"  {name} = {json.dumps(value)}")
+    block_lines.append("")
+    block = "\n".join(block_lines)
+    content = content[:vars_match.start(1)] + block + content[vars_match.end(1):]
+
+with open(config_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+if missing_vars:
+    print(f"Warning: Missing env vars: {', '.join(missing_vars)}")
+
+print(f"Updated $CONFIG_FILE for env '{target_env}'")
+PYTHON
+
+echo "Done"

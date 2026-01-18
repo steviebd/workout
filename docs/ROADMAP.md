@@ -11,24 +11,29 @@
 
 **Deliverable:** ✓ Working dev environment with database connection
 
-### 1.2 Authentication (WorkOS)
-- [ ] Implement WorkOS OAuth flow
-- [ ] Create `/auth/callback` route
-- [ ] Create `/auth/signin` and `/auth/signout` routes
-- [ ] Sync users to local database
-- [ ] Set up session management
-- [ ] Write unit tests for auth helpers
+### 1.2 Authentication (WorkOS + JWT) - COMPLETE
+- [x] Add @workos-inc/node SDK dependency
+- [x] Add jose library for JWT
+- [x] Create JWT utilities (src/lib/auth.ts)
+- [x] Create session management (src/lib/session.ts)
+- [x] Create user sync from WorkOS (src/lib/db/user.ts)
+- [x] Create `/auth/signin` route
+- [x] Create `/auth/callback` route
+- [x] Create `/auth/signout` route
+- [x] Update root layout with auth state
+- [x] Create placeholder routes for exercises, templates, workouts, history
 
-**Deliverable:** Working authentication system
+**Deliverable:** ✓ Working authentication system with JWT-based sessions
 
-### 1.3 Basic Routing & Layout
-- [ ] Set up root layout with auth state
-- [ ] Create dashboard (`/`)
-- [ ] Create navigation components
-- [ ] Add Tailwind styling foundation
-- [ ] Configure Playwright for E2E testing
+### 1.3 Basic Routing & Layout - COMPLETE
+- [x] Set up root layout with auth state
+- [x] Create dashboard (`/`)
+- [x] Create navigation header with auth-aware links
+- [x] Add Tailwind styling foundation
+- [x] Add client-side route protection
+- [x] Create placeholder protected routes
 
-**Deliverable:** App shell with navigation and auth state
+**Deliverable:** ✓ App shell with navigation, auth state, and protected routes
 
 ---
 
@@ -202,9 +207,10 @@
 
 ## Milestone Checklist
 
-### Sprint 1 End ✓
+### Sprint 1 End - COMPLETE
 - [x] Dev environment working
-- [x] Auth system implemented (pending)
+- [x] Auth dependencies installed
+- [x] Auth system implemented
 - [x] Database schema finalized
 
 ### Sprint 2 End
