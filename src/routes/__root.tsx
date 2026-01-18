@@ -2,9 +2,7 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import Header from '../components/Header'
-
-import appCss from '../styles.css?url'
+import '../styles.css'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -17,13 +15,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
+        title: 'Fit Workout App',
       },
     ],
   }),
@@ -37,8 +29,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
-        <Header />
+      <body className="min-h-screen bg-gray-50">
         {children}
         <TanStackDevtools
           config={{

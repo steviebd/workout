@@ -1,0 +1,19 @@
+name = "workout-${ENVIRONMENT}"
+main = "@tanstack/react-start/server-entry"
+compatibility_date = "2025-09-02"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "${ENVIRONMENT}"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "workout-${ENVIRONMENT}-db"
+database_id = "${CLOUDFLARE_D1_DATABASE_ID}"
+
+[[routes]]
+pattern = "*.workout.${ENVIRONMENT}.example.com/*"
+zone_name = "workout.example.com"

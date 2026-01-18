@@ -1,0 +1,267 @@
+# AGENTS.md - Development Guide for AI Agents
+
+This document provides instructions for AI assistants (OpenCode, AmpCode, etc.) working on this project.
+
+## Project Overview
+
+**Fit Workout App** - A personal workout tracking application built with:
+- TanStack Start + React
+- Drizzle ORM + D1 (Cloudflare)
+- WorkOS for authentication
+- Tailwind CSS for styling
+- Cloudflare Workers for deployment
+
+## Critical Rules
+
+### 1. NEVER Hardcode Secrets
+
+All secrets must be fetched from Infisical. Never commit `.env` files or hardcoded API keys.
+
+**Correct:**
+```typescript
+const apiKey = process.env.WORKOS_API_KEY;
+```
+
+**Incorrect:**
+```typescript
+const apiKey = "sk_live_123456789";
+```
+
+### 2. Use Drizzle for All Database Operations
+
+Never write raw SQL or use direct D1 API calls. Always use Drizzle ORM.
+
+**Correct:**
+```typescript
+import { db } from '~/lib/db';
+import { exercises } from '~/lib/db/schema';
+
+await db.insert(exercises).values({ ... });
+```
+
+**Incorrect:**
+```typescript
+const result = await env.DB.prepare('INSERT INTO exercises ...').run();
+```
+
+### 3. File-Based Routing
+
+Routes are defined by file location in `src/routes/`. Follow the existing pattern.
+
+**Examples:**
+- `src/routes/exercises._index.tsx` → `/exercises`
+- `src/routes/exercises.$id.tsx` → `/exercises/:id`
+- `src/routes/templates.new.tsx` → `/templates/new`
+
+### 4. Environment-Specific Behavior
+
+The `ENVIRONMENT` environment variable determines behavior:
+
+| Value | Behavior |
+|-------|----------|
+| `dev` | Local development, use workout-dev D1 |
+| `staging` | Staging deployment, use workout-staging D1 |
+| `prod` | Production deployment, use workout-prod D1 |
+
+### 5. WorkOS Authentication
+
+- Use WorkOS hosted UI exclusively for sign-in/sign-up
+- Handle OAuth callback at `/auth/callback`
+- Sync user data (id, name, email) to local DB after auth
+- Store session in secure cookie
+
+## Database Schema (Drizzle)
+
+The schema is defined in `src/lib/db/schema.ts`. Key tables:
+
+- **users** - Synced from WorkOS (workos_id, name, email)
+- **exercises** - User-created exercises
+- **templates** - Workout templates grouping exercises
+- **template_exercises** - Links exercises to templates with order
+- **workouts** - Completed workout sessions
+- **workout_exercises** - Exercises within a workout
+- **workout_sets** - Individual sets with weight/reps/RPE
+
+## Development Commands
+
+```bash
+# Start local dev server (port 8787, remote D1 from Infisical)
+bun run dev
+
+# Type checking
+bun run typecheck
+
+# Linting
+bun run lint
+
+# Run tests
+bun run test          # Unit tests
+bun run test:e2e      # Playwright E2E tests
+
+# Build for production
+bun run build
+
+# Deploy to staging
+bun run deploy:staging
+
+# Deploy to production
+bun run deploy:prod
+```
+
+## CI/CD Pipeline
+
+1. **Push to any branch** → Lint + Typecheck + Tests
+2. **Push to non-main branch** → Auto-deploy to staging
+3. **Push to main** → Auto-deploy to production
+4. **Pull Request** → Run full test suite
+
+## Infisical Integration
+
+Secrets are managed via Infisical. The `.infisical.json` file configures the workspace.
+
+**Required secrets per environment:**
+
+| Secret | Purpose |
+|--------|---------|
+| `WORKOS_API_KEY` | WorkOS authentication |
+| `WORKOS_CLIENT_ID` | WorkOS OAuth client |
+| `POSTHOG_API_KEY` | Analytics |
+| `POSTHOG_PROJECT_URL` | Posthog server |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare API |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API |
+| `CLOUDFLARE_D1_DATABASE_ID` | D1 database binding |
+
+## Styling Guidelines
+
+- Use Tailwind CSS for all styling
+- Follow existing component patterns
+- No custom CSS files unless absolutely necessary
+- Use Lucide React for icons
+
+## Testing Requirements
+
+- Write Vitest tests for all utilities and components
+- Write Playwright E2E tests for critical user flows
+- Run `bun run test` before committing
+- E2E tests must pass in CI/CD
+
+## Code Style
+
+- TypeScript strict mode enabled
+- ESLint configured
+- No comments unless explaining complex logic
+- Use functional React patterns with hooks
+- Prefer file-based routes over code-based routes
+
+## File Locations
+
+| Purpose | Location |
+|---------|----------|
+| Routes | `src/routes/` |
+| Components | `src/components/` |
+| Database | `src/lib/db/` |
+| Auth | `src/lib/auth.ts` |
+| Analytics | `src/lib/posthog.ts` |
+| Base Config | `wrangler.toml` |
+| Staging Config | `wrangler.staging.toml` |
+| Production Config | `wrangler.prod.toml` |
+| Dev Script | `dev.sh` |
+| Drizzle Config | `drizzle.config.ts` |
+
+## Adding New Features
+
+1. **Create schema changes** → Update `src/lib/db/schema.ts`
+2. **Create migrations** → Run `bun run db:migrate`
+3. **Create routes** → Add file in `src/routes/`
+4. **Add components** → Add to `src/components/`
+5. **Add tests** → Add to `tests/` directory
+6. **Verify** → Run lint, typecheck, and tests
+
+## Common Patterns
+
+### Fetching Data in Routes
+
+```typescript
+import { createFileRoute } from '@tanstack/react-router';
+import { exercises } from '~/lib/db/schema';
+import { db } from '~/lib/db';
+
+export const Route = createFileRoute('/exercises/_index')({
+  loader: async () => {
+    return await db.select().from(exercises);
+  },
+  component: ExercisesComponent,
+});
+```
+
+### Protected Routes
+
+```typescript
+import { createProtectedRoute } from '~/lib/auth';
+
+export const protectedLoader = createProtectedRoute(async ({ context }) => {
+  // Only authenticated users reach here
+  return { user: context.user };
+});
+```
+
+### Database Inserts
+
+```typescript
+import { db } from '~/lib/db';
+import { exercises } from '~/lib/db/schema';
+
+await db.insert(exercises).values({
+  userId: user.id,
+  name: 'Bench Press',
+  muscleGroup: 'Chest',
+});
+```
+
+### Environment Detection
+
+```typescript
+const isDev = process.env.ENVIRONMENT === 'dev';
+const isStaging = process.env.ENVIRONMENT === 'staging';
+const isProd = process.env.ENVIRONMENT === 'prod';
+```
+
+## Troubleshooting
+
+### D1 Binding Errors
+Ensure `CLOUDFLARE_D1_DATABASE_ID` is set in Infisical for the correct environment:
+- Local dev: uses dev environment
+- Staging deploy: uses staging environment
+- Production deploy: uses prod environment
+
+### Worker Deployment Errors
+Check which wrangler config is being used:
+- Staging: `wrangler.staging.toml` → worker `workout-staging`
+- Production: `wrangler.prod.toml` → worker `workout-prod`
+
+### Local Dev Script
+The `dev.sh` script fetches `CLOUDFLARE_D1_DATABASE_ID` from Infisical dev environment. Run with:
+```bash
+bun run dev
+```
+
+### Auth Errors
+Check WorkOS redirect URIs match exactly:
+- `http://localhost:8787/auth/callback`
+- `https://staging.fit.stevenduong.com/auth/callback`
+- `https://fit.stevenduong.com/auth/callback`
+
+### Database Migration Errors
+Run migrations locally first:
+```bash
+bun run db:migrate
+```
+
+## Resources
+
+- [TanStack Start Docs](https://tanstack.com/start)
+- [Drizzle ORM Docs](https://orm.drizzle.team)
+- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
+- [WorkOS Docs](https://workos.com/docs)
+- [Tailwind CSS Docs](https://tailwindcss.com/docs)
+- [Posthog Docs](https://posthog.com/docs)
