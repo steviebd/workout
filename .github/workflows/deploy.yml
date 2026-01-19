@@ -94,7 +94,7 @@ jobs:
       - name: Export Environment Variables
         run: |
           set -a
-          source .env.staging
+          source workout.env.staging
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> $GITHUB_ENV
           echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> $GITHUB_ENV
@@ -140,7 +140,7 @@ jobs:
       - name: Export Environment Variables
         run: |
           set -a
-          source .env.production
+          source workout.env.production
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> $GITHUB_ENV
           echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> $GITHUB_ENV
