@@ -66,12 +66,16 @@ bun run build
 
 The project uses GitHub Actions for automated deployments:
 
-- **Push to `develop`** → Deploys to staging
 - **Push to `main`** → Deploys to production
+- **Push to any other branch** → Deploys to staging
 - **Pull requests** → Runs lint, typecheck, and tests (does not deploy)
-- **Lint/Typecheck/Tests** run in parallel with deployments
 
 All jobs run in parallel - deployments are not blocked by test failures.
+
+| Branch | Deploys To |
+|--------|------------|
+| `main` | Production |
+| Any other branch | Staging |
 
 ### Required Setup
 
