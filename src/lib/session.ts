@@ -1,4 +1,4 @@
-import { verifyToken, getTokenFromCookie } from './auth';
+import { getTokenFromCookie, verifyToken } from './auth';
 
 const SESSION_COOKIE_NAME = 'session_token';
 
@@ -32,22 +32,22 @@ function createClearCookie(): string {
   return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
-export function createSessionResponse(token: string, redirectTo: string = '/'): Response {
+export function createSessionResponse(token: string, redirectTo = '/'): Response {
   return new Response(null, {
     status: 302,
     headers: {
       'Set-Cookie': createSessionCookie(token),
-      Location: redirectTo,
+      'Location': redirectTo,
     },
   });
 }
 
-export function destroySessionResponse(redirectTo: string = '/'): Response {
+export function destroySessionResponse(redirectTo = '/'): Response {
   return new Response(null, {
     status: 302,
     headers: {
       'Set-Cookie': createClearCookie(),
-      Location: redirectTo,
+      'Location': redirectTo,
     },
   });
 }

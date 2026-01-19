@@ -1,5 +1,5 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export function generateId(): string {
   return crypto.randomUUID();
@@ -40,8 +40,8 @@ export const templates = sqliteTable('templates', {
   description: text('description'),
   notes: text('notes'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const templateExercises = sqliteTable('template_exercises', {
@@ -99,3 +99,15 @@ export type NewWorkout = typeof workouts.$inferInsert;
 export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
 export type NewWorkoutSet = typeof workoutSets.$inferInsert;
 export type NewUserPreference = typeof userPreferences.$inferInsert;
+
+export default {
+  generateId,
+  users,
+  userPreferences,
+  exercises,
+  templates,
+  templateExercises,
+  workouts,
+  workoutExercises,
+  workoutSets,
+};

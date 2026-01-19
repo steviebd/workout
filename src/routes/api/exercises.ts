@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type CreateExerciseData, createExercise, getExercisesByUserId } from '../../lib/db/exercise';
 import { getSession } from '../../lib/session';
-import { createExercise, getExercisesByUserId, type CreateExerciseData } from '../../lib/db/exercise';
 
 export const Route = createFileRoute('/api/exercises')({
   server: {
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/exercises')({
           const url = new URL(request.url);
           const search = url.searchParams.get('search') || undefined;
           const muscleGroup = url.searchParams.get('muscleGroup') || undefined;
-          const sortBy = url.searchParams.get('sortBy') as 'name' | 'muscleGroup' | 'createdAt' | undefined;
+          const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'muscleGroup' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
 
           const db = (env as { DB?: D1Database }).DB;

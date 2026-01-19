@@ -1,7 +1,8 @@
-import { createFileRoute, useParams, useRouter, Link } from '@tanstack/react-router';
+/* eslint-disable @typescript-eslint/no-floating-promises, react-hooks/exhaustive-deps */
+import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
+import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 
 const MUSCLE_GROUPS = [
   'Chest',
@@ -33,19 +34,25 @@ interface Exercise {
   updatedAt: string;
 }
 
+interface ExerciseResponse {
+  id: string;
+  name: string;
+  muscleGroup: string | null;
+  description: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface FormErrors {
   name?: string;
   muscleGroup?: string;
   submit?: string;
 }
 
-export const Route = createFileRoute('/exercises/$id/edit')({
-  component: EditExercise,
-});
-
 function EditExercise() {
-  const params = useParams({ from: '/exercises/$id/edit' });
-  const router = useRouter();
+  const { id } = useParams({ from: '/exercises/$id/edit' });
+  const navigate = useNavigate();
   const auth = useAuth();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -69,42 +76,40 @@ function EditExercise() {
     }
   }, [auth.loading, auth.user]);
 
-  useEffect(() => {
-    if (!auth.loading && auth.user && params.id) {
-      fetchExercise();
-    }
-  }, [auth.loading, auth.user, params.id]);
-
   async function fetchExercise() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/exercises/${params.id}`, {
+      const response = await fetch(`/api/exercises/${id}`, {
         credentials: 'include',
       });
 
       if (response.status === 404) {
-        router.navigate({ to: '/exercises' });
+        navigate({ to: '/exercises' });
         return;
       }
 
-      if (response.ok) {
-        const data = await response.json();
-        setExercise(data);
-        setFormData({
-          name: data.name || '',
-          muscleGroup: data.muscleGroup || '',
-          customMuscleGroup: MUSCLE_GROUPS.includes(data.muscleGroup as MuscleGroup)
-            ? ''
-            : (data.muscleGroup || ''),
-          description: data.description || '',
-        });
+       if (response.ok) {
+         const data: ExerciseResponse = await response.json();
+         setExercise(data);
+         setFormData({
+           name: data.name || '',
+           muscleGroup: data.muscleGroup || '',
+           customMuscleGroup: (data.muscleGroup && MUSCLE_GROUPS.includes(data.muscleGroup as MuscleGroup))
+             ? ''
+             : (data.muscleGroup || ''),
+           description: data.description || '',
+         });
       }
-    } catch (error) {
-      console.error('Failed to fetch exercise:', error);
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!auth.loading && auth.user && id) {
+      void fetchExercise();
+    }
+  }, [auth.loading, auth.user, id]);
 
   function validateForm(): boolean {
     const newErrors: FormErrors = {};
@@ -123,7 +128,7 @@ function EditExercise() {
     return Object.keys(newErrors).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmitAsync(e: React.FormEvent) {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -138,7 +143,7 @@ function EditExercise() {
         ? formData.customMuscleGroup.trim() || 'Other'
         : formData.muscleGroup;
 
-      const response = await fetch(`/api/exercises/${params.id}`, {
+      const response = await fetch(`/api/exercises/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -152,46 +157,56 @@ function EditExercise() {
       });
 
       if (response.ok) {
-        router.navigate({ to: '/exercises/$id', params: { id: params.id } });
+        navigate({ to: '/exercises/$id', params: { id } });
       } else if (response.status === 403) {
         setErrors({ submit: 'You do not have permission to edit this exercise' });
       } else if (response.status === 404) {
         setErrors({ submit: 'Exercise not found' });
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        let errorData: { message?: string } = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          // use default
+        }
         setErrors({ submit: errorData.message || 'Failed to update exercise' });
       }
-    } catch (error) {
+    } catch {
       setErrors({ submit: 'An error occurred. Please try again.' });
     } finally {
       setSubmitting(false);
     }
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    handleSubmitAsync(e);
+  }
+
   if (auth.loading || redirecting || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+	<div className={'min-h-screen flex items-center justify-center'}>
+		<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
+	</div>
     );
   }
 
   if (!exercise) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <p className="text-gray-600">Exercise not found</p>
-            <Link
-              to="/exercises"
-              className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
-            >
-              <ArrowLeft size={16} />
-              Back to exercises
-            </Link>
-          </div>
-        </div>
-      </div>
+	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
+		<div className={'max-w-2xl mx-auto'}>
+			<div className={'bg-white rounded-lg border border-gray-200 p-8 text-center'}>
+				<p className={'text-gray-600'}>{'Exercise not found'}</p>
+				<Link
+					className={'mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700'}
+					to={'/exercises'}
+				>
+					<ArrowLeft size={16} />
+					{'Back to exercises'}
+				</Link>
+			</div>
+		</div>
+	</div>
     );
   }
 
@@ -200,141 +215,139 @@ function EditExercise() {
     : 'Custom';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <Link
-            to="/exercises/$id"
-            params={{ id: params.id }}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Back to exercise
-          </Link>
-        </div>
+	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
+		<div className={'max-w-2xl mx-auto'}>
+			<div className={'mb-6'}>
+				<Link
+					className={'inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors'}
+					params={{ id }}
+					to={'/exercises/$id'}
+				>
+					<ArrowLeft size={20} />
+					{'Back to exercise'}
+				</Link>
+			</div>
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-xl font-semibold text-gray-900">Edit Exercise</h1>
-          </div>
+			<div className={'bg-white rounded-lg border border-gray-200 shadow-sm'}>
+				<div className={'px-6 py-4 border-b border-gray-200'}>
+					<h1 className={'text-xl font-semibold text-gray-900'}>{'Edit Exercise'}</h1>
+				</div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {errors.submit && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                <AlertCircle size={20} />
-                <span>{errors.submit}</span>
-              </div>
-            )}
+				<form className={'p-6 space-y-6'} onSubmit={handleSubmit}>
+					{errors.submit ? <div className={'flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700'}>
+						<AlertCircle size={20} />
+						<span>{errors.submit}</span>
+                      </div> : null}
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow ${
+					<div>
+						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'name'}>
+							{'Name '}
+							<span className={'text-red-500'}>{'*'}</span>
+						</label>
+						<input
+							className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="e.g., Bench Press"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-              )}
-            </div>
+							id={'name'}
+							onChange={(e) => void setFormData({ ...formData, name: e.target.value })}
+							placeholder={'e.g., Bench Press'}
+							type={'text'}
+							value={formData.name}
+						/>
+						{errors.name ? <p className={'mt-1 text-sm text-red-600'}>{errors.name}</p> : null}
+					</div>
 
-            <div>
-              <label htmlFor="muscleGroup" className="block text-sm font-medium text-gray-700 mb-1">
-                Muscle Group <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="muscleGroup"
-                value={selectedMuscleGroupValue}
-                onChange={(e) =>
-                  setFormData({
+					<div>
+						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'muscleGroup'}>
+							{'Muscle Group '}
+							<span className={'text-red-500'}>{'*'}</span>
+						</label>
+						<select
+							className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white ${
+                  errors.muscleGroup ? 'border-red-500' : 'border-gray-300'
+                }`}
+							id={'muscleGroup'}
+							onChange={(e) =>
+                  void setFormData({
                     ...formData,
                     muscleGroup: e.target.value,
                     customMuscleGroup: e.target.value !== 'Custom' ? '' : formData.customMuscleGroup,
-                  })
-                }
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white ${
-                  errors.muscleGroup ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select muscle group</option>
-                {MUSCLE_GROUPS.filter((g) => g !== 'Custom').map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
+                  })}
+							value={selectedMuscleGroupValue}
+						>
+							<option value={''}>{'Select muscle group'}</option>
+							{MUSCLE_GROUPS.filter((g) => g !== 'Custom').map((group) => (
+								<option key={group} value={group}>
+									{group}
+								</option>
                 ))}
-                <option value="Custom">Custom...</option>
-              </select>
-              {errors.muscleGroup && (
-                <p className="mt-1 text-sm text-red-600">{errors.muscleGroup}</p>
-              )}
-            </div>
+							<option value={'Custom'}>{'Custom...'}</option>
+						</select>
+						{errors.muscleGroup ? <p className={'mt-1 text-sm text-red-600'}>{errors.muscleGroup}</p> : null}
+					</div>
 
-            {selectedMuscleGroupValue === 'Custom' && (
-              <div>
-                <label htmlFor="customMuscleGroup" className="block text-sm font-medium text-gray-700 mb-1">
-                  Custom Muscle Group
-                </label>
-                <input
-                  type="text"
-                  id="customMuscleGroup"
-                  value={formData.customMuscleGroup}
-                  onChange={(e) => setFormData({ ...formData, customMuscleGroup: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
-                  placeholder="Enter custom muscle group"
-                />
-              </div>
-            )}
+					{selectedMuscleGroupValue === 'Custom' ? <div>
+						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'customMuscleGroup'}>
+							{'Custom Muscle Group'}
+						</label>
+						<input
+							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
+							id={'customMuscleGroup'}
+							onChange={(e) => setFormData({ ...formData, customMuscleGroup: e.target.value })}
+							placeholder={'Enter custom muscle group'}
+							type={'text'}
+							value={formData.customMuscleGroup}
+						/>
+                                              </div> : null}
 
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none"
-                placeholder="Add a description for this exercise..."
-              />
-            </div>
+					<div>
+						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'description'}>
+							{'Description '}
+							<span className={'text-gray-400 font-normal'}>{'(optional)'}</span>
+						</label>
+						<textarea
+							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none'}
+							id={'description'}
+							onChange={(e) => void setFormData({ ...formData, description: e.target.value })}
+							placeholder={'Add a description for this exercise...'}
+							rows={4}
+							value={formData.description}
+						/>
+					</div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-              <Link
-                to="/exercises/$id"
-                params={{ id: params.id }}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Saving...
-                  </>
+					<div className={'flex justify-end gap-3 pt-4 border-t border-gray-200'}>
+						<Link
+							className={'px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors'}
+							params={{ id }}
+							to={'/exercises/$id'}
+						>
+							{'Cancel'}
+						</Link>
+						<button
+							className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed'}
+							disabled={submitting}
+							type={'submit'}
+						>
+							{submitting ? (
+								<>
+									<div className={'animate-spin rounded-full h-4 w-4 border-b-2 border-white'} />
+									{'Saving...'}
+								</>
                 ) : (
-                  <>
-                    <Save size={20} />
-                    Save Changes
-                  </>
+	<>
+		<Save size={20} />
+		{'Save Changes'}
+	</>
                 )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
   );
 }
+
+export const Route = createFileRoute('/exercises/$id/edit')({
+  component: EditExercise,
+});

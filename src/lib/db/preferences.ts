@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
+import { type NewUserPreference, type UserPreference, userPreferences } from './schema';
 import { createDb } from './index';
-import { userPreferences, type UserPreference, type NewUserPreference } from './schema';
 
 export type { UserPreference, NewUserPreference };
 
 export type WeightUnit = 'kg' | 'lbs';
-export type Theme = 'light' | 'dark';
+export type Theme = 'dark' | 'light';
 
 export interface UpdatePreferencesData {
   weightUnit?: WeightUnit;
@@ -51,7 +51,7 @@ export async function upsertUserPreferences(
       .returning()
       .get();
 
-    return updated as UserPreference;
+    return updated;
   }
 
   const newPrefs = await drizzleDb
@@ -64,7 +64,7 @@ export async function upsertUserPreferences(
     .returning()
     .get();
 
-  return newPrefs as UserPreference;
+  return newPrefs;
 }
 
 export async function updateWeightUnit(

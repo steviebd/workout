@@ -44,7 +44,7 @@ export const exerciseLibrary: ExerciseLibraryItem[] = [
   // Forearms
   { name: 'Wrist Curl', muscleGroup: 'Forearms', description: 'An isolation exercise curling the wrists with palms facing up to target the flexor muscles of the forearm.' },
   { name: 'Reverse Wrist Curl', muscleGroup: 'Forearms', description: 'An isolation exercise curling the wrists with palms facing down to target the extensor muscles of the forearm.' },
-  { name: "Farmer's Walk", muscleGroup: 'Forearms', description: 'A compound exercise carrying heavy weights while walking, building grip strength and forearm endurance through sustained holding.' },
+  { name: 'Farmer\'s Walk', muscleGroup: 'Forearms', description: 'A compound exercise carrying heavy weights while walking, building grip strength and forearm endurance through sustained holding.' },
 
   // Core
   { name: 'Plank', muscleGroup: 'Core', description: 'An isometric core exercise holding a push-up position, engaging the entire midsection including abs, obliques, and lower back.' },

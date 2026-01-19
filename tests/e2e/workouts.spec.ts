@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
 const TEST_USERNAME = process.env.TEST_USERNAME || '';

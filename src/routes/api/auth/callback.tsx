@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
 import { env } from 'cloudflare:workers';
-import { createSessionResponse } from '../../../lib/session';
 import { createToken, extractSessionIdFromAccessToken } from '../../../lib/auth';
 import { getOrCreateUser } from '../../../lib/db/user';
+import { createSessionResponse } from '../../../lib/session';
 
-const WORKOS_API_KEY = process.env.WORKOS_API_KEY;
-const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID;
+const {WORKOS_API_KEY} = process.env;
+const {WORKOS_CLIENT_ID} = process.env;
 
 export const Route = createFileRoute('/api/auth/callback')({
   server: {
@@ -32,10 +32,18 @@ export const Route = createFileRoute('/api/auth/callback')({
             });
           }
 
-          const workos = new WorkOS(WORKOS_API_KEY!);
+          if (!WORKOS_API_KEY || !WORKOS_CLIENT_ID) {
+            console.error('WorkOS configuration missing');
+            return new Response(null, {
+              status: 302,
+              headers: { Location: '/?error=config_missing' },
+            });
+          }
+
+          const workos = new WorkOS(WORKOS_API_KEY);
           const { user, accessToken } = await workos.userManagement.authenticateWithCode({
             code,
-            clientId: WORKOS_CLIENT_ID!,
+            clientId: WORKOS_CLIENT_ID,
           });
 
           const localUser = await getOrCreateUser(db, {

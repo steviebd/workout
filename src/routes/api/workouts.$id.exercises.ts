@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import {
+  type ExerciseOrder,
   createWorkoutExercise,
-  removeWorkoutExercise,
-  reorderWorkoutExercises,
   getWorkoutExercises,
-  type ExerciseOrder
+  removeWorkoutExercise,
+  reorderWorkoutExercises
 } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id/exercises')({
   server: {
@@ -102,7 +103,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
   },
 });
 
-export const Route2 = createFileRoute('/api/workouts/$id/exercises/reorder')({
+export const Route2 = createFileRoute('/api/workouts/$id/exercises/reorder' as const)({
   server: {
     handlers: {
       PUT: async ({ request, params }) => {

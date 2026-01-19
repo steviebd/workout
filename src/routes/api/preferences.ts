@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type UpdatePreferencesData, getUserPreferences, upsertUserPreferences } from '../../lib/db/preferences';
 import { getSession } from '../../lib/session';
-import { getUserPreferences, upsertUserPreferences, type UpdatePreferencesData } from '../../lib/db/preferences';
 
 export const Route = createFileRoute('/api/preferences')({
   server: {

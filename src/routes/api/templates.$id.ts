@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import {
+  type UpdateTemplateData,
   getTemplateById,
-  updateTemplate,
   softDeleteTemplate,
-  type UpdateTemplateData
+  updateTemplate
 } from '../../lib/db/template';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {

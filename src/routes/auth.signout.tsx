@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { destroySessionResponse } from '../lib/session';
-import { getTokenFromCookie, verifyToken } from '../lib/auth';
 import { useEffect } from 'react';
+import { getTokenFromCookie, verifyToken } from '../lib/auth';
+import { destroySessionResponse } from '../lib/session';
 import { useAuth } from './__root';
 
 export const Route = createFileRoute('/auth/signout')({
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/auth/signout')({
               status: 302,
               headers: {
                 'Set-Cookie': 'session_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
-                Location: signOutUrl,
+                'Location': signOutUrl,
               },
             });
           }

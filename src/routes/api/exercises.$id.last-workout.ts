@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { getLastWorkoutForExercise } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/exercises/$id/last-workout')({
   server: {

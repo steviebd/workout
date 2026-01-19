@@ -1,4 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { Page, Dialog } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
 
@@ -6,7 +8,7 @@ function isAuthKitUrl(url: URL): boolean {
 	return url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin');
 }
 
-async function deleteExercise(page: any, exerciseName: string) {
+async function deleteExercise(page: Page, exerciseName: string) {
 	await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 	const exerciseCard = page.locator(`text=${exerciseName}`).first();
 	if (await exerciseCard.isVisible()) {
@@ -14,7 +16,7 @@ async function deleteExercise(page: any, exerciseName: string) {
 		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 		const deleteButton = page.locator('text=Delete').first();
 		await expect(deleteButton).toBeVisible();
-		page.on('dialog', async (dialog: any) => await dialog.accept());
+		page.on('dialog', async (dialog: Dialog) => await dialog.accept());
 		await deleteButton.click();
 		await page.waitForURL(`${BASE_URL}/exercises`, { timeout: 10000 });
 	}
@@ -176,8 +178,8 @@ test.describe('Edit Exercise Flow', () => {
 		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
 		await expect(page.locator(`h1:has-text("${updatedName}")`).first()).toBeVisible({ timeout: 10000 });
-		await expect(page.locator(`text=Triceps`).first()).toBeVisible();
-		await expect(page.locator(`text=Updated description`).first()).toBeVisible();
+		await expect(page.locator('text=Triceps').first()).toBeVisible();
+		await expect(page.locator('text=Updated description').first()).toBeVisible();
 
 		await deleteExercise(page, updatedName);
 	});

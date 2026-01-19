@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { type JWTPayload, SignJWT, jwtVerify } from 'jose';
 
 let jwtSecret: Uint8Array | null = null;
 
@@ -13,7 +13,7 @@ function getJwtSecret(): Uint8Array {
   return jwtSecret;
 }
 
-export interface SessionPayload extends JWTPayload {
+export type SessionPayload = JWTPayload & {
   sub: string;
   userId: string;
   email: string;
@@ -66,7 +66,7 @@ export function extractSessionIdFromAccessToken(accessToken: string): string | n
   try {
     const parts = accessToken.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString()) as { sid?: string };
     return payload.sid || null;
   } catch {
     return null;

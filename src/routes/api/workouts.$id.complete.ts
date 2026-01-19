@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { completeWorkout, getWorkoutWithExercises } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id/complete')({
   server: {

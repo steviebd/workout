@@ -1,6 +1,15 @@
-import { eq, and, like, desc, asc } from 'drizzle-orm';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+import { and, asc, desc, eq, like } from 'drizzle-orm';
+import { type NewTemplate, type NewTemplateExercise, type Template, type TemplateExercise, exercises, templateExercises, templates } from './schema';
 import { createDb } from './index';
-import { templates, templateExercises, exercises, type Template, type NewTemplate, type TemplateExercise, type NewTemplateExercise } from './schema';
+
+export interface TemplateExerciseWithDetails extends TemplateExercise {
+  exercise?: {
+    id: string;
+    name: string;
+    muscleGroup: string | null;
+  };
+}
 
 export type { Template, NewTemplate, TemplateExercise, NewTemplateExercise };
 
@@ -18,7 +27,7 @@ export interface UpdateTemplateData {
 
 export interface GetTemplatesOptions {
   search?: string;
-  sortBy?: 'name' | 'createdAt';
+  sortBy?: 'createdAt' | 'name';
   sortOrder?: 'ASC' | 'DESC';
   limit?: number;
   offset?: number;
@@ -26,14 +35,6 @@ export interface GetTemplatesOptions {
 
 export interface TemplateWithExerciseCount extends Template {
   exerciseCount: number;
-}
-
-export interface TemplateExerciseWithDetails extends TemplateExercise {
-  exercise?: {
-    id: string;
-    name: string;
-    muscleGroup: string | null;
-  };
 }
 
 export async function createTemplate(
@@ -53,7 +54,7 @@ export async function createTemplate(
     .returning()
     .get();
 
-  return template as Template;
+  return template;
 }
 
 export async function getTemplateById(
@@ -69,7 +70,7 @@ export async function getTemplateById(
     .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
     .get();
 
-  return template ? (template as Template) : null;
+  return template || null;
 }
 
 export async function getTemplatesByUserId(
@@ -87,7 +88,7 @@ export async function getTemplatesByUserId(
     offset,
   } = options;
 
-  let conditions = [eq(templates.userId, userId), eq(templates.isDeleted, false)];
+  const conditions = [eq(templates.userId, userId), eq(templates.isDeleted, false)];
 
   if (search) {
     conditions.push(like(templates.name, `%${search}%`));
@@ -154,7 +155,8 @@ export async function updateTemplate(
     .returning()
     .get();
 
-  return updated ? (updated as Template) : null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return updated || null;
 }
 
 export async function softDeleteTemplate(
@@ -221,7 +223,7 @@ export async function copyTemplate(
     await drizzleDb.insert(templateExercises).values(newExercises).run();
   }
 
-  return newTemplate as Template;
+  return newTemplate;
 }
 
 export async function addExerciseToTemplate(
@@ -242,7 +244,7 @@ export async function addExerciseToTemplate(
     .returning()
     .get();
 
-  return templateExercise as TemplateExercise;
+  return templateExercise;
 }
 
 export async function removeExerciseFromTemplate(

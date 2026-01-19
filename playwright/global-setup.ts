@@ -1,13 +1,13 @@
-import { chromium, type Browser } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
+import { mkdirSync } from 'fs';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { type Browser, chromium } from '@playwright/test';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
 async function globalSetup() {
-	const storageStatePath = path.join(__dirname, '.auth/state.json');
+	const storageStatePath = join(__dirname, '.auth/state.json');
 	const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
 	const TEST_USERNAME = process.env.TEST_USERNAME || '';
 	const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
@@ -16,7 +16,7 @@ async function globalSetup() {
 	const AUTH_SUBMIT_SELECTOR = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR || 'button[name="intent"]:not([data-method])';
 	const AUTH_CONTINUE_SELECTOR = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR || 'button:has-text("Continue")';
 
-	fs.mkdirSync(path.dirname(storageStatePath), { recursive: true });
+	mkdirSync(dirname(storageStatePath), { recursive: true });
 
 	const browser: Browser = await chromium.launch();
 	const page = await browser.newPage();

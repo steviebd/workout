@@ -1,6 +1,7 @@
-import { eq, and, like, desc, asc } from 'drizzle-orm';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+import { and, asc, desc, eq, like } from 'drizzle-orm';
+import { type Exercise, type NewExercise, exercises } from './schema';
 import { createDb } from './index';
-import { exercises, type Exercise, type NewExercise } from './schema';
 
 export type { Exercise, NewExercise };
 
@@ -20,7 +21,7 @@ export interface GetExercisesOptions {
   search?: string;
   muscleGroup?: string;
   excludeDeleted?: boolean;
-  sortBy?: 'name' | 'muscleGroup' | 'createdAt';
+  sortBy?: 'createdAt' | 'muscleGroup' | 'name';
   sortOrder?: 'ASC' | 'DESC';
   limit?: number;
   offset?: number;
@@ -43,7 +44,7 @@ export async function createExercise(
     .returning()
     .get();
 
-  return exercise as Exercise;
+  return exercise;
 }
 
 export async function getExerciseById(
@@ -59,7 +60,7 @@ export async function getExerciseById(
     .where(and(eq(exercises.id, exerciseId), eq(exercises.userId, userId)))
     .get();
 
-  return exercise ? (exercise as Exercise) : null;
+  return exercise || null;
 }
 
 export async function getExercisesByUserId(
@@ -79,7 +80,7 @@ export async function getExercisesByUserId(
     offset,
   } = options;
 
-  let conditions = [eq(exercises.userId, userId)];
+  const conditions = [eq(exercises.userId, userId)];
 
   if (excludeDeleted) {
     conditions.push(eq(exercises.isDeleted, false));
@@ -147,7 +148,8 @@ export async function updateExercise(
     .returning()
     .get();
 
-  return updated ? (updated as Exercise) : null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return updated || null;
 }
 
 export async function softDeleteExercise(
@@ -193,5 +195,5 @@ export async function copyExerciseFromLibrary(
     .returning()
     .get();
 
-  return newExercise as Exercise;
+  return newExercise;
 }

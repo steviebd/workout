@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type CreateTemplateData, createTemplate, getTemplatesByUserId } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
-import { createTemplate, getTemplatesByUserId, type CreateTemplateData } from '../../lib/db/template';
 
 export const Route = createFileRoute('/api/templates')({
   server: {
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/templates')({
 
           const url = new URL(request.url);
           const search = url.searchParams.get('search') || undefined;
-          const sortBy = url.searchParams.get('sortBy') as 'name' | 'createdAt' | undefined;
+          const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
           const page = parseInt(url.searchParams.get('page') || '1', 10);
           const limit = parseInt(url.searchParams.get('limit') || '20', 10);

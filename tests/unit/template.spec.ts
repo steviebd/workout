@@ -1,17 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createDb } from '@/lib/db/index';
 import {
+  addExerciseToTemplate,
+  copyTemplate,
   createTemplate,
   getTemplateById,
-  getTemplatesByUserId,
-  updateTemplate,
-  softDeleteTemplate,
-  copyTemplate,
-  addExerciseToTemplate,
+  getTemplateExercises,
   removeExerciseFromTemplate,
   reorderTemplateExercises,
-  getTemplateExercises,
+  softDeleteTemplate,
+  updateTemplate,
 } from '@/lib/db/template';
-import { createDb } from '@/lib/db/index';
 
 vi.mock('@/lib/db/index', () => ({
   createDb: vi.fn(),

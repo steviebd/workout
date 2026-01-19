@@ -1,17 +1,18 @@
-import { eq, and, desc, asc, isNotNull, sql } from 'drizzle-orm';
-import { createDb } from './index';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import {
-  workouts,
+  type NewWorkout,
+  type NewWorkoutExercise,
+  type NewWorkoutSet,
+  type Workout,
+  type WorkoutExercise,
+  type WorkoutSet,
+  exercises,
   workoutExercises,
   workoutSets,
-  exercises,
-  type Workout,
-  type NewWorkout,
-  type WorkoutExercise,
-  type NewWorkoutExercise,
-  type WorkoutSet,
-  type NewWorkoutSet,
+  workouts,
 } from './schema';
+import { createDb } from './index';
 
 export type { Workout, NewWorkout, WorkoutExercise, NewWorkoutExercise, WorkoutSet, NewWorkoutSet };
 
@@ -28,7 +29,7 @@ export interface UpdateWorkoutData {
 }
 
 export interface GetWorkoutsOptions {
-  sortBy?: 'startedAt' | 'createdAt';
+  sortBy?: 'createdAt' | 'startedAt';
   sortOrder?: 'ASC' | 'DESC';
   limit?: number;
   offset?: number;
@@ -72,7 +73,7 @@ export async function createWorkout(
     .returning()
     .get();
 
-  return workout as Workout;
+  return workout;
 }
 
 export async function getWorkoutById(
@@ -88,7 +89,7 @@ export async function getWorkoutById(
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
     .get();
 
-  return workout ? (workout as Workout) : null;
+  return workout ? workout : null;
 }
 
 export async function getWorkoutWithExercises(
@@ -145,7 +146,7 @@ export async function getWorkoutWithExercises(
     const existing = exerciseMap.get(row.id);
     const setData = row.sets as WorkoutSet | null;
     if (existing) {
-      if (setData && setData.id) {
+      if (setData?.id) {
         existing.sets.push(setData);
       }
     } else {
@@ -155,8 +156,8 @@ export async function getWorkoutWithExercises(
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
         notes: row.notes,
-        exercise: row.exercise || undefined,
-        sets: setData && setData.id ? [setData] : [],
+        exercise: row.exercise,
+        sets: setData?.id ? [setData] : [],
       });
     }
   }
@@ -219,7 +220,8 @@ export async function updateWorkout(
     .returning()
     .get();
 
-  return updated ? (updated as Workout) : null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return updated || null;
 }
 
 export async function completeWorkout(
@@ -267,7 +269,7 @@ export async function createWorkoutExercise(
     .returning()
     .get();
 
-  return workoutExercise as WorkoutExercise;
+  return workoutExercise;
 }
 
 export async function getWorkoutExercises(
@@ -313,7 +315,7 @@ export async function getWorkoutExercises(
     const existing = exerciseMap.get(row.id);
     const setData = row.sets as WorkoutSet | null;
     if (existing) {
-      if (setData && setData.id) {
+      if (setData?.id) {
         existing.sets.push(setData);
       }
     } else {
@@ -323,8 +325,8 @@ export async function getWorkoutExercises(
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
         notes: row.notes,
-        exercise: row.exercise || undefined,
-        sets: setData && setData.id ? [setData] : [],
+        exercise: row.exercise,
+        sets: setData?.id ? [setData] : [],
       });
     }
   }
@@ -421,7 +423,7 @@ export async function createWorkoutSet(
     .returning()
     .get();
 
-  return workoutSet as WorkoutSet;
+  return workoutSet;
 }
 
 export async function updateWorkoutSet(
@@ -442,7 +444,8 @@ export async function updateWorkoutSet(
 
   console.log('updateWorkoutSet result:', updated);
 
-  return updated ? (updated as WorkoutSet) : null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return updated || null;
 }
 
 export async function completeWorkoutSet(

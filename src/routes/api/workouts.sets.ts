@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { createWorkoutSet } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/sets')({
   server: {

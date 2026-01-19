@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface ActiveWorkoutExercise {
   exerciseId: string;
@@ -31,76 +31,84 @@ export interface ActiveWorkout {
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const SYNC_INTERVAL = 1000;
 
+function loadWorkoutFromStorage(setWorkout: (workout: ActiveWorkout | null) => void, setIsLoading: (loading: boolean) => void) {
+  try {
+    const stored = localStorage.getItem(ACTIVE_WORKOUT_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as ActiveWorkout;
+      setWorkout(parsed);
+    }
+  } catch (err) {
+    console.error('Failed to load workout from localStorage:', err);
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+function setupVisibilityListener(loadWorkoutFromStorageFn: () => void) {
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      loadWorkoutFromStorageFn();
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+function setupBeforeUnloadListener(workout: ActiveWorkout | null, saveWorkoutFn: () => void) {
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (workout) {
+      saveWorkoutFn();
+      e.preventDefault();
+    }
+  };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+}
+
+function removeBeforeUnloadListener() {
+  window.removeEventListener('beforeunload', () => {});
+}
+
 export function useActiveWorkout() {
   const [workout, setWorkout] = useState<ActiveWorkout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncRef = useRef<number>(0);
+  const workoutRef = useRef<ActiveWorkout | null>(null);
 
-  useEffect(() => {
-    loadWorkoutFromStorage();
-    setupVisibilityListener();
-    setupBeforeUnloadListener();
-
-    return () => {
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
-      }
-      removeBeforeUnloadListener();
-    };
-  }, []);
-
-  const loadWorkoutFromStorage = () => {
-    try {
-      const stored = localStorage.getItem(ACTIVE_WORKOUT_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setWorkout(parsed);
-      }
-    } catch (err) {
-      console.error('Failed to load workout from localStorage:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setupVisibilityListener = () => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadWorkoutFromStorage();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-  };
-
-  const setupBeforeUnloadListener = () => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (workout) {
-        saveWorkoutToStorage();
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-  };
-
-  const removeBeforeUnloadListener = () => {
-    window.removeEventListener('beforeunload', () => {});
-  };
-
-  const saveWorkoutToStorage = useCallback(() => {
-    if (!workout) return;
+  const saveWorkoutToStorage = useCallback((currentWorkout: ActiveWorkout | null) => {
+    if (!currentWorkout) return;
 
     try {
-      localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(workout));
+      localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(currentWorkout));
       lastSyncRef.current = Date.now();
     } catch (err) {
       console.error('Failed to save workout to localStorage:', err);
     }
+  }, []);
+
+  useEffect(() => {
+    workoutRef.current = workout;
   }, [workout]);
+
+  useEffect(() => {
+    const loadFn = () => loadWorkoutFromStorage(setWorkout, setIsLoading);
+    const saveFn = () => saveWorkoutToStorage(workoutRef.current);
+    
+    loadFn();
+    setupVisibilityListener(loadFn);
+    setupBeforeUnloadListener(workout, saveFn);
+
+    const timeout = syncTimeoutRef.current;
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      removeBeforeUnloadListener();
+    };
+  }, [saveWorkoutToStorage, workout]);
 
   const syncWorkout = useCallback(() => {
     if (!workout) return;
@@ -109,7 +117,7 @@ export function useActiveWorkout() {
     if (now - lastSyncRef.current < SYNC_INTERVAL) return;
 
     setIsSyncing(true);
-    saveWorkoutToStorage();
+    saveWorkoutToStorage(workout);
 
     setTimeout(() => {
       setIsSyncing(false);
@@ -123,7 +131,7 @@ export function useActiveWorkout() {
     };
 
     setWorkout(newWorkout);
-    saveWorkoutToStorage();
+    saveWorkoutToStorage(newWorkout);
   }, [saveWorkoutToStorage]);
 
   const updateWorkout = useCallback((updates: Partial<ActiveWorkout>) => {
@@ -245,7 +253,7 @@ export function useActiveWorkout() {
     syncWorkout();
   }, [syncWorkout]);
 
-  const reorderExercises = useCallback((exerciseOrders: { exerciseId: string; orderIndex: number }[]) => {
+  const reorderExercises = useCallback((exerciseOrders: Array<{ exerciseId: string; orderIndex: number }>) => {
     setWorkout((prev) => {
       if (!prev) return prev;
 

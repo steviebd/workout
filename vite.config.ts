@@ -13,9 +13,8 @@ const config = defineConfig({
   },
   plugins: [
     devtools(),
-    cloudflare({ 
+    cloudflare({
       viteEnvironment: { name: 'ssr' },
-      wranglerEnvironment: process.env.WRANGLER_ENV || 'dev',
     }),
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],

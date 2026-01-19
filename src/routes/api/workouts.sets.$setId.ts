@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type NewWorkoutSet, deleteWorkoutSet, updateWorkoutSet } from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
-import { updateWorkoutSet, deleteWorkoutSet, type NewWorkoutSet } from '../../lib/db/workout';
 
 export const Route = createFileRoute('/api/workouts/sets/$setId')({
   server: {
