@@ -89,12 +89,12 @@ jobs:
           project-slug: "workout-wm-0-u"
           env-slug: "staging"
           export-type: "file"
-          file-output-path: "workout.env"
+          file-output-path: "/tmp/workout.env"
 
       - name: Export Environment Variables
         run: |
           set -a
-          source $GITHUB_WORKSPACE/workout.env
+          source /tmp/workout.env
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> $GITHUB_ENV
           echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> $GITHUB_ENV
@@ -135,12 +135,12 @@ jobs:
           project-slug: "workout-wm-0-u"
           env-slug: "prod"
           export-type: "file"
-          file-output-path: "workout.env"
+          file-output-path: "/tmp/workout.env"
 
       - name: Export Environment Variables
         run: |
           set -a
-          source $GITHUB_WORKSPACE/workout.env
+          source /tmp/workout.env
           echo "CLOUDFLARE_D1_DATABASE_ID=$CLOUDFLARE_D1_DATABASE_ID" >> $GITHUB_ENV
           echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> $GITHUB_ENV
           echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> $GITHUB_ENV
