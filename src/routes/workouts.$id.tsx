@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/consistent-type-definitions, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, react/jsx-closing-tag-location */
 import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
 import {
   Calendar,
@@ -12,13 +11,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails, type LastWorkoutData } from '@/lib/db/workout';
 
 
-type WorkoutExercise = {
+interface WorkoutExercise {
    id: string;
    exerciseId: string;
    name: string;
@@ -28,21 +27,32 @@ type WorkoutExercise = {
    notes: string | null;
  }
 
-type WorkoutSet = {
+interface WorkoutSet {
+    id: string;
+    workoutExerciseId: string;
+    setNumber: number;
+    weight: number | null;
+    reps: number | null;
+    rpe: number | null;
+    isComplete: boolean;
+    completedAt: string | null;
+    createdAt: string | null;
+  }
+
+interface Exercise {
    id: string;
-   setNumber: number;
-   weight: number | null;
-   reps: number | null;
-   rpe: number | null;
-   isComplete: boolean;
-   completedAt: string | null;
+   name: string;
+   muscleGroup: string | null;
  }
 
-type Exercise = {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-}
+interface NewWorkoutExerciseResponse {
+   id: string;
+   notes: string | null;
+ }
+
+interface ApiError {
+   message?: string;
+ }
 
 function WorkoutSession() {
   const auth = useAuth();
@@ -62,340 +72,158 @@ function WorkoutSession() {
   const [notes, setNotes] = useState('');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showIncompleteSetsConfirm, setShowIncompleteSetsConfirm] = useState(false);
-  const fetchedRef = useRef(false);
-  const redirectingRef = useRef(false);
+    const fetchedRef = useRef(false);
+    const redirectingRef = useRef(false);
 
-  useEffect(() => {
-    if (!auth.loading && !auth.user && !redirectingRef.current) {
-      redirectingRef.current = true;
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
+    const handleUpdateSet = useCallback(async (
+      exerciseId: string,
+      setId: string,
+      updates: Partial<WorkoutSet>
+    ) => {
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates)
+      ) as Record<string, number | null>;
 
-  useEffect(() => {
-    if (!auth.loading && auth.user && params.id && !fetchedRef.current) {
-      fetchedRef.current = true;
-      void loadWorkout();
-    }
-  }, [auth.loading, auth.user, params.id]);
+      if (cleanUpdates.weight !== null && cleanUpdates.weight < 0) return;
+      if (cleanUpdates.reps !== null && cleanUpdates.reps < 0) return;
+      if (cleanUpdates.rpe !== null && cleanUpdates.rpe < 0) return;
 
-  // Reset redirectingRef when component unmounts or when params change
-  useEffect(() => {
-    return () => {
-      redirectingRef.current = false;
-    };
-  }, [params.id]);
-
-  async function fetchExercises() {
-    try {
-      const res = await fetch('/api/exercises', {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const data: Exercise[] = await res.json();
-        setAvailableExercises(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch exercises:', err);
-    }
-  }
-
-  async function loadWorkout() {
-    const {id} = params;
-    if (!id) return;
-    setWorkoutId(id);
-
-    try {
-      const res = await fetch(`/api/workouts/${id}`, {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const data: Workout = await res.json();
-        setWorkoutName(data.name);
-        setStartedAt(data.startedAt);
-        setNotes(data.notes || '');
-
-        if (data.completedAt && !redirectingRef.current) {
-          console.log('Workout: Detected completed workout, redirecting to summary');
-          redirectingRef.current = true;
-          router.navigate({ to: `/workouts/${id}/summary`, replace: true });
-          return;
-        }
-
-        const exerciseData = await fetch(`/api/workouts/${id}/exercises`, {
+      try {
+        const res = await fetch(`/api/workouts/sets/${setId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
+          body: JSON.stringify(cleanUpdates),
         });
 
-        if (exerciseData.ok) {
-          const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
-          const flattenedExercises = exercisesData.map((e) => ({
-            id: e.id,
-            exerciseId: e.exerciseId,
-            orderIndex: e.orderIndex,
-            notes: e.notes,
-            name: e.exercise?.name ?? '',
-            muscleGroup: e.exercise?.muscleGroup ?? null,
-            sets: e.sets,
-          })) as WorkoutExercise[];
-          setExercises(flattenedExercises);
-
-          const initialExpanded = new Set<string>();
-          flattenedExercises.forEach((e) => initialExpanded.add(e.exerciseId));
-          setExpandedExercises(initialExpanded);
+        if (res.ok) {
+          setExercises(
+            exercises.map((e) =>
+              e.exerciseId === exerciseId
+                ? {
+                    ...e,
+                    sets: e.sets.map((s: WorkoutSet) =>
+                      s.id === setId ? { ...s, ...cleanUpdates } : s
+                    ),
+                  }
+                : e
+            )
+          );
         }
-      } else {
-        setError('Workout not found');
+      } catch (err) {
+        console.error('Failed to update set:', err);
+        setError('Failed to update set');
       }
-    } catch (err) {
-      console.error('Failed to load workout:', err);
-      setError('Failed to load workout');
-    }
+    }, [exercises]);
 
-    void fetchExercises();
-  }
-
-  const filteredExercises = availableExercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&
-    !exercises.some((e) => e.exerciseId === exercise.id)
-  );
-
-  const toggleExerciseExpanded = (exerciseId: string) => {
-    const newExpanded = new Set(expandedExercises);
-    if (newExpanded.has(exerciseId)) {
-      newExpanded.delete(exerciseId);
-    } else {
-      newExpanded.add(exerciseId);
-    }
-    setExpandedExercises(newExpanded);
-  };
-
-  async function addSetToBackend(
-    workoutExerciseId: string,
-    setNumber: number,
-    weight?: number,
-    reps?: number,
-    rpe?: number
-  ) {
-    const res = await fetch('/api/workouts/sets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        workoutExerciseId,
-        setNumber,
-        weight,
-        reps,
-        rpe,
-      }),
-    });
-
-    return res.ok;
-  }
-
-  const handleAddExercise = async (exercise: Exercise) => {
-    const orderIndex = exercises.length;
-
-    try {
-      const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          exerciseId: exercise.id,
-          orderIndex,
-        }),
-      });
-
-      if (res.ok) {
-        const newExerciseData = await res.json() as any;
-
-        const lastWorkoutRes = await fetch(`/api/exercises/${exercise.id}/last-workout`, {
-          credentials: 'include',
-        });
-
-        let lastSetData = { weight: undefined as number | undefined, reps: undefined as number | undefined, rpe: undefined as number | undefined };
-        if (lastWorkoutRes.ok) {
-          const lastWorkoutData: LastWorkoutData = await lastWorkoutRes.json();
-          lastSetData = {
-            weight: lastWorkoutData.weight ?? undefined,
-            reps: lastWorkoutData.reps ?? undefined,
-            rpe: lastWorkoutData.rpe ?? undefined,
-          };
-        }
-
-        const workoutExercise: WorkoutExercise = {
-          id: newExerciseData.id,
-          exerciseId: exercise.id,
-          name: exercise.name,
-          muscleGroup: exercise.muscleGroup,
-          orderIndex,
-          sets: [],
-          notes: newExerciseData.notes ?? null,
-        };
-
-        const updatedExercises = [...exercises, workoutExercise];
-        setExercises(updatedExercises);
-        setExpandedExercises(new Set([...expandedExercises, exercise.id]));
-
-        if (lastSetData.weight || lastSetData.reps) {
-          await addSetToBackend(newExerciseData.id, 1, lastSetData.weight, lastSetData.reps, lastSetData.rpe);
-          workoutExercise.sets.push({
-            id: crypto.randomUUID(),
-            setNumber: 1,
-            weight: lastSetData.weight ?? null,
-            reps: lastSetData.reps ?? null,
-            rpe: lastSetData.rpe ?? null,
-            isComplete: false,
-            completedAt: null,
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Failed to add exercise:', err);
-      setError('Failed to add exercise');
-    }
-
-    setShowExerciseSelector(false);
-    setExerciseSearch('');
-  };
-
-  const handleRemoveExercise = async (exerciseId: string) => {
-    try {
-      const res = await fetch(`/api/workouts/${workoutId}/exercises?exerciseId=${exerciseId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        setExercises(exercises.filter((e) => e.exerciseId !== exerciseId));
-      }
-    } catch (err) {
-      console.error('Failed to remove exercise:', err);
-      setError('Failed to remove exercise');
-    }
-  };
-
-  const handleAddSet = async (exerciseId: string) => {
-    const exercise = exercises.find((e) => e.exerciseId === exerciseId);
-    if (!exercise) return;
-
-    const setNumber = exercise.sets.length + 1;
-
-    try {
+    const addSetToBackend = useCallback(async (
+       workoutExerciseId: string,
+       setNumber: number,
+       weight?: number | null,
+       reps?: number | null,
+       rpe?: number | null
+     ) => {
       const res = await fetch('/api/workouts/sets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          workoutExerciseId: exercise.id,
+          workoutExerciseId,
           setNumber,
+          weight,
+          reps,
+          rpe,
         }),
       });
 
-        if (res.ok) {
-          const newSet = await res.json() as WorkoutSet;
-          setExercises(
-            exercises.map((e) =>
-              e.exerciseId === exerciseId
-                ? { ...e, sets: [...e.sets, newSet] }
-                : e
-            )
-          );
-        }
-    } catch (err) {
-      console.error('Failed to add set:', err);
-      setError('Failed to add set');
-    }
-  };
+      return res.ok;
+    }, []);
 
-  const handleUpdateSet = async (
-    exerciseId: string,
-    setId: string,
-    updates: Partial<WorkoutSet>
-  ) => {
-    if (updates.weight != null && updates.weight < 0) {
-      return;
-    }
-    if (updates.reps != null && updates.reps < 0) {
-      return;
-    }
-    if (updates.rpe != null && updates.rpe < 0) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/workouts/sets/${setId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updates),
-      });
-
-      if (res.ok) {
-        setExercises(
-          exercises.map((e) =>
-            e.exerciseId === exerciseId
-              ? {
-                  ...e,
-                  sets: e.sets.map((s: WorkoutSet) =>
-                    s.id === setId ? { ...s, ...updates } : s
-                  ),
-                }
-              : e
-          )
-        );
+     const toggleExerciseExpanded = useCallback((exerciseId: string) => {
+      const newExpanded = new Set(expandedExercises);
+      if (newExpanded.has(exerciseId)) {
+        newExpanded.delete(exerciseId);
+      } else {
+        newExpanded.add(exerciseId);
       }
-    } catch (err) {
-      console.error('Failed to update set:', err);
-      setError('Failed to update set');
-    }
-  };
+      setExpandedExercises(newExpanded);
+    }, [expandedExercises]);
 
-  const handleCompleteSet = async (exerciseId: string, setId: string) => {
-    console.log('handleCompleteSet called:', { exerciseId, setId });
-    try {
-      const body = {
-        isComplete: true,
-        completedAt: new Date().toISOString(),
-      };
-      console.log('Sending complete request:', body);
-      
-      const res = await fetch(`/api/workouts/sets/${setId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
+    const handleAddSet = useCallback(async (exerciseId: string) => {
+     const exercise = exercises.find((e) => e.exerciseId === exerciseId);
+     if (!exercise) return;
 
-      console.log('Complete response:', res.ok, res.status);
-      const result = await res.json();
-      console.log('Complete result:', result);
+     const setNumber = exercise.sets.length + 1;
 
-      if (res.ok) {
-        setExercises(
-          exercises.map((e) =>
-            e.exerciseId === exerciseId
-              ? {
-                  ...e,
-                   sets: e.sets.map((s: WorkoutSet) =>
-                    s.id === setId
-                      ? { ...s, isComplete: true, completedAt: new Date().toISOString() }
-                      : s
-                  ),
-                }
-              : e
-          )
-        );
-      }
-    } catch (err) {
-      console.error('Failed to complete set:', err);
-      setError('Failed to complete set');
-    }
-  };
+     try {
+       const res = await fetch('/api/workouts/sets', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         credentials: 'include',
+         body: JSON.stringify({
+           workoutExerciseId: exercise.id,
+           setNumber,
+         }),
+       });
 
-  const handleDeleteSet = async (exerciseId: string, setId: string) => {
+         if (res.ok) {
+           const newSet: WorkoutSet = await res.json();
+           setExercises(
+             exercises.map((e) =>
+               e.exerciseId === exerciseId
+                 ? { ...e, sets: [...e.sets, newSet] }
+                 : e
+             )
+           );
+         }
+     } catch (err) {
+       console.error('Failed to add set:', err);
+     }
+   }, [exercises]);
+
+   const handleCompleteSet = useCallback(async (exerciseId: string, setId: string) => {
+     console.log('handleCompleteSet called:', { exerciseId, setId });
+     try {
+       const body = {
+         isComplete: true,
+         completedAt: new Date().toISOString(),
+       };
+       console.log('Sending complete request:', body);
+       
+       const res = await fetch(`/api/workouts/sets/${setId}`, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         credentials: 'include',
+         body: JSON.stringify(body),
+       });
+
+       console.log('Complete response:', res.ok, res.status);
+       const result = await res.json();
+       console.log('Complete result:', result);
+
+       if (res.ok) {
+         setExercises(
+           exercises.map((e) =>
+             e.exerciseId === exerciseId
+               ? {
+                   ...e,
+                    sets: e.sets.map((s) =>
+                     s.id === setId
+                       ? { ...s, isComplete: true, completedAt: new Date().toISOString() }
+                       : s
+                   ),
+                 }
+               : e
+           )
+         );
+       }
+     } catch (err) {
+       console.error('Failed to complete set:', err);
+       setError('Failed to complete set');
+     }
+   }, [exercises]);
+
+  const handleDeleteSet = useCallback(async (exerciseId: string, setId: string) => {
     try {
       const res = await fetch(`/api/workouts/sets/${setId}`, {
         method: 'DELETE',
@@ -406,8 +234,8 @@ function WorkoutSession() {
         const exercise = exercises.find((e) => e.exerciseId === exerciseId);
         if (!exercise) return;
 
-         const updatedSets = exercise.sets.filter((s: WorkoutSet) => s.id !== setId);
-        const reorderedSets = updatedSets.map((s: WorkoutSet, i: number) => ({ ...s, setNumber: i + 1 }));
+         const updatedSets = exercise.sets.filter((s) => s.id !== setId);
+        const reorderedSets = updatedSets.map((s, i) => ({ ...s, setNumber: i + 1 }));
 
         setExercises(
           exercises.map((e) =>
@@ -419,101 +247,460 @@ function WorkoutSession() {
       console.error('Failed to delete set:', err);
       setError('Failed to delete set');
     }
-  };
+  }, [exercises]);
 
-  const handleSaveNotes = async () => {
-    if (!workoutId) return;
+   const handleToggleExercise = useCallback((exerciseId: string) => {
+     toggleExerciseExpanded(exerciseId);
+   }, [toggleExerciseExpanded]);
 
-    try {
-      const res = await fetch(`/api/workouts/${workoutId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ notes }),
-      });
+   const handleToggleClick = useCallback((e: React.MouseEvent) => {
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+     if (exerciseId) {
+       handleToggleExercise(exerciseId);
+     }
+   }, [handleToggleExercise]);
 
-      if (res.ok) {
-        setEditingNotes(false);
+   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+     if (e.key === 'Enter' || e.key === ' ') {
+       const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+       if (exerciseId) {
+         toggleExerciseExpanded(exerciseId);
+         e.preventDefault();
+       }
+     }
+   }, [toggleExerciseExpanded]);
+
+
+
+
+
+
+
+
+
+    const handleRemoveExercise = useCallback(async (exerciseId: string) => {
+      try {
+        const res = await fetch(`/api/workouts/${workoutId}/exercises?exerciseId=${exerciseId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+
+        if (res.ok) {
+          setExercises(exercises.filter((e) => e.exerciseId !== exerciseId));
+        }
+      } catch (err) {
+        console.error('Failed to remove exercise:', err);
+        setError('Failed to remove exercise');
       }
-    } catch (err) {
-      console.error('Failed to save notes:', err);
-      setError('Failed to save notes');
-    }
-  };
+    }, [exercises, workoutId]);
 
-  const completeWorkout = async () => {
-    if (!workoutId) {
-      console.error('completeWorkout: workoutId is undefined');
-      setError('Workout ID is missing');
-      return;
-    }
 
-    console.log('completeWorkout: Starting with workoutId:', workoutId);
-    setCompleting(true);
-    setError(null);
 
-    try {
-      const res = await fetch(`/api/workouts/${workoutId}/complete`, {
-        method: 'PUT',
-        credentials: 'include',
-      });
 
-      console.log('completeWorkout: API response status:', res.status);
 
-      if (!res.ok) {
-        const data = await res.json() as { message?: string };
-        console.error('completeWorkout: API error:', data);
-        throw new Error(data.message || 'Failed to complete workout');
+    const handleAddExercise = useCallback(async (exercise: Exercise) => {
+       const orderIndex = exercises.length;
+
+       try {
+         const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           credentials: 'include',
+           body: JSON.stringify({
+             exerciseId: exercise.id,
+             orderIndex,
+           }),
+         });
+
+          if (res.ok) {
+            const newExerciseData: NewWorkoutExerciseResponse = await res.json();
+
+           const lastWorkoutRes = await fetch(`/api/exercises/${exercise.id}/last-workout`, {
+             credentials: 'include',
+           });
+
+           let         lastSetData = { weight: null as number | null, reps: null as number | null, rpe: null as number | null };
+           if (lastWorkoutRes.ok) {
+             const lastWorkoutData: LastWorkoutData = await lastWorkoutRes.json();
+             lastSetData = {
+               weight: lastWorkoutData.weight ?? null,
+               reps: lastWorkoutData.reps ?? null,
+               rpe: lastWorkoutData.rpe ?? null,
+             };
+           }
+
+           const workoutExercise: WorkoutExercise = {
+             id: newExerciseData.id,
+             exerciseId: exercise.id,
+             name: exercise.name,
+             muscleGroup: exercise.muscleGroup,
+             orderIndex,
+             sets: [],
+             notes: newExerciseData.notes ?? null,
+           };
+
+           const updatedExercises = [...exercises, workoutExercise];
+           setExercises(updatedExercises);
+           setExpandedExercises(new Set([...expandedExercises, exercise.id]));
+
+           if (lastSetData.weight || lastSetData.reps) {
+             await addSetToBackend(newExerciseData.id, 1, lastSetData.weight, lastSetData.reps, lastSetData.rpe);
+             workoutExercise.sets.push({
+               id: crypto.randomUUID(),
+               workoutExerciseId: newExerciseData.id,
+               setNumber: 1,
+               weight: lastSetData.weight ?? null,
+               reps: lastSetData.reps ?? null,
+               rpe: lastSetData.rpe ?? null,
+               isComplete: false,
+               completedAt: null,
+               createdAt: null,
+             });
+           }
+         }
+       } catch (err) {
+         console.error('Failed to add exercise:', err);
+         setError('Failed to add exercise');
+       }
+
+        setShowExerciseSelector(false);
+        setExerciseSearch('');
+      }, [exercises, expandedExercises, workoutId, addSetToBackend]);
+
+    const filteredExercises = availableExercises.filter((exercise) =>
+      exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&
+      !exercises.some((e) => e.exerciseId === exercise.id)
+    );
+
+
+
+    const handleAddExerciseClickShared = useCallback((e: React.MouseEvent) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      const exercise = filteredExercises.find(ex => ex.id === id);
+      if (exercise) {
+        void handleAddExercise(exercise);
       }
+    }, [filteredExercises, handleAddExercise]);
 
-      await res.json();
-      console.log('completeWorkout: Workout completed successfully, redirecting to:', `/workouts/${workoutId}/summary`);
-      window.location.href = `/workouts/${workoutId}/summary`;
-    } catch (err) {
-      console.error('completeWorkout: Error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setCompleting(false);
+   const handleSaveNotes = useCallback(async () => {
+     if (!workoutId) return;
+
+     try {
+       const res = await fetch(`/api/workouts/${workoutId}`, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         credentials: 'include',
+         body: JSON.stringify({ notes }),
+       });
+
+       if (res.ok) {
+         setEditingNotes(false);
+       }
+     } catch (err) {
+       console.error('Failed to save notes:', err);
+       setError('Failed to save notes');
+     }
+   }, [workoutId, notes]);
+
+   const completeWorkout = useCallback(async () => {
+     if (!workoutId) {
+       console.error('completeWorkout: workoutId is undefined');
+       setError('Workout ID is missing');
+       return;
+     }
+
+     console.log('completeWorkout: Starting with workoutId:', workoutId);
+     setCompleting(true);
+     setError(null);
+
+     try {
+       const res = await fetch(`/api/workouts/${workoutId}/complete`, {
+         method: 'PUT',
+         credentials: 'include',
+       });
+
+       console.log('completeWorkout: API response status:', res.status);
+
+        if (!res.ok) {
+          const data: ApiError = await res.json();
+         console.error('completeWorkout: API error:', data);
+         throw new Error(data.message ?? 'Failed to complete workout');
+       }
+
+       await res.json();
+       console.log('completeWorkout: Workout completed successfully, redirecting to:', `/workouts/${workoutId}/summary`);
+       window.location.href = `/workouts/${workoutId}/summary`;
+     } catch (err) {
+       console.error('completeWorkout: Error:', err);
+       setError(err instanceof Error ? err.message : 'An error occurred');
+       setCompleting(false);
+     }
+   }, [workoutId]);
+
+   const handleCompleteWorkout = useCallback(async () => {
+     if (!workoutId) return;
+
+     const incompleteSetsCount = exercises.reduce((acc, e) => {
+       return acc + e.sets.filter((s: WorkoutSet) => !s.isComplete).length;
+     }, 0);
+
+     if (incompleteSetsCount > 0) {
+       setShowIncompleteSetsConfirm(true);
+       return;
+     }
+
+     await completeWorkout();
+   }, [workoutId, exercises, completeWorkout]);
+
+   const handleDiscardWorkout = useCallback(async () => {
+     if (!workoutId) return;
+
+     try {
+       const res = await fetch(`/api/workouts/${workoutId}`, {
+         method: 'DELETE',
+         credentials: 'include',
+       });
+
+       if (res.ok) {
+         window.location.href = '/workouts/new';
+       }
+     } catch (err) {
+       console.error('Failed to discard workout:', err);
+       setError('Failed to discard workout');
+     }
+   }, [workoutId]);
+
+   const handleCompleteWorkoutClick = useCallback(async () => {
+     await handleCompleteWorkout();
+   }, [handleCompleteWorkout]);
+
+    const handleDiscardClick = useCallback(() => {
+     setShowDiscardConfirm(true);
+   }, []);
+
+   const handleDiscardBackClick = useCallback(() => {
+     setShowDiscardConfirm(false);
+   }, []);
+
+
+
+   const handleSaveNotesClick = useCallback(async () => {
+     await handleSaveNotes();
+   }, [handleSaveNotes]);
+
+   const handleEditNotesClick = useCallback(() => {
+     setEditingNotes(true);
+   }, []);
+
+   const handleCancelNotesClick = useCallback(() => {
+     setEditingNotes(false);
+   }, []);
+
+   const handleAddExerciseClick = useCallback(() => {
+     setShowExerciseSelector(true);
+   }, []);
+
+   const handleCloseExerciseSelector = useCallback(() => {
+     setShowExerciseSelector(false);
+     setExerciseSearch('');
+   }, []);
+
+   const handleDiscardConfirmClick = useCallback(async () => {
+     await handleDiscardWorkout();
+   }, [handleDiscardWorkout]);
+
+      const handleIncompleteSetsContinueClick = useCallback(async () => {
+        setShowIncompleteSetsConfirm(false);
+        await completeWorkout();
+      }, [completeWorkout]);
+
+      const handleIncompleteSetsBackClick = useCallback(() => {
+        setShowIncompleteSetsConfirm(false);
+      }, []);
+
+   const handleCompleteWorkoutClickWrapped = useCallback(() => {
+     void handleCompleteWorkoutClick();
+   }, [handleCompleteWorkoutClick]);
+
+   const handleAddExerciseClickWrapped = useCallback(() => {
+     void handleAddExerciseClick();
+   }, [handleAddExerciseClick]);
+
+   const handleRemoveExerciseClick = useCallback((e: React.MouseEvent) => {
+     e.stopPropagation();
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+     if (exerciseId) {
+       void handleRemoveExercise(exerciseId);
+     }
+   }, [handleRemoveExercise]);
+
+   const handleCompleteSetClick = useCallback((e: React.MouseEvent) => {
+     e.stopPropagation();
+     e.preventDefault();
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+     const setId = (e.currentTarget as HTMLElement).getAttribute('data-set-id');
+     if (exerciseId && setId) {
+       void handleCompleteSet(exerciseId, setId);
+     }
+   }, [handleCompleteSet]);
+
+   const handleDeleteSetClick = useCallback((e: React.MouseEvent) => {
+     e.stopPropagation();
+     e.preventDefault();
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+     const setId = (e.currentTarget as HTMLElement).getAttribute('data-set-id');
+     if (exerciseId && setId) {
+       void handleDeleteSet(exerciseId, setId);
+     }
+   }, [handleDeleteSet]);
+
+   const handleAddSetClick = useCallback((e: React.MouseEvent) => {
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-exercise-id');
+     if (exerciseId) {
+       void handleAddSet(exerciseId);
+     }
+   }, [handleAddSet]);
+
+   const handleSaveNotesClickWrapped = useCallback(() => {
+     void handleSaveNotesClick();
+   }, [handleSaveNotesClick]);
+
+    const handleAddExerciseClickSharedWrapped = useCallback((e: React.MouseEvent) => {
+      void handleAddExerciseClickShared(e);
+    }, [handleAddExerciseClickShared]);
+
+    const handleDiscardConfirmClickWrapped = useCallback(() => {
+      void handleDiscardConfirmClick();
+    }, [handleDiscardConfirmClick]);
+
+    const handleIncompleteSetsContinueClickWrapped = useCallback(() => {
+      void handleIncompleteSetsContinueClick();
+    }, [handleIncompleteSetsContinueClick]);
+
+    const _handleIncompleteSetsBackClickWrapped = useCallback(() => {
+      void handleIncompleteSetsBackClick();
+    }, [handleIncompleteSetsBackClick]);
+
+
+
+
+
+      const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+         const exerciseIdAttr = e.currentTarget.getAttribute('data-exercise-id');
+         const setIdAttr = e.currentTarget.getAttribute('data-set-id');
+         if (!exerciseIdAttr || !setIdAttr) return;
+         const exerciseId = exerciseIdAttr;
+         const setId = setIdAttr;
+         const field = e.currentTarget.getAttribute('data-field') as 'weight' | 'reps' | 'rpe';
+         const value = e.target.value;
+         if (field === 'weight' || field === 'reps') {
+           const num = value === '' ? null : (field === 'reps' ? parseInt(value, 10) : parseFloat(value));
+           void handleUpdateSet(exerciseId, setId, { [field]: num });
+         } else {
+            const num = value === '' ? null : parseFloat(value);
+            if (value === '' || (num !== null && num >= 1 && num <= 10)) {
+             void handleUpdateSet(exerciseId, setId, { rpe: num });
+           }
+         }
+       }, [handleUpdateSet]);
+
+    const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setNotes(e.target.value);
+    }, []);
+
+    const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      setExerciseSearch(e.target.value);
+    }, []);
+
+  useEffect(() => {
+    if (!auth.loading && !auth.user && !redirectingRef.current) {
+      redirectingRef.current = true;
+      window.location.href = '/auth/signin';
     }
-  };
+   }, [auth.loading, auth.user]);
 
-  const handleCompleteWorkout = async () => {
-    if (!workoutId) return;
+   async function fetchExercises() {
+     try {
+       const res = await fetch('/api/exercises', {
+         credentials: 'include',
+       });
 
-    const incompleteSetsCount = exercises.reduce((acc, e) => {
-      return acc + e.sets.filter((s: WorkoutSet) => !s.isComplete).length;
-    }, 0);
+       if (res.ok) {
+         const data: Exercise[] = await res.json();
+         setAvailableExercises(data);
+       }
+     } catch (err) {
+       console.error('Failed to fetch exercises:', err);
+     }
+   }
 
-    if (incompleteSetsCount > 0) {
-      setShowIncompleteSetsConfirm(true);
-      return;
-    }
+   const loadWorkout = useCallback(async () => {
+     const {id} = params;
+     if (!id) return;
+     setWorkoutId(id);
 
-    await completeWorkout();
-  };
+     try {
+       const res = await fetch(`/api/workouts/${id}`, {
+         credentials: 'include',
+       });
+
+       if (res.ok) {
+         const data: Workout = await res.json();
+         setWorkoutName(data.name);
+         setStartedAt(data.startedAt);
+         setNotes(data.notes ?? '');
+
+         if (data.completedAt && !redirectingRef.current) {
+           console.log('Workout: Detected completed workout, redirecting to summary');
+           redirectingRef.current = true;
+           await router.navigate({ to: `/workouts/${id}/summary`, replace: true });
+           return;
+         }
+
+         const exerciseData = await fetch(`/api/workouts/${id}/exercises`, {
+           credentials: 'include',
+         });
+
+         if (exerciseData.ok) {
+           const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
+           const flattenedExercises = exercisesData.map((e) => ({
+             id: e.id,
+             exerciseId: e.exerciseId,
+             orderIndex: e.orderIndex,
+             notes: e.notes,
+             name: e.exercise?.name ?? '',
+             muscleGroup: e.exercise?.muscleGroup ?? null,
+             sets: e.sets as WorkoutSet[],
+           }));
+           setExercises(flattenedExercises);
+
+           const initialExpanded = new Set<string>();
+           flattenedExercises.forEach((e) => initialExpanded.add(e.exerciseId));
+           setExpandedExercises(initialExpanded);
+         }
+       } else {
+         setError('Workout not found');
+       }
+     } catch (err) {
+       console.error('Failed to load workout:', err);
+       setError('Failed to load workout');
+     }
+
+
+     void fetchExercises();
+   }, [params, router]);
+
+   useEffect(() => {
+     if (!auth.loading && auth.user && params.id && !fetchedRef.current) {
+       fetchedRef.current = true;
+       void loadWorkout();
+     }
+    }, [auth.loading, auth.user, params.id, loadWorkout]);
 
 
 
-  const handleDiscardWorkout = async () => {
-    if (!workoutId) return;
 
-    try {
-      const res = await fetch(`/api/workouts/${workoutId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
 
-      if (res.ok) {
-        window.location.href = '/workouts/new';
-      }
-    } catch (err) {
-      console.error('Failed to discard workout:', err);
-      setError('Failed to discard workout');
-    }
-  };
-
-  const completedSetsCount = exercises.reduce((acc, e) => {
-    return acc + e.sets.filter((s: WorkoutSet) => s.isComplete).length;
-  }, 0);
 
   const totalSetsCount = exercises.reduce((acc, e) => acc + e.sets.length, 0);
 
@@ -570,26 +757,19 @@ function WorkoutSession() {
 								<Dumbbell size={14} />
 								{formatDuration(startedAt)}
 							</span>
-							<span>
-								{completedSetsCount}
-								{'/'}
-								{totalSetsCount}
-								{' '}
-								{'sets'}
-							</span>
 						</div>
 					</div>
 					<div className={'flex items-center gap-2'}>
 						<button
 							className={'px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors'}
-							onClick={() => void setShowDiscardConfirm(true)}
+							onClick={handleDiscardClick}
 						>
 							{'Discard'}
 						</button>
 						<button
 							className={'inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-green-400 disabled:cursor-not-allowed'}
 							disabled={completing || totalSetsCount === 0}
-							onClick={handleCompleteWorkout}
+							onClick={handleCompleteWorkoutClickWrapped}
 						>
 							{completing ? (
 								<>
@@ -619,7 +799,7 @@ function WorkoutSession() {
 						<p className={'text-gray-500 mb-4'}>{'No exercises added yet'}</p>
 						<button
 							className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'}
-							onClick={() => void setShowExerciseSelector(true)}
+							onClick={handleAddExerciseClickWrapped}
 						>
 							<Plus size={18} />
 							{'Add Exercise'}
@@ -628,10 +808,14 @@ function WorkoutSession() {
           ) : (
             exercises.map((exercise) => (
 	<div className={'bg-white rounded-lg border border-gray-200 overflow-hidden'} key={exercise.exerciseId}>
-		<div
-			className={'flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors'}
-			onClick={() => toggleExerciseExpanded(exercise.exerciseId)}
-		>
+        <div
+          className={'flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors'}
+          data-exercise-id={exercise.exerciseId}
+          onClick={handleToggleClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+        >
 			<div className={'flex items-center gap-3'}>
 				{expandedExercises.has(exercise.exerciseId) ? (
 					<ChevronUp className={'text-gray-400'} size={20} />
@@ -651,17 +835,15 @@ function WorkoutSession() {
 					{' '}
 					{'sets'}
 				</span>
-				<button
-					className={'p-1 text-gray-400 hover:text-red-600'}
-					onClick={(e) => {
-                        e.stopPropagation();
-                        void handleRemoveExercise(exercise.exerciseId);
-                      }}
-				>
+                                <button
+                                  className={'p-1 text-gray-400 hover:text-red-600'}
+                                  data-exercise-id={exercise.exerciseId}
+                                   onClick={handleRemoveExerciseClick}
+                                >
 					<X size={18} />
-				</button>
+                                </button>
 			</div>
-		</div>
+        </div>
 
 		{expandedExercises.has(exercise.exerciseId) ? <div className={'border-t border-gray-100 p-4'}>
 			{exercise.sets.length > 0 ? <div className={'mb-4'}>
@@ -691,16 +873,12 @@ function WorkoutSession() {
 								<td className={'py-2'}>
 									<input
 										className={'w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none'}
+										data-exercise-id={exercise.exerciseId}
+										data-field={'weight'}
+										data-set-id={set.id}
 										disabled={set.isComplete}
 										inputMode={'decimal'}
-										onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                                        handleUpdateSet(exercise.exerciseId, set.id, {
-                                          weight: val ? parseFloat(val) : undefined,
-                                        });
-                                      }
-                                    }}
+										onChange={handleInputChange}
 										pattern={'[0-9]*\\.?[0-9]*'}
 										placeholder={'0'}
 										type={'text'}
@@ -710,16 +888,12 @@ function WorkoutSession() {
 								<td className={'py-2'}>
 									<input
 										className={'w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none'}
+										data-exercise-id={exercise.exerciseId}
+										data-field={'reps'}
+										data-set-id={set.id}
 										disabled={set.isComplete}
 										inputMode={'numeric'}
-										onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val === '' || /^\d+$/.test(val)) {
-                                        handleUpdateSet(exercise.exerciseId, set.id, {
-                                          reps: val ? parseInt(val, 10) : undefined,
-                                        });
-                                      }
-                                    }}
+										onChange={handleInputChange}
 										pattern={'[0-9]*'}
 										placeholder={'0'}
 										type={'text'}
@@ -729,19 +903,12 @@ function WorkoutSession() {
 								<td className={'py-2'}>
 									<input
 										className={'w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none'}
+										data-exercise-id={exercise.exerciseId}
+										data-field={'rpe'}
+										data-set-id={set.id}
 										disabled={set.isComplete}
 										inputMode={'decimal'}
-										onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                                        const num = parseFloat(val);
-                                        if (val === '' || (num >= 1 && num <= 10)) {
-                                          handleUpdateSet(exercise.exerciseId, set.id, {
-                                            rpe: val ? num : undefined,
-                                          });
-                                        }
-                                      }
-                                    }}
+										onChange={handleInputChange}
 										pattern={'[0-9]*\\.?[0-9]*'}
 										placeholder={'-'}
 										type={'text'}
@@ -749,33 +916,29 @@ function WorkoutSession() {
 									/>
 								</td>
 								<td className={'py-2'}>
-									<button
-										className={`p-2 rounded-lg transition-colors ${
+                                  <button
+                                    className={`p-2 rounded-lg transition-colors ${
                                       set.isComplete
                                         ? 'bg-green-100 text-green-600'
                                         : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600'
                                     }`}
-										disabled={set.isComplete}
-										onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleCompleteSet(exercise.exerciseId, set.id);
-                                    }}
-									>
+                                    data-exercise-id={exercise.exerciseId}
+                                    data-set-id={set.id}
+                                    disabled={set.isComplete}
+                                     onClick={handleCompleteSetClick}
+                                  >
 										<Check size={18} />
-									</button>
+                                  </button>
 								</td>
 								<td className={'py-2 text-right'}>
-									<button
-										className={'p-1 text-gray-400 hover:text-red-600'}
-										onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleDeleteSet(exercise.exerciseId, set.id);
-                                    }}
-									>
+                                  <button
+                                    className={'p-1 text-gray-400 hover:text-red-600'}
+                                    data-exercise-id={exercise.exerciseId}
+                                    data-set-id={set.id}
+                                     onClick={handleDeleteSetClick}
+                                  >
 										<Trash2 size={16} />
-									</button>
+                                  </button>
 								</td>
 							</tr>
                             ))}
@@ -783,25 +946,26 @@ function WorkoutSession() {
 				</table>
                                </div> : null}
 
-			<button
-				className={'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors'}
-				onClick={async () => handleAddSet(exercise.exerciseId)}
-			>
+          <button
+            className={'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors'}
+            data-exercise-id={exercise.exerciseId}
+             onClick={handleAddSetClick}
+          >
 				<Plus size={16} />
 				{'Add Set'}
-			</button>
-		</div> : null}
+          </button>
+                                                </div> : null}
 	</div>
             ))
           )}
 
 				{exercises.length > 0 ? <button
 					className={'w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2'}
-					onClick={() => setShowExerciseSelector(true)}
+					onClick={handleAddExerciseClickWrapped}
 				>
 					<Plus size={18} />
 					{'Add Exercise'}
-				</button> : null}
+                            </button> : null}
 
 				<div className={'bg-white rounded-lg border border-gray-200 p-4'}>
 					<div className={'flex items-center justify-between mb-2'}>
@@ -810,21 +974,21 @@ function WorkoutSession() {
 							<div className={'flex items-center gap-2'}>
 								<button
 									className={'text-sm text-gray-500 hover:text-gray-700'}
-									onClick={() => void setEditingNotes(false)}
+									onClick={handleCancelNotesClick}
 								>
 									{'Cancel'}
 								</button>
-								<button
-									className={'text-sm text-blue-600 hover:text-blue-700'}
-									onClick={handleSaveNotes}
-								>
-									{'Save'}
-								</button>
+							<button
+								className={'text-sm text-blue-600 hover:text-blue-700'}
+								onClick={handleSaveNotesClickWrapped}
+							>
+								{'Save'}
+							</button>
 							</div>
               ) : (
 	<button
 		className={'text-sm text-blue-600 hover:text-blue-700'}
-		onClick={() => void setEditingNotes(true)}
+		onClick={handleEditNotesClick}
 	>
 		{'Edit'}
 	</button>
@@ -833,7 +997,7 @@ function WorkoutSession() {
 					{editingNotes ? (
 						<textarea
 							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none'}
-							onChange={(e) => void setNotes(e.target.value)}
+							onChange={handleNotesChange}
 							placeholder={'Add notes about this workout...'}
 							rows={3}
 							value={notes}
@@ -853,10 +1017,7 @@ function WorkoutSession() {
 					<h2 className={'text-lg font-semibold text-gray-900'}>{'Add Exercise'}</h2>
 					<button
 						className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
-						onClick={() => {
-                  setShowExerciseSelector(false);
-                  setExerciseSearch('');
-                }}
+					onClick={handleCloseExerciseSelector}
 					>
 						<X size={20} />
 					</button>
@@ -868,7 +1029,7 @@ function WorkoutSession() {
 						<input
 							autoFocus={true}
 							className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={(e) => setExerciseSearch(e.target.value)}
+							onChange={handleExerciseSearchChange}
 							placeholder={'Search exercises...'}
 							type={'text'}
 							value={exerciseSearch}
@@ -884,24 +1045,26 @@ function WorkoutSession() {
               ) : (
 	<div className={'space-y-2'}>
 		{filteredExercises.map((exercise) => (
-			<button
-				className={'w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors'}
-				key={exercise.id}
-				onClick={async () => handleAddExercise(exercise)}
-			>
+          <button
+            className={'w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors'}
+            data-id={exercise.id}
+            key={exercise.id}
+            onClick={handleAddExerciseClickSharedWrapped}
+          >
 				<div>
 					<h3 className={'font-medium text-gray-900'}>{exercise.name}</h3>
-					{exercise.muscleGroup ? <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
-						{exercise.muscleGroup}
-					</span> : null}
+						{exercise.muscleGroup ?
+							<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
+								{exercise.muscleGroup}
+							</span> : null}
 				</div>
-			</button>
+          </button>
                   ))}
 	</div>
               )}
 				</div>
 			</div>
-		</div> : null}
+                          </div> : null}
 
 		{showDiscardConfirm ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
 			<div className={'bg-white rounded-xl shadow-xl p-6 max-w-md'}>
@@ -912,19 +1075,19 @@ function WorkoutSession() {
 				<div className={'flex justify-end gap-3'}>
 					<button
 						className={'px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors'}
-						onClick={() => setShowDiscardConfirm(false)}
+						onClick={handleDiscardBackClick}
 					>
 						{'Cancel'}
 					</button>
 					<button
 						className={'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'}
-						onClick={handleDiscardWorkout}
+						onClick={handleDiscardConfirmClickWrapped}
 					>
 						{'Discard Workout'}
 					</button>
 				</div>
 			</div>
-		</div> : null}
+                        </div> : null}
 
 		{showIncompleteSetsConfirm ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
 			<div className={'bg-white rounded-xl shadow-xl p-6 max-w-md'}>
@@ -935,22 +1098,19 @@ function WorkoutSession() {
 				<div className={'flex justify-end gap-3'}>
 					<button
 						className={'px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors'}
-						onClick={() => setShowIncompleteSetsConfirm(false)}
+						onClick={_handleIncompleteSetsBackClickWrapped}
 					>
 						{'Go Back'}
 					</button>
 					<button
 						className={'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors'}
-						onClick={() => {
-                  setShowIncompleteSetsConfirm(false);
-                  void completeWorkout();
-                }}
+						onClick={handleIncompleteSetsContinueClickWrapped}
 					>
 						{'Continue'}
 					</button>
 				</div>
 			</div>
-		</div> : null}
+                               </div> : null}
 	</div>
   );
 }

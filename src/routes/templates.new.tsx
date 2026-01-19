@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions, react/jsx-closing-tag-location */
 import { createFileRoute } from '@tanstack/react-router';
 import { ArrowLeft, Loader2, Plus, Save, Search, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { type Template } from '@/lib/db/schema';
 
@@ -34,6 +34,31 @@ function NewTemplate() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, name: e.target.value });
+  }, [formData]);
+
+   const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+     setFormData(prev => ({ ...prev, description: e.target.value }));
+   }, []);
+
+   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+     setFormData(prev => ({ ...prev, notes: e.target.value }));
+   }, []);
+
+
+
+    const handleCloseExerciseSelector = useCallback(() => {
+      setShowExerciseSelector(false);
+      setExerciseSearch('');
+    }, []);
+
+
+
+     const _handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+       setExerciseSearch(e.target.value);
+     }, []);
+
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       setRedirecting(true);
@@ -49,11 +74,11 @@ function NewTemplate() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setExercises(data as Exercise[]);
+        const data: Exercise[] = await response.json();
+        setExercises(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch exercises:', error);
+    } catch (err) {
+      console.error('Failed to fetch exercises:', err);
     } finally {
       setLoading(false);
     }
@@ -69,39 +94,73 @@ function NewTemplate() {
     exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase())
   );
 
-  const handleAddExercise = (exercise: Exercise) => {
-    if (!selectedExercises.some((se) => se.exerciseId === exercise.id)) {
-      setSelectedExercises([
-        ...selectedExercises,
-        {
-          exerciseId: exercise.id,
-          name: exercise.name,
-          muscleGroup: exercise.muscleGroup,
-        },
-      ]);
-    }
-    setShowExerciseSelector(false);
-    setExerciseSearch('');
-  };
+   const handleAddExercise = useCallback((exercise: Exercise) => {
+     if (!selectedExercises.some((se) => se.exerciseId === exercise.id)) {
+       setSelectedExercises([
+         ...selectedExercises,
+         {
+           exerciseId: exercise.id,
+           name: exercise.name,
+           muscleGroup: exercise.muscleGroup,
+         },
+       ]);
+     }
+     setShowExerciseSelector(false);
+     setExerciseSearch('');
+   }, [selectedExercises]);
 
-  const handleRemoveExercise = (exerciseId: string) => {
+  const handleRemoveExercise = useCallback((exerciseId: string) => {
     setSelectedExercises(selectedExercises.filter((se) => se.exerciseId !== exerciseId));
-  };
+  }, [selectedExercises]);
 
-  const handleMoveExercise = (index: number, direction: 'down' | 'up') => {
-    const newExercises = [...selectedExercises];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const handleMoveExercise = useCallback((idx: number, direction: 'down' | 'up') => {
+      const newExercises = [...selectedExercises];
+      const newIndex = direction === 'up' ? idx - 1 : idx + 1;
 
-    if (newIndex >= 0 && newIndex < selectedExercises.length) {
-      [newExercises[index], newExercises[newIndex]] = [
-        newExercises[newIndex],
-        newExercises[index],
-      ];
-      setSelectedExercises(newExercises);
-    }
-  };
+      if (newIndex >= 0 && newIndex < selectedExercises.length) {
+        [newExercises[idx], newExercises[newIndex]] = [
+          newExercises[newIndex],
+          newExercises[idx],
+        ];
+        setSelectedExercises(newExercises);
+      }
+    }, [selectedExercises]);
 
-  const validateForm = () => {
+   const handleAddExerciseButtonClick = useCallback(() => {
+     setShowExerciseSelector(true);
+   }, []);
+
+   const handleMoveClick = useCallback((e: React.MouseEvent) => {
+     const indexStr = (e.currentTarget as HTMLElement).getAttribute('data-index');
+     const direction = (e.currentTarget as HTMLElement).getAttribute('data-direction') as 'up' | 'down';
+     if (indexStr) {
+       const idx = parseInt(indexStr, 10);
+       handleMoveExercise(idx, direction);
+     }
+   }, [handleMoveExercise]);
+
+   const handleRemoveClick = useCallback((e: React.MouseEvent) => {
+     const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-id');
+     if (exerciseId) {
+       handleRemoveExercise(exerciseId);
+     }
+   }, [handleRemoveExercise]);
+
+   const handleExerciseSelectorClick = useCallback((e: React.MouseEvent) => {
+     const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+     const exerciseItem = filteredExercises.find(ex => ex.id === id);
+     if (exerciseItem) {
+       handleAddExercise(exerciseItem);
+     }
+   }, [filteredExercises, handleAddExercise]);
+
+
+
+
+
+
+
+  const validateForm = useCallback(() => {
     const newErrors: { name?: string; exercises?: string } = {};
 
     if (!formData.name.trim()) {
@@ -110,9 +169,9 @@ function NewTemplate() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData.name]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -138,8 +197,8 @@ function NewTemplate() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error((data as { message?: string }).message || 'Failed to create template');
+        const data: { message?: string } = await response.json();
+        throw new Error(data.message ?? 'Failed to create template');
       }
 
       const template: Template = await response.json();
@@ -162,7 +221,11 @@ function NewTemplate() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [formData.name, formData.description, formData.notes, selectedExercises, validateForm]);
+
+  const onFormSubmit = useCallback((e: React.FormEvent) => {
+    void handleSubmit(e);
+  }, [handleSubmit]);
 
   if (auth.loading || redirecting) {
     return (
@@ -192,7 +255,7 @@ function NewTemplate() {
 					<p className={'text-sm text-red-600'}>{error}</p>
 				</div> : null}
 
-				<form className={'space-y-6'} onSubmit={(e) => void handleSubmit(e)}>
+				<form className={'space-y-6'} onSubmit={onFormSubmit}>
 					<div>
 						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'name'}>
 							{'Template Name '}
@@ -203,7 +266,7 @@ function NewTemplate() {
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
 							id={'name'}
-							onChange={(e) => void setFormData({ ...formData, name: e.target.value })}
+							onChange={handleNameChange}
 							placeholder={'e.g., Upper Body Workout'}
 							type={'text'}
 							value={formData.name}
@@ -219,7 +282,7 @@ function NewTemplate() {
 						<textarea
 							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none'}
 							id={'description'}
-							onChange={(e) => void setFormData({ ...formData, description: e.target.value })}
+							onChange={handleDescriptionChange}
 							placeholder={'Brief description of this template...'}
 							rows={2}
 							value={formData.description}
@@ -234,7 +297,7 @@ function NewTemplate() {
 						<textarea
 							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none'}
 							id={'notes'}
-							onChange={(e) => void setFormData({ ...formData, notes: e.target.value })}
+							onChange={handleNotesChange}
 							placeholder={'Additional notes or instructions...'}
 							rows={3}
 							value={formData.notes}
@@ -249,7 +312,7 @@ function NewTemplate() {
 							</label>
 							<button
 								className={'inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors'}
-								onClick={() => void setShowExerciseSelector(true)}
+								onClick={handleAddExerciseButtonClick}
 								type={'button'}
 							>
 								<Plus size={16} />
@@ -283,23 +346,28 @@ function NewTemplate() {
 				<div className={'flex items-center gap-1'}>
 					<button
 						className={'p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed'}
+						data-index={index}
+						data-direction={'up'}
 						disabled={index === 0}
-						onClick={() => void handleMoveExercise(index, 'up')}
+						onClick={handleMoveClick}
 						type={'button'}
 					>
 						{'↑'}
 					</button>
 					<button
 						className={'p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed'}
+						data-direction={'down'}
+						data-index={index}
 						disabled={index === selectedExercises.length - 1}
-						onClick={() => void handleMoveExercise(index, 'down')}
+						onClick={handleMoveClick}
 						type={'button'}
 					>
 						{'↓'}
 					</button>
 					<button
 						className={'p-1 text-gray-400 hover:text-red-600'}
-						onClick={() => void handleRemoveExercise(exercise.exerciseId)}
+						data-id={exercise.exerciseId}
+						onClick={handleRemoveClick}
 						type={'button'}
 					>
 						<X size={18} />
@@ -346,10 +414,7 @@ function NewTemplate() {
 					<h2 className={'text-lg font-semibold text-gray-900'}>{'Add Exercise'}</h2>
 					<button
 						className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
-						onClick={() => {
-                  setShowExerciseSelector(false);
-                  setExerciseSearch('');
-                }}
+						onClick={handleCloseExerciseSelector}
 					>
 						<X size={20} />
 					</button>
@@ -361,7 +426,7 @@ function NewTemplate() {
 						<input
 							autoFocus={true}
 							className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={(e) => setExerciseSearch(e.target.value)}
+ 							onChange={_handleExerciseSearchChange}
 							placeholder={'Search exercises...'}
 							type={'text'}
 							value={exerciseSearch}
@@ -380,24 +445,25 @@ function NewTemplate() {
 	</div>
               ) : (
 	<div className={'space-y-2'}>
-		{filteredExercises.map((exercise) => (
+		{filteredExercises.map((exerciseItem) => (
 			<button
 				className={'w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'}
-				disabled={selectedExercises.some((se) => se.exerciseId === exercise.id)}
-				key={exercise.id}
-				onClick={() => handleAddExercise(exercise)}
+				data-id={exerciseItem.id}
+				disabled={selectedExercises.some((se) => se.exerciseId === exerciseItem.id)}
+				key={exerciseItem.id}
+             onClick={handleExerciseSelectorClick}
 			>
 				<div className={'flex items-center justify-between'}>
 					<div>
-						<h3 className={'font-medium text-gray-900'}>{exercise.name}</h3>
-						{exercise.muscleGroup ? <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
-							{exercise.muscleGroup}
-                              </span> : null}
+						<h3 className={'font-medium text-gray-900'}>{exerciseItem.name}</h3>
+						{exerciseItem.muscleGroup ? <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
+							{exerciseItem.muscleGroup}
+                          </span> : null}
 					</div>
-					{selectedExercises.some((se) => se.exerciseId === exercise.id) ? <span className={'text-green-600 text-sm font-medium'}>{'Added'}</span> : null}
+					{selectedExercises.some((se) => se.exerciseId === exerciseItem.id) ? <span className={'text-green-600 text-sm font-medium'}>{'Added'}</span> : null}
 				</div>
 			</button>
-                  ))}
+                ))}
 	</div>
               )}
 				</div>

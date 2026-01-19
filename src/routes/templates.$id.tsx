@@ -1,7 +1,7 @@
 /* eslint-disable no-alert */
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { ArrowLeft, Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Template, TemplateExerciseWithDetails as TemplateExercise } from '@/lib/db/template';
 
@@ -16,6 +16,61 @@ function TemplateDetail() {
   const [deleting, setDeleting] = useState(false);
 
   const templateId = params.id;
+
+  const handleCopy = useCallback(async () => {
+    setCopying(true);
+
+    try {
+      const response = await fetch(`/api/templates/${templateId}/copy`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+       if (response.ok) {
+          const newTemplate: Template = await response.json();
+          window.location.href = `/templates/${newTemplate.id}`;
+      } else {
+        alert('Failed to copy template');
+      }
+    } catch {
+      alert('Failed to copy template');
+    } finally {
+      setCopying(false);
+    }
+  }, [templateId]);
+
+  const handleDelete = useCallback(async () => {
+    if (!confirm('Are you sure you want to delete this template?')) {
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      const response = await fetch(`/api/templates/${templateId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        window.location.href = '/templates';
+      } else {
+        alert('Failed to delete template');
+      }
+    } catch {
+      alert('Failed to delete template');
+    } finally {
+      setDeleting(false);
+    }
+  }, [templateId]);
+
+  const handleCopyClick = useCallback(() => {
+    void handleCopy();
+  }, [handleCopy]);
+
+  const handleDeleteClick = useCallback(() => {
+    void handleDelete();
+  }, [handleDelete]);
 
   useEffect(() => {
     async function fetchTemplate() {
@@ -62,56 +117,9 @@ function TemplateDetail() {
     } else if (!auth.loading && !auth.user) {
       setLoading(false);
     }
-  }, [auth.loading, auth.user, templateId]);
+   }, [auth.loading, auth.user, templateId]);
 
-  const handleCopy = async () => {
-    setCopying(true);
-
-    try {
-      const response = await fetch(`/api/templates/${templateId}/copy`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-       if (response.ok) {
-          const newTemplate: Template = await response.json();
-          window.location.href = `/templates/${newTemplate.id}`;
-      } else {
-        alert('Failed to copy template');
-      }
-    } catch {
-      alert('Failed to copy template');
-    } finally {
-      setCopying(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this template?')) {
-      return;
-    }
-
-    setDeleting(true);
-
-    try {
-      const response = await fetch(`/api/templates/${templateId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        window.location.href = '/templates';
-      } else {
-        alert('Failed to delete template');
-      }
-    } catch {
-      alert('Failed to delete template');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  useEffect(() => {
+   useEffect(() => {
     if (!auth.loading && !auth.user) {
       window.location.href = '/auth/signin';
     }
@@ -183,7 +191,7 @@ function TemplateDetail() {
 						<button
 							className={'inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50'}
 							disabled={copying}
-							onClick={() => void handleCopy()}
+							onClick={handleCopyClick}
 						>
 							<Copy size={18} />
 							{copying ? 'Copying...' : 'Copy'}
@@ -198,7 +206,7 @@ function TemplateDetail() {
 						<button
 							className={'inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50'}
 							disabled={deleting}
-							onClick={() => void handleDelete()}
+							onClick={handleDeleteClick}
 						>
 							<Trash2 size={18} />
 							{deleting ? 'Deleting...' : 'Delete'}
@@ -241,7 +249,7 @@ function TemplateDetail() {
 				<Dumbbell className={'text-gray-400'} size={18} />
 				<div className={'flex-1'}>
 					<p className={'font-medium text-gray-900'}>
-						{te.exercise?.name || 'Unknown Exercise'}
+						{te.exercise?.name ?? 'Unknown Exercise'}
 					</p>
 					{te.exercise?.muscleGroup ? <p className={'text-sm text-gray-500'}>{te.exercise.muscleGroup}</p> : null}
 				</div>

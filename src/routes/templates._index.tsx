@@ -24,6 +24,16 @@ function Templates() {
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const [error, setError] = useState<string | null>(null);
 
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, []);
+
+  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const [by, order] = e.target.value.split('-');
+    setSortBy(by as 'createdAt' | 'name');
+    setSortOrder(order as 'ASC' | 'DESC');
+  }, []);
+
   const fetchTemplates = useCallback(async () => {
     try {
       setLoading(true);
@@ -36,12 +46,12 @@ function Templates() {
         credentials: 'include',
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data as Template[]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch templates:', error);
+       if (response.ok) {
+         const data = await response.json();
+         setTemplates(data as Template[]);
+       }
+    } catch (err) {
+      console.error('Failed to fetch templates:', err);
     } finally {
       setLoading(false);
     }
@@ -60,39 +70,37 @@ function Templates() {
     }
   }, [auth.loading, auth.user, fetchTemplates]);
 
-  const handleCopy = async (templateId: string) => {
-    try {
-      const response = await fetch(`/api/templates/${templateId}/copy`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+  
 
-      if (response.ok) {
-        void fetchTemplates();
-      } else {
-        setError('Failed to copy template');
-      }
-    } catch {
-      setError('Failed to copy template');
-    }
-  };
+     const handleDelete = useCallback(async (templateId: string) => {
+       try {
+         const response = await fetch(`/api/templates/${templateId}`, {
+           method: 'DELETE',
+           credentials: 'include',
+         });
 
-  const handleDelete = async (templateId: string) => {
-    try {
-      const response = await fetch(`/api/templates/${templateId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+         if (response.ok) {
+           void fetchTemplates();
+         } else {
+           setError('Failed to delete template');
+         }
+       } catch {
+         setError('Failed to delete template');
+       }
+     }, [fetchTemplates]);
 
-      if (response.ok) {
-        void fetchTemplates();
-      } else {
-        setError('Failed to delete template');
-      }
-    } catch {
-      setError('Failed to delete template');
-    }
-  };
+   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+     const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+     if (id) {
+       void handleDelete(id);
+     }
+   }, [handleDelete]);
+
+
+
+
+
+
 
   if (auth.loading || redirecting) {
     return (
@@ -104,7 +112,7 @@ function Templates() {
 
   return (
 	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		{error && <div className="text-red-500 mb-4">{error}</div>}
+		{error ? <div className="text-red-500 mb-4">{error}</div> : null}
 		<div className={'max-w-6xl mx-auto'}>
 			<div className={'flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4'}>
 				<h1 className={'text-3xl font-bold text-gray-900'}>{'Templates'}</h1>
@@ -122,7 +130,7 @@ function Templates() {
 					<Search className={'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'} size={20} />
 					<input
 						className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
-						onChange={(e) => void setSearch(e.target.value)}
+						onChange={handleSearchChange}
 						placeholder={'Search templates...'}
 						type={'text'}
 						value={search}
@@ -130,11 +138,7 @@ function Templates() {
 				</div>
 				<select
 					className={'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white'}
-					onChange={(e) => {
-              const [by, order] = e.target.value.split('-');
-              setSortBy(by as 'createdAt' | 'name');
-              setSortOrder(order as 'ASC' | 'DESC');
-            }}
+					onChange={handleSortChange}
 					value={`${sortBy}-${sortOrder}`}
 				>
 					<option value={'createdAt-DESC'}>{'Newest First'}</option>
@@ -195,9 +199,10 @@ function Templates() {
 					</div>
 					<div className={'flex items-center gap-2'}>
 						<button
-							className={'p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors'}
-							onClick={() => void handleCopy(template.id)}
-							title={'Copy template'}
+							className={'p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors'}
+							data-id={template.id}
+							onClick={handleDeleteClick}
+							title={'Delete template'}
 						>
 							<Copy size={18} />
 						</button>
@@ -210,7 +215,8 @@ function Templates() {
 						</a>
 						<button
 							className={'p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors'}
-							onClick={() => void handleDelete(template.id)}
+							data-id={template.id}
+							onClick={handleDeleteClick}
 							title={'Delete template'}
 						>
 							<Trash2 size={18} />

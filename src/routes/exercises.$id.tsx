@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unnecessary-condition, no-alert */
+/* eslint-disable @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unnecessary-condition, no-alert */
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 
 interface Exercise {
@@ -58,36 +58,42 @@ function ExerciseDetail() {
     }
   }, [auth.loading, auth.user, exerciseId]);
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this exercise?')) {
-      return;
-    }
+   const handleDelete = useCallback(async () => {
+     if (!confirm('Are you sure you want to delete this exercise?')) {
+       return;
+     }
 
-    setDeleting(true);
+     setDeleting(true);
 
-    try {
-      const response = await fetch(`/api/exercises/${exerciseId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+     try {
+       const response = await fetch(`/api/exercises/${exerciseId}`, {
+         method: 'DELETE',
+         credentials: 'include',
+       });
 
-      if (response.ok) {
-        window.location.href = '/exercises';
-      } else {
-        void alert('Failed to delete exercise');
-      }
-    } catch {
-      void alert('Failed to delete exercise');
-    } finally {
-      setDeleting(false);
-    }
-  };
+       if (response.ok) {
+         window.location.href = '/exercises';
+       } else {
+         void alert('Failed to delete exercise');
+       }
+     } catch {
+       void alert('Failed to delete exercise');
+     } finally {
+       setDeleting(false);
+     }
+   }, [exerciseId]);
 
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
+   const handleDeleteClick = useCallback(() => {
+     void handleDelete();
+   }, [handleDelete]);
+
+   useEffect(() => {
+     if (!auth.loading && !auth.user) {
+       window.location.href = '/auth/signin';
+     }
+   }, [auth.loading, auth.user]);
+
+
 
   if (auth.loading || (!auth.user && !auth.loading)) {
     return (
@@ -155,7 +161,7 @@ function ExerciseDetail() {
 						<button
 							className={'inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50'}
 							disabled={deleting}
-							onClick={handleDelete}
+							onClick={handleDeleteClick}
 						>
 							{deleting ? 'Deleting...' : 'Delete'}
 						</button>

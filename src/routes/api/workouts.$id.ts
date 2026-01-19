@@ -35,8 +35,8 @@ export const Route = createFileRoute('/api/workouts/$id')({
             exercises: workout.exercises.map(ex => ({
               id: ex.id,
               exerciseId: ex.exerciseId,
-              name: ex.exercise?.name || 'Unknown Exercise',
-              muscleGroup: ex.exercise?.muscleGroup || null,
+              name: ex.exercise?.name ?? 'Unknown Exercise',
+              muscleGroup: ex.exercise?.muscleGroup ?? null,
               orderIndex: ex.orderIndex,
               notes: ex.notes,
               sets: ex.sets,
@@ -53,8 +53,8 @@ export const Route = createFileRoute('/api/workouts/$id')({
               id: e.id,
               name: e.name,
               muscleGroup: e.muscleGroup,
-              setsCount: e.sets?.length || 0,
-              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length || 0
+              setsCount: e.sets?.length ?? 0,
+              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length ?? 0
             }))
           });
 

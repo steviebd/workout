@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Exercise } from '../../src/lib/db/schema';
 
 const mockExerciseData = {
   id: 'exercise-1',
@@ -11,20 +12,20 @@ const mockExerciseData = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
-const createMockInsertChain = (result: any) => ({
+const createMockInsertChain = (result: Exercise) => ({
   values: vi.fn().mockReturnThis(),
   returning: vi.fn().mockReturnThis(),
   get: vi.fn().mockResolvedValue(result),
 });
 
-const createMockSelectChain = (result: any) => ({
+const createMockSelectChain = (result: Exercise | Exercise[] | undefined) => ({
   from: vi.fn().mockReturnThis(),
   where: vi.fn().mockReturnThis(),
   orderBy: vi.fn().mockResolvedValue(result),
   get: vi.fn().mockResolvedValue(result),
 });
 
-const createMockUpdateChain = (result: any) => ({
+const createMockUpdateChain = (result: Exercise | undefined | { success: boolean }) => ({
   set: vi.fn().mockReturnThis(),
   where: vi.fn().mockReturnThis(),
   returning: vi.fn().mockReturnThis(),
@@ -33,8 +34,12 @@ const createMockUpdateChain = (result: any) => ({
 });
 
 describe('Exercise CRUD Operations', () => {
-  let mockDrizzleDb: any;
-  let createDbMock: any;
+  let mockDrizzleDb: {
+    insert: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+  let createDbMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -100,9 +105,16 @@ describe('Exercise CRUD Operations', () => {
 
       const result = await getExerciseById({} as D1Database, 'exercise-1', 'user-1');
 
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe('exercise-1');
-      expect(result!.userId).toBe('user-1');
+      expect(result).toEqual({
+        id: 'exercise-1',
+        userId: 'user-1',
+        name: 'Bench Press',
+        muscleGroup: 'Chest',
+        description: 'Classic chest exercise',
+        isDeleted: false,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      });
     });
 
     it('returns null when exercise belongs to different user', async () => {
@@ -197,9 +209,13 @@ describe('Exercise CRUD Operations', () => {
         description: 'Updated description',
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.name).toBe('Updated Bench Press');
-      expect(result!.muscleGroup).toBe('Upper Chest');
+      expect(result).toEqual({
+        ...mockExerciseData,
+        name: 'Updated Bench Press',
+        muscleGroup: 'Upper Chest',
+        description: 'Updated description',
+        updatedAt: '2024-01-02T00:00:00.000Z',
+      });
     });
 
     it('returns null when exercise does not exist', async () => {

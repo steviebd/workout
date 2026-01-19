@@ -52,17 +52,17 @@ function WorkoutSummary() {
     const loadWorkout = async () => {
       if (auth.loading || !auth.user || !params.id) return;
 
-      const stateWorkout = (router.state.location.state as any)?.workout as Workout | undefined;
+      const stateWorkout = (router.state.location.state as { workout?: Workout }).workout;
 
       if (stateWorkout) {
         console.log('[Summary] Using workout from router state:', {
           id: stateWorkout.id,
           name: stateWorkout.name,
-          exercisesCount: stateWorkout.exercises?.length || 0,
-          exercises: stateWorkout.exercises?.map((e: any) => ({
+          exercisesCount: stateWorkout.exercises.length,
+          exercises: stateWorkout.exercises.map((e) => ({
             id: e.id,
             name: e.name,
-            setsCount: e.sets?.length || 0,
+            setsCount: e.sets.length,
             sets: e.sets
           }))
         });
@@ -81,20 +81,20 @@ function WorkoutSummary() {
           throw new Error('Workout not found');
         }
 
-        const data = await res.json();
+        const data: Workout = await res.json();
         console.log('[Summary] Fetched workout:', {
-          id: (data as any).id,
-          name: (data as any).name,
-          exercisesCount: (data as any).exercises?.length || 0,
-          exercises: (data as any).exercises?.map((e: any) => ({
+          id: data.id,
+          name: data.name,
+          exercisesCount: data.exercises.length,
+          exercises: data.exercises.map((e) => ({
             id: e.id,
             name: e.name,
-            setsCount: e.sets?.length || 0,
+            setsCount: e.sets.length,
             sets: e.sets
           }))
         });
-        setWorkout(data as Workout);
-      } catch (err) {
+        setWorkout(data);
+      } catch (err: unknown) {
         console.error('[Summary] Error loading workout:', err);
         setError(err instanceof Error ? err.message : 'Failed to load workout');
       } finally {
@@ -102,13 +102,21 @@ function WorkoutSummary() {
       }
     };
 
-    loadWorkout();
+    loadWorkout().catch(() => {});
   }, [auth.loading, auth.user, params.id, router.state.location.state]);
 
   useEffect(() => {
-    if (!loading && workout && !workout.completedAt) {
-      router.navigate({ to: `/workouts/${params.id}`, replace: true });
-    }
+    const redirectIfIncomplete = async () => {
+      if (!loading && workout && !workout.completedAt) {
+        try {
+          await router.navigate({ to: `/workouts/${params.id}`, replace: true });
+      } catch (err) {
+        console.error('Navigation error:', err);
+      }
+      }
+    };
+
+    redirectIfIncomplete().catch(console.error);
   }, [workout, params.id, router, loading]);
 
   if (auth.loading || loading) {
@@ -124,7 +132,7 @@ function WorkoutSummary() {
 	<div className={'min-h-screen bg-gray-50 p-8'}>
 		<div className={'max-w-4xl mx-auto'}>
 			<div className={'bg-red-50 border border-red-200 rounded-lg p-4'}>
-				<p className={'text-red-600'}>{error || 'Workout not found'}</p>
+				<p className={'text-red-600'}>{error ?? 'Workout not found'}</p>
 				<a className={'text-blue-600 hover:text-blue-700 mt-2 inline-block'} href={'/'}>
 					{'Go to dashboard'}
 				</a>
@@ -154,10 +162,8 @@ function WorkoutSummary() {
 
   const calculateTotalVolume = () => {
     try {
-      if (!workout?.exercises) return 0;
       let total = 0;
       for (const exercise of workout.exercises) {
-        if (!exercise.sets) continue;
         for (const set of exercise.sets) {
           if (set.isComplete && set.weight && set.reps) {
             total += set.weight * set.reps;
@@ -172,18 +178,15 @@ function WorkoutSummary() {
 
   const getPersonalRecords = () => {
     try {
-      if (!workout?.exercises) return [];
-
       const prs: Array<{ exerciseName: string; weight: number; reps: number }> = [];
       const exerciseMaxes = new Map<string, { weight: number; reps: number }>();
 
       for (const exercise of workout.exercises) {
-        if (!exercise.sets) continue;
         for (const set of exercise.sets) {
           if (set.isComplete && set.weight) {
             const current = exerciseMaxes.get(exercise.name);
             if (!current || set.weight > current.weight) {
-              exerciseMaxes.set(exercise.name, { weight: set.weight, reps: set.reps || 0 });
+              exerciseMaxes.set(exercise.name, { weight: set.weight, reps: set.reps ?? 0 });
             }
           }
         }
@@ -201,9 +204,9 @@ function WorkoutSummary() {
     }
   };
 
-  const totalSetsCount = workout?.exercises?.reduce((acc, e) => {
-    return acc + (e.sets?.length || 0);
-  }, 0) || 0;
+  const totalSetsCount = workout.exercises.reduce((acc, e) => {
+    return acc + e.sets.length;
+  }, 0);
 
   const totalVolume = calculateTotalVolume();
   const personalRecords = getPersonalRecords();
@@ -247,7 +250,7 @@ function WorkoutSummary() {
 						<span className={'text-sm font-medium'}>{'Duration'}</span>
 					</div>
 					<p className={'text-2xl font-bold text-gray-900'}>
-						{formatDuration(workout.startedAt, workout.completedAt || workout.startedAt)}
+						{formatDuration(workout.startedAt, workout.completedAt ?? workout.startedAt)}
 					</p>
 				</div>
 

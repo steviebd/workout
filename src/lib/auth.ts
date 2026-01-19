@@ -67,7 +67,7 @@ export function extractSessionIdFromAccessToken(accessToken: string): string | n
     const parts = accessToken.split('.');
     if (parts.length !== 3) return null;
     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString()) as { sid?: string };
-    return payload.sid || null;
+    return payload.sid ?? null;
   } catch {
     return null;
   }

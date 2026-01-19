@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/preferences')({
 
           const preferences = await getUserPreferences(db, session.userId);
 
-          return Response.json(preferences || { weightUnit: 'kg', theme: 'light' });
+          return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light' });
         } catch (err) {
           console.error('Get preferences error:', err);
           const errorMessage = err instanceof Error ? err.message : String(err);

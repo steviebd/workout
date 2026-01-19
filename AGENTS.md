@@ -88,6 +88,12 @@ The schema is defined in `src/lib/db/schema.ts`. Key tables:
 # Start local dev server (port 8787, remote D1 from Infisical)
 bun run dev
 
+# Initialize local D1 database with migrations (run once on first setup)
+bun run db:init:dev
+
+# Push database schema changes/updates to local D1
+bun run db:push:dev
+
 # Type checking
 bun run typecheck
 
@@ -239,11 +245,11 @@ Check which wrangler config is being used:
 - Staging: `wrangler.staging.toml` → worker `workout-staging`
 - Production: `wrangler.prod.toml` → worker `workout-prod`
 
-### Local Dev Script
-The `dev.sh` script fetches `CLOUDFLARE_D1_DATABASE_ID` from Infisical dev environment. Run with:
-```bash
-bun run dev
-```
+### Local Dev Setup
+For first-time local development:
+1. Ensure Infisical is configured with dev environment secrets
+2. Run database initialization: `bun run db:init:dev`
+3. Start dev server: `bun run dev`
 
 ### Auth Errors
 Check WorkOS redirect URIs match exactly:
@@ -252,9 +258,14 @@ Check WorkOS redirect URIs match exactly:
 - `https://fit.stevenduong.com/auth/callback`
 
 ### Database Migration Errors
-Run migrations locally first:
+For a fresh database, run initialization:
 ```bash
-bun run db:migrate
+bun run db:init:dev
+```
+
+For schema updates/changes, push migrations:
+```bash
+bun run db:push:dev
 ```
 
 ## Lint Errors Todo

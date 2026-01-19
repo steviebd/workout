@@ -60,7 +60,7 @@ export async function getExerciseById(
     .where(and(eq(exercises.id, exerciseId), eq(exercises.userId, userId)))
     .get();
 
-  return exercise || null;
+  return exercise ?? null;
 }
 
 export async function getExercisesByUserId(
@@ -149,7 +149,7 @@ export async function updateExercise(
     .get();
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function softDeleteExercise(

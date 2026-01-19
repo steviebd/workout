@@ -14,11 +14,11 @@ export const Route = createFileRoute('/api/templates')({
           }
 
           const url = new URL(request.url);
-          const search = url.searchParams.get('search') || undefined;
+          const search = url.searchParams.get('search') ?? undefined;
           const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
-          const page = parseInt(url.searchParams.get('page') || '1', 10);
-          const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+          const page = parseInt(url.searchParams.get('page') ?? '1', 10);
+          const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
           const offset = (page - 1) * limit;
 
           const db = (env as { DB?: D1Database }).DB;

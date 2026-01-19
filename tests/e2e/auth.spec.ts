@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
-const TEST_USERNAME = process.env.TEST_USERNAME || '';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
-const AUTH_EMAIL_SELECTOR = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR || 'input[name="email"]';
-const AUTH_PASSWORD_SELECTOR = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR || 'input[name="password"]';
-const AUTH_SUBMIT_SELECTOR = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR || 'button[name="intent"]:not([data-method])';
-const AUTH_CONTINUE_SELECTOR = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR || 'button:has-text("Continue")';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8787';
+const TEST_USERNAME = process.env.TEST_USERNAME ?? '';
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? '';
+const AUTH_EMAIL_SELECTOR = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
+const AUTH_PASSWORD_SELECTOR = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
+const AUTH_SUBMIT_SELECTOR = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
+const AUTH_CONTINUE_SELECTOR = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
 
 function isAuthKitUrl(url: URL): boolean {
 	return url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin');

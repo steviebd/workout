@@ -1,8 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, Page, Dialog } from '@playwright/test';
 
-import { Page, Dialog } from '@playwright/test';
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:8787';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8787';
 
 function isAuthKitUrl(url: URL): boolean {
 	return url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin');

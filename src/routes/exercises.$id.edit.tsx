@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises, react-hooks/exhaustive-deps */
 import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 
 const MUSCLE_GROUPS = [
@@ -69,6 +69,26 @@ function EditExercise() {
 
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, name: e.target.value });
+  }, [formData]);
+
+  const handleMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      muscleGroup: e.target.value,
+      customMuscleGroup: e.target.value !== 'Custom' ? '' : formData.customMuscleGroup,
+    });
+  }, [formData]);
+
+  const handleCustomMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, customMuscleGroup: e.target.value });
+  }, []);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData({ ...formData, description: e.target.value });
+  }, []);
+
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       setRedirecting(true);
@@ -93,11 +113,11 @@ function EditExercise() {
          setExercise(data);
          setFormData({
            name: data.name || '',
-           muscleGroup: data.muscleGroup || '',
+           muscleGroup: data.muscleGroup ?? '',
            customMuscleGroup: (data.muscleGroup && MUSCLE_GROUPS.includes(data.muscleGroup as MuscleGroup))
              ? ''
-             : (data.muscleGroup || ''),
-           description: data.description || '',
+              : (data.muscleGroup ?? ''),
+           description: data.description ?? '',
          });
       }
     } finally {
@@ -169,7 +189,7 @@ function EditExercise() {
         } catch {
           // use default
         }
-        setErrors({ submit: errorData.message || 'Failed to update exercise' });
+        setErrors({ submit: errorData.message ?? 'Failed to update exercise' });
       }
     } catch {
       setErrors({ submit: 'An error occurred. Please try again.' });
@@ -177,11 +197,11 @@ function EditExercise() {
       setSubmitting(false);
     }
   }
-
-  function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmitAsync(e);
-  }
+    void handleSubmitAsync(e);
+  }, [handleSubmitAsync]);
+
 
   if (auth.loading || redirecting || loading) {
     return (
@@ -249,7 +269,7 @@ function EditExercise() {
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
 							id={'name'}
-							onChange={(e) => void setFormData({ ...formData, name: e.target.value })}
+							onChange={handleNameChange}
 							placeholder={'e.g., Bench Press'}
 							type={'text'}
 							value={formData.name}
@@ -267,12 +287,7 @@ function EditExercise() {
                   errors.muscleGroup ? 'border-red-500' : 'border-gray-300'
                 }`}
 							id={'muscleGroup'}
-							onChange={(e) =>
-                  void setFormData({
-                    ...formData,
-                    muscleGroup: e.target.value,
-                    customMuscleGroup: e.target.value !== 'Custom' ? '' : formData.customMuscleGroup,
-                  })}
+							onChange={handleMuscleGroupChange}
 							value={selectedMuscleGroupValue}
 						>
 							<option value={''}>{'Select muscle group'}</option>
@@ -293,7 +308,7 @@ function EditExercise() {
 						<input
 							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
 							id={'customMuscleGroup'}
-							onChange={(e) => setFormData({ ...formData, customMuscleGroup: e.target.value })}
+							onChange={handleCustomMuscleGroupChange}
 							placeholder={'Enter custom muscle group'}
 							type={'text'}
 							value={formData.customMuscleGroup}
@@ -308,7 +323,7 @@ function EditExercise() {
 						<textarea
 							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none'}
 							id={'description'}
-							onChange={(e) => void setFormData({ ...formData, description: e.target.value })}
+							onChange={handleDescriptionChange}
 							placeholder={'Add a description for this exercise...'}
 							rows={4}
 							value={formData.description}

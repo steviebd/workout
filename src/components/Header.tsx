@@ -4,10 +4,13 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
+
+  const openMenu = useCallback(() => setIsOpen(true), [])
+  const closeMenu = useCallback(() => setIsOpen(false), [])
 
   return (
 	<>
@@ -15,7 +18,7 @@ export default function Header() {
 			<button
 				aria-label={'Open menu'}
 				className={'p-2 hover:bg-gray-700 rounded-lg transition-colors'}
-				onClick={() => setIsOpen(true)}
+				onClick={openMenu}
 			>
 				<Menu size={24} />
 			</button>
@@ -40,7 +43,7 @@ export default function Header() {
 				<button
 					aria-label={'Close menu'}
 					className={'p-2 hover:bg-gray-800 rounded-lg transition-colors'}
-					onClick={() => setIsOpen(false)}
+					onClick={closeMenu}
 				>
 					<X size={24} />
 				</button>
@@ -53,7 +56,7 @@ export default function Header() {
                 'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
             }}
 					className={'flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2'}
-					onClick={() => setIsOpen(false)}
+					onClick={closeMenu}
 					to={'/'}
 				>
 					<Home size={20} />

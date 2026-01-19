@@ -1,13 +1,8 @@
-/* eslint-disable @typescript-eslint/no-misused-promises, @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-type-assertion, react/jsx-closing-tag-location, react/no-array-index-key */
 import { createFileRoute } from '@tanstack/react-router';
 import { BookOpen, Loader2, Plus, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type ExerciseLibraryItem, exerciseLibrary, searchLibraryExercises } from '../lib/exercise-library';
 import { useAuth } from './__root';
-
-export const Route = createFileRoute('/exercises/new')({
-  component: NewExercise,
-});
 
 const MUSCLE_GROUPS = [
   'Chest',
@@ -43,6 +38,33 @@ function NewExercise() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
+  const handleMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMuscleGroup(e.target.value as MuscleGroup);
+  }, []);
+
+  const handleCustomMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, customMuscleGroup: e.target.value }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, description: e.target.value }));
+  }, []);
+
+
+
+   const handleCloseLibrary = useCallback(() => {
+     setShowLibrary(false);
+     setLibrarySearch('');
+   }, []);
+
+   const handleLibrarySearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+     setLibrarySearch(e.target.value);
+   }, []);
+
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       setRedirecting(true);
@@ -55,69 +77,86 @@ function NewExercise() {
     return searchLibraryExercises(librarySearch);
   }, [librarySearch]);
 
-  const handleSelectFromLibrary = (item: ExerciseLibraryItem) => {
-    setFormData({
-      name: item.name,
-      customMuscleGroup: '',
-      description: item.description,
-    });
-    if (MUSCLE_GROUPS.includes(item.muscleGroup as MuscleGroup)) {
-      setSelectedMuscleGroup(item.muscleGroup as MuscleGroup);
-    } else {
-      setSelectedMuscleGroup('Other');
-      setFormData(prev => ({ ...prev, customMuscleGroup: item.muscleGroup }));
-    }
-    setShowLibrary(false);
-    setLibrarySearch('');
-  };
-
-  const validateForm = () => {
-    const newErrors: { name?: string; muscleGroup?: string } = {};
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    if (!selectedMuscleGroup) {
-      newErrors.muscleGroup = 'Muscle group is required';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!validateForm()) return;
-
-    setLoading(true);
-
-    try {
-      const muscleGroup = selectedMuscleGroup === 'Other' ? formData.customMuscleGroup : selectedMuscleGroup;
-
-      const response = await fetch('/api/exercises', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: formData.name,
-          muscleGroup,
-          description: formData.description,
-        }),
+    const handleSelectFromLibrary = useCallback((item: ExerciseLibraryItem) => {
+      setFormData({
+        name: item.name,
+        customMuscleGroup: '',
+        description: item.description,
       });
-
-      if (!response.ok) {
-        const data = await response.json() as { message?: string };
-        throw new Error(data.message || 'Failed to create exercise');
+      if (MUSCLE_GROUPS.includes(item.muscleGroup as MuscleGroup)) {
+        setSelectedMuscleGroup(item.muscleGroup as MuscleGroup);
+      } else {
+        setSelectedMuscleGroup('Other');
+        setFormData(prev => ({ ...prev, customMuscleGroup: item.muscleGroup }));
       }
+      setShowLibrary(false);
+      setLibrarySearch('');
+    }, []);
 
-      const data = await response.json() as { id: string };
-      window.location.href = `/exercises/${data.id}`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+      const handleSelectFromLibraryById = useCallback((e: React.MouseEvent) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id) {
+          const item = filteredLibrary.find(lib => lib.id === id);
+          if (item) handleSelectFromLibrary(item);
+        }
+       }, [filteredLibrary, handleSelectFromLibrary]);
+
+    const handleLibraryButtonClick = useCallback(() => {
+      setShowLibrary(true);
+    }, []);
+
+    const validateForm = useCallback(() => {
+      const newErrors: { name?: string; muscleGroup?: string } = {};
+      if (!formData.name.trim()) {
+        newErrors.name = 'Name is required';
+      }
+      if (!selectedMuscleGroup) {
+        newErrors.muscleGroup = 'Muscle group is required';
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    }, [formData.name, selectedMuscleGroup]);
+
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
+
+      if (!validateForm()) return;
+
+      setLoading(true);
+
+      try {
+        const muscleGroup = selectedMuscleGroup === 'Other' ? formData.customMuscleGroup : selectedMuscleGroup;
+
+        const response = await fetch('/api/exercises', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: formData.name,
+            muscleGroup,
+            description: formData.description,
+          }),
+        });
+
+        if (!response.ok) {
+          const data: { message?: string } = await response.json();
+          throw new Error(data.message ?? 'Failed to create exercise');
+        }
+
+        const data: { id: string } = await response.json();
+        window.location.href = `/exercises/${data.id}`;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }, [formData.name, formData.customMuscleGroup, formData.description, selectedMuscleGroup, validateForm]);
+
+    const handleFormSubmit = useCallback((e: React.FormEvent) => {
+      e.preventDefault();
+      void handleSubmit(e);
+    }, [handleSubmit]);
 
   if (auth.loading || redirecting) {
     return (
@@ -135,7 +174,7 @@ function NewExercise() {
 					<h1 className={'text-2xl font-bold text-gray-900'}>{'Create Exercise'}</h1>
 					<button
 						className={'flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors'}
-						onClick={() => void setShowLibrary(true)}
+						onClick={handleLibraryButtonClick}
 						type={'button'}
 					>
 						<BookOpen size={18} />
@@ -143,21 +182,21 @@ function NewExercise() {
 					</button>
 				</div>
 
-				{error ? <div className={'mb-4 p-4 bg-red-50 border border-red-200 rounded-lg'}>
-					<p className={'text-sm text-red-600'}>{error}</p>
-				</div> : null}
+				{error !== null && (
+					<div className={'mb-4 p-4 bg-red-50 border border-red-200 rounded-lg'}>
+						<p className={'text-sm text-red-600'}>{error}</p>
+					</div>
+				)}
 
-				<form className={'space-y-6'} onSubmit={handleSubmit}>
+				<form className={'space-y-6'} onSubmit={handleFormSubmit}>
 					<div>
 						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'name'}>
 							{'Name *'}
 						</label>
 						<input
-							className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+							className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
 							id={'name'}
-							onChange={(e) => void setFormData(prev => ({ ...prev, name: e.target.value }))}
+							onChange={handleNameChange}
 							placeholder={'Enter exercise name'}
 							type={'text'}
 							value={formData.name}
@@ -170,34 +209,34 @@ function NewExercise() {
 							{'Muscle Group *'}
 						</label>
 						<select
-							className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.muscleGroup ? 'border-red-500' : 'border-gray-300'
-                }`}
+							className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.muscleGroup ? 'border-red-500' : 'border-gray-300'}`}
 							id={'muscleGroup'}
-							onChange={(e) => void setSelectedMuscleGroup(e.target.value as MuscleGroup)}
+							onChange={handleMuscleGroupChange}
 							value={selectedMuscleGroup}
 						>
 							<option value={''}>{'Select muscle group'}</option>
 							{MUSCLE_GROUPS.map(group => (
 								<option key={group} value={group}>{group}</option>
-                ))}
+							))}
 						</select>
 						{errors.muscleGroup ? <p className={'mt-1 text-sm text-red-500'}>{errors.muscleGroup}</p> : null}
 					</div>
 
-					{selectedMuscleGroup === 'Other' ? <div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'customMuscleGroup'}>
-							{'Custom Muscle Group'}
-						</label>
-						<input
-							className={'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							id={'customMuscleGroup'}
-							onChange={(e) => setFormData(prev => ({ ...prev, customMuscleGroup: e.target.value }))}
-							placeholder={'Enter custom muscle group'}
-							type={'text'}
-							value={formData.customMuscleGroup}
-						/>
-                                        </div> : null}
+					{selectedMuscleGroup === 'Other' && (
+						<div>
+							<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'customMuscleGroup'}>
+								{'Custom Muscle Group'}
+							</label>
+							<input
+								className={'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
+								id={'customMuscleGroup'}
+								onChange={handleCustomMuscleGroupChange}
+								placeholder={'Enter custom muscle group'}
+								type={'text'}
+								value={formData.customMuscleGroup}
+							/>
+						</div>
+					)}
 
 					<div>
 						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'description'}>
@@ -206,7 +245,7 @@ function NewExercise() {
 						<textarea
 							className={'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'}
 							id={'description'}
-							onChange={(e) => void setFormData(prev => ({ ...prev, description: e.target.value }))}
+							onChange={handleDescriptionChange}
 							placeholder={'Describe the exercise...'}
 							rows={4}
 							value={formData.description}
@@ -236,64 +275,68 @@ function NewExercise() {
 			</div>
 		</div>
 
-		{showLibrary ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col'}>
-				<div className={'flex items-center justify-between p-4 border-b'}>
-					<h2 className={'text-lg font-semibold text-gray-900'}>{'Exercise Library'}</h2>
-					<button
-						className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
-						onClick={() => {
-                  setShowLibrary(false);
-                  setLibrarySearch('');
-                }}
-					>
-						<X size={20} />
-					</button>
-				</div>
-
-				<div className={'p-4 border-b'}>
-					<div className={'relative'}>
-						<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
-						<input
-							className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={(e) => setLibrarySearch(e.target.value)}
-							placeholder={'Search exercises...'}
-							type={'text'}
-							value={librarySearch}
-						/>
+		{showLibrary ? (
+			<div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
+				<div className={'bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col'}>
+					<div className={'flex items-center justify-between p-4 border-b'}>
+						<h2 className={'text-lg font-semibold text-gray-900'}>{'Exercise Library'}</h2>
+						<button
+							className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
+							onClick={handleCloseLibrary}
+						>
+							<X size={20} />
+						</button>
 					</div>
-				</div>
 
-				<div className={'flex-1 overflow-y-auto p-4'}>
-					{filteredLibrary.length === 0 ? (
-						<div className={'text-center py-8 text-gray-500'}>
-							{'No exercises found'}
+					<div className={'p-4 border-b'}>
+						<div className={'relative'}>
+							<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
+							<input
+								className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
+								onChange={handleLibrarySearchChange}
+								placeholder={'Search exercises...'}
+								type={'text'}
+								value={librarySearch}
+							/>
 						</div>
-              ) : (
-	<div className={'space-y-2'}>
-		{filteredLibrary.map((item, index) => (
-			<button
-				className={'w-full text-left p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors'}
-				key={index}
-				onClick={() => handleSelectFromLibrary(item)}
-			>
-				<div className={'flex items-start justify-between'}>
-					<div>
-						<h3 className={'font-medium text-gray-900'}>{item.name}</h3>
-						<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
-							{item.muscleGroup}
-						</span>
-						<p className={'mt-2 text-sm text-gray-600 line-clamp-2'}>{item.description}</p>
 					</div>
-					<Plus className={'text-blue-500 flex-shrink-0 ml-4'} size={18} />
-				</div>
-			</button>
-                  ))}
-	</div>
-              )}
+
+					<div className={'flex-1 overflow-y-auto p-4'}>
+						{filteredLibrary.length === 0 ? (
+							<div className={'text-center py-8 text-gray-500'}>
+								{'No exercises found'}
+							</div>
+						) : (
+							<div className={'space-y-2'}>
+								{filteredLibrary.map((item) => (
+									<button
+										className={'w-full text-left p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors'}
+										data-id={item.id}
+										key={item.id}
+										onClick={handleSelectFromLibraryById}
+									>
+										<div className={'flex items-start justify-between'}>
+											<div>
+												<h3 className={'font-medium text-gray-900'}>{item.name}</h3>
+												<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
+													{item.muscleGroup}
+												</span>
+												<p className={'mt-2 text-sm text-gray-600 line-clamp-2'}>{item.description}</p>
+											</div>
+											<Plus className={'text-blue-500 flex-shrink-0 ml-4'} size={18} />
+										</div>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
-		</div> : null}
+		) : null}
 	</div>
   );
 }
+
+export const Route = createFileRoute('/exercises/new')({
+  component: NewExercise,
+});

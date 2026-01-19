@@ -1,32 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb } from '@/lib/db/index';
-import {
-  addExerciseToTemplate,
-  copyTemplate,
-  createTemplate,
-  getTemplateById,
-  getTemplateExercises,
-  removeExerciseFromTemplate,
-  reorderTemplateExercises,
-  softDeleteTemplate,
-  updateTemplate,
-} from '@/lib/db/template';
-
-vi.mock('@/lib/db/index', () => ({
-  createDb: vi.fn(),
-}));
-
-const mockDrizzleDb = {
-  insert: vi.fn(),
-  update: vi.fn(),
-  select: vi.fn(),
-  delete: vi.fn(),
-};
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { D1Database } from '@cloudflare/workers-types';
 
 describe('Template DB Operations', () => {
+  let mockDrizzleDb: {
+    insert: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
+  let createDbMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
+
+    mockDrizzleDb = {
+      insert: vi.fn(),
+      select: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    createDbMock = vi.fn(() => mockDrizzleDb);
+    vi.doMock('../../src/lib/db/index', () => ({
+      createDb: createDbMock,
+    }));
+  });
+
+  afterEach(() => {
+    vi.doUnmock('../../src/lib/db/index');
   });
 
   describe('createTemplate', () => {
@@ -49,6 +50,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { createTemplate } = await import('../../src/lib/db/template');
 
       const result = await createTemplate({} as D1Database, {
         userId: 'user-1',
@@ -81,6 +84,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { getTemplateById } = await import('../../src/lib/db/template');
+
       const result = await getTemplateById({} as D1Database, 'template-1', 'user-1');
 
       expect(result).toEqual(mockTemplate);
@@ -95,6 +100,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { getTemplateById } = await import('../../src/lib/db/template');
+
       const result = await getTemplateById({} as D1Database, 'template-1', 'user-1');
 
       expect(result).toBeNull();
@@ -108,6 +115,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { getTemplateById } = await import('../../src/lib/db/template');
 
       const result = await getTemplateById({} as D1Database, 'template-1', 'user-2');
 
@@ -138,6 +147,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { updateTemplate } = await import('../../src/lib/db/template');
+
       const result = await updateTemplate({} as D1Database, 'template-1', 'user-1', {
         name: 'Updated Name',
         description: 'Updated description',
@@ -158,6 +169,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { updateTemplate } = await import('../../src/lib/db/template');
+
       const result = await updateTemplate({} as D1Database, 'template-1', 'user-1', {
         name: 'Updated Name',
       });
@@ -176,6 +189,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { softDeleteTemplate } = await import('../../src/lib/db/template');
+
       const result = await softDeleteTemplate({} as D1Database, 'template-1', 'user-1');
 
       expect(result).toBe(true);
@@ -189,6 +204,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { softDeleteTemplate } = await import('../../src/lib/db/template');
 
       const result = await softDeleteTemplate({} as D1Database, 'template-1', 'user-1');
 
@@ -256,6 +273,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { copyTemplate } = await import('../../src/lib/db/template');
+
       const result = await copyTemplate({} as D1Database, 'template-1', 'user-1');
 
       expect(result?.name).toBe('Original Template (Copy)');
@@ -269,6 +288,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { copyTemplate } = await import('../../src/lib/db/template');
 
       const result = await copyTemplate({} as D1Database, 'template-1', 'user-1');
 
@@ -292,6 +313,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { addExerciseToTemplate } = await import('../../src/lib/db/template');
 
       const result = await addExerciseToTemplate(
         {} as D1Database,
@@ -322,6 +345,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { removeExerciseFromTemplate } = await import('../../src/lib/db/template');
+
       const result = await removeExerciseFromTemplate(
         {} as D1Database,
         'template-1',
@@ -340,6 +365,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { removeExerciseFromTemplate } = await import('../../src/lib/db/template');
 
       const result = await removeExerciseFromTemplate(
         {} as D1Database,
@@ -370,6 +397,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { reorderTemplateExercises } = await import('../../src/lib/db/template');
+
       const result = await reorderTemplateExercises(
         {} as D1Database,
         'template-1',
@@ -391,6 +420,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { reorderTemplateExercises } = await import('../../src/lib/db/template');
 
       const result = await reorderTemplateExercises(
         {} as D1Database,
@@ -450,6 +481,8 @@ describe('Template DB Operations', () => {
         }),
       });
 
+      const { getTemplateExercises } = await import('../../src/lib/db/template');
+
       const result = await getTemplateExercises(
         {} as D1Database,
         'template-1',
@@ -468,6 +501,8 @@ describe('Template DB Operations', () => {
           }),
         }),
       });
+
+      const { getTemplateExercises } = await import('../../src/lib/db/template');
 
       const result = await getTemplateExercises(
         {} as D1Database,

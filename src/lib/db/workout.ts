@@ -89,7 +89,7 @@ export async function getWorkoutById(
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
     .get();
 
-  return workout ? workout : null;
+  return workout ?? null;
 }
 
 export async function getWorkoutWithExercises(
@@ -221,7 +221,7 @@ export async function updateWorkout(
     .get();
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function completeWorkout(
@@ -445,7 +445,7 @@ export async function updateWorkoutSet(
   console.log('updateWorkoutSet result:', updated);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function completeWorkoutSet(

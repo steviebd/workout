@@ -1,6 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createDb } from '../../src/lib/db/index';
+import type { D1Database } from '@cloudflare/workers-types';
+import type { Workout, WorkoutSet, UserPreference } from '../../src/lib/db/schema';
 
-const mockWorkoutData = {
+vi.mock('../../src/lib/db/index', () => ({
+  createDb: vi.fn(),
+}));
+
+const mockDb = vi.fn() as unknown as D1Database;
+
+const mockDrizzleDb = {
+  insert: vi.fn(),
+  update: vi.fn(),
+  select: vi.fn(),
+  delete: vi.fn(),
+};
+
+const mockWorkoutData: Workout = {
   id: 'workout-1',
   userId: 'user-1',
   templateId: 'template-1',
@@ -11,7 +27,7 @@ const mockWorkoutData = {
   createdAt: '2024-01-01T10:00:00.000Z',
 };
 
-const mockWorkoutSetData = {
+const mockWorkoutSetData: WorkoutSet = {
   id: 'workout-set-1',
   workoutExerciseId: 'workout-exercise-1',
   setNumber: 1,
@@ -23,7 +39,7 @@ const mockWorkoutSetData = {
   createdAt: '2024-01-01T10:05:00.000Z',
 };
 
-const mockUserPreferenceData = {
+const mockUserPreferenceData: UserPreference = {
   id: 'prefs-1',
   userId: 'user-1',
   weightUnit: 'kg',
@@ -32,67 +48,31 @@ const mockUserPreferenceData = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
-const createMockInsertChain = (result: any) => ({
-  values: vi.fn().mockReturnThis(),
-  returning: vi.fn().mockReturnThis(),
-  get: vi.fn().mockResolvedValue(result),
-});
-
-const createMockSelectChain = (result: any) => ({
-  from: vi.fn().mockReturnThis(),
-  innerJoin: vi.fn().mockReturnThis(),
-  leftJoin: vi.fn().mockReturnThis(),
-  where: vi.fn().mockReturnThis(),
-  orderBy: vi.fn().mockResolvedValue(result),
-  limit: vi.fn().mockResolvedValue(result),
-  get: vi.fn().mockResolvedValue(result),
-  all: vi.fn().mockResolvedValue(result),
-});
-
-const createMockUpdateChain = (result: any) => ({
-  set: vi.fn().mockReturnThis(),
-  where: vi.fn().mockReturnThis(),
-  returning: vi.fn().mockReturnThis(),
-  get: vi.fn().mockResolvedValue(result),
-  run: vi.fn().mockResolvedValue({ success: true }),
-});
-
-const createMockDeleteChain = () => ({
-  where: vi.fn().mockReturnThis(),
-  run: vi.fn().mockResolvedValue({ success: true }),
-});
-
 describe('Workout CRUD Operations', () => {
-  let mockDrizzleDb: any;
-  let createDbMock: any;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-
-    mockDrizzleDb = {
-      insert: vi.fn(() => createMockInsertChain(mockWorkoutData)),
-      select: vi.fn(() => createMockSelectChain([mockWorkoutData])),
-      update: vi.fn(() => createMockUpdateChain(mockWorkoutData)),
-      delete: vi.fn(() => createMockDeleteChain()),
-    };
-
-    createDbMock = vi.fn(() => mockDrizzleDb);
-    vi.doMock('../../src/lib/db/index', () => ({
-      createDb: createDbMock,
-    }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.doUnmock('../../src/lib/db/index');
   });
 
   describe('createWorkout', () => {
     it('creates workout with all fields', async () => {
+      mockDrizzleDb.insert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockWorkoutData),
+          }),
+        }),
+      });
+
       const { createWorkout } = await import('../../src/lib/db/workout');
 
-      const result = await createWorkout({} as D1Database, {
+      const result = await createWorkout(mockDb, {
         userId: 'user-1',
         name: 'Upper Body Workout',
         templateId: 'template-1',
@@ -109,11 +89,18 @@ describe('Workout CRUD Operations', () => {
 
     it('creates workout without template', async () => {
       const workoutWithoutTemplate = { ...mockWorkoutData, templateId: null };
-      mockDrizzleDb.insert = vi.fn(() => createMockInsertChain(workoutWithoutTemplate));
+
+      mockDrizzleDb.insert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(workoutWithoutTemplate),
+          }),
+        }),
+      });
 
       const { createWorkout } = await import('../../src/lib/db/workout');
 
-      const result = await createWorkout({} as D1Database, {
+      const result = await createWorkout(mockDb, {
         userId: 'user-1',
         name: 'Quick Workout',
       });
@@ -125,22 +112,34 @@ describe('Workout CRUD Operations', () => {
 
   describe('getWorkoutById', () => {
     it('returns workout when owned by user', async () => {
-      mockDrizzleDb.select = vi.fn(() => createMockSelectChain(mockWorkoutData));
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockWorkoutData),
+          }),
+        }),
+      });
 
       const { getWorkoutById } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutById({} as D1Database, 'workout-1', 'user-1');
+      const result = await getWorkoutById(mockDb, 'workout-1', 'user-1');
 
       expect(result?.id).toBe('workout-1');
       expect(result?.name).toBe('Upper Body Workout');
     });
 
     it('returns null when not owned by user', async () => {
-      mockDrizzleDb.select = vi.fn(() => createMockSelectChain(null));
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(null),
+          }),
+        }),
+      });
 
       const { getWorkoutById } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutById({} as D1Database, 'workout-1', 'user-2');
+      const result = await getWorkoutById(mockDb, 'workout-1', 'user-2');
 
       expect(result).toBeNull();
     });
@@ -149,11 +148,20 @@ describe('Workout CRUD Operations', () => {
   describe('completeWorkout', () => {
     it('completes workout with timestamp', async () => {
       const completedWorkout = { ...mockWorkoutData, completedAt: '2024-01-01T11:00:00.000Z' };
-      mockDrizzleDb.update = vi.fn(() => createMockUpdateChain(completedWorkout));
+
+      mockDrizzleDb.update.mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue(completedWorkout),
+            }),
+          }),
+        }),
+      });
 
       const { completeWorkout } = await import('../../src/lib/db/workout');
 
-      const result = await completeWorkout({} as D1Database, 'workout-1', 'user-1');
+      const result = await completeWorkout(mockDb, 'workout-1', 'user-1');
 
       expect(result?.completedAt).toBe('2024-01-01T11:00:00.000Z');
     });
@@ -161,9 +169,15 @@ describe('Workout CRUD Operations', () => {
 
   describe('deleteWorkout', () => {
     it('deletes workout successfully', async () => {
+      mockDrizzleDb.delete.mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          run: vi.fn().mockReturnValue({ success: true }),
+        }),
+      });
+
       const { deleteWorkout } = await import('../../src/lib/db/workout');
 
-      const result = await deleteWorkout({} as D1Database, 'workout-1', 'user-1');
+      const result = await deleteWorkout(mockDb, 'workout-1', 'user-1');
 
       expect(result).toBe(true);
     });
@@ -171,11 +185,19 @@ describe('Workout CRUD Operations', () => {
 
   describe('createWorkoutSet', () => {
     it('creates workout set with all fields', async () => {
-      mockDrizzleDb.insert = vi.fn(() => createMockInsertChain(mockWorkoutSetData));
+      const expectedSet = { ...mockWorkoutSetData, isComplete: false };
+
+      mockDrizzleDb.insert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(expectedSet),
+          }),
+        }),
+      });
 
       const { createWorkoutSet } = await import('../../src/lib/db/workout');
 
-      const result = await createWorkoutSet({} as D1Database, 'workout-exercise-1', 1, 80, 8, 7.5);
+      const result = await createWorkoutSet(mockDb, 'workout-exercise-1', 1, 80, 8, 7.5);
 
       expect(result.id).toBe('workout-set-1');
       expect(result.workoutExerciseId).toBe('workout-exercise-1');
@@ -190,11 +212,20 @@ describe('Workout CRUD Operations', () => {
   describe('completeWorkoutSet', () => {
     it('marks set as complete', async () => {
       const completedSet = { ...mockWorkoutSetData, isComplete: true, completedAt: '2024-01-01T10:05:00.000Z' };
-      mockDrizzleDb.update = vi.fn(() => createMockUpdateChain(completedSet));
+
+      mockDrizzleDb.update.mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue(completedSet),
+            }),
+          }),
+        }),
+      });
 
       const { completeWorkoutSet } = await import('../../src/lib/db/workout');
 
-      const result = await completeWorkoutSet({} as D1Database, 'workout-set-1');
+      const result = await completeWorkoutSet(mockDb, 'workout-set-1');
 
       expect(result?.isComplete).toBe(true);
       expect(result?.completedAt).toBeDefined();
@@ -203,37 +234,30 @@ describe('Workout CRUD Operations', () => {
 });
 
 describe('User Preferences Operations', () => {
-  let mockDrizzleDb: any;
-  let createDbMock: any;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-
-    mockDrizzleDb = {
-      insert: vi.fn(() => createMockInsertChain(mockUserPreferenceData)),
-      select: vi.fn(() => createMockSelectChain(mockUserPreferenceData)),
-      update: vi.fn(() => createMockUpdateChain(mockUserPreferenceData)),
-    };
-
-    createDbMock = vi.fn(() => mockDrizzleDb);
-    vi.doMock('../../src/lib/db/index', () => ({
-      createDb: createDbMock,
-    }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.doUnmock('../../src/lib/db/index');
   });
 
   describe('getUserPreferences', () => {
     it('returns preferences when user has them', async () => {
-      mockDrizzleDb.select = vi.fn(() => createMockSelectChain(mockUserPreferenceData));
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockUserPreferenceData),
+          }),
+        }),
+      });
 
       const { getUserPreferences } = await import('../../src/lib/db/preferences');
 
-      const result = await getUserPreferences({} as D1Database, 'user-1');
+      const result = await getUserPreferences(mockDb, 'user-1');
 
       expect(result?.userId).toBe('user-1');
       expect(result?.weightUnit).toBe('kg');
@@ -241,11 +265,17 @@ describe('User Preferences Operations', () => {
     });
 
     it('returns null when user has no preferences', async () => {
-      mockDrizzleDb.select = vi.fn(() => createMockSelectChain(null));
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(null),
+          }),
+        }),
+      });
 
       const { getUserPreferences } = await import('../../src/lib/db/preferences');
 
-      const result = await getUserPreferences({} as D1Database, 'user-1');
+      const result = await getUserPreferences(mockDb, 'user-1');
 
       expect(result).toBeNull();
     });
@@ -253,9 +283,25 @@ describe('User Preferences Operations', () => {
 
   describe('upsertUserPreferences', () => {
     it('creates new preferences when none exist', async () => {
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(null),
+          }),
+        }),
+      });
+
+      mockDrizzleDb.insert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockUserPreferenceData),
+          }),
+        }),
+      });
+
       const { upsertUserPreferences } = await import('../../src/lib/db/preferences');
 
-      const result = await upsertUserPreferences({} as D1Database, 'user-1', {
+      const result = await upsertUserPreferences(mockDb, 'user-1', {
         weightUnit: 'lbs',
         theme: 'dark',
       });
@@ -266,16 +312,32 @@ describe('User Preferences Operations', () => {
 
     it('updates existing preferences', async () => {
       const updatedPrefs = { ...mockUserPreferenceData, weightUnit: 'lbs' };
-      mockDrizzleDb.select = vi.fn(() => createMockSelectChain(mockUserPreferenceData));
-      mockDrizzleDb.update = vi.fn(() => createMockUpdateChain(updatedPrefs));
+
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockUserPreferenceData),
+          }),
+        }),
+      });
+
+      mockDrizzleDb.update.mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue(updatedPrefs),
+            }),
+          }),
+        }),
+      });
 
       const { upsertUserPreferences } = await import('../../src/lib/db/preferences');
 
-      const result = await upsertUserPreferences({} as D1Database, 'user-1', {
+      const result = await upsertUserPreferences(mockDb, 'user-1', {
         weightUnit: 'lbs',
       });
 
-      expect(result.weightUnit).toBe('kg');
+      expect(result.weightUnit).toBe('lbs');
     });
   });
 });

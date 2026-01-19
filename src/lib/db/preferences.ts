@@ -58,8 +58,8 @@ export async function upsertUserPreferences(
     .insert(userPreferences)
     .values({
       userId,
-      weightUnit: data.weightUnit || 'kg',
-      theme: data.theme || 'light',
+      weightUnit: data.weightUnit ?? 'kg',
+      theme: data.theme ?? 'light',
     })
     .returning()
     .get();

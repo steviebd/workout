@@ -14,8 +14,8 @@ export const Route = createFileRoute('/api/exercises')({
           }
 
           const url = new URL(request.url);
-          const search = url.searchParams.get('search') || undefined;
-          const muscleGroup = url.searchParams.get('muscleGroup') || undefined;
+          const search = url.searchParams.get('search') ?? undefined;
+          const muscleGroup = url.searchParams.get('muscleGroup') ?? undefined;
           const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'muscleGroup' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
 

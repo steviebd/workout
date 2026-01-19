@@ -70,7 +70,7 @@ export async function getTemplateById(
     .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
     .get();
 
-  return template || null;
+  return template ?? null;
 }
 
 export async function getTemplatesByUserId(
@@ -156,7 +156,7 @@ export async function updateTemplate(
     .get();
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return updated || null;
+  return updated ?? null;
 }
 
 export async function softDeleteTemplate(

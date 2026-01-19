@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-use-before-define, @typescript-eslint/no-floating-promises, react/jsx-closing-tag-location */
 import { createFileRoute } from '@tanstack/react-router';
 import { Calendar, Dumbbell, Filter, Plus, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 
 const MUSCLE_GROUPS = [
@@ -39,6 +39,14 @@ function Exercises() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup>('All');
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, []);
+
+  const handleMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMuscleGroup(e.target.value as MuscleGroup);
+  }, []);
 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
@@ -102,7 +110,7 @@ function Exercises() {
 					<Search className={'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'} size={20} />
 					<input
 						className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
-						onChange={(e) => void setSearch(e.target.value)}
+						onChange={handleSearchChange}
 						placeholder={'Search exercises...'}
 						type={'text'}
 						value={search}
@@ -112,7 +120,7 @@ function Exercises() {
 					<Filter className={'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'} size={20} />
 					<select
 						className={'pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow appearance-none bg-white'}
-						onChange={(e) => void setSelectedMuscleGroup(e.target.value as MuscleGroup)}
+						onChange={handleMuscleGroupChange}
 						value={selectedMuscleGroup}
 					>
 						{MUSCLE_GROUPS.map((group) => (

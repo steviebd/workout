@@ -49,8 +49,8 @@ export const Route = createFileRoute('/api/auth/callback')({
           const localUser = await getOrCreateUser(db, {
             id: user.id,
             email: user.email,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
+            firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '',
           });
 
           const workosSessionId = extractSessionIdFromAccessToken(accessToken) ?? undefined;
@@ -59,8 +59,8 @@ export const Route = createFileRoute('/api/auth/callback')({
             {
               id: user.id,
               email: user.email,
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
+            firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '',
             },
             localUser.id,
             workosSessionId
