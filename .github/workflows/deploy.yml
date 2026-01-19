@@ -81,11 +81,15 @@ jobs:
         run: bun install
 
       - name: Setup Infisical
-        uses: Infisical/github-action@latest
+        uses: Infisical/secrets-action@v1
         with:
-          instrument-command: |
-            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }} --client-secret ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
-            infisical secrets pull --projectId 5676c8fb-7089-43cf-91d2-9d1cb8b7e966 --env staging --output dotenv --path .env.staging
+          method: "universal"
+          client-id: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
+          client-secret: ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
+          project-slug: "workout"
+          env-slug: "staging"
+          export-type: "file"
+          file-output-path: ".env.staging"
 
       - name: Export Environment Variables
         run: |
@@ -123,11 +127,15 @@ jobs:
         run: bun install
 
       - name: Setup Infisical
-        uses: Infisical/github-action@latest
+        uses: Infisical/secrets-action@v1
         with:
-          instrument-command: |
-            infisical login --method universal-auth --client-id ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }} --client-secret ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
-            infisical secrets pull --projectId 5676c8fb-7089-43cf-91d2-9d1cb8b7e966 --env prod --output dotenv --path .env.production
+          method: "universal"
+          client-id: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
+          client-secret: ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
+          project-slug: "workout"
+          env-slug: "prod"
+          export-type: "file"
+          file-output-path: ".env.production"
 
       - name: Export Environment Variables
         run: |
