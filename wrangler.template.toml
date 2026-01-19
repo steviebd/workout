@@ -28,6 +28,10 @@ name = "workout-staging"
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
 
+  [[env.staging.routes]]
+  pattern = "staging.fit.stevenduong.com/*"
+  zone_name = "fit.stevenduong.com"
+
     [[env.staging.d1_databases]]
     binding = "DB"
     database_name = "workout-staging-db"
@@ -40,6 +44,10 @@ name = "workout-prod"
   ENVIRONMENT = "production"
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
+
+  [[env.production.routes]]
+  pattern = "fit.stevenduong.com/*"
+  zone_name = "fit.stevenduong.com"
 
     [[env.production.d1_databases]]
     binding = "DB"
