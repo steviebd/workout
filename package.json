@@ -4,8 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; scripts/generate-wrangler-config.sh --env dev && infisical run --env dev -- sh -c 'WRANGLER_ENV=dev bun run build && bun run wrangler dev --env dev'",
-		"deploy:staging": "scripts/generate-wrangler-config.sh --env staging && infisical run --environment staging -- sh -c 'bun run build && bun run wrangler deploy'",
-		"deploy:prod": "scripts/generate-wrangler-config.sh --env prod && infisical run --environment prod -- sh -c 'bun run build && bun run wrangler deploy'",
+		"deploy:staging": "scripts/generate-wrangler-config.sh --env staging && infisical run --environment staging -- sh -c 'bun run build && bun run wrangler deploy --env staging'",
+		"deploy:prod": "scripts/generate-wrangler-config.sh --env prod && infisical run --environment prod -- sh -c 'bun run build && bun run wrangler deploy --env production'",
 		"build": "vite build",
 		"serve": "vite preview",
 		"test": "vitest run",
