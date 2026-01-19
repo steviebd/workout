@@ -65,15 +65,20 @@ echo "Updating $CONFIG_FILE for env '$WRANGLER_ENV' with Infisical secrets..."
 
 SECRETS_JSON=$(infisical secrets --env "$TARGET_ENV" --output json 2>/dev/null || echo "[]")
 
-D1_DB_ID="${CLOUDFLARE_D1_DATABASE_ID:-}"
+# For dev environment, use a placeholder UUID since wrangler creates local DB
+if [ "$TARGET_ENV" = "dev" ]; then
+    D1_DB_ID="00000000-0000-0000-0000-000000000000"
+else
+    D1_DB_ID="${CLOUDFLARE_D1_DATABASE_ID:-}"
 
-if [ -z "$D1_DB_ID" ]; then
-  D1_DB_ID=$(echo "$SECRETS_JSON" | python3 -c "import json, sys; data=json.load(sys.stdin); print(next((item['secretValue'] for item in data if item.get('secretKey')=='CLOUDFLARE_D1_DATABASE_ID'), ''))" 2>/dev/null || true)
-fi
+    if [ -z "$D1_DB_ID" ]; then
+        D1_DB_ID=$(echo "$SECRETS_JSON" | python3 -c "import json, sys; data=json.load(sys.stdin); print(next((item['secretValue'] for item in data if item.get('secretKey')=='CLOUDFLARE_D1_DATABASE_ID'), ''))" 2>/dev/null || true)
+    fi
 
-if [ -z "$D1_DB_ID" ]; then
-  echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID from Infisical for '$TARGET_ENV' (wrangler env: '$WRANGLER_ENV')"
-  exit 1
+    if [ -z "$D1_DB_ID" ]; then
+        echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID from Infisical for '$TARGET_ENV' (wrangler env: '$WRANGLER_ENV')"
+        exit 1
+    fi
 fi
 
 cp "$CONFIG_FILE" "$BACKUP_FILE"
@@ -111,9 +116,9 @@ def replace_placeholder(match):
 
 content = placeholder_pattern.sub(replace_placeholder, content)
 
-db_pattern = re.compile(rf'(\[\[env\.{re.escape(target_env)}\.d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
+db_pattern = re.compile(rf'(\[\[d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
 if not db_pattern.search(content):
-    raise SystemExit(f"Could not locate env.{target_env} D1 configuration in {config_path}")
+    raise SystemExit(f"Could not locate D1 configuration in {config_path}")
 
 content = db_pattern.sub(lambda m: f"{m.group(1)}{db_id}{m.group(3)}", content)
 
@@ -142,24 +147,25 @@ if vars_match:
     content = content[:vars_match.start(1)] + block + content[vars_match.end(1):]
 
 # Add top-level D1 binding for Cloudflare Vite plugin (it only reads top-level config)
-# Find the position after compatibility_flags and before [observability]
-top_level_d1 = f'''
+# Skip for dev since we use local_path in the template
+if target_env != "dev":
+    top_level_d1 = f'''
 [[d1_databases]]
 binding = "DB"
 database_name = "workout-{target_env}-db"
 database_id = "{db_id}"
 '''
 
-# Check if top-level d1_databases already exists
-if not re.search(r'^\[\[d1_databases\]\]', content, re.MULTILINE):
-    # Insert before [observability]
-    obs_match = re.search(r'\n\[observability\]', content)
-    if obs_match:
-        content = content[:obs_match.start()] + top_level_d1 + content[obs_match.start():]
-else:
-    # Update existing top-level D1 config
-    top_level_db_pattern = re.compile(r'(\[\[d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
-    content = top_level_db_pattern.sub(lambda m: f"{m.group(1)}{db_id}{m.group(3)}", content)
+    # Check if top-level d1_databases already exists
+    if not re.search(r'^\[\[d1_databases\]\]', content, re.MULTILINE):
+        # Insert before [observability]
+        obs_match = re.search(r'\n\[observability\]', content)
+        if obs_match:
+            content = content[:obs_match.start()] + top_level_d1 + content[obs_match.start():]
+    else:
+        # Update existing top-level D1 config
+        top_level_db_pattern = re.compile(r'(\[\[d1_databases\]\][^\[]*?database_id\s*=\s*")([^"]*)(")', re.DOTALL)
+        content = top_level_db_pattern.sub(lambda m: f"{m.group(1)}{db_id}{m.group(3)}", content)
 
 with open(config_path, "w", encoding="utf-8") as f:
     f.write(content)

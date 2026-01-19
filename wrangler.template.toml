@@ -3,6 +3,12 @@ main = "@tanstack/react-start/server-entry"
 compatibility_date = "2025-09-02"
 compatibility_flags = ["nodejs_compat"]
 
+[[d1_databases]]
+binding = "DB"
+database_name = "workout-dev-db"
+database_id = "{{ D1_DB_ID }}"
+remote = false
+
 [observability]
 enabled = true
 
@@ -13,12 +19,6 @@ name = "workout-dev"
   ENVIRONMENT = "dev"
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
-
-    [[env.dev.d1_databases]]
-    binding = "DB"
-    database_name = "workout-dev-db"
-    database_id = "{{ D1_DB_ID }}"
-    remote = true
 
 [env.staging]
 name = "workout-staging"

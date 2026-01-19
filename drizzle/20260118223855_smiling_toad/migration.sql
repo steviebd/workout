@@ -15,9 +15,6 @@ CREATE TABLE `template_exercises` (
 	`template_id` text NOT NULL,
 	`exercise_id` text NOT NULL,
 	`order_index` integer NOT NULL,
-	`target_sets` integer,
-	`target_reps` integer,
-	`notes` text,
 	CONSTRAINT `fk_template_exercises_template_id_templates_id_fk` FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_template_exercises_exercise_id_exercises_id_fk` FOREIGN KEY (`exercise_id`) REFERENCES `exercises`(`id`) ON DELETE CASCADE
 );
@@ -27,6 +24,8 @@ CREATE TABLE `templates` (
 	`user_id` text NOT NULL,
 	`name` text NOT NULL,
 	`description` text,
+	`notes` text,
+	`is_deleted` integer DEFAULT false,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `fk_templates_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE

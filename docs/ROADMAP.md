@@ -134,16 +134,70 @@
 
 **Deliverable:** ✓ Users can create, view, edit, and soft-delete exercises with search/filter capabilities
 
-### 2.2 Template System
-- [ ] Create Template model
-- [ ] Create TemplateExercise linking model
-- [ ] Build `/templates` list view
-- [ ] Build `/templates/new` create form
-- [ ] Add exercise selector component
-- [ ] Write unit tests
-- [ ] Add E2E tests
+### 2.2 Template System ✓ COMPLETE
 
-**Deliverable:** Users can create workout templates
+**Schema Updates:**
+- [x] Add `isDeleted` (soft-delete boolean, default false) to templates table
+- [x] Add `notes` (optional text field) to templates table
+- [x] Remove `targetSets`, `targetReps`, `notes` from template_exercises (save for workout-level)
+
+**Routes & Views:**
+
+| Route | Purpose | Features |
+|-------|---------|----------|
+| `/templates` | List view | [x] Search by name, [x] sort by name/date, [x] pagination |
+| `/templates/new` | Create form | [x] Template name, [x] description, [x] notes, [x] exercise selector with search/filter, [x] reorderable exercises |
+| `/templates/$id` | Detail view | [x] Read-only display, [x] exercise list in order, [x] copy button |
+| `/templates/$id/edit` | Edit form | [x] Same as create, [x] add/remove/reorder exercises |
+
+**Features:**
+- [x] Soft delete (preserves workout references)
+- [x] Search by template name
+- [x] Sort by name, created date
+- [x] Exercise selector with search/filter (reuse `/exercises` patterns)
+- [x] Drag-to-reorder exercises
+- [x] Copy template (creates new with exercises)
+- [x] Full CRUD operations
+
+**Database Operations (src/lib/db/template.ts):**
+- [x] createTemplate
+- [x] getTemplateById (with ownership check)
+- [x] getTemplatesByUserId (search, sort, pagination)
+- [x] updateTemplate
+- [x] softDeleteTemplate
+- [x] copyTemplate
+- [x] addExerciseToTemplate
+- [x] removeExerciseFromTemplate
+- [x] reorderTemplateExercises
+
+**API Routes:**
+- [x] GET /api/templates - List templates
+- [x] POST /api/templates - Create template
+- [x] GET /api/templates/$id - Get single template
+- [x] PUT /api/templates/$id - Update template
+- [x] DELETE /api/templates/$id - Soft delete template
+- [x] POST /api/templates/$id/copy - Copy template
+- [x] POST /api/templates/$id/exercises - Add exercise
+- [x] DELETE /api/templates/$id/exercises/$exerciseId - Remove exercise
+- [x] PUT /api/templates/$id/exercises/reorder - Reorder exercises
+
+**Tests:**
+- [x] Unit tests - tests/unit/template.spec.ts
+- [x] E2E tests - tests/e2e/templates.spec.ts
+
+**Files Created:**
+- src/lib/db/template.ts - CRUD operations
+- src/routes/templates._index.tsx - List view
+- src/routes/templates.new.tsx - Create form
+- src/routes/templates.$id.tsx - Detail view
+- src/routes/templates.$id.edit.tsx - Edit form
+- src/routes/api/templates.ts - List + Create API
+- src/routes/api/templates.$id.ts - Get + Update + Delete API
+- src/routes/api/templates.$id.copy.ts - Copy API
+- src/routes/api/templates.$id.exercises.ts - Exercise management API
+- src/routes/api/templates.$id.exercises.reorder.ts - Reorder API
+
+**Deliverable:** ✓ Users can create, view, edit, copy, and soft-delete workout templates with reorderable exercises
 
 ### 2.3 Workout Logging
 - [ ] Create Workout model
@@ -299,8 +353,8 @@
 - [x] Database schema finalized
 
 ### Sprint 2 End
-- [ ] Exercises CRUD complete
-- [ ] Templates CRUD complete
+- [x] Exercises CRUD complete
+- [x] Templates CRUD complete
 - [ ] Workout logging complete
 
 ### Sprint 3 End

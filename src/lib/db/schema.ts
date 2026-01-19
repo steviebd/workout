@@ -29,6 +29,8 @@ export const templates = sqliteTable('templates', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
+  notes: text('notes'),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -38,9 +40,6 @@ export const templateExercises = sqliteTable('template_exercises', {
   templateId: text('template_id').notNull().references(() => templates.id, { onDelete: 'cascade' }),
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
-  targetSets: integer('target_sets'),
-  targetReps: integer('target_reps'),
-  notes: text('notes'),
 });
 
 export const workouts = sqliteTable('workouts', {
