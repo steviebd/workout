@@ -86,7 +86,7 @@ jobs:
           method: "universal"
           client-id: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
           client-secret: ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
-          project-slug: "workout"
+          project-slug: "workout-wm-0-u"
           env-slug: "staging"
           export-type: "file"
           file-output-path: ".env.staging"
@@ -132,7 +132,7 @@ jobs:
           method: "universal"
           client-id: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
           client-secret: ${{ secrets.INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET }}
-          project-slug: "workout"
+          project-slug: "workout-wm-0-u"
           env-slug: "prod"
           export-type: "file"
           file-output-path: ".env.production"
