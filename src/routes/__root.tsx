@@ -75,75 +75,75 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, setUser, signOut }}>
-      <html lang="en">
-        <head>
-          <HeadContent />
-        </head>
-        <body className="min-h-screen bg-gray-50">
-          <div className="min-h-screen flex flex-col">
-            <header className="bg-white shadow">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                  <div className="flex">
-                    <Link to="/" className="flex-shrink-0 flex items-center">
-                      <span className="text-xl font-bold text-gray-900">Fit Workout</span>
-                    </Link>
-                    <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                      <Link to="/exercises" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Exercises
+      <AuthContext.Provider value={{ user, loading, setUser, signOut }}>
+        <html lang="en">
+          <head>
+            <HeadContent />
+          </head>
+          <body className="min-h-screen bg-gray-50">
+            <div className="min-h-screen flex flex-col">
+              <header className="bg-white shadow">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-between h-16">
+                    <div className="flex">
+                      <Link to="/" className="flex-shrink-0 flex items-center">
+                        <span className="text-xl font-bold text-gray-900">Fit Workout</span>
                       </Link>
-                      <Link to="/templates" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Templates
-                      </Link>
-                      <Link to="/workouts/new" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Start Workout
-                      </Link>
-                      <Link to="/history" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        History
-                      </Link>
+                      <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <Link to="/exercises" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                          Exercises
+                        </Link>
+                        <Link to="/templates" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                          Templates
+                        </Link>
+                        <Link to="/workouts/new" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                          Start Workout
+                        </Link>
+                        <Link to="/history" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                          History
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      {loading ? (
+                        <span className="text-sm text-gray-500">Loading...</span>
+                      ) : user ? (
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm text-gray-700">{user.name}</span>
+                          <button
+                            onClick={signOut}
+                            className="text-sm text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer p-0"
+                          >
+                            Sign Out
+                          </button>
+                        </div>
+                      ) : (
+                        <a href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-500">
+                          Sign In
+                        </a>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    {loading ? (
-                      <span className="text-sm text-gray-500">Loading...</span>
-                    ) : user ? (
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-700">{user.name}</span>
-                        <button
-                          onClick={signOut}
-                          className="text-sm text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer p-0"
-                        >
-                          Sign Out
-                        </button>
-                      </div>
-                    ) : (
-                      <a href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-500">
-                        Sign In
-                      </a>
-                    )}
-                  </div>
                 </div>
-              </div>
-            </header>
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-            ]}
-          />
-          <Scripts />
-        </body>
-      </html>
-    </AuthContext.Provider>
+              </header>
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+              ]}
+            />
+            <Scripts />
+          </body>
+        </html>
+      </AuthContext.Provider>
   )
 }

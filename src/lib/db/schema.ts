@@ -13,6 +13,15 @@ export const users = sqliteTable('users', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const userPreferences = sqliteTable('user_preferences', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  weightUnit: text('weight_unit').default('kg'),
+  theme: text('theme').default('light'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const exercises = sqliteTable('exercises', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -80,6 +89,7 @@ export type TemplateExercise = typeof templateExercises.$inferSelect;
 export type Workout = typeof workouts.$inferSelect;
 export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type WorkoutSet = typeof workoutSets.$inferSelect;
+export type UserPreference = typeof userPreferences.$inferSelect;
 
 export type NewUser = typeof users.$inferInsert;
 export type NewExercise = typeof exercises.$inferInsert;
@@ -88,3 +98,4 @@ export type NewTemplateExercise = typeof templateExercises.$inferInsert;
 export type NewWorkout = typeof workouts.$inferInsert;
 export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
 export type NewWorkoutSet = typeof workoutSets.$inferInsert;
+export type NewUserPreference = typeof userPreferences.$inferInsert;

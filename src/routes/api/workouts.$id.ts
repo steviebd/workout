@@ -1,0 +1,134 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { env } from 'cloudflare:workers';
+import { getSession } from '../../lib/session';
+import {
+  getWorkoutWithExercises,
+  updateWorkout,
+  deleteWorkout,
+  type UpdateWorkoutData
+} from '../../lib/db/workout';
+
+export const Route = createFileRoute('/api/workouts/$id')({
+  server: {
+    handlers: {
+      GET: async ({ request, params }) => {
+        try {
+          const session = await getSession(request);
+          if (!session) {
+            return Response.json({ error: 'Not authenticated' }, { status: 401 });
+          }
+
+          const db = (env as { DB?: D1Database }).DB;
+          if (!db) {
+            return Response.json({ error: 'Database not available' }, { status: 500 });
+          }
+
+          const workout = await getWorkoutWithExercises(db, params.id, session.userId);
+
+          if (!workout) {
+            return Response.json({ error: 'Workout not found' }, { status: 404 });
+          }
+
+          const response = {
+            ...workout,
+            exercises: workout.exercises.map(ex => ({
+              id: ex.id,
+              exerciseId: ex.exerciseId,
+              name: ex.exercise?.name || 'Unknown Exercise',
+              muscleGroup: ex.exercise?.muscleGroup || null,
+              orderIndex: ex.orderIndex,
+              notes: ex.notes,
+              sets: ex.sets,
+            })),
+          };
+
+          console.log('GET /api/workouts/:id returning:', {
+            id: response.id,
+            name: response.name,
+            completedAt: response.completedAt,
+            startedAt: response.startedAt,
+            exercisesCount: response.exercises.length,
+            exercises: response.exercises.map((e: any) => ({
+              id: e.id,
+              name: e.name,
+              muscleGroup: e.muscleGroup,
+              setsCount: e.sets?.length || 0,
+              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length || 0
+            }))
+          });
+
+          return Response.json(response, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          });
+        } catch (err) {
+          console.error('Get workout error:', err);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+        }
+      },
+      PUT: async ({ request, params }) => {
+        try {
+          const session = await getSession(request);
+          if (!session) {
+            return Response.json({ error: 'Not authenticated' }, { status: 401 });
+          }
+
+          const body = await request.json();
+          const { name, notes, completedAt } = body as UpdateWorkoutData;
+
+          const db = (env as { DB?: D1Database }).DB;
+          if (!db) {
+            return Response.json({ error: 'Database not available' }, { status: 500 });
+          }
+
+          const workout = await updateWorkout(db, params.id, session.userId, {
+            name,
+            notes,
+            completedAt,
+          });
+
+          if (!workout) {
+            return Response.json({ error: 'Workout not found' }, { status: 404 });
+          }
+
+          return Response.json(workout);
+        } catch (err) {
+          console.error('Update workout error:', err);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+        }
+      },
+      DELETE: async ({ request, params }) => {
+        try {
+          const session = await getSession(request);
+          if (!session) {
+            return Response.json({ error: 'Not authenticated' }, { status: 401 });
+          }
+
+          const db = (env as { DB?: D1Database }).DB;
+          if (!db) {
+            return Response.json({ error: 'Database not available' }, { status: 500 });
+          }
+
+          const deleted = await deleteWorkout(db, params.id, session.userId);
+
+          if (!deleted) {
+            return Response.json({ error: 'Workout not found' }, { status: 404 });
+          }
+
+          return new Response(null, { status: 204 });
+        } catch (err) {
+          console.error('Delete workout error:', err);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+        }
+      },
+    },
+  },
+});
+
+export default function ApiWorkoutId() {
+  return null;
+}

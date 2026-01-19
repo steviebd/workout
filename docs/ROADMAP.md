@@ -200,16 +200,134 @@
 **Deliverable:** ✓ Users can create, view, edit, copy, and soft-delete workout templates with reorderable exercises
 
 ### 2.3 Workout Logging
-- [ ] Create Workout model
-- [ ] Create WorkoutExercise and WorkoutSet models
-- [ ] Build `/workouts/new` start form
-- [ ] Build workout session interface
-- [ ] Implement set logging with weight/reps/RPE
-- [ ] Support multiple attempts per set
-- [ ] Write unit tests
-- [ ] Add E2E tests
 
-**Deliverable:** Users can start and complete workouts
+**Schema Updates:**
+- [x] Add `user_preferences` table (weightUnit: 'kg' | 'lbs', theme)
+- [x] Add `notes` (optional text) to workouts table
+
+**Database Operations:**
+- [x] Create `src/lib/db/workout.ts`:
+  - [x] createWorkout
+  - [x] getWorkoutById (with ownership check)
+  - [x] getWorkoutsByUserId (for history)
+  - [x] updateWorkout (for completing/saving)
+  - [x] deleteWorkout (for discarding drafts)
+  - [x] createWorkoutExercise
+  - [x] getWorkoutExercises (with exercise details)
+  - [x] createWorkoutSet
+  - [x] updateWorkoutSet
+  - [x] deleteWorkoutSet
+  - [x] getLastWorkoutForExercise (for populating defaults)
+- [x] Create `src/lib/db/preferences.ts`:
+  - [x] getUserPreferences
+  - [x] upsertUserPreferences
+
+**API Routes:**
+- [x] GET /api/preferences - Get user preferences
+- [x] PUT /api/preferences - Update preferences
+- [x] POST /api/workouts - Create draft workout
+- [x] GET /api/workouts - List user workouts (for history)
+- [x] GET /api/workouts/$id - Get single workout
+- [x] PUT /api/workouts/$id/complete - Complete workout
+- [x] DELETE /api/workouts/$id - Delete workout (discard draft)
+- [x] POST /api/workouts/$id/exercises - Add exercise to workout
+- [x] DELETE /api/workouts/$id/exercises/$exerciseId - Remove exercise
+- [x] PUT /api/workouts/$id/exercises/reorder - Reorder exercises
+- [x] POST /api/workouts/$id/exercises/$exerciseId/sets - Add set
+- [x] PUT /api/workouts/sets/$setId - Update set
+- [x] DELETE /api/workouts/sets/$setId - Delete set
+
+**localStorage Sync:**
+- [x] Create `src/hooks/useActiveWorkout.ts`:
+  - [x] Continuous sync to localStorage (key: `activeWorkout`)
+  - [x] Check for existing active workout on mount
+  - [x] Resume workout from localStorage on return
+  - [x] Only one active workout at a time
+
+**Routes & Views:**
+
+| Route | Purpose | Features |
+|-------|---------|----------|
+| `/workouts/new` | Start workout form | [x] Start from template, [x] Copy from recent, [x] Blank workout |
+| `/workouts/$id` | Workout session | [x] Active workout interface, [x] Set logging, [x] Add/delete sets, [x] Add exercises, [x] Reorder exercises, [x] Complete workout |
+| `/workouts/$id/summary` | Completion summary | [x] Duration, [x] Total volume, [x] Exercises completed, [x] Personal records |
+
+**Start Workout Flow:**
+1. **Start from Template** - User selects template, can add extra exercises before starting
+2. **Copy from Recent** - Copy last workout's exercise + set data
+3. **Blank Workout** - User selects exercises to include
+
+**Workout Session Interface:**
+- [x] Exercise list with collapsible sections
+- [x] Each exercise shows:
+  - [x] Exercise name
+  - [x] Set list (editable weight/reps/RPE)
+  - [x] Add set button
+  - [x] Delete set button
+  - [x] Delete exercise button
+- [x] Add exercises button (search/filter from exercise library)
+- [x] Reorder exercises (drag or up/down arrows)
+- [x] Workout notes field
+- [x] Real-time localStorage sync
+- [x] Complete workout button
+- [x] Discard workout button
+
+**Set Logging:**
+- [x] Weight input (stored as-is, displayed with unit conversion)
+- [x] Reps input
+- [x] RPE input (1-10, optional, allows decimals)
+- [x] Set number (auto-incremented)
+- [x] "Complete" toggle for each set
+- [x] Auto-populate with last workout's data when adding exercise
+
+**Workout Completion:**
+- [x] Calculate total duration (startedAt to completedAt)
+- [x] Calculate total volume (sum of weight × reps)
+- [x] Count completed exercises and sets
+- [x] Identify personal records (new max weight for exercise)
+- [x] Save workout to database (sets completedAt timestamps)
+- [x] Clear localStorage active workout
+- [x] Show summary screen
+- [x] Redirect to history or dashboard
+
+**Summary Page Data Fetching:**
+- [x] Implemented TanStack Query polling to handle race condition between workout completion and summary page load
+- [x] Polls workout data every 500ms until `completedAt` timestamp is available
+- [x] Automatically stops polling once workout data is confirmed complete
+- [x] Eliminates "Workout not yet completed" error that occurred during race condition
+- [x] Provides seamless user experience without artificial delays
+
+**Features:**
+- [x] Real-time auto-save to localStorage (continuous sync)
+- [x] Resume in-progress workout on return
+- [x] Weight unit preference (kg/lbs, kg default)
+- [x] Soft delete preserved in schema
+- [x] Draft workouts (started but not completed)
+- [x] History populates defaults for exercises
+
+**Files Created:**
+- `src/lib/db/workout.ts` - Workout CRUD operations
+- `src/lib/db/preferences.ts` - User preferences operations
+- `src/hooks/useActiveWorkout.ts` - localStorage sync hook
+- `src/routes/workouts.new.tsx` - Start workout form
+- `src/routes/workouts.$id.tsx` - Workout session interface
+- `src/routes/workouts.$id.summary.tsx` - Completion summary
+- `src/routes/api/preferences.ts` - Preferences API
+- `src/routes/api/workouts.ts` - Workout CRUD API
+- `src/routes/api/workouts.$id.ts` - Single workout API
+- `src/routes/api/workouts.$id.complete.ts` - Complete workout API
+- `src/routes/api/workouts.$id.exercises.ts` - Exercise management
+- `src/routes/api/workouts.$id.exercises.reorder.ts` - Reorder API
+- `src/routes/api/workouts.sets.ts` - Create set API
+- `src/routes/api/workouts.sets.$setId.ts` - Set operations API
+- `tests/unit/workout.spec.ts` - Unit tests
+- `tests/e2e/workouts.spec.ts` - E2E tests
+
+**Tests:**
+- [x] Unit tests (workout CRUD, preferences, set operations)
+- [x] E2E tests (start workout, complete workout, discard workout, resume workout)
+
+**Deliverable:** ✓ Users can start workouts from templates/recent/blank, log sets with weight/reps/RPE, add/remove/reorder exercises, have workout auto-save to localStorage, and complete workouts with summary
 
 ---
 
@@ -355,7 +473,7 @@
 ### Sprint 2 End
 - [x] Exercises CRUD complete
 - [x] Templates CRUD complete
-- [ ] Workout logging complete
+- [x] Workout logging complete
 
 ### Sprint 3 End
 - [ ] History views complete

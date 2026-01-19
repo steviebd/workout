@@ -31,7 +31,16 @@ async function globalSetup() {
 	await page.locator(AUTH_EMAIL_SELECTOR).fill(TEST_USERNAME);
 	await page.locator(AUTH_CONTINUE_SELECTOR).click();
 
-	await page.locator(AUTH_PASSWORD_SELECTOR).waitFor({ state: 'visible', timeout: 10000 });
+	await page.waitForLoadState('networkidle');
+	
+	try {
+		await page.locator(AUTH_PASSWORD_SELECTOR).waitFor({ state: 'visible', timeout: 10000 });
+	} catch {
+		console.log('Password field not visible, taking screenshot...');
+		await page.screenshot({ path: '/tmp/auth-error.png' });
+		throw new Error('Password field not visible after email submission');
+	}
+	
 	await page.locator(AUTH_PASSWORD_SELECTOR).fill(TEST_PASSWORD);
 	await page.locator(AUTH_SUBMIT_SELECTOR).click();
 
