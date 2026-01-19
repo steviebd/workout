@@ -54,6 +54,68 @@ bun run build
 
 ### Deployment
 
+### Environments
+
+| Environment | URL | Worker | D1 Database |
+|-------------|-----|--------|-------------|
+| Local Dev | http://localhost:8787 | workout-dev | workout-dev-db |
+| Staging | https://staging.fit.stevenduong.com | workout-staging | workout-staging-db |
+| Production | https://fit.stevenduong.com | workout-prod | workout-prod-db |
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for automated deployments:
+
+- **Push to `develop`** → Deploys to staging
+- **Push to `main`** → Deploys to production
+- **Pull requests** → Runs lint, typecheck, and tests (does not deploy)
+- **Lint/Typecheck/Tests** run in parallel with deployments
+
+All jobs run in parallel - deployments are not blocked by test failures.
+
+### Required Setup
+
+#### 1. GitHub Actions Secrets
+
+Add these to **Repository → Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `INFISICAL_MACHINE_IDENTITY_ID` | Infisical machine identity client ID |
+| `INFISICAL_MACHINE_IDENTITY_CLIENT_SECRET` | Infisical machine identity client secret |
+
+#### 2. Infisical Secrets
+
+Add these secrets to Infisical in both `staging` and `prod` environments:
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers and D1 permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+| `CLOUDFLARE_D1_DATABASE_ID` | D1 database ID for the environment |
+| `WORKOS_API_KEY` | WorkOS API key |
+| `WORKOS_CLIENT_ID` | WorkOS client ID |
+
+#### 3. Cloudflare Setup
+
+1. **Create API Token**: Cloudflare → My Profile → API Tokens
+   - Permissions: `Workers & R2` (read/write), `D1` (read/write)
+   - Token ID → `CLOUDFLARE_API_TOKEN`
+
+2. **Get Account ID**: Cloudflare dashboard → Workers & Pages → (right side)
+
+3. **Create D1 Databases**:
+   - `workout-staging-db` → ID → Infisical `staging.CLOUDFLARE_D1_DATABASE_ID`
+   - `workout-prod-db` → ID → Infisical `prod.CLOUDFLARE_D1_DATABASE_ID`
+
+#### 4. WorkOS Setup
+
+Add redirect URLs to your WorkOS OAuth application:
+- Staging: `https://staging.fit.stevenduong.com/auth/callback`
+- Production: `https://fit.stevenduong.com/auth/callback`
+
+### Manual Deployment
+
 ```bash
 # Deploy to staging
 bun run deploy:staging
