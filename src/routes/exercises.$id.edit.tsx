@@ -3,6 +3,7 @@ import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-r
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import { useToast } from '@/components/ToastProvider';
 
 const MUSCLE_GROUPS = [
   'Chest',
@@ -54,6 +55,7 @@ function EditExercise() {
   const { id } = useParams({ from: '/exercises/$id/edit' });
   const navigate = useNavigate();
   const auth = useAuth();
+  const toast = useToast();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
@@ -177,11 +179,18 @@ function EditExercise() {
       });
 
       if (response.ok) {
-        navigate({ to: '/exercises/$id', params: { id } });
+        toast.success('Exercise updated successfully!');
+        setTimeout(() => {
+          navigate({ to: '/exercises/$id', params: { id } });
+        }, 1000);
       } else if (response.status === 403) {
-        setErrors({ submit: 'You do not have permission to edit this exercise' });
+        const errorMsg = 'You do not have permission to edit this exercise';
+        setErrors({ submit: errorMsg });
+        toast.error(errorMsg);
       } else if (response.status === 404) {
-        setErrors({ submit: 'Exercise not found' });
+        const errorMsg = 'Exercise not found';
+        setErrors({ submit: errorMsg });
+        toast.error(errorMsg);
       } else {
         let errorData: { message?: string } = {};
         try {
@@ -189,10 +198,14 @@ function EditExercise() {
         } catch {
           // use default
         }
-        setErrors({ submit: errorData.message ?? 'Failed to update exercise' });
+        const errorMsg = errorData.message ?? 'Failed to update exercise';
+        setErrors({ submit: errorMsg });
+        toast.error(errorMsg);
       }
     } catch {
-      setErrors({ submit: 'An error occurred. Please try again.' });
+      const errorMsg = 'An error occurred. Please try again.';
+      setErrors({ submit: errorMsg });
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }

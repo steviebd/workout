@@ -268,31 +268,6 @@ For schema updates/changes, push migrations:
 bun run db:push:dev
 ```
 
-## Lint Errors Todo
-
-- [x] Fix unsafe assignments in exercises.$id.edit.tsx
-- [x] Fix 'TemplateDetail' used before defined in templates.$id.tsx
-- [x] Fix 'fetchTemplates' used before defined and missing dependency in templates._index.tsx
-- [x] Fix 'NewTemplate' used before defined in templates.new.tsx
-- [x] Fix 'fetchExercises' used before defined in templates.new.tsx
-- [x] Fix 'WorkoutSession' used before defined in workouts.$id.tsx
-- [x] Fix 'loadWorkout' used before defined in workouts.$id.tsx
-- [x] Fix 'fetchExercises' used before defined in workouts.$id.tsx
-- [x] Fix 'addSetToBackend' used before defined in workouts.$id.tsx
-- [x] Fix 'completeWorkout' used before defined in workouts.$id.tsx
-- [x] Fix 'WorkoutSummary' used before defined in workouts.$id_.summary.tsx
-- [x] Fix 'NewWorkout' used before defined in workouts.new.tsx
-- [x] Fix 'fetchData' used before defined in workouts.new.tsx
-- [ ] Remove duplicate import in tests/e2e/exercises.spec.ts
-- [ ] Fix floating promises
-- [ ] Fix unnecessary type assertions
-- [ ] Fix unsafe assignments
-- [ ] Add missing hook dependencies
-- [ ] Replace deprecated methods (substr)
-- [ ] Remove unnecessary conditionals
-- [ ] Fix test types
-- [ ] Remove unused vars
-- [ ] Fix duplicate imports
 
 ## Resources
 

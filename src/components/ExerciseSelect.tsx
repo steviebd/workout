@@ -1,5 +1,3 @@
-/* eslint-disable react/require-default-props */
-
 import { ChevronDown, Search } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type Exercise } from '@/lib/db/schema';

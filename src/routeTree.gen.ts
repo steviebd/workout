@@ -39,6 +39,7 @@ import { Route as ApiExercisesCopyFromLibraryRouteImport } from './routes/api/ex
 import { Route as ApiExercisesIdRouteImport } from './routes/api/exercises.$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAnalyticsTrackRouteImport } from './routes/api/analytics/track'
 import { Route as ApiWorkoutsSetsSetIdRouteImport } from './routes/api/workouts.sets.$setId'
 import { Route as ApiWorkoutsIdExercisesRouteImport } from './routes/api/workouts.$id.exercises'
 import { Route as ApiWorkoutsIdCompleteRouteImport } from './routes/api/workouts.$id.complete'
@@ -202,6 +203,11 @@ const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   path: '/api/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnalyticsTrackRoute = ApiAnalyticsTrackRouteImport.update({
+  id: '/api/analytics/track',
+  path: '/api/analytics/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWorkoutsSetsSetIdRoute = ApiWorkoutsSetsSetIdRouteImport.update({
   id: '/$setId',
   path: '/$setId',
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts/new'
+    | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
     | '/api/exercises/$id'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts/new'
+    | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
     | '/api/exercises/$id'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts/new'
+    | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
     | '/api/exercises/$id'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   TemplatesNewRoute: typeof TemplatesNewRoute
   WorkoutsIdRoute: typeof WorkoutsIdRoute
   WorkoutsNewRoute: typeof WorkoutsNewRoute
+  ApiAnalyticsTrackRoute: typeof ApiAnalyticsTrackRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
@@ -760,6 +773,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/callback'
       fullPath: '/api/auth/callback'
       preLoaderRoute: typeof ApiAuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/analytics/track': {
+      id: '/api/analytics/track'
+      path: '/api/analytics/track'
+      fullPath: '/api/analytics/track'
+      preLoaderRoute: typeof ApiAnalyticsTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/workouts/sets/$setId': {
@@ -1016,6 +1036,7 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesNewRoute: TemplatesNewRoute,
   WorkoutsIdRoute: WorkoutsIdRoute,
   WorkoutsNewRoute: WorkoutsNewRoute,
+  ApiAnalyticsTrackRoute: ApiAnalyticsTrackRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,

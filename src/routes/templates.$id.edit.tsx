@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
+import { useToast } from '@/components/ToastProvider';
 
 interface SelectedExercise {
   id: string;
@@ -27,6 +28,7 @@ function EditTemplate() {
   const { id } = useParams({ from: '/templates/$id/edit' });
   const navigate = useNavigate();
   const auth = useAuth();
+  const toast = useToast();
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [templateExercises, setTemplateExercises] = useState<TemplateExerciseWithDetails[]>([]);
@@ -237,18 +239,24 @@ function EditTemplate() {
         });
 
         if (templateRes.status === 404) {
-          setErrors({ submit: 'Template not found' });
+          const errorMsg = 'Template not found';
+          setErrors({ submit: errorMsg });
+          toast.error(errorMsg);
           return;
         }
 
         if (templateRes.status === 403) {
-          setErrors({ submit: 'You do not have permission to edit this template' });
+          const errorMsg = 'You do not have permission to edit this template';
+          setErrors({ submit: errorMsg });
+          toast.error(errorMsg);
           return;
         }
 
         if (!templateRes.ok) {
           const errorData = await templateRes.json().catch((): ApiError => ({})) as ApiError;
-          setErrors({ submit: errorData.message ?? 'Failed to update template' });
+          const errorMsg = errorData.message ?? 'Failed to update template';
+          setErrors({ submit: errorMsg });
+          toast.error(errorMsg);
           return;
         }
 
@@ -298,11 +306,13 @@ function EditTemplate() {
 
         void navigate({ to: '/templates/$id', params: { id } });
       } catch {
-        setErrors({ submit: 'An error occurred. Please try again.' });
+        const errorMsg = 'An error occurred. Please try again.';
+        setErrors({ submit: errorMsg });
+        toast.error(errorMsg);
       } finally {
         setSubmitting(false);
       }
-    }, [formData, id, navigate, selectedExercises, setErrors, setSubmitting, templateExercises, validateForm]);
+    }, [formData, id, navigate, selectedExercises, setErrors, setSubmitting, templateExercises, validateForm, toast]);
 
      const handleFormSubmit = useCallback((e: React.FormEvent) => {
        e.preventDefault();

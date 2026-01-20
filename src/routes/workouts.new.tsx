@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { ArrowLeft, ChevronRight, Dumbbell, FilePlus, History, Loader2, Plus, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import { trackEvent } from '@/lib/posthog';
 
 interface Exercise {
   id: string;
@@ -94,6 +95,13 @@ function NewWorkout() {
 
         if (res.ok) {
           const workout: Workout = await res.json();
+          void trackEvent('workout_started', {
+            workout_id: workout.id,
+            workout_name: workout.name,
+            exercise_count: selectedExercises.length,
+            from_template: !!selectedTemplate,
+            template_id: selectedTemplate?.id,
+          });
           window.location.href = `/workouts/${workout.id}`;
         }
      } catch (err) {

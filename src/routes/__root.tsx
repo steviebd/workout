@@ -5,6 +5,8 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 import '../styles.css'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ToastProvider } from '@/components/ToastProvider'
 
 type User = { id: string; email: string; name: string } | null;
 
@@ -109,7 +111,11 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
 						</div>
 					</header>
 					<main className={'flex-1'}>
-						{children}
+						<ErrorBoundary>
+							<ToastProvider>
+								{children}
+							</ToastProvider>
+						</ErrorBoundary>
 					</main>
 				</div>
 				<TanStackDevtools

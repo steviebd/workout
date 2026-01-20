@@ -1,6 +1,7 @@
  
 import { createFileRoute , useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { trackEvent } from '@/lib/posthog';
 
 function Callback() {
   const search = useSearch({ from: '/auth/callback' });
@@ -13,6 +14,7 @@ function Callback() {
     }
 
     if (code) {
+      void trackEvent('user_signed_in');
       window.location.href = `/api/auth/callback?code=${encodeURIComponent(code)}`;
     } else {
       window.location.href = '/auth/signin';

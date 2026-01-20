@@ -4,6 +4,8 @@ import { ArrowLeft, Loader2, Plus, Save, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { type Template } from '@/lib/db/schema';
+import { trackEvent } from '@/lib/posthog';
+import { useToast } from '@/components/ToastProvider';
 
 type Exercise = {
   id: string;
@@ -19,6 +21,7 @@ type SelectedExercise = {
 
 function NewTemplate() {
   const auth = useAuth();
+  const toast = useToast();
   const [redirecting, setRedirecting] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
@@ -203,6 +206,12 @@ function NewTemplate() {
 
       const template: Template = await response.json();
 
+      void trackEvent('template_created', {
+        template_id: template.id,
+        template_name: template.name,
+        exercise_count: selectedExercises.length,
+      });
+
       for (let i = 0; i < selectedExercises.length; i++) {
         await fetch(`/api/templates/${template.id}/exercises`, {
           method: 'POST',
@@ -217,11 +226,13 @@ function NewTemplate() {
 
       window.location.href = `/templates/${template.id}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
-  }, [formData.name, formData.description, formData.notes, selectedExercises, validateForm]);
+  }, [formData.name, formData.description, formData.notes, selectedExercises, validateForm, toast]);
 
   const onFormSubmit = useCallback((e: React.FormEvent) => {
     void handleSubmit(e);

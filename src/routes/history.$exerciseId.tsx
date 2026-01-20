@@ -3,6 +3,7 @@ import { AlertCircle, Calendar, Loader2, Trophy, TrendingUp } from 'lucide-react
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { ExerciseHistoryChart } from '@/components/ExerciseHistoryChart';
+import { EmptyExerciseHistory } from '@/components/EmptyState';
 
 interface ExerciseHistoryItem {
   workoutId: string;
@@ -390,9 +391,7 @@ function ExerciseHistory() {
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           {history.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No workouts found for this exercise</p>
-            </div>
+            <EmptyExerciseHistory />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">

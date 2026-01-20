@@ -1,8 +1,10 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions, react/jsx-closing-tag-location */
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { createFileRoute } from '@tanstack/react-router';
-import { Calendar, Copy, Edit, FileText, Plus, Search, Trash2 } from 'lucide-react';
+import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import { EmptyTemplates } from '@/components/EmptyState';
+import { SkeletonList } from '@/components/LoadingSpinner';
 
 type Template = {
   id: string;
@@ -89,17 +91,16 @@ function Templates() {
        }
      }, [fetchTemplates]);
 
-   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
-     const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-     if (id) {
-       void handleDelete(id);
-     }
-   }, [handleDelete]);
+    const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (id) {
+        void handleDelete(id);
+      }
+    }, [handleDelete]);
 
-
-
-
-
+    const handleCreateTemplate = useCallback(() => {
+      window.location.href = '/templates/new';
+    }, []);
 
 
   if (auth.loading || redirecting) {
@@ -149,26 +150,12 @@ function Templates() {
 			</div>
 
 			{loading ? (
-				<div className={'flex items-center justify-center py-12'}>
-					<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
-				</div>
+				<SkeletonList count={4} />
         ) : templates.length === 0 ? (
-	<div className={'text-center py-12'}>
-		<FileText className={'mx-auto h-12 w-12 text-gray-400 mb-4'} />
-		<h3 className={'text-lg font-medium text-gray-900 mb-2'}>{'No templates found'}</h3>
-		<p className={'text-gray-600 mb-4'}>
-			{search
-                ? 'Try adjusting your search'
-                : 'Create your first workout template to get started'}
-		</p>
-		{!search ? <a
-			className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium'}
-			href={'/templates/new'}
-		>
-			<Plus size={20} />
-			{'New Template'}
-		</a> : null}
-	</div>
+	<EmptyTemplates
+		searchActive={!!search}
+		onCreate={handleCreateTemplate}
+	/>
         ) : (
 	<div className={'grid grid-cols-1 gap-4'}>
 		{templates.map((template) => (

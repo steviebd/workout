@@ -15,6 +15,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
+import { trackEvent } from '@/lib/posthog';
+import { useToast } from '@/components/ToastProvider';
 
 
 interface WorkoutExercise {
@@ -58,6 +60,7 @@ function WorkoutSession() {
   const auth = useAuth();
   const router = useRouter();
   const params = useParams({ from: '/workouts/$id' });
+  const toast = useToast();
   const [workoutId, setWorkoutId] = useState<string | null>(null);
   const [workoutName, setWorkoutName] = useState('');
   const [startedAt, setStartedAt] = useState('');
@@ -201,29 +204,41 @@ function WorkoutSession() {
        const result = await res.json();
        console.log('Complete result:', result);
 
-       if (res.ok) {
-         setExercises(
-           exercises.map((e) =>
-             e.exerciseId === exerciseId
-               ? {
-                   ...e,
-                    sets: e.sets.map((s) =>
-                     s.id === setId
-                       ? { ...s, isComplete: true, completedAt: new Date().toISOString() }
-                       : s
-                   ),
-                 }
-               : e
-           )
-         );
-       }
+         if (res.ok) {
+           const exercise = exercises.find((e) => e.exerciseId === exerciseId);
+           const set = exercise?.sets.find((s: WorkoutSet) => s.id === setId);
+           void trackEvent('set_logged', {
+             workout_id: workoutId,
+             exercise_id: exerciseId,
+             exercise_name: exercise?.name,
+             set_id: setId,
+             set_number: set?.setNumber,
+             weight: set?.weight,
+             reps: set?.reps,
+             rpe: set?.rpe,
+           });
+          setExercises(
+            exercises.map((e) =>
+              e.exerciseId === exerciseId
+                ? {
+                    ...e,
+                     sets: e.sets.map((s) =>
+                      s.id === setId
+                        ? { ...s, isComplete: true, completedAt: new Date().toISOString() }
+                        : s
+                    ),
+                  }
+                : e
+            )
+          );
+        }
      } catch (err) {
        console.error('Failed to complete set:', err);
        setError('Failed to complete set');
      }
-   }, [exercises]);
+    }, [exercises, workoutId]);
 
-  const handleDeleteSet = useCallback(async (exerciseId: string, setId: string) => {
+   const handleDeleteSet = useCallback(async (exerciseId: string, setId: string) => {
     try {
       const res = await fetch(`/api/workouts/sets/${setId}`, {
         method: 'DELETE',
@@ -413,42 +428,59 @@ function WorkoutSession() {
      }
    }, [workoutId, notes]);
 
-   const completeWorkout = useCallback(async () => {
-     if (!workoutId) {
-       console.error('completeWorkout: workoutId is undefined');
-       setError('Workout ID is missing');
-       return;
-     }
+    const completeWorkout = useCallback(async () => {
+      if (!workoutId) {
+        console.error('completeWorkout: workoutId is undefined');
+        setError('Workout ID is missing');
+        return;
+      }
 
-     console.log('completeWorkout: Starting with workoutId:', workoutId);
-     setCompleting(true);
-     setError(null);
+      console.log('completeWorkout: Starting with workoutId:', workoutId);
+      setCompleting(true);
+      setError(null);
 
-     try {
-       const res = await fetch(`/api/workouts/${workoutId}/complete`, {
-         method: 'PUT',
-         credentials: 'include',
-       });
+      try {
+        const res = await fetch(`/api/workouts/${workoutId}/complete`, {
+          method: 'PUT',
+          credentials: 'include',
+        });
 
-       console.log('completeWorkout: API response status:', res.status);
+        console.log('completeWorkout: API response status:', res.status);
 
         if (!res.ok) {
           const data: ApiError = await res.json();
-         console.error('completeWorkout: API error:', data);
-         throw new Error(data.message ?? 'Failed to complete workout');
-       }
+          console.error('completeWorkout: API error:', data);
+          const errorMsg = data.message ?? 'Failed to complete workout';
+          setError(errorMsg);
+          toast.error(errorMsg);
+          return;
+        }
 
-       await res.json();
-       console.log('completeWorkout: Workout completed successfully, redirecting to:', `/workouts/${workoutId}/summary`);
-       window.location.href = `/workouts/${workoutId}/summary`;
-     } catch (err) {
-       console.error('completeWorkout: Error:', err);
-       setError(err instanceof Error ? err.message : 'An error occurred');
-       setCompleting(false);
-     }
-   }, [workoutId]);
+        await res.json();
+        const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);
+        const completedSets = exercises.reduce((acc, e) => acc + e.sets.filter((s: WorkoutSet) => s.isComplete).length, 0);
+        void trackEvent('workout_completed', {
+          workout_id: workoutId,
+          workout_name: workoutName,
+          total_sets: totalSets,
+          completed_sets: completedSets,
+          exercise_count: exercises.length,
+        });
+        console.log('completeWorkout: Workout completed successfully, redirecting to:', `/workouts/${workoutId}/summary`);
+        toast.success('Workout completed successfully!');
+        setTimeout(() => {
+          window.location.href = `/workouts/${workoutId}/summary`;
+        }, 1000);
+      } catch (err) {
+        console.error('completeWorkout: Error:', err);
+        const errorMsg = err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setCompleting(false);
+      }
+    }, [workoutId, exercises, workoutName, toast]);
 
-   const handleCompleteWorkout = useCallback(async () => {
+    const handleCompleteWorkout = useCallback(async () => {
      if (!workoutId) return;
 
      const incompleteSetsCount = exercises.reduce((acc, e) => {
