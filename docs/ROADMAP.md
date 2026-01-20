@@ -488,13 +488,33 @@
 
 **Deliverable:** ✓ Users can view exercise-specific progress with line chart, PR tracking, and filtered history
 
-### 3.3 Dashboard Updates
-- [ ] Show recent workouts on dashboard
-- [ ] Display quick stats (workouts this week, etc.)
-- [ ] Add "Start Workout" quick action
-- [ ] Write unit tests
+### 3.3 Dashboard Updates ✓ COMPLETE
 
-**Deliverable:** Informative dashboard with quick actions
+**Features:**
+- [x] Show recent workouts on dashboard (5 most recent completed workouts)
+- [x] Display quick stats (workouts this week, this month, total, PRs count)
+- [x] Add "Start Workout" quick action (prominent CTA button)
+- [x] Write unit tests
+
+**UI Layout:**
+- **Stats Cards (4 cards):** This Week, This Month, Total Workouts, PRs
+- **Start Workout CTA:** Prominent button linking to `/workouts/new`
+- **Recent Workouts:** List of 5 most recent completed workouts with date, name, duration
+- **Empty State:** Friendly message when no workouts exist
+
+**Files Created:**
+- `src/routes/api/workouts.pr-count.ts` - API endpoint for PR count
+- `tests/unit/dashboard.spec.ts` - Unit tests for dashboard functions
+
+**Files Modified:**
+- `src/routes/index.tsx` - Complete rewrite with stats cards, recent workouts, and CTA
+- `src/lib/db/workout.ts` - Added `getPrCount` function
+
+**Tests:**
+- [x] Unit tests for dashboard data fetching functions
+- [x] Tests for PR counting logic
+
+**Deliverable:** ✓ Informative dashboard with quick stats, recent workouts, and prominent start action
 
 ---
 
@@ -612,7 +632,7 @@
 
 ### Sprint 3 End
 - [x] History views complete
-- [ ] Dashboard complete
+- [x] Dashboard complete
 - [ ] All unit tests passing
 
 ### Sprint 4 End

@@ -949,3 +949,71 @@ export async function getWorkoutHistoryStats(
     totalSets: setsResult?.total ?? 0,
   };
 }
+
+export async function getPrCount(
+  db: D1Database,
+  userId: string
+): Promise<number> {
+  const drizzleDb = createDb(db);
+
+  const allWorkouts = await drizzleDb
+    .select({
+      workoutId: workouts.id,
+      workoutDate: workouts.startedAt,
+    })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .innerJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+    .where(and(
+      eq(workouts.userId, userId),
+      eq(workoutSets.isComplete, true),
+      sql`${workoutSets.weight} > 0`
+    ))
+    .orderBy(asc(workouts.startedAt))
+    .all();
+
+  const workoutExerciseMaxes = new Map<string, { exerciseId: string; weight: number; date: string }>();
+
+  for (const row of allWorkouts) {
+    const setsData = await drizzleDb
+      .select({
+        exerciseId: workoutExercises.exerciseId,
+        weight: workoutSets.weight,
+      })
+      .from(workoutSets)
+      .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+      .where(and(
+        eq(workoutExercises.workoutId, row.workoutId),
+        eq(workoutSets.isComplete, true)
+      ))
+      .all();
+
+    for (const set of setsData) {
+      if (set.weight !== null && set.exerciseId) {
+        const key = `${row.workoutId}-${set.exerciseId}`;
+        const current = workoutExerciseMaxes.get(key);
+        if (!current || set.weight > current.weight) {
+          workoutExerciseMaxes.set(key, {
+            exerciseId: set.exerciseId,
+            weight: set.weight,
+            date: row.workoutDate,
+          });
+        }
+      }
+    }
+  }
+
+  const allMaxes = Array.from(workoutExerciseMaxes.values());
+  const exerciseCurrentMax = new Map<string, number>();
+  let prCount = 0;
+
+  for (const max of allMaxes) {
+    const currentMax = exerciseCurrentMax.get(max.exerciseId) ?? 0;
+    if (max.weight > currentMax) {
+      exerciseCurrentMax.set(max.exerciseId, max.weight);
+      prCount++;
+    }
+  }
+
+  return prCount;
+}
