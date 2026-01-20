@@ -21,3 +21,4 @@ wrangler.toml
 test-results/
 wrangler.toml.backup
 server.log
+example/
