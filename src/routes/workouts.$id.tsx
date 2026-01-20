@@ -14,7 +14,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
-import { type WorkoutExerciseWithDetails, type LastWorkoutData } from '@/lib/db/workout';
+import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
 
 
 interface WorkoutExercise {
@@ -299,73 +299,84 @@ function WorkoutSession() {
 
 
     const handleAddExercise = useCallback(async (exercise: Exercise) => {
-       const orderIndex = exercises.length;
+        const orderIndex = exercises.length;
 
-       try {
-         const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           credentials: 'include',
-           body: JSON.stringify({
-             exerciseId: exercise.id,
-             orderIndex,
-           }),
-         });
+        try {
+          const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              exerciseId: exercise.id,
+              orderIndex,
+            }),
+          });
 
-          if (res.ok) {
-            const newExerciseData: NewWorkoutExerciseResponse = await res.json();
+           if (res.ok) {
+             const newExerciseData: NewWorkoutExerciseResponse = await res.json();
 
-           const lastWorkoutRes = await fetch(`/api/exercises/${exercise.id}/last-workout`, {
-             credentials: 'include',
-           });
+            const lastWorkoutSetsRes = await fetch(`/api/exercises/${exercise.id}/last-workout-sets`, {
+              credentials: 'include',
+            });
 
-           let         lastSetData = { weight: null as number | null, reps: null as number | null, rpe: null as number | null };
-           if (lastWorkoutRes.ok) {
-             const lastWorkoutData: LastWorkoutData = await lastWorkoutRes.json();
-             lastSetData = {
-               weight: lastWorkoutData.weight ?? null,
-               reps: lastWorkoutData.reps ?? null,
-               rpe: lastWorkoutData.rpe ?? null,
-             };
-           }
+            let lastSetData: Array<{ setNumber: number; weight: number | null; reps: number | null; rpe: number | null }> = [];
+            if (lastWorkoutSetsRes.ok) {
+              const lastWorkoutSetsData: { sets?: Array<{ setNumber: number; weight: number | null; reps: number | null; rpe: number | null }> } = await lastWorkoutSetsRes.json();
+              lastSetData = lastWorkoutSetsData.sets ?? [];
+            }
 
-           const workoutExercise: WorkoutExercise = {
-             id: newExerciseData.id,
-             exerciseId: exercise.id,
-             name: exercise.name,
-             muscleGroup: exercise.muscleGroup,
-             orderIndex,
-             sets: [],
-             notes: newExerciseData.notes ?? null,
-           };
+            const workoutExercise: WorkoutExercise = {
+              id: newExerciseData.id,
+              exerciseId: exercise.id,
+              name: exercise.name,
+              muscleGroup: exercise.muscleGroup,
+              orderIndex,
+              sets: [],
+              notes: newExerciseData.notes ?? null,
+            };
 
-           const updatedExercises = [...exercises, workoutExercise];
-           setExercises(updatedExercises);
-           setExpandedExercises(new Set([...expandedExercises, exercise.id]));
+            const updatedExercises = [...exercises, workoutExercise];
+            setExercises(updatedExercises);
+            setExpandedExercises(new Set([...expandedExercises, exercise.id]));
 
-           if (lastSetData.weight || lastSetData.reps) {
-             await addSetToBackend(newExerciseData.id, 1, lastSetData.weight, lastSetData.reps, lastSetData.rpe);
-             workoutExercise.sets.push({
-               id: crypto.randomUUID(),
-               workoutExerciseId: newExerciseData.id,
-               setNumber: 1,
-               weight: lastSetData.weight ?? null,
-               reps: lastSetData.reps ?? null,
-               rpe: lastSetData.rpe ?? null,
-               isComplete: false,
-               completedAt: null,
-               createdAt: null,
-             });
-           }
-         }
-       } catch (err) {
-         console.error('Failed to add exercise:', err);
-         setError('Failed to add exercise');
-       }
+            if (lastSetData.length > 0) {
+              for (const setData of lastSetData) {
+                await addSetToBackend(newExerciseData.id, setData.setNumber, setData.weight, setData.reps, setData.rpe);
+                workoutExercise.sets.push({
+                  id: crypto.randomUUID(),
+                  workoutExerciseId: newExerciseData.id,
+                  setNumber: setData.setNumber,
+                  weight: setData.weight ?? null,
+                  reps: setData.reps ?? null,
+                  rpe: setData.rpe ?? null,
+                  isComplete: false,
+                  completedAt: null,
+                  createdAt: null,
+                });
+              }
+            } else {
+              await addSetToBackend(newExerciseData.id, 1, null, null, null);
+              workoutExercise.sets.push({
+                id: crypto.randomUUID(),
+                workoutExerciseId: newExerciseData.id,
+                setNumber: 1,
+                weight: null,
+                reps: null,
+                rpe: null,
+                isComplete: false,
+                completedAt: null,
+                createdAt: null,
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to add exercise:', err);
+          setError('Failed to add exercise');
+        }
 
-        setShowExerciseSelector(false);
-        setExerciseSearch('');
-      }, [exercises, expandedExercises, workoutId, addSetToBackend]);
+         setShowExerciseSelector(false);
+         setExerciseSearch('');
+       }, [exercises, expandedExercises, workoutId, addSetToBackend]);
 
     const filteredExercises = availableExercises.filter((exercise) =>
       exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&

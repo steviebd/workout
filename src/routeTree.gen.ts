@@ -43,6 +43,7 @@ import { Route as ApiWorkoutsIdExercisesRouteImport } from './routes/api/workout
 import { Route as ApiWorkoutsIdCompleteRouteImport } from './routes/api/workouts.$id.complete'
 import { Route as ApiTemplatesIdExercisesRouteImport } from './routes/api/templates.$id.exercises'
 import { Route as ApiTemplatesIdCopyRouteImport } from './routes/api/templates.$id.copy'
+import { Route as ApiExercisesIdLastWorkoutSetsRouteImport } from './routes/api/exercises.$id.last-workout-sets'
 import { Route as ApiExercisesIdLastWorkoutRouteImport } from './routes/api/exercises.$id.last-workout'
 import { Route as ApiExercisesExerciseIdHistoryRouteImport } from './routes/api/exercises.$exerciseId.history'
 import { Route as ApiWorkoutsIdExercisesReorderRouteImport } from './routes/api/workouts.$id.exercises.reorder'
@@ -220,6 +221,12 @@ const ApiTemplatesIdCopyRoute = ApiTemplatesIdCopyRouteImport.update({
   path: '/copy',
   getParentRoute: () => ApiTemplatesIdRoute,
 } as any)
+const ApiExercisesIdLastWorkoutSetsRoute =
+  ApiExercisesIdLastWorkoutSetsRouteImport.update({
+    id: '/last-workout-sets',
+    path: '/last-workout-sets',
+    getParentRoute: () => ApiExercisesIdRoute,
+  } as any)
 const ApiExercisesIdLastWorkoutRoute =
   ApiExercisesIdLastWorkoutRouteImport.update({
     id: '/last-workout',
@@ -283,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
+  '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -324,6 +332,7 @@ export interface FileRoutesByTo {
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
+  '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -366,6 +375,7 @@ export interface FileRoutesById {
   '/workouts/$id_/summary': typeof WorkoutsIdSummaryRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
+  '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/workouts/$id/summary'
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
+    | '/api/exercises/$id/last-workout-sets'
     | '/api/templates/$id/copy'
     | '/api/templates/$id/exercises'
     | '/api/workouts/$id/complete'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/workouts/$id/summary'
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
+    | '/api/exercises/$id/last-workout-sets'
     | '/api/templates/$id/copy'
     | '/api/templates/$id/exercises'
     | '/api/workouts/$id/complete'
@@ -491,6 +503,7 @@ export interface FileRouteTypes {
     | '/workouts/$id_/summary'
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
+    | '/api/exercises/$id/last-workout-sets'
     | '/api/templates/$id/copy'
     | '/api/templates/$id/exercises'
     | '/api/workouts/$id/complete'
@@ -765,6 +778,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTemplatesIdCopyRouteImport
       parentRoute: typeof ApiTemplatesIdRoute
     }
+    '/api/exercises/$id/last-workout-sets': {
+      id: '/api/exercises/$id/last-workout-sets'
+      path: '/last-workout-sets'
+      fullPath: '/api/exercises/$id/last-workout-sets'
+      preLoaderRoute: typeof ApiExercisesIdLastWorkoutSetsRouteImport
+      parentRoute: typeof ApiExercisesIdRoute
+    }
     '/api/exercises/$id/last-workout': {
       id: '/api/exercises/$id/last-workout'
       path: '/last-workout'
@@ -805,10 +825,12 @@ declare module '@tanstack/react-router' {
 
 interface ApiExercisesIdRouteChildren {
   ApiExercisesIdLastWorkoutRoute: typeof ApiExercisesIdLastWorkoutRoute
+  ApiExercisesIdLastWorkoutSetsRoute: typeof ApiExercisesIdLastWorkoutSetsRoute
 }
 
 const ApiExercisesIdRouteChildren: ApiExercisesIdRouteChildren = {
   ApiExercisesIdLastWorkoutRoute: ApiExercisesIdLastWorkoutRoute,
+  ApiExercisesIdLastWorkoutSetsRoute: ApiExercisesIdLastWorkoutSetsRoute,
 }
 
 const ApiExercisesIdRouteWithChildren = ApiExercisesIdRoute._addFileChildren(

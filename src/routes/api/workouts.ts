@@ -1,6 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { type CreateWorkoutData, createWorkout, createWorkoutExercise, getWorkoutsByUserId } from '../../lib/db/workout';
+import {
+  type CreateWorkoutData,
+  createWorkout,
+  createWorkoutExercise,
+  createWorkoutSet,
+  getLastWorkoutSetsForExercise,
+  getWorkoutsByUserId,
+} from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
 import { getTemplateExercises } from '../../lib/db/template';
 
@@ -80,7 +87,27 @@ export const Route = createFileRoute('/api/workouts')({
           }
 
           for (let i = 0; i < exercisesToAdd.length; i++) {
-            await createWorkoutExercise(db, workout.id, session.userId, exercisesToAdd[i], i);
+            const workoutExercise = await createWorkoutExercise(db, workout.id, session.userId, exercisesToAdd[i], i);
+
+            if (workoutExercise) {
+              const lastWorkoutSets = await getLastWorkoutSetsForExercise(db, session.userId, exercisesToAdd[i]);
+
+              if (lastWorkoutSets.length > 0) {
+                for (const setData of lastWorkoutSets) {
+                  await createWorkoutSet(
+                    db,
+                    workoutExercise.id,
+                    session.userId,
+                    setData.setNumber,
+                    setData.weight ?? undefined,
+                    setData.reps ?? undefined,
+                    setData.rpe ?? undefined
+                  );
+                }
+              } else {
+                await createWorkoutSet(db, workoutExercise.id, session.userId, 1);
+              }
+            }
           }
 
           return Response.json(workout, { status: 201 });

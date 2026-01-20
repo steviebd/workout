@@ -26,7 +26,8 @@ export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, char
   }, []);
 
   const chartData = useMemo(() => {
-    return data.map((item, index) => ({
+    const sortedData = [...data].sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime());
+    return sortedData.map((item, index) => ({
       ...item,
       date: new Date(item.workoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: chartType === 'weight' ? item.maxWeight : item.maxWeight * item.repsAtMax,

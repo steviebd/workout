@@ -975,6 +975,367 @@ describe('Workout History - getWorkoutHistoryStats', () => {
   });
 });
 
+describe('getLastWorkoutForExercise', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns last workout data when previous workout exists', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue({
+                    weight: 100,
+                    reps: 5,
+                    rpe: 7.5,
+                    completedAt: '2024-01-14T10:00:00.000Z',
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutForExercise(mockDb, 'user-1', 'exercise-1');
+
+    expect(result).not.toBeNull();
+    expect(result?.exerciseId).toBe('exercise-1');
+    expect(result?.weight).toBe(100);
+    expect(result?.reps).toBe(5);
+    expect(result?.rpe).toBe(7.5);
+  });
+
+  it('returns null when no previous workout exists', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue(null),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutForExercise(mockDb, 'user-1', 'exercise-new');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null when weight and reps are null', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue({
+                    weight: null,
+                    reps: null,
+                    rpe: null,
+                    completedAt: '2024-01-14T10:00:00.000Z',
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutForExercise(mockDb, 'user-1', 'exercise-1');
+
+    expect(result).not.toBeNull();
+    expect(result?.weight).toBeNull();
+    expect(result?.reps).toBeNull();
+  });
+
+  it('only returns completed sets', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue({
+                    weight: 80,
+                    reps: 10,
+                    rpe: null,
+                    completedAt: '2024-01-14T10:00:00.000Z',
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutForExercise(mockDb, 'user-1', 'exercise-2');
+
+    expect(result).not.toBeNull();
+    expect(result?.weight).toBe(80);
+    expect(result?.reps).toBe(10);
+  });
+
+  it('returns most recent completed workout', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue({
+                    weight: 120,
+                    reps: 3,
+                    rpe: 8,
+                    completedAt: '2024-01-14T15:00:00.000Z',
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutForExercise(mockDb, 'user-1', 'exercise-3');
+
+    expect(result).not.toBeNull();
+    expect(result?.weight).toBe(120);
+    expect(result?.reps).toBe(3);
+    expect(result?.rpe).toBe(8);
+  });
+});
+
+describe('getLastWorkoutSetsForExercise', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns all sets from previous workout', async () => {
+    let selectCallCount = 0;
+    mockDrizzleDb.select.mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) {
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              innerJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      get: vi.fn().mockReturnValue({
+                        workoutExerciseId: 'workout-exercise-1',
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              all: vi.fn().mockReturnValue([
+                { setNumber: 1, weight: 100, reps: 5, rpe: 7.5 },
+                { setNumber: 2, weight: 90, reps: 6, rpe: 7 },
+                { setNumber: 3, weight: 80, reps: 8, rpe: 6.5 },
+              ]),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getLastWorkoutSetsForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutSetsForExercise(mockDb, 'user-1', 'exercise-1');
+
+    expect(result).toHaveLength(3);
+    expect(result[0].setNumber).toBe(1);
+    expect(result[0].weight).toBe(100);
+    expect(result[0].reps).toBe(5);
+    expect(result[0].rpe).toBe(7.5);
+    expect(result[1].setNumber).toBe(2);
+    expect(result[1].weight).toBe(90);
+    expect(result[1].reps).toBe(6);
+    expect(result[1].rpe).toBe(7);
+    expect(result[2].setNumber).toBe(3);
+    expect(result[2].weight).toBe(80);
+    expect(result[2].reps).toBe(8);
+    expect(result[2].rpe).toBe(6.5);
+  });
+
+  it('returns empty array when no previous workout exists', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  get: vi.fn().mockReturnValue(null),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getLastWorkoutSetsForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutSetsForExercise(mockDb, 'user-1', 'exercise-new');
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns sets ordered by setNumber', async () => {
+    let selectCallCount = 0;
+    mockDrizzleDb.select.mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) {
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              innerJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      get: vi.fn().mockReturnValue({
+                        workoutExerciseId: 'workout-exercise-2',
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              all: vi.fn().mockReturnValue([
+                { setNumber: 1, weight: 80, reps: 10, rpe: null },
+                { setNumber: 2, weight: 80, reps: 10, rpe: null },
+                { setNumber: 3, weight: 80, reps: 10, rpe: null },
+                { setNumber: 4, weight: 80, reps: 10, rpe: null },
+              ]),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getLastWorkoutSetsForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutSetsForExercise(mockDb, 'user-1', 'exercise-2');
+
+    expect(result).toHaveLength(4);
+    expect(result[0].setNumber).toBe(1);
+    expect(result[1].setNumber).toBe(2);
+    expect(result[2].setNumber).toBe(3);
+    expect(result[3].setNumber).toBe(4);
+  });
+
+  it('handles multiple sets with different weights/reps', async () => {
+    let selectCallCount = 0;
+    mockDrizzleDb.select.mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1) {
+        return {
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              innerJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      get: vi.fn().mockReturnValue({
+                        workoutExerciseId: 'workout-exercise-3',
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              all: vi.fn().mockReturnValue([
+                { setNumber: 1, weight: 100, reps: 5, rpe: 8 },
+                { setNumber: 2, weight: 90, reps: 6, rpe: 7 },
+                { setNumber: 3, weight: null, reps: null, rpe: null },
+              ]),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getLastWorkoutSetsForExercise } = await import('../../src/lib/db/workout');
+
+    const result = await getLastWorkoutSetsForExercise(mockDb, 'user-1', 'exercise-3');
+
+    expect(result).toHaveLength(3);
+    expect(result[0].weight).toBe(100);
+    expect(result[0].reps).toBe(5);
+    expect(result[1].weight).toBe(90);
+    expect(result[1].reps).toBe(6);
+    expect(result[2].weight).toBeNull();
+    expect(result[2].reps).toBeNull();
+  });
+});
+
 describe('calculateE1RM', () => {
   it('returns weight when reps is 1', async () => {
     const { calculateE1RM } = await import('../../src/lib/db/workout');

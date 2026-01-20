@@ -601,6 +601,60 @@ export async function getLastWorkoutForExercise(
   } : null;
 }
 
+export interface LastWorkoutSetData {
+  setNumber: number;
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+}
+
+export async function getLastWorkoutSetsForExercise(
+  db: D1Database,
+  userId: string,
+  exerciseId: string
+): Promise<LastWorkoutSetData[]> {
+  const drizzleDb = createDb(db);
+
+  const recentWorkoutExercise = await drizzleDb
+    .select({
+      workoutExerciseId: workoutExercises.id,
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(
+      eq(workouts.userId, userId),
+      eq(workoutExercises.exerciseId, exerciseId),
+      isNotNull(workoutSets.completedAt)
+    ))
+    .orderBy(desc(workouts.completedAt))
+    .limit(1)
+    .get();
+
+  if (!recentWorkoutExercise) {
+    return [];
+  }
+
+  const sets = await drizzleDb
+    .select({
+      setNumber: workoutSets.setNumber,
+      weight: workoutSets.weight,
+      reps: workoutSets.reps,
+      rpe: workoutSets.rpe,
+    })
+    .from(workoutSets)
+    .where(eq(workoutSets.workoutExerciseId, recentWorkoutExercise.workoutExerciseId))
+    .orderBy(workoutSets.setNumber)
+    .all();
+
+  return sets.map(set => ({
+    setNumber: set.setNumber,
+    weight: set.weight,
+    reps: set.reps,
+    rpe: set.rpe,
+  }));
+}
+
 export async function getCompletedWorkoutsCount(
   db: D1Database,
   userId: string

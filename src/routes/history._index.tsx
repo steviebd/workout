@@ -152,6 +152,7 @@ function History() {
             if (exercisesRes.ok) {
               const exercisesData: Array<{
                 id: string;
+                exerciseId: string;
                 exercise?: { name: string };
                 sets: Array<{
                   setNumber: number;
@@ -184,7 +185,7 @@ function History() {
                 }
 
                 exerciseDetails.push({
-                  id: we.id,
+                  id: we.exerciseId,
                   name: we.exercise?.name ?? '',
                   sets: setDetails,
                 });
