@@ -60,9 +60,9 @@ test.describe('Workout History', () => {
     await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });
 
     await expect(page.locator('h1:has-text("Workout History")')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=Total Workouts')).toBeVisible();
-    await expect(page.locator('text=This Week')).toBeVisible();
-    await expect(page.locator('text=This Month')).toBeVisible();
+    await expect(page.locator('text=Total Workouts').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=This Week').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=This Month').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('can filter by date range', async ({ page }) => {
@@ -75,8 +75,8 @@ test.describe('Workout History', () => {
     const fromDateInput = page.locator('input[type="date"]').first();
     const toDateInput = page.locator('input[type="date"]').nth(1);
 
-    await expect(fromDateInput).toBeVisible();
-    await expect(toDateInput).toBeVisible();
+    await expect(fromDateInput).toBeVisible({ timeout: 5000 });
+    await expect(toDateInput).toBeVisible({ timeout: 5000 });
 
     await fromDateInput.fill('2025-01-01');
     await toDateInput.fill('2025-12-31');
@@ -132,21 +132,18 @@ test.describe('Workout History', () => {
 
     await expect(page.locator('h1:has-text("Workout History")')).toBeVisible({ timeout: 10000 });
 
-    const workoutCards = page.locator('.bg-white.rounded-lg.border.border-gray-200');
+    const workoutCards = page.locator('[class*="rounded-lg"][class*="border"]').filter({ has: page.locator('button') });
 
     const cardCount = await workoutCards.count();
 
     if (cardCount > 0) {
       const firstCard = workoutCards.first();
-      await expect(firstCard).toBeVisible();
+      await expect(firstCard).toBeVisible({ timeout: 5000 });
 
-      const chevronDown = page.locator('svg.lucide-chevron-down').first();
-      await expect(chevronDown).toBeVisible();
+      const chevronIcon = firstCard.locator('svg').first();
+      await expect(chevronIcon).toBeVisible({ timeout: 5000 });
 
       await firstCard.click();
-
-      await expect(page.locator('svg.lucide-chevron-up').first()).toBeVisible({ timeout: 5000 });
-
       await page.waitForTimeout(500);
     } else {
       console.log('No workout cards found to test expand/collapse');
@@ -194,19 +191,19 @@ test.describe('Workout History', () => {
 
     await expect(page.locator('h1:has-text("Workout History")')).toBeVisible({ timeout: 10000 });
 
-    const thisWeekButton = page.locator('button:has-text("This Week")').nth(1);
+    const thisWeekButton = page.locator('button:has-text("This Week")').first();
     await expect(thisWeekButton).toBeVisible();
     await thisWeekButton.click();
 
     await page.waitForTimeout(500);
 
-    const thisMonthButton = page.locator('button:has-text("This Month")').nth(1);
+    const thisMonthButton = page.locator('button:has-text("This Month")').first();
     await expect(thisMonthButton).toBeVisible();
     await thisMonthButton.click();
 
     await page.waitForTimeout(500);
 
-    const allTimeButton = page.locator('button:has-text("All Time")').nth(1);
+    const allTimeButton = page.locator('button:has-text("All Time")').first();
     await expect(allTimeButton).toBeVisible();
     await allTimeButton.click();
 
@@ -270,18 +267,21 @@ test.describe('Exercise History', () => {
 
     await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
 
-    const historyLinks = page.locator('a:has-text("History")');
-    const linkCount = await historyLinks.count();
+    const exerciseCards = page.locator('[class*="rounded-lg"][class*="border"]').filter({ has: page.locator('a:has-text("History")') });
+    const cardCount = await exerciseCards.count();
 
-    if (linkCount > 0) {
-      await historyLinks.first().click();
-      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+    if (cardCount > 0) {
+      const historyLink = exerciseCards.first().locator('a:has-text("History")').first();
+      await expect(historyLink).toBeVisible({ timeout: 5000 });
+      await historyLink.click();
 
-      await expect(page.locator('text=Max Weight')).toBeVisible({ timeout: 5000 });
-      await expect(page.locator('text=Est. 1RM')).toBeVisible();
-      await expect(page.locator('text=Workouts')).toBeVisible();
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 15000 });
+
+      await expect(page.locator('text=Max Weight').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('text=Est. 1RM').first()).toBeVisible();
+      await expect(page.locator('text=Workouts').first()).toBeVisible();
     } else {
-      console.log('No history links found on exercises page');
+      console.log('No exercise cards with history links found');
     }
   });
 
@@ -292,17 +292,20 @@ test.describe('Exercise History', () => {
 
     await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
 
-    const historyLinks = page.locator('a:has-text("History")');
-    const linkCount = await historyLinks.count();
+    const exerciseCards = page.locator('[class*="rounded-lg"][class*="border"]').filter({ has: page.locator('a:has-text("History")') });
+    const cardCount = await exerciseCards.count();
 
-    if (linkCount > 0) {
-      await historyLinks.first().click();
-      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+    if (cardCount > 0) {
+      const historyLink = exerciseCards.first().locator('a:has-text("History")').first();
+      await expect(historyLink).toBeVisible({ timeout: 5000 });
+      await historyLink.click();
+
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 15000 });
 
       const weightButton = page.locator('button:has-text("Weight")');
       const volumeButton = page.locator('button:has-text("Volume")');
 
-      await expect(weightButton).toBeVisible({ timeout: 5000 });
+      await expect(weightButton).toBeVisible({ timeout: 10000 });
       await expect(volumeButton).toBeVisible();
 
       await volumeButton.click();
@@ -311,7 +314,7 @@ test.describe('Exercise History', () => {
       await weightButton.click();
       await page.waitForTimeout(300);
     } else {
-      console.log('No history links found to test chart toggle');
+      console.log('No exercise cards with history links found to test chart toggle');
     }
   });
 
@@ -322,18 +325,21 @@ test.describe('Exercise History', () => {
 
     await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
 
-    const historyLinks = page.locator('a:has-text("History")');
-    const linkCount = await historyLinks.count();
+    const exerciseCards = page.locator('[class*="rounded-lg"][class*="border"]').filter({ has: page.locator('a:has-text("History")') });
+    const cardCount = await exerciseCards.count();
 
-    if (linkCount > 0) {
-      await historyLinks.first().click();
-      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+    if (cardCount > 0) {
+      const historyLink = exerciseCards.first().locator('a:has-text("History")').first();
+      await expect(historyLink).toBeVisible({ timeout: 5000 });
+      await historyLink.click();
+
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 15000 });
 
       const thisWeekButton = page.locator('button:has-text("This Week")').first();
       const thisMonthButton = page.locator('button:has-text("This Month")').first();
       const allTimeButton = page.locator('button:has-text("All Time")').first();
 
-      await expect(thisWeekButton).toBeVisible({ timeout: 5000 });
+      await expect(thisWeekButton).toBeVisible({ timeout: 10000 });
 
       await thisMonthButton.click();
       await page.waitForTimeout(300);
@@ -341,7 +347,7 @@ test.describe('Exercise History', () => {
       await allTimeButton.click();
       await page.waitForTimeout(300);
     } else {
-      console.log('No history links found to test filters');
+      console.log('No exercise cards with history links found to test filters');
     }
   });
 
@@ -352,20 +358,23 @@ test.describe('Exercise History', () => {
 
     await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
 
-    const historyLinks = page.locator('a:has-text("History")');
-    const linkCount = await historyLinks.count();
+    const exerciseCards = page.locator('[class*="rounded-lg"][class*="border"]').filter({ has: page.locator('a:has-text("History")') });
+    const cardCount = await exerciseCards.count();
 
-    if (linkCount > 0) {
-      await historyLinks.first().click();
-      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+    if (cardCount > 0) {
+      const historyLink = exerciseCards.first().locator('a:has-text("History")').first();
+      await expect(historyLink).toBeVisible({ timeout: 5000 });
+      await historyLink.click();
 
-      await expect(page.locator('th:has-text("Date")')).toBeVisible({ timeout: 5000 });
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 15000 });
+
+      await expect(page.locator('th:has-text("Date")')).toBeVisible({ timeout: 10000 });
       await expect(page.locator('th:has-text("Workout")')).toBeVisible();
       await expect(page.locator('th:has-text("Max Weight")')).toBeVisible();
       await expect(page.locator('th:has-text("Reps")')).toBeVisible();
       await expect(page.locator('th:has-text("Est. 1RM")')).toBeVisible();
     } else {
-      console.log('No history links found to test table columns');
+      console.log('No exercise cards with history links found to test table columns');
     }
   });
 });

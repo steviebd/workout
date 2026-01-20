@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { AlertCircle, Calendar, Loader2, Trophy, TrendingUp } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { ExerciseHistoryChart } from '@/components/ExerciseHistoryChart';
 import { EmptyExerciseHistory } from '@/components/EmptyState';
+
+const ExerciseHistoryChart = lazy(() => import('@/components/ExerciseHistoryChart').then(module => ({ default: module.ExerciseHistoryChart })));
+import { ChartSkeleton } from '@/components/ChartSkeleton';
 
 interface ExerciseHistoryItem {
   workoutId: string;
@@ -295,36 +297,38 @@ function ExerciseHistory() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Progress Over Time</h2>
-            <div className="flex items-center gap-2">
-              <button
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  chartType === 'weight'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={chartType === 'volume' ? handleChartTypeChange : undefined}
-                type="button"
-              >
-                Weight
-              </button>
-              <button
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  chartType === 'volume'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={chartType === 'weight' ? handleChartTypeChange : undefined}
-                type="button"
-              >
-                Volume
-              </button>
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Progress Over Time</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    chartType === 'weight'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  onClick={chartType === 'volume' ? handleChartTypeChange : undefined}
+                  type="button"
+                >
+                  Weight
+                </button>
+                <button
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    chartType === 'volume'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  onClick={chartType === 'weight' ? handleChartTypeChange : undefined}
+                  type="button"
+                >
+                  Volume
+                </button>
+              </div>
             </div>
+            <Suspense fallback={<ChartSkeleton />}>
+              <ExerciseHistoryChart data={history} chartType={chartType} />
+            </Suspense>
           </div>
-          <ExerciseHistoryChart data={history} chartType={chartType} />
-        </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
           <button

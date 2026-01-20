@@ -178,6 +178,12 @@ export async function softDeleteTemplate(
   return result.success;
 }
 
+/**
+ * Creates a deep copy of a template including all exercises with their order.
+ * Fetches original template and exercises, creates new template with "(Copy)" suffix,
+ * then copies each exercise reference preserving the original order index.
+ * Used when user wants to modify an existing template without affecting the original.
+ */
 export async function copyTemplate(
   db: D1Database,
   templateId: string,
@@ -331,6 +337,11 @@ export interface ExerciseOrder {
   orderIndex: number;
 }
 
+/**
+ * Reorders exercises within a template by updating their orderIndex values.
+ * Validates template ownership first, then applies all order updates in sequence.
+ * Batch update ensures atomic reordering - either all succeed or none do.
+ */
 export async function reorderTemplateExercises(
   db: D1Database,
   templateId: string,

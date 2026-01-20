@@ -306,8 +306,8 @@ describe('Dashboard Loader Functions', () => {
           innerJoin: vi.fn().mockReturnValue({
             innerJoin: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  all: vi.fn().mockReturnValue([]),
+                groupBy: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockResolvedValue([]),
                 }),
               }),
             }),
@@ -333,10 +333,11 @@ describe('Dashboard Loader Functions', () => {
               innerJoin: vi.fn().mockReturnValue({
                 innerJoin: vi.fn().mockReturnValue({
                   where: vi.fn().mockReturnValue({
-                    orderBy: vi.fn().mockReturnValue({
-                      all: vi.fn().mockReturnValue([
-                        { workoutId: 'workout-1' },
-                        { workoutId: 'workout-2' },
+                    groupBy: vi.fn().mockReturnValue({
+                      orderBy: vi.fn().mockResolvedValue([
+                        { exerciseId: 'exercise-1', workoutId: 'workout-1', workoutStartedAt: '2024-01-01T10:00:00.000Z', maxWeight: 80 },
+                        { exerciseId: 'exercise-1', workoutId: 'workout-2', workoutStartedAt: '2024-01-02T10:00:00.000Z', maxWeight: 100 },
+                        { exerciseId: 'exercise-2', workoutId: 'workout-1', workoutStartedAt: '2024-01-01T10:00:00.000Z', maxWeight: 60 },
                       ]),
                     }),
                   }),
@@ -363,7 +364,7 @@ describe('Dashboard Loader Functions', () => {
 
       const result = await getPrCount(mockDb, 'user-1');
 
-      expect(result).toBe(2);
+      expect(result).toBe(3);
     });
   });
 });

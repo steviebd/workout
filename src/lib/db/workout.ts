@@ -95,6 +95,11 @@ export async function getWorkoutById(
   return workout ?? null;
 }
 
+/**
+ * Fetches a workout with all its exercises and sets in a single structured response.
+ * Joins workouts, exercises, and sets tables, then groups sets by exercise using a map.
+ * Used by UI to display complete workout details in one request.
+ */
 export async function getWorkoutWithExercises(
   db: D1Database,
   workoutId: string,
@@ -748,11 +753,21 @@ export interface GetExerciseHistoryOptions {
   offset?: number;
 }
 
+/**
+ * Calculates estimated one-rep max using the Epley formula.
+ * Used to normalize different rep ranges for PR tracking.
+ * Formula: weight * (1 + reps/30)
+ */
 export function calculateE1RM(weight: number, reps: number): number {
   if (reps === 1) return weight;
   return Math.round(weight * (1 + reps / 30));
 }
 
+/**
+ * Retrieves exercise history with PR tracking and estimated 1RM calculations.
+ * Aggregates workout sets to find max weight per workout, calculates E1RM for each,
+ * and flags records that exceeded previous maximums. Results sorted by date.
+ */
 export async function getExerciseHistory(
   db: D1Database,
   userId: string,
@@ -950,69 +965,39 @@ export async function getWorkoutHistoryStats(
   };
 }
 
+/**
+ * Counts total personal records across all exercises for a user.
+ * Tracks max weight per exercise per workout, then counts how many times
+ * a new maximum was set. Used for gamification and progress metrics.
+ */
 export async function getPrCount(
   db: D1Database,
   userId: string
 ): Promise<number> {
   const drizzleDb = createDb(db);
-
-  const allWorkouts = await drizzleDb
+  const workoutMaxes = await drizzleDb
     .select({
+      exerciseId: workoutExercises.exerciseId,
       workoutId: workouts.id,
-      workoutDate: workouts.startedAt,
+      workoutStartedAt: workouts.startedAt,
+      maxWeight: sql<number>`max(${workoutSets.weight})`.mapWith(Number),
     })
-    .from(workouts)
-    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
-    .innerJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
-    .where(and(
-      eq(workouts.userId, userId),
-      eq(workoutSets.isComplete, true),
-      sql`${workoutSets.weight} > 0`
-    ))
-    .orderBy(asc(workouts.startedAt))
-    .all();
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(eq(workouts.userId, userId), eq(workoutSets.isComplete, true), sql`${workoutSets.weight} > 0`))
+    .groupBy(workoutExercises.exerciseId, workouts.id, workouts.startedAt)
+    .orderBy(workouts.startedAt);
 
-  const workoutExerciseMaxes = new Map<string, { exerciseId: string; weight: number; date: string }>();
-
-  for (const row of allWorkouts) {
-    const setsData = await drizzleDb
-      .select({
-        exerciseId: workoutExercises.exerciseId,
-        weight: workoutSets.weight,
-      })
-      .from(workoutSets)
-      .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
-      .where(and(
-        eq(workoutExercises.workoutId, row.workoutId),
-        eq(workoutSets.isComplete, true)
-      ))
-      .all();
-
-    for (const set of setsData) {
-      if (set.weight !== null && set.exerciseId) {
-        const key = `${row.workoutId}-${set.exerciseId}`;
-        const current = workoutExerciseMaxes.get(key);
-        if (!current || set.weight > current.weight) {
-          workoutExerciseMaxes.set(key, {
-            exerciseId: set.exerciseId,
-            weight: set.weight,
-            date: row.workoutDate,
-          });
-        }
-      }
-    }
-  }
-
-  const allMaxes = Array.from(workoutExerciseMaxes.values());
-  const exerciseCurrentMax = new Map<string, number>();
   let prCount = 0;
+  const previousMaxByExercise: Record<string, number> = {};
 
-  for (const max of allMaxes) {
-    const currentMax = exerciseCurrentMax.get(max.exerciseId) ?? 0;
-    if (max.weight > currentMax) {
-      exerciseCurrentMax.set(max.exerciseId, max.weight);
+  for (const workoutMax of workoutMaxes) {
+    const prevMax = previousMaxByExercise[workoutMax.exerciseId] ?? 0;
+    if (workoutMax.maxWeight > prevMax) {
       prCount++;
     }
+    previousMaxByExercise[workoutMax.exerciseId] = workoutMax.maxWeight;
   }
 
   return prCount;

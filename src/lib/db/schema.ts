@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export function generateId(): string {
   return crypto.randomUUID();
@@ -81,6 +81,25 @@ export const workoutSets = sqliteTable('workout_sets', {
   completedAt: text('completed_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const _exercisesUserIdIdx = index('idx_exercises_user_id').on(exercises.userId);
+export const _exercisesMuscleGroupIdx = index('idx_exercises_muscle_group').on(exercises.muscleGroup);
+export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
+export const _exercisesIsDeletedIdx = index('idx_exercises_is_deleted').on(exercises.isDeleted);
+
+export const _templatesUserIdIdx = index('idx_templates_user_id').on(templates.userId);
+export const _templatesIsDeletedIdx = index('idx_templates_is_deleted').on(templates.isDeleted);
+
+export const _workoutsUserIdIdx = index('idx_workouts_user_id').on(workouts.userId);
+export const _workoutsTemplateIdIdx = index('idx_workouts_template_id').on(workouts.templateId);
+export const _workoutsStartedAtIdx = index('idx_workouts_started_at').on(workouts.startedAt);
+export const _workoutsCompletedAtIdx = index('idx_workouts_completed_at').on(workouts.completedAt);
+
+export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
+export const _workoutExercisesExerciseIdIdx = index('idx_workout_exercises_exercise_id').on(workoutExercises.exerciseId);
+
+export const _workoutSetsWorkoutExerciseIdIdx = index('idx_workout_sets_workout_exercise_id').on(workoutSets.workoutExerciseId);
+export const _workoutSetsCompletedAtIdx = index('idx_workout_sets_completed_at').on(workoutSets.completedAt);
 
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
