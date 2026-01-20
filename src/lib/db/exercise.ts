@@ -63,6 +63,21 @@ export async function getExerciseById(
   return exercise ?? null;
 }
 
+export async function getExerciseByIdOnly(
+  db: D1Database,
+  exerciseId: string
+): Promise<Exercise | null> {
+  const drizzleDb = createDb(db);
+
+  const exercise = await drizzleDb
+    .select()
+    .from(exercises)
+    .where(eq(exercises.id, exerciseId))
+    .get();
+
+  return exercise ?? null;
+}
+
 export async function getExercisesByUserId(
   db: D1Database,
   userId: string,

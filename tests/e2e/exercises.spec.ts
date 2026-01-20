@@ -294,92 +294,302 @@ test.describe('Copy from Library Flow', () => {
 });
 
 test.describe('Search and Filter Flow', () => {
-	test('create multiple exercises with different muscle groups', async ({ page }) => {
-		const exercises = [
-			{ name: 'Chest Test Alpha', muscleGroup: 'Chest' },
-			{ name: 'Back Test Beta', muscleGroup: 'Back' },
-			{ name: 'Shoulder Test Gamma', muscleGroup: 'Shoulders' },
-			{ name: 'Leg Test Delta', muscleGroup: 'Quads' },
-		];
+  test('create multiple exercises with different muscle groups', async ({ page }) => {
+    const exercises = [
+      { name: 'Chest Test Alpha', muscleGroup: 'Chest' },
+      { name: 'Back Test Beta', muscleGroup: 'Back' },
+      { name: 'Shoulder Test Gamma', muscleGroup: 'Shoulders' },
+      { name: 'Leg Test Delta', muscleGroup: 'Quads' },
+    ];
 
-		for (const exercise of exercises) {
-			await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    for (const exercise of exercises) {
+      await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
 
-			await page.locator('input#name').fill(exercise.name);
-			await page.locator('select#muscleGroup').selectOption(exercise.muscleGroup);
+      await page.locator('input#name').fill(exercise.name);
+      await page.locator('select#muscleGroup').selectOption(exercise.muscleGroup);
 
-			const submitButton = page.locator('button[type="submit"]:has-text("Create Exercise")');
-			await submitButton.click();
+      const submitButton = page.locator('button[type="submit"]:has-text("Create Exercise")');
+      await submitButton.click();
 
-			await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
-		}
+      await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+    }
 
-		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
-		for (const exercise of exercises) {
-			await expect(page.locator(`text=${exercise.name}`).first()).toBeVisible({ timeout: 10000 });
-		}
+    for (const exercise of exercises) {
+      await expect(page.locator(`text=${exercise.name}`).first()).toBeVisible({ timeout: 10000 });
+    }
 
-		for (const exercise of exercises) {
-			await deleteExercise(page, exercise.name);
-		}
-	});
+    for (const exercise of exercises) {
+      await deleteExercise(page, exercise.name);
+    }
+  });
 
-	test('search filters exercises by name', async ({ page }) => {
-		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
-		await page.locator('input#name').fill('Unique Searchable Exercise 12345');
-		await page.locator('select#muscleGroup').selectOption('Glutes');
-		await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
-		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+  test('search filters exercises by name', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Unique Searchable Exercise 12345');
+    await page.locator('select#muscleGroup').selectOption('Glutes');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
-		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
-		const searchInput = page.locator('input[placeholder="Search exercises..."]');
-		await expect(searchInput).toBeVisible();
+    const searchInput = page.locator('input[placeholder="Search exercises..."]');
+    await expect(searchInput).toBeVisible();
 
-		await searchInput.fill('Unique Searchable');
+    await searchInput.fill('Unique Searchable');
 
-		const exerciseCard = page.locator('text=Unique Searchable Exercise 12345');
-		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+    const exerciseCard = page.locator('text=Unique Searchable Exercise 12345');
+    await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
 
-		await deleteExercise(page, 'Unique Searchable Exercise 12345');
-	});
+    await deleteExercise(page, 'Unique Searchable Exercise 12345');
+  });
 
-	test('muscle group dropdown filters exercises', async ({ page }) => {
-		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
-		await page.locator('input#name').fill('Filter Test Chest Exercise');
-		await page.locator('select#muscleGroup').selectOption('Chest');
-		await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
-		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+  test('muscle group dropdown filters exercises', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Filter Test Chest Exercise');
+    await page.locator('select#muscleGroup').selectOption('Chest');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
-		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
-		const filterDropdown = page.locator('select').filter({ has: page.locator('option[value="Chest"]') });
-		await expect(filterDropdown).toBeVisible();
+    const filterDropdown = page.locator('select').filter({ has: page.locator('option[value="Chest"]') });
+    await expect(filterDropdown).toBeVisible();
 
-		await filterDropdown.selectOption('Chest');
+    await filterDropdown.selectOption('Chest');
 
-		const exerciseCard = page.locator('text=Filter Test Chest Exercise');
-		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+    const exerciseCard = page.locator('text=Filter Test Chest Exercise');
+    await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
 
-		await deleteExercise(page, 'Filter Test Chest Exercise');
-	});
+    await deleteExercise(page, 'Filter Test Chest Exercise');
+  });
 
-	test('combined search and filter', async ({ page }) => {
-		await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
-		await page.locator('input#name').fill('Combo Test Exercise XYZ');
-		await page.locator('select#muscleGroup').selectOption('Biceps');
-		await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
-		await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+  test('combined search and filter', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Combo Test Exercise XYZ');
+    await page.locator('select#muscleGroup').selectOption('Biceps');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
-		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
-		await page.locator('input[placeholder="Search exercises..."]').fill('Combo Test');
-		await page.locator('select').filter({ has: page.locator('option[value="Biceps"]') }).selectOption('Biceps');
+    await page.locator('input[placeholder="Search exercises..."]').fill('Combo Test');
+    await page.locator('select').filter({ has: page.locator('option[value="Biceps"]') }).selectOption('Biceps');
 
-		const exerciseCard = page.locator('text=Combo Test Exercise XYZ');
-		await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
+    const exerciseCard = page.locator('text=Combo Test Exercise XYZ');
+    await expect(exerciseCard.first()).toBeVisible({ timeout: 10000 });
 
-		await deleteExercise(page, 'Combo Test Exercise XYZ');
-	});
+    await deleteExercise(page, 'Combo Test Exercise XYZ');
+  });
+});
+
+test.describe('Exercise History Flow', () => {
+  test('view exercise history with completed workout', async ({ page }) => {
+    // Create exercise
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('History Test Exercise');
+    await page.locator('select#muscleGroup').selectOption('Chest');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    // Create and complete workout
+    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('History Test Workout');
+    const addExerciseButton = page.locator('text=Add Exercise').first();
+    await expect(addExerciseButton).toBeVisible();
+    await addExerciseButton.click();
+
+    const exerciseSelect = page.locator('select').first();
+    await expect(exerciseSelect).toBeVisible();
+    await exerciseSelect.selectOption({ label: 'History Test Exercise' });
+
+    const startWorkoutButton = page.locator('button[type="submit"]:has-text("Start Workout")');
+    await expect(startWorkoutButton).toBeVisible();
+    await startWorkoutButton.click();
+
+    await page.waitForURL(/\/workouts\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    // Add sets and complete
+    const addSetButton = page.locator('text=Add Set').first();
+    await expect(addSetButton).toBeVisible();
+    await addSetButton.click();
+
+    const weightInput = page.locator('input[placeholder*="weight"]').first();
+    await weightInput.fill('100');
+
+    const repsInput = page.locator('input[placeholder*="reps"]').first();
+    await repsInput.fill('5');
+
+    const completeSetButton = page.locator('text=Complete').first();
+    await expect(completeSetButton).toBeVisible();
+    await completeSetButton.click();
+
+    const completeWorkoutButton = page.locator('text=Complete Workout').first();
+    await expect(completeWorkoutButton).toBeVisible();
+    await completeWorkoutButton.click();
+
+    await page.waitForURL(/\/workouts\/[a-zA-Z0-9-]+\/summary/, { timeout: 10000 });
+
+    // Go to history and click on exercise
+    await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });
+
+    // Expand workout
+    const expandButton = page.locator('button').filter({ hasText: '▶' }).first();
+    await expect(expandButton).toBeVisible();
+    await expandButton.click();
+
+    // Click exercise name
+    const exerciseLink = page.locator(`a:has-text("History Test Exercise")`).first();
+    await expect(exerciseLink).toBeVisible();
+    await exerciseLink.click();
+
+    // Verify exercise history page
+    await page.waitForURL(/\/history\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+    await expect(page.locator('h1:has-text("History Test Exercise")').first()).toBeVisible({ timeout: 10000 });
+
+    // Verify chart is present (not "No data to display")
+    const chartSection = page.locator('text=Progress Over Time').first();
+    await expect(chartSection).toBeVisible();
+
+    const chartContainer = page.locator('.recharts-wrapper').first();
+    await expect(chartContainer).toBeVisible({ timeout: 10000 });
+
+    // Verify stats are shown
+    await expect(page.locator('text=Max Weight').first()).toBeVisible();
+    await expect(page.locator('text=Est. 1RM').first()).toBeVisible();
+    await expect(page.locator('text=Workouts').first()).toBeVisible();
+
+    // Verify table is present
+    const table = page.locator('table').first();
+    await expect(table).toBeVisible();
+
+    // Clean up
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await deleteExercise(page, 'History Test Exercise');
+  });
+});
+
+test.describe('Security - Unauthorized Access', () => {
+  test('cannot access another user exercise history', async ({ page }) => {
+    // Create and complete a workout with an exercise
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Security Test Exercise');
+    await page.locator('select#muscleGroup').selectOption('Chest');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    const exerciseUrl = page.url();
+    const exerciseId = exerciseUrl.split('/').pop();
+
+    // Start and complete workout
+    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Security Test Workout');
+    await page.locator('button:has-text("Add Exercise")').first().click();
+    await page.locator('select').first().selectOption({ label: 'Security Test Exercise' });
+    await page.locator('button[type="submit"]:has-text("Start Workout")').click();
+    await page.waitForURL(/\/workouts\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    // Add set and complete
+    await page.locator('button:has-text("Add Set")').first().click();
+    await page.locator('input[placeholder*="weight"]').first().fill('100');
+    await page.locator('input[placeholder*="reps"]').first().fill('5');
+    await page.locator('button:has-text("Complete")').first().click();
+    await page.locator('button:has-text("Complete Workout")').first().click();
+    await page.waitForURL(/\/workouts\/[a-zA-Z0-9-]+\/summary/, { timeout: 10000 });
+
+    // Try to access exercise history directly with API
+    const historyResponse = await page.request.get(`${BASE_URL}/api/exercises/${exerciseId}/history`);
+    expect(historyResponse.status()).toBe(200);
+
+    // Verify page shows data
+    await page.goto(`${BASE_URL}/history/${exerciseId}`, { waitUntil: 'networkidle' });
+    await expect(page.locator('h1:has-text("Security Test Exercise")').first()).toBeVisible({ timeout: 10000 });
+
+    // Clean up
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await deleteExercise(page, 'Security Test Exercise');
+  });
+
+  test('workout sets API validates ownership', async ({ page }) => {
+    // Create exercise and workout with set
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Set Security Test');
+    await page.locator('select#muscleGroup').selectOption('Back');
+    await page.locator('button[type="submit"]:has-text("Create Exercise")').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Set Security Workout');
+    await page.locator('button:has-text("Add Exercise")').first().click();
+    await page.locator('select').first().selectOption({ label: 'Set Security Test' });
+    await page.locator('button[type="submit"]:has-text("Start Workout")').click();
+    await page.waitForURL(/\/workouts\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    // Get workout ID from URL
+    const workoutUrl = page.url();
+    const workoutId = workoutUrl.split('/').pop();
+
+    // Add a set via API
+    const setsResponse = await page.request.get(`${BASE_URL}/api/workouts/${workoutId}/exercises`);
+    expect(setsResponse.status()).toBe(200);
+    const exercisesData = await setsResponse.json() as Array<{ id: string }>;
+    const workoutExerciseId = exercisesData[0]?.id;
+
+    const createSetResponse = await page.request.post(`${BASE_URL}/api/workouts/sets`, {
+      data: {
+        workoutExerciseId,
+        setNumber: 1,
+        weight: 100,
+        reps: 5,
+      },
+    });
+    expect(createSetResponse.status()).toBe(201);
+    const setData = await createSetResponse.json() as { id: string };
+    const setId = setData.id;
+
+    // Complete the set
+    const completeResponse = await page.request.put(`${BASE_URL}/api/workouts/sets/${setId}`, {
+      data: { isComplete: true },
+    });
+    expect(completeResponse.status()).toBe(200);
+
+    // Delete the set
+    const deleteResponse = await page.request.delete(`${BASE_URL}/api/workouts/sets/${setId}`);
+    expect(deleteResponse.status()).toBe(204);
+
+    // Clean up
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await deleteExercise(page, 'Set Security Test');
+  });
+
+  test('template exercises API validates ownership', async ({ page }) => {
+    // Create template with exercise
+    await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill('Template Security Test');
+    await page.locator('button:has-text("Add Exercise")').first().click();
+    await page.locator('.fixed select').first().selectOption({ label: 'Barbell Bench Press' });
+    await page.locator('.fixed button:has-text("Add")').first().click();
+    await page.locator('button[type="submit"]:has-text("Create Template")').click();
+    await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    const templateUrl = page.url();
+    const templateId = templateUrl.split('/').pop();
+
+    // Get template exercises
+    const exercisesResponse = await page.request.get(`${BASE_URL}/api/templates/${templateId}/exercises`);
+    expect(exercisesResponse.status()).toBe(200);
+
+    // Clean up - delete template
+    await page.goto(`${BASE_URL}/templates`, { waitUntil: 'networkidle' });
+    const templateCard = page.locator('text=Template Security Test').first();
+    if (await templateCard.isVisible()) {
+      await templateCard.click();
+      await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+      const deleteButton = page.locator('text=Delete').first();
+      page.on('dialog', async (dialog: Dialog) => await dialog.accept());
+      await deleteButton.click();
+      await page.waitForURL(`${BASE_URL}/templates`, { timeout: 10000 });
+    }
+  });
 });

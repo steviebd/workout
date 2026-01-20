@@ -72,10 +72,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workoutSet = await updateWorkoutSet(db, params.setId, updateData as Partial<NewWorkoutSet>);
+          const workoutSet = await updateWorkoutSet(db, params.setId, session.userId, updateData as Partial<NewWorkoutSet>);
 
           if (!workoutSet) {
-            return Response.json({ error: 'Set not found' }, { status: 404 });
+            return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
           return Response.json(workoutSet);
@@ -97,10 +97,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await deleteWorkoutSet(db, params.setId);
+          const deleted = await deleteWorkoutSet(db, params.setId, session.userId);
 
           if (!deleted) {
-            return Response.json({ error: 'Set not found' }, { status: 404 });
+            return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
           return new Response(null, { status: 204 });

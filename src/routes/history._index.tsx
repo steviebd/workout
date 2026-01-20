@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, ChevronDown, ChevronUp, Clock, Dumbbell, Loader2, Scale, Search, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
@@ -627,7 +627,11 @@ function History() {
                     <div className="border-t border-gray-200 pt-4 mt-3">
                       {workout.exercises.map((exercise) => (
                         <div className="mb-4 last:mb-0" key={`${workout.id}-exercise-${exercise.id}`}>
-                          <p className="font-medium text-gray-900 mb-2">{exercise.name}</p>
+                          <p className="font-medium text-gray-900 mb-2">
+                            <Link to="/history/$exerciseId" params={{ exerciseId: exercise.id }} className="hover:underline hover:text-blue-600">
+                              {exercise.name}
+                            </Link>
+                          </p>
                           {exercise.sets.length > 0 ? (
                             <table className="w-full text-sm">
                               <thead>

@@ -80,7 +80,7 @@ export const Route = createFileRoute('/api/workouts')({
           }
 
           for (let i = 0; i < exercisesToAdd.length; i++) {
-            await createWorkoutExercise(db, workout.id, exercisesToAdd[i], i);
+            await createWorkoutExercise(db, workout.id, session.userId, exercisesToAdd[i], i);
           }
 
           return Response.json(workout, { status: 201 });

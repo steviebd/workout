@@ -35,11 +35,16 @@ export const Route = createFileRoute('/api/workouts/sets')({
           const workoutSet = await createWorkoutSet(
             db,
             workoutExerciseId,
+            session.userId,
             setNumber,
             weight,
             reps,
             rpe
           );
+
+          if (!workoutSet) {
+            return Response.json({ error: 'Workout exercise not found or does not belong to you' }, { status: 404 });
+          }
 
           return Response.json(workoutSet, { status: 201 });
         } catch (err) {

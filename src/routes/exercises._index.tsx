@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-use-before-define, @typescript-eslint/no-floating-promises, react/jsx-closing-tag-location */
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Dumbbell, Filter, Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
@@ -154,27 +154,37 @@ function Exercises() {
 		</a> : null}
 	</div>
         ) : (
-	<div className={'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
-		{exercises.map((exercise) => (
-			<a
-				className={'block bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-blue-300 transition-all'}
-				href={`/exercises/${exercise.id}`}
-				key={exercise.id}
-			>
-				<div className={'flex items-start justify-between mb-2'}>
-					<h3 className={'font-semibold text-gray-900 line-clamp-1'}>{exercise.name}</h3>
-					{exercise.muscleGroup ? <span className={'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'}>
-						{exercise.muscleGroup}
-                             </span> : null}
-				</div>
-				{exercise.description ? <p className={'text-sm text-gray-600 line-clamp-2 mb-3'}>{exercise.description}</p> : null}
-				<div className={'flex items-center text-xs text-gray-500'}>
-					<Calendar className={'mr-1'} size={14} />
-					{new Date(exercise.createdAt).toLocaleDateString()}
-				</div>
-			</a>
-            ))}
-	</div>
+			<div className={'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+				{exercises.map((exercise) => (
+					<div
+						className={'block bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-blue-300 transition-all'}
+						key={exercise.id}
+					>
+						<Link to="/exercises/$id" params={{ id: exercise.id }} className="block">
+							<div className={'flex items-start justify-between mb-2'}>
+								<h3 className={'font-semibold text-gray-900 line-clamp-1'}>{exercise.name}</h3>
+								{exercise.muscleGroup ? <span className={'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'}>
+									{exercise.muscleGroup}
+									 </span> : null}
+							</div>
+							{exercise.description ? <p className={'text-sm text-gray-600 line-clamp-2 mb-3'}>{exercise.description}</p> : null}
+						</Link>
+						<div className={'flex items-center justify-between mt-3 pt-3 border-t border-gray-100'}>
+							<div className={'flex items-center text-xs text-gray-500'}>
+								<Calendar className={'mr-1'} size={14} />
+								{new Date(exercise.createdAt).toLocaleDateString()}
+							</div>
+							<Link
+								to="/history/$exerciseId"
+								params={{ exerciseId: exercise.id }}
+								className="text-xs text-blue-600 hover:underline font-medium"
+							>
+								History
+							</Link>
+						</div>
+					</div>
+				))}
+			</div>
         )}
 		</div>
 	</div>

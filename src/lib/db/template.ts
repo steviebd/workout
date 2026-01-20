@@ -229,10 +229,22 @@ export async function copyTemplate(
 export async function addExerciseToTemplate(
   db: D1Database,
   templateId: string,
+  userId: string,
   exerciseId: string,
   orderIndex: number
-): Promise<TemplateExercise> {
+): Promise<TemplateExercise | null> {
   const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select({ id: templates.id })
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
+    .get();
+
+  if (!template) {
+    console.log('addExerciseToTemplate: Template not found or does not belong to user');
+    return null;
+  }
 
   const templateExercise = await drizzleDb
     .insert(templateExercises)
@@ -353,12 +365,26 @@ export async function reorderTemplateExercises(
 
 export async function deleteAllTemplateExercises(
   db: D1Database,
-  templateId: string
-): Promise<void> {
+  templateId: string,
+  userId: string
+): Promise<boolean> {
   const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select({ id: templates.id })
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
+    .get();
+
+  if (!template) {
+    console.log('deleteAllTemplateExercises: Template not found or does not belong to user');
+    return false;
+  }
 
   await drizzleDb
     .delete(templateExercises)
     .where(eq(templateExercises.templateId, templateId))
     .run();
+
+  return true;
 }

@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercises = await getWorkoutExercises(db, params.id);
+          const exercises = await getWorkoutExercises(db, params.id, session.userId);
           return Response.json(exercises);
         } catch (err) {
           console.error('Get workout exercises error:', err);
@@ -55,10 +55,15 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           const workoutExercise = await createWorkoutExercise(
             db,
             params.id,
+            session.userId,
             exerciseId,
             orderIndex,
             notes
           );
+
+          if (!workoutExercise) {
+            return Response.json({ error: 'Workout not found or does not belong to you' }, { status: 404 });
+          }
 
           return Response.json(workoutExercise, { status: 201 });
         } catch (err) {

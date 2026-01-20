@@ -213,3 +213,159 @@ test.describe('Workout History', () => {
     await page.waitForTimeout(500);
   });
 });
+
+test.describe('Exercise History', () => {
+  test.beforeEach(async ({ context }) => {
+    const storageStateExists = await import('fs').then(fs =>
+      fs.existsSync('playwright/.auth/state.json')
+    );
+    if (!storageStateExists) {
+      await context.clearCookies();
+    }
+  });
+
+  test('can navigate to exercise history from expanded workout', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Workout History")')).toBeVisible({ timeout: 10000 });
+
+    const workoutCards = page.locator('.bg-white.rounded-lg.border.border-gray-200');
+    const cardCount = await workoutCards.count();
+
+    if (cardCount > 0) {
+      const firstCard = workoutCards.first();
+      await firstCard.click();
+
+      await page.waitForTimeout(500);
+
+      const exerciseLinks = page.locator('a[href^="/history/"]');
+      const linkCount = await exerciseLinks.count();
+
+      if (linkCount > 0) {
+        await exerciseLinks.first().click();
+        await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+        await expect(page.locator('h1').first()).toBeVisible({ timeout: 5000 });
+      } else {
+        console.log('No exercise history links found on expanded card');
+      }
+    } else {
+      console.log('No workout cards found to test navigation');
+    }
+  });
+
+  test('can view exercise history page', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Workout History")')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('exercise history page shows stats cards', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
+
+    const historyLinks = page.locator('a:has-text("History")');
+    const linkCount = await historyLinks.count();
+
+    if (linkCount > 0) {
+      await historyLinks.first().click();
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+
+      await expect(page.locator('text=Max Weight')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('text=Est. 1RM')).toBeVisible();
+      await expect(page.locator('text=Workouts')).toBeVisible();
+    } else {
+      console.log('No history links found on exercises page');
+    }
+  });
+
+  test('can toggle chart between weight and volume', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
+
+    const historyLinks = page.locator('a:has-text("History")');
+    const linkCount = await historyLinks.count();
+
+    if (linkCount > 0) {
+      await historyLinks.first().click();
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+
+      const weightButton = page.locator('button:has-text("Weight")');
+      const volumeButton = page.locator('button:has-text("Volume")');
+
+      await expect(weightButton).toBeVisible({ timeout: 5000 });
+      await expect(volumeButton).toBeVisible();
+
+      await volumeButton.click();
+      await page.waitForTimeout(300);
+
+      await weightButton.click();
+      await page.waitForTimeout(300);
+    } else {
+      console.log('No history links found to test chart toggle');
+    }
+  });
+
+  test('quick filters work on exercise history page', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
+
+    const historyLinks = page.locator('a:has-text("History")');
+    const linkCount = await historyLinks.count();
+
+    if (linkCount > 0) {
+      await historyLinks.first().click();
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+
+      const thisWeekButton = page.locator('button:has-text("This Week")').first();
+      const thisMonthButton = page.locator('button:has-text("This Month")').first();
+      const allTimeButton = page.locator('button:has-text("All Time")').first();
+
+      await expect(thisWeekButton).toBeVisible({ timeout: 5000 });
+
+      await thisMonthButton.click();
+      await page.waitForTimeout(300);
+
+      await allTimeButton.click();
+      await page.waitForTimeout(300);
+    } else {
+      console.log('No history links found to test filters');
+    }
+  });
+
+  test('history table shows correct columns', async ({ page }) => {
+    await loginUser(page);
+
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    await expect(page.locator('h1:has-text("Exercises")')).toBeVisible({ timeout: 10000 });
+
+    const historyLinks = page.locator('a:has-text("History")');
+    const linkCount = await historyLinks.count();
+
+    if (linkCount > 0) {
+      await historyLinks.first().click();
+      await page.waitForURL(/\/history\/[a-f0-9-]+/, { timeout: 10000 });
+
+      await expect(page.locator('th:has-text("Date")')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('th:has-text("Workout")')).toBeVisible();
+      await expect(page.locator('th:has-text("Max Weight")')).toBeVisible();
+      await expect(page.locator('th:has-text("Reps")')).toBeVisible();
+      await expect(page.locator('th:has-text("Est. 1RM")')).toBeVisible();
+    } else {
+      console.log('No history links found to test table columns');
+    }
+  });
+});

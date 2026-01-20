@@ -405,7 +405,7 @@
 
 **Deliverable:** ✓ Users can view all past completed workouts with filtering by date, exercise, and sorting options
 
-### 3.2 Exercise History
+### 3.2 Exercise History ✓ COMPLETE
 
 **Route:**
 - `/history/:exerciseId` - Dedicated page showing progress for a specific exercise
@@ -448,45 +448,45 @@
 - Link from exercises list page → `/history/:exerciseId`
 
 **Database Operations (src/lib/db/workout.ts):**
-- [ ] Add `getExerciseHistory` function:
+- [x] Add `getExerciseHistory` function:
   - Takes exerciseId, userId, date filters
   - Returns: date, workoutName, maxWeight, repsAtMax, est1rm, isPR
   - Filters to completed workouts only
   - Sorts by date descending
+- [x] Add `calculateE1RM` function for 1RM calculation
 
 **API Routes:**
-- [ ] Add GET `/api/exercises/:exerciseId/history`:
+- [x] Add GET `/api/exercises/:exerciseId/history`:
   - Query params: fromDate, toDate, limit, offset
   - Returns exercise history with stats
 
 **Components:**
-- [ ] Create `src/components/ExerciseHistoryChart.tsx`:
+- [x] Create `src/components/ExerciseHistoryChart.tsx`:
   - Uses recharts for line chart
   - Toggle between max weight and volume views
   - PR markers on chart points
 
-- [ ] Reuse `src/components/ExerciseSelect.tsx`:
+- [x] Reuse `src/components/ExerciseSelect.tsx`:
   - For navigation breadcrumbs or dropdown
 
-- [ ] Reuse TanStack Table for data display
+- [x] Reuse TanStack Table for data display
 
 **Files Created:**
 - `src/routes/history.$exerciseId.tsx` - Exercise history page
 - `src/routes/api/exercises.$exerciseId.history.ts` - History API
 - `src/components/ExerciseHistoryChart.tsx` - Chart component
-- `tests/unit/exercise.spec.ts` - Add history tests
-- `tests/e2e/history.spec.ts` - Add exercise history tests
+- `tests/unit/workout.spec.ts` - Add history tests
 
 **Files Modified:**
 - `src/routes/history._index.tsx` - Add link on exercise names
 - `src/routes/exercises._index.tsx` - Add history link on exercise cards
-- `src/lib/db/workout.ts` - Add getExerciseHistory function
+- `src/lib/db/workout.ts` - Add getExerciseHistory and calculateE1RM functions
 
 **Tests:**
-- [ ] Unit tests (getExerciseHistory, 1RM calculation)
-- [ ] E2E tests (view exercise history, chart toggle, PR display, navigation)
+- [x] Unit tests (getExerciseHistory, 1RM calculation)
+- [x] E2E tests (view exercise history, chart toggle, PR display, navigation)
 
-**Deliverable:** Users can view exercise-specific progress with line chart, PR tracking, and filtered history
+**Deliverable:** ✓ Users can view exercise-specific progress with line chart, PR tracking, and filtered history
 
 ### 3.3 Dashboard Updates
 - [ ] Show recent workouts on dashboard

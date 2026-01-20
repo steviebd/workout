@@ -306,6 +306,14 @@ describe('Template DB Operations', () => {
         orderIndex: 0,
       };
 
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue({ id: 'template-1' }),
+          }),
+        }),
+      });
+
       mockDrizzleDb.insert.mockReturnValue({
         values: vi.fn().mockReturnValue({
           returning: vi.fn().mockReturnValue({
@@ -319,13 +327,17 @@ describe('Template DB Operations', () => {
       const result = await addExerciseToTemplate(
         {} as D1Database,
         'template-1',
+        'user-1',
         'ex-1',
         0
       );
 
-      expect(result.templateId).toBe('template-1');
-      expect(result.exerciseId).toBe('ex-1');
-      expect(result.orderIndex).toBe(0);
+      expect(result).not.toBeNull();
+      if (result) {
+        expect(result.templateId).toBe('template-1');
+        expect(result.exerciseId).toBe('ex-1');
+        expect(result.orderIndex).toBe(0);
+      }
     });
   });
 
