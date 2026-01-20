@@ -79,6 +79,222 @@ export async function createWorkout(
   return workout;
 }
 
+export async function getLastWorkoutSetsForExercises(
+  db: D1Database,
+  userId: string,
+  exerciseIds: string[]
+): Promise<Map<string, LastWorkoutSetData[]>> {
+  if (exerciseIds.length === 0) {
+    return new Map();
+  }
+
+  const drizzleDb = createDb(db);
+
+  const recentWorkoutExercises = await drizzleDb
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      workoutExerciseId: workoutExercises.id,
+      completedAt: workouts.completedAt,
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(
+      eq(workouts.userId, userId),
+      inArray(workoutExercises.exerciseId, exerciseIds),
+      isNotNull(workoutSets.completedAt)
+    ))
+    .orderBy(desc(workouts.completedAt))
+    .all();
+
+  if (recentWorkoutExercises.length === 0) {
+    return new Map();
+  }
+
+  const workoutExerciseIds = [...new Set(recentWorkoutExercises.map(r => r.workoutExerciseId))];
+
+  const sets = await drizzleDb
+    .select({
+      workoutExerciseId: workoutSets.workoutExerciseId,
+      setNumber: workoutSets.setNumber,
+      weight: workoutSets.weight,
+      reps: workoutSets.reps,
+      rpe: workoutSets.rpe,
+    })
+    .from(workoutSets)
+    .where(inArray(workoutSets.workoutExerciseId, workoutExerciseIds))
+    .orderBy(workoutSets.setNumber)
+    .all();
+
+  const result = new Map<string, LastWorkoutSetData[]>();
+
+  for (const exerciseId of exerciseIds) {
+    const filtered = recentWorkoutExercises
+      .filter(rwe => rwe.exerciseId === exerciseId)
+      .sort((a, b) => {
+        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+    if (filtered.length > 0) {
+      const mostRecentWorkoutExercise = filtered[0];
+      const exerciseSets = sets
+        .filter(s => s.workoutExerciseId === mostRecentWorkoutExercise.workoutExerciseId)
+        .map(s => ({
+          setNumber: s.setNumber,
+          weight: s.weight,
+          reps: s.reps,
+          rpe: s.rpe,
+        }));
+      result.set(exerciseId, exerciseSets);
+    } else {
+      result.set(exerciseId, []);
+    }
+  }
+
+  return result;
+}
+
+export async function getWorkoutExercises(
+  db: D1Database,
+  workoutId: string,
+  userId: string
+): Promise<WorkoutExerciseWithDetails[]> {
+  const drizzleDb = createDb(db);
+
+  const results = await drizzleDb
+    .select({
+      id: workoutExercises.id,
+      workoutId: workoutExercises.workoutId,
+      exerciseId: workoutExercises.exerciseId,
+      orderIndex: workoutExercises.orderIndex,
+      notes: workoutExercises.notes,
+      exercise: {
+        id: exercises.id,
+        name: exercises.name,
+        muscleGroup: exercises.muscleGroup,
+      },
+      sets: {
+        id: workoutSets.id,
+        workoutExerciseId: workoutSets.workoutExerciseId,
+        setNumber: workoutSets.setNumber,
+        weight: workoutSets.weight,
+        reps: workoutSets.reps,
+        rpe: workoutSets.rpe,
+        isComplete: workoutSets.isComplete,
+        completedAt: workoutSets.completedAt,
+        createdAt: workoutSets.createdAt,
+      },
+    })
+    .from(workoutExercises)
+
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+    .where(and(
+      eq(workoutExercises.workoutId, workoutId),
+      eq(exercises.userId, userId),
+      eq(exercises.isDeleted, false)
+    ))
+    .orderBy(workoutExercises.orderIndex, workoutSets.setNumber)
+    .all();
+
+  const exerciseMap = new Map<string, WorkoutExerciseWithDetails>();
+
+  for (const row of results) {
+    const existing = exerciseMap.get(row.id);
+    const setData = row.sets as WorkoutSet | null;
+    if (existing) {
+      if (setData?.id) {
+        existing.sets.push(setData);
+      }
+    } else {
+      exerciseMap.set(row.id, {
+        id: row.id,
+        workoutId: row.workoutId,
+        exerciseId: row.exerciseId,
+        orderIndex: row.orderIndex,
+        notes: row.notes,
+        exercise: row.exercise,
+        sets: setData?.id ? [setData] : [],
+      });
+    }
+  }
+
+  return Array.from(exerciseMap.values());
+}
+
+export async function createWorkoutWithDetails(
+  db: D1Database,
+  data: CreateWorkoutData & { userId: string; exerciseIds: string[] }
+): Promise<WorkoutWithExercises> {
+  const drizzleDb = createDb(db);
+
+  const workout = await drizzleDb
+    .insert(workouts)
+    .values({
+      userId: data.userId,
+      name: data.name,
+      templateId: data.templateId,
+      notes: data.notes,
+      startedAt: new Date().toISOString(),
+    })
+    .returning()
+    .get();
+
+  const workoutExercisesData: NewWorkoutExercise[] = data.exerciseIds.map((exerciseId, index) => ({
+    workoutId: workout.id,
+    exerciseId,
+    orderIndex: index,
+  }));
+
+  const newWorkoutExercises = await drizzleDb
+    .insert(workoutExercises)
+    .values(workoutExercisesData)
+    .returning()
+    .all();
+
+  const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.userId, data.exerciseIds);
+
+  const setsToInsert: NewWorkoutSet[] = [];
+
+  for (let i = 0; i < newWorkoutExercises.length; i++) {
+    const workoutExercise = newWorkoutExercises[i];
+    const exerciseId = data.exerciseIds[i];
+    const lastSets = lastSetsByExercise.get(exerciseId) ?? [];
+
+    if (lastSets.length > 0) {
+      for (const setData of lastSets) {
+        setsToInsert.push({
+          workoutExerciseId: workoutExercise.id,
+          setNumber: setData.setNumber,
+          weight: setData.weight,
+          reps: setData.reps,
+          rpe: setData.rpe,
+          isComplete: false,
+        });
+      }
+    } else {
+      setsToInsert.push({
+        workoutExerciseId: workoutExercise.id,
+        setNumber: 1,
+        isComplete: false,
+      });
+    }
+  }
+
+  if (setsToInsert.length > 0) {
+    await drizzleDb.insert(workoutSets).values(setsToInsert).run();
+  }
+
+  const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.userId);
+
+  return {
+    ...workout,
+    exercises: exercisesWithSets,
+  };
+}
+
 export async function getWorkoutById(
   db: D1Database,
   workoutId: string,
@@ -309,74 +525,6 @@ export async function createWorkoutExercise(
   return workoutExercise;
 }
 
-export async function getWorkoutExercises(
-  db: D1Database,
-  workoutId: string,
-  userId: string
-): Promise<WorkoutExerciseWithDetails[]> {
-  const drizzleDb = createDb(db);
-
-  const results = await drizzleDb
-    .select({
-      id: workoutExercises.id,
-      workoutId: workoutExercises.workoutId,
-      exerciseId: workoutExercises.exerciseId,
-      orderIndex: workoutExercises.orderIndex,
-      notes: workoutExercises.notes,
-      exercise: {
-        id: exercises.id,
-        name: exercises.name,
-        muscleGroup: exercises.muscleGroup,
-      },
-      sets: {
-        id: workoutSets.id,
-        workoutExerciseId: workoutSets.workoutExerciseId,
-        setNumber: workoutSets.setNumber,
-        weight: workoutSets.weight,
-        reps: workoutSets.reps,
-        rpe: workoutSets.rpe,
-        isComplete: workoutSets.isComplete,
-        completedAt: workoutSets.completedAt,
-        createdAt: workoutSets.createdAt,
-      },
-    })
-    .from(workoutExercises)
-
-    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
-    .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
-    .where(and(
-      eq(workoutExercises.workoutId, workoutId),
-      eq(exercises.userId, userId),
-      eq(exercises.isDeleted, false)
-    ))
-    .orderBy(workoutExercises.orderIndex, workoutSets.setNumber)
-    .all();
-
-  const exerciseMap = new Map<string, WorkoutExerciseWithDetails>();
-
-  for (const row of results) {
-    const existing = exerciseMap.get(row.id);
-    const setData = row.sets as WorkoutSet | null;
-    if (existing) {
-      if (setData?.id) {
-        existing.sets.push(setData);
-      }
-    } else {
-      exerciseMap.set(row.id, {
-        id: row.id,
-        workoutId: row.workoutId,
-        exerciseId: row.exerciseId,
-        orderIndex: row.orderIndex,
-        notes: row.notes,
-        exercise: row.exercise,
-        sets: setData?.id ? [setData] : [],
-      });
-    }
-  }
-
-  return Array.from(exerciseMap.values());
-}
-
 export async function removeWorkoutExercise(
   db: D1Database,
   workoutId: string,
@@ -429,16 +577,18 @@ export async function reorderWorkoutExercises(
     return false;
   }
 
-  for (const order of exerciseOrders) {
-    await drizzleDb
+  const updates = exerciseOrders.map(order =>
+    drizzleDb
       .update(workoutExercises)
       .set({ orderIndex: order.orderIndex })
       .where(and(
         eq(workoutExercises.workoutId, workoutId),
         eq(workoutExercises.exerciseId, order.exerciseId)
       ))
-      .run();
-  }
+      .run()
+  );
+
+  await Promise.all(updates);
 
   return true;
 }
@@ -714,7 +864,7 @@ export async function getTotalVolume(
 
   let totalVolume = 0;
   for (const set of sets) {
-    if (set.weight && set.reps) {
+    if (set.weight !== null && set.reps !== null) {
       totalVolume += set.weight * set.reps;
     }
   }

@@ -2,10 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import {
   type CreateWorkoutData,
-  createWorkout,
-  createWorkoutExercise,
-  createWorkoutSet,
-  getLastWorkoutSetsForExercise,
+  createWorkoutWithDetails,
   getWorkoutsByUserId,
 } from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
@@ -72,13 +69,6 @@ export const Route = createFileRoute('/api/workouts')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workout = await createWorkout(db, {
-            userId: session.userId,
-            name,
-            templateId,
-            notes,
-          });
-
           let exercisesToAdd = exerciseIds ?? [];
 
           if (exercisesToAdd.length === 0 && templateId) {
@@ -86,29 +76,13 @@ export const Route = createFileRoute('/api/workouts')({
             exercisesToAdd = templateExercises.map((te) => te.exerciseId);
           }
 
-          for (let i = 0; i < exercisesToAdd.length; i++) {
-            const workoutExercise = await createWorkoutExercise(db, workout.id, session.userId, exercisesToAdd[i], i);
-
-            if (workoutExercise) {
-              const lastWorkoutSets = await getLastWorkoutSetsForExercise(db, session.userId, exercisesToAdd[i]);
-
-              if (lastWorkoutSets.length > 0) {
-                for (const setData of lastWorkoutSets) {
-                  await createWorkoutSet(
-                    db,
-                    workoutExercise.id,
-                    session.userId,
-                    setData.setNumber,
-                    setData.weight ?? undefined,
-                    setData.reps ?? undefined,
-                    setData.rpe ?? undefined
-                  );
-                }
-              } else {
-                await createWorkoutSet(db, workoutExercise.id, session.userId, 1);
-              }
-            }
-          }
+          const workout = await createWorkoutWithDetails(db, {
+            userId: session.userId,
+            name,
+            templateId,
+            notes,
+            exerciseIds: exercisesToAdd,
+          });
 
           return Response.json(workout, { status: 201 });
         } catch (err) {

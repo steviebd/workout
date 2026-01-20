@@ -10,7 +10,7 @@
 		"serve": "vite preview",
 		"test": "vitest run",
 		"test:e2e": "infisical run --env dev -- npx playwright test",
-		"test:e2e:ui": "infisical run --env dev -- npx playwright test --ui",
+		"test:e2e:ui": "npx playwright test --ui --headed",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"typecheck": "bun run tsc --noEmit",

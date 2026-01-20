@@ -9,9 +9,9 @@ export default defineConfig({
 	webServer: {
 		command: process.env.CI
 			? ''
-			: 'infisical run --env dev -- sh -c "bun run build && bun run wrangler dev"',
+			: ':',
 		url: 'http://localhost:8787',
-		reuseExistingServer: true,
+		reuseExistingServer: !process.env.CI,
 		timeout: 120000,
 	},
 	testDir: './tests/e2e',

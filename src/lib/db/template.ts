@@ -360,16 +360,18 @@ export async function reorderTemplateExercises(
     return false;
   }
 
-  for (const order of exerciseOrders) {
-    await drizzleDb
+  const updates = exerciseOrders.map(order =>
+    drizzleDb
       .update(templateExercises)
       .set({ orderIndex: order.orderIndex })
       .where(and(
         eq(templateExercises.templateId, templateId),
         eq(templateExercises.exerciseId, order.exerciseId)
       ))
-      .run();
-  }
+      .run()
+  );
+
+  await Promise.all(updates);
 
   return true;
 }
