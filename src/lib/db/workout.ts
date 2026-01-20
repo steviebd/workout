@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import {
   type NewWorkout,
   type NewWorkoutExercise,
@@ -33,6 +33,9 @@ export interface GetWorkoutsOptions {
   sortOrder?: 'ASC' | 'DESC';
   limit?: number;
   offset?: number;
+  fromDate?: string;
+  toDate?: string;
+  exerciseId?: string;
 }
 
 export interface WorkoutWithExercises extends Workout {
@@ -175,12 +178,29 @@ export async function getWorkoutsByUserId(
 ): Promise<Workout[]> {
   const drizzleDb = createDb(db);
 
-  const { sortBy = 'startedAt', sortOrder = 'DESC', limit, offset } = options;
+  const { sortBy = 'startedAt', sortOrder = 'DESC', limit, offset, fromDate, toDate, exerciseId } = options;
+
+  const conditions = [
+    eq(workouts.userId, userId),
+    isNotNull(workouts.completedAt),
+  ];
+
+  if (fromDate) {
+    conditions.push(sql`${workouts.startedAt} >= ${fromDate}`);
+  }
+
+  if (toDate) {
+    conditions.push(sql`${workouts.startedAt} <= ${toDate}`);
+  }
+
+  if (exerciseId) {
+    conditions.push(inArray(workouts.id, drizzleDb.select({ value: workoutExercises.workoutId }).from(workoutExercises).where(eq(workoutExercises.exerciseId, exerciseId))));
+  }
 
   let query = drizzleDb
     .select()
     .from(workouts)
-    .where(eq(workouts.userId, userId));
+    .where(and(...conditions));
 
   if (sortBy === 'startedAt') {
     query = sortOrder === 'DESC'
@@ -562,4 +582,87 @@ export async function getTotalVolume(
   }
 
   return totalVolume;
+}
+
+export interface WorkoutHistoryStats {
+  totalWorkouts: number;
+  thisWeek: number;
+  thisMonth: number;
+  totalVolume: number;
+  totalSets: number;
+}
+
+export async function getWorkoutHistoryStats(
+  db: D1Database,
+  userId: string
+): Promise<WorkoutHistoryStats> {
+  const drizzleDb = createDb(db);
+
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  const monday = new Date(now.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  const weekStart = monday.toISOString();
+
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  firstDay.setHours(0, 0, 0, 0);
+  const monthStart = firstDay.toISOString();
+
+  const [totalWorkouts, thisWeek, thisMonth, volumeResult, setsResult] = await Promise.all([
+    drizzleDb
+      .select({ count: sql<number>`count(*)` })
+      .from(workouts)
+      .where(and(
+        eq(workouts.userId, userId),
+        isNotNull(workouts.completedAt)
+      ))
+      .get(),
+    drizzleDb
+      .select({ count: sql<number>`count(*)` })
+      .from(workouts)
+      .where(and(
+        eq(workouts.userId, userId),
+        isNotNull(workouts.completedAt),
+        sql`${workouts.startedAt} >= ${weekStart}`
+      ))
+      .get(),
+    drizzleDb
+      .select({ count: sql<number>`count(*)` })
+      .from(workouts)
+      .where(and(
+        eq(workouts.userId, userId),
+        isNotNull(workouts.completedAt),
+        sql`${workouts.startedAt} >= ${monthStart}`
+      ))
+      .get(),
+    drizzleDb
+      .select({ total: sql<number>`COALESCE(SUM(${workoutSets.weight} * ${workoutSets.reps}), 0)` })
+      .from(workoutSets)
+      .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+      .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+      .where(and(
+        eq(workouts.userId, userId),
+        eq(workoutSets.isComplete, true)
+      ))
+      .get(),
+    drizzleDb
+      .select({ total: sql<number>`count(*)` })
+      .from(workoutSets)
+      .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+      .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+      .where(and(
+        eq(workouts.userId, userId),
+        eq(workoutSets.isComplete, true)
+      ))
+      .get(),
+  ]);
+
+  return {
+    totalWorkouts: totalWorkouts?.count ?? 0,
+    thisWeek: thisWeek?.count ?? 0,
+    thisMonth: thisMonth?.count ?? 0,
+    totalVolume: volumeResult?.total ?? 0,
+    totalSets: setsResult?.total ?? 0,
+  };
 }

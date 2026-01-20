@@ -333,25 +333,160 @@
 
 ## Phase 3: History & Analytics (Week 3)
 
-### 3.1 Workout History
-- [ ] Build `/history` list view
-- [ ] Display all past workouts
-- [ ] Show workout details (exercises, sets, totals)
-- [ ] Add filtering by date range
-- [ ] Write unit tests
-- [ ] Add E2E tests
+### 3.1 Workout History ✓ COMPLETE
 
-**Deliverable:** Users can view all past workouts
+**Database Operations (src/lib/db/workout.ts):**
+- [x] Extend `getWorkoutsByUserId` with new options:
+  - `fromDate?: string` - Filter by startedAt >= date
+  - `toDate?: string` - Filter by startedAt <= date
+  - `exerciseId?: string` - Filter workouts containing specific exercise
+- [x] Return enriched data: exerciseCount, totalSets, totalVolume, duration
+- [x] Add `getWorkoutHistoryStats` function:
+  - totalWorkouts: number
+  - thisWeek: number
+  - thisMonth: number
+  - totalVolume: number
+  - totalSets: number
+
+**API Routes:**
+- [x] Extend GET /api/workouts with:
+  - `fromDate` - Filter by startedAt >= date
+  - `toDate` - Filter by startedAt <= date
+  - `exerciseId` - Filter workouts containing specific exercise
+  - Only return workouts where `completedAt IS NOT NULL`
+- [x] Add GET /api/workouts/stats for summary statistics
+
+**Reusable Component:**
+- [x] Create `src/components/ExerciseSelect.tsx`
+  - Searchable dropdown for exercises
+  - Reuses existing exercise API
+  - Used in template creation, workout creation, and history filter
+
+**Routes & Views:**
+
+| Route | Purpose | Features |
+|-------|---------|----------|
+| `/history` | History list view | [x] Stats cards (clickable), [x] Exercise filter (dropdown), [x] Date range picker, [x] Search, [x] Sort options, [x] Expandable workout cards with full set details, [x] Infinite scroll (load 10 initial) |
+
+**UI Layout:**
+- **Stats Cards:** Total Workouts, This Week, This Month, Total Volume, Total Sets (clickable to apply filters)
+- **Quick Filter Buttons:** [This Week] [This Month] [All Time]
+- **Filter Bar:** Exercise dropdown, From date picker, To date picker, Search input
+- **Sort Dropdown:** Newest First, Oldest First, Most Volume, Longest Duration
+- **Workout Cards (expandable):**
+  - Date, workout name, duration, exercise count, sets count, volume, status badge
+  - Expanded: full set details (weight/reps for each set)
+- **Infinite Scroll:** Load more when within 500px of bottom
+
+**Features:**
+- [x] Only show completed workouts (completedAt IS NOT NULL)
+- [x] Quick date filters (This Week, This Month, All Time)
+- [x] Filter by exercise (dropdown/search picker)
+- [x] Filter by date range (native date pickers)
+- [x] Sort by newest/oldest, volume, duration
+- [x] Expandable workout cards with full set details
+- [x] Clickable stat cards to apply filters
+- [x] Infinite scroll (10 initial load, 500px threshold)
+- [x] Search by workout name
+
+**Tests:**
+- [x] Unit tests (getWorkoutsByUserId with filters, getWorkoutHistoryStats) - tests/unit/workout.spec.ts
+- [x] E2E tests (view history, filter by date, filter by exercise, click stats cards, expand/collapse, infinite scroll) - tests/e2e/history.spec.ts
+
+**Files Created:**
+- src/components/ExerciseSelect.tsx - Reusable exercise dropdown component
+- tests/e2e/history.spec.ts - E2E tests
+
+**Files Modified:**
+- src/lib/db/workout.ts - Add functions
+- src/routes/api/workouts.ts - Extend API
+- src/routes/history._index.tsx - Implement UI
+- tests/unit/workout.spec.ts - Add tests
+
+**Deliverable:** ✓ Users can view all past completed workouts with filtering by date, exercise, and sorting options
 
 ### 3.2 Exercise History
-- [ ] Build `/history/:exerciseId` filtered view
-- [ ] Show all logged sets for an exercise
-- [ ] Display progress over time
-- [ ] Calculate max weight, total volume
-- [ ] Write unit tests
-- [ ] Add E2E tests
 
-**Deliverable:** Users can filter history by exercise and see progress
+**Route:**
+- `/history/:exerciseId` - Dedicated page showing progress for a specific exercise
+
+**UI Layout:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Bench Press                                                │
+│ [Line Chart: Max Weight Over Time - toggle switch]         │
+├─────────────────────────────────────────────────────────────┤
+│ Max Weight: 140kg  │  Est. 1RM: 155kg  │  12 Workouts      │
+├─────────────────────────────────────────────────────────────┤
+│ [This Week] [This Month] [This Year (default)] [All Time]  │
+│ From: [_____]  To: [_____]                                  │
+├─────────────────────────────────────────────────────────────┤
+│ Table (TanStack Table):                                     │
+│ ┌──────────┬────────────┬───────────┬──────┬────────┬────┐  │
+│ │ Date     │ Workout    │ Max Weight│ Reps │ Est 1RM│ PR │  │
+│ ├──────────┼────────────┼───────────┼──────┼────────┼────┤  │
+│ │ Jan 15   │ Push Day   │ 105kg     │ 4    │ 115kg  │ 🏆 │  │
+│ │ Jan 10   │ Upper Body │ 100kg     │ 5    │ 110kg  │    │  │
+│ │ Jan 5    │ Chest Day  │ 95kg      │ 8    │ 103kg  │    │  │
+│ └──────────┴────────────┴───────────┴──────┴────────┴────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- **Line Chart:** Max weight per workout over time, switchable to volume
+- **Flat List Table:** One row per workout showing highest weight set for this exercise
+- **Columns:** Date | Workout Name | Max Weight | Reps | Est. 1RM | PR Badge
+- **PR Badge:** 🏆 shown when this workout set a new max for the exercise
+- **Quick Filters:** This Week, This Month, This Year (default), All Time
+- **Date Range Picker:** Custom from/to dates
+- **Stats Cards:** Max Weight, Estimated 1RM, Total Workouts (clickable filters)
+- **Chart PR Markers:** Highlight workout points where new PR was set
+
+**Navigation:**
+- Click exercise name on expanded history card → `/history/:exerciseId`
+- Link from exercises list page → `/history/:exerciseId`
+
+**Database Operations (src/lib/db/workout.ts):**
+- [ ] Add `getExerciseHistory` function:
+  - Takes exerciseId, userId, date filters
+  - Returns: date, workoutName, maxWeight, repsAtMax, est1rm, isPR
+  - Filters to completed workouts only
+  - Sorts by date descending
+
+**API Routes:**
+- [ ] Add GET `/api/exercises/:exerciseId/history`:
+  - Query params: fromDate, toDate, limit, offset
+  - Returns exercise history with stats
+
+**Components:**
+- [ ] Create `src/components/ExerciseHistoryChart.tsx`:
+  - Uses recharts for line chart
+  - Toggle between max weight and volume views
+  - PR markers on chart points
+
+- [ ] Reuse `src/components/ExerciseSelect.tsx`:
+  - For navigation breadcrumbs or dropdown
+
+- [ ] Reuse TanStack Table for data display
+
+**Files Created:**
+- `src/routes/history.$exerciseId.tsx` - Exercise history page
+- `src/routes/api/exercises.$exerciseId.history.ts` - History API
+- `src/components/ExerciseHistoryChart.tsx` - Chart component
+- `tests/unit/exercise.spec.ts` - Add history tests
+- `tests/e2e/history.spec.ts` - Add exercise history tests
+
+**Files Modified:**
+- `src/routes/history._index.tsx` - Add link on exercise names
+- `src/routes/exercises._index.tsx` - Add history link on exercise cards
+- `src/lib/db/workout.ts` - Add getExerciseHistory function
+
+**Tests:**
+- [ ] Unit tests (getExerciseHistory, 1RM calculation)
+- [ ] E2E tests (view exercise history, chart toggle, PR display, navigation)
+
+**Deliverable:** Users can view exercise-specific progress with line chart, PR tracking, and filtered history
 
 ### 3.3 Dashboard Updates
 - [ ] Show recent workouts on dashboard
@@ -476,7 +611,7 @@
 - [x] Workout logging complete
 
 ### Sprint 3 End
-- [ ] History views complete
+- [x] History views complete
 - [ ] Dashboard complete
 - [ ] All unit tests passing
 

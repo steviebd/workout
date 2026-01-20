@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { type CreateWorkoutData, createWorkout, getWorkoutsByUserId } from '../../lib/db/workout';
+import { type CreateWorkoutData, createWorkout, createWorkoutExercise, getWorkoutsByUserId } from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
+import { getTemplateExercises } from '../../lib/db/template';
 
 export const Route = createFileRoute('/api/workouts')({
   server: {
@@ -19,6 +20,9 @@ export const Route = createFileRoute('/api/workouts')({
           const page = parseInt(url.searchParams.get('page') ?? '1', 10);
           const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
           const offset = (page - 1) * limit;
+          const fromDate = url.searchParams.get('fromDate') ?? undefined;
+          const toDate = url.searchParams.get('toDate') ?? undefined;
+          const exerciseId = url.searchParams.get('exerciseId') ?? undefined;
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {
@@ -30,6 +34,9 @@ export const Route = createFileRoute('/api/workouts')({
             sortOrder,
             limit,
             offset,
+            fromDate,
+            toDate,
+            exerciseId,
           });
 
           return Response.json(workouts);
@@ -47,7 +54,7 @@ export const Route = createFileRoute('/api/workouts')({
           }
 
           const body = await request.json();
-          const { name, templateId, notes } = body as CreateWorkoutData;
+          const { name, templateId, notes, exerciseIds } = body as CreateWorkoutData & { exerciseIds?: string[] };
 
           if (!name) {
             return Response.json({ error: 'Name is required' }, { status: 400 });
@@ -64,6 +71,17 @@ export const Route = createFileRoute('/api/workouts')({
             templateId,
             notes,
           });
+
+          let exercisesToAdd = exerciseIds ?? [];
+
+          if (exercisesToAdd.length === 0 && templateId) {
+            const templateExercises = await getTemplateExercises(db, templateId, session.userId);
+            exercisesToAdd = templateExercises.map((te) => te.exerciseId);
+          }
+
+          for (let i = 0; i < exercisesToAdd.length; i++) {
+            await createWorkoutExercise(db, workout.id, exercisesToAdd[i], i);
+          }
 
           return Response.json(workout, { status: 201 });
         } catch (err) {

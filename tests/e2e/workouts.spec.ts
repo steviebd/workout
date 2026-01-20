@@ -76,15 +76,22 @@ test.describe('Workout Flow', () => {
     await expect(exerciseSelectorModal).toBeVisible({ timeout: 5000 });
 
     let exerciseAdded = false;
-    const buttons = await page.locator('.fixed.inset-0 button').all();
-    
-    for (const btn of buttons) {
-      const text = await btn.textContent();
-      if (text && text.includes('Barbell') && !text.includes('Added')) {
-        await btn.click({ force: true });
-        exerciseAdded = true;
-        console.log('Added exercise:', text.substring(0, 50));
-        break;
+    let addedExerciseName = '';
+
+    const exerciseButtons = page.locator('.fixed.inset-0 button').filter({ has: page.locator('h3') });
+    const buttonCount = await exerciseButtons.count();
+
+    if (buttonCount > 0) {
+      for (let i = 0; i < buttonCount; i++) {
+        const btn = exerciseButtons.nth(i);
+        const text = await btn.textContent() ?? '';
+        if (!text.includes('Added')) {
+          await btn.click({ force: true });
+          exerciseAdded = true;
+          addedExerciseName = text.substring(0, 50);
+          console.log('Added exercise:', addedExerciseName);
+          break;
+        }
       }
     }
 
@@ -98,7 +105,7 @@ test.describe('Workout Flow', () => {
     console.log('Workout created:', page.url());
 
     await expect(page.locator('text=Progressive Test Workout')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=Barbell')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=${addedExerciseName}`).first()).toBeVisible({ timeout: 10000 });
     console.log('Workout page loaded successfully!');
 
     const exerciseCard = page.locator('[class*="bg-white"][class*="rounded-lg"][class*="border"]').first();

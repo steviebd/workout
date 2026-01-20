@@ -341,3 +341,611 @@ describe('User Preferences Operations', () => {
     });
   });
 });
+
+describe('Workout History - getWorkoutsByUserId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const completedWorkouts = [
+    {
+      id: 'workout-1',
+      userId: 'user-1',
+      templateId: 'template-1',
+      name: 'Upper Body',
+      startedAt: '2024-01-10T10:00:00.000Z',
+      completedAt: '2024-01-10T11:00:00.000Z',
+      notes: null,
+      createdAt: '2024-01-10T10:00:00.000Z',
+    },
+    {
+      id: 'workout-2',
+      userId: 'user-1',
+      templateId: 'template-2',
+      name: 'Lower Body',
+      startedAt: '2024-01-12T10:00:00.000Z',
+      completedAt: '2024-01-12T11:00:00.000Z',
+      notes: null,
+      createdAt: '2024-01-12T10:00:00.000Z',
+    },
+    {
+      id: 'workout-3',
+      userId: 'user-1',
+      templateId: 'template-1',
+      name: 'Full Body',
+      startedAt: '2024-01-14T10:00:00.000Z',
+      completedAt: '2024-01-14T11:00:00.000Z',
+      notes: null,
+      createdAt: '2024-01-14T10:00:00.000Z',
+    },
+  ];
+
+  it('should return only completed workouts', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1');
+
+    expect(result).toHaveLength(3);
+    expect(result.every((w) => w.completedAt)).toBe(true);
+  });
+
+  it('should filter workouts by fromDate', async () => {
+    const filtered = [completedWorkouts[1], completedWorkouts[2]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      fromDate: '2024-01-12T00:00:00.000Z',
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe('workout-2');
+    expect(result[1].id).toBe('workout-3');
+  });
+
+  it('should filter workouts by toDate', async () => {
+    const filtered = [completedWorkouts[0]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      toDate: '2024-01-11T23:59:59.999Z',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('workout-1');
+  });
+
+  it('should filter workouts by both fromDate and toDate', async () => {
+    const filtered = [completedWorkouts[1]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      fromDate: '2024-01-12T00:00:00.000Z',
+      toDate: '2024-01-12T23:59:59.999Z',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('workout-2');
+  });
+
+  it('should filter workouts by exerciseId', async () => {
+    const filtered = [completedWorkouts[0], completedWorkouts[2]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      exerciseId: 'bench-press',
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe('workout-1');
+    expect(result[1].id).toBe('workout-3');
+  });
+
+  it('should filter workouts with multiple exercises by exerciseId', async () => {
+    const filtered = [completedWorkouts[1]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      exerciseId: 'squat',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('workout-2');
+  });
+
+  it('should filter workouts by date and exerciseId combined', async () => {
+    const filtered = [completedWorkouts[2]];
+
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(filtered),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      fromDate: '2024-01-14T00:00:00.000Z',
+      exerciseId: 'deadlift',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('workout-3');
+  });
+
+  it('should apply limit and offset for pagination', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockReturnValue({
+            offset: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      limit: 1,
+      offset: 1,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('workout-2');
+  });
+
+  it('should sort by createdAt when specified', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    await getWorkoutsByUserId(mockDb, 'user-1', {
+      sortBy: 'createdAt',
+      sortOrder: 'ASC',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.where.mock.results[0].value.orderBy;
+
+    expect(orderByCall).toHaveBeenCalled();
+  });
+
+  it('should handle empty results', async () => {
+    mockDrizzleDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    });
+
+    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+      fromDate: '2025-01-01T00:00:00.000Z',
+    });
+
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe('Workout History - getWorkoutHistoryStats', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should calculate totalWorkouts for completed workouts', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 5 },
+      { count: 3 },
+      { count: 4 },
+      { total: 10000 },
+      { total: 50 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation((_arg) => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.totalWorkouts).toBe(5);
+    expect(result.thisWeek).toBe(3);
+    expect(result.thisMonth).toBe(4);
+    expect(result.totalVolume).toBe(10000);
+    expect(result.totalSets).toBe(50);
+  });
+
+  it('should calculate thisWeek workouts from Monday to Sunday', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 10 },
+      { count: 3 },
+      { count: 5 },
+      { total: 8000 },
+      { total: 40 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.thisWeek).toBe(3);
+    expect(mockDrizzleDb.select).toHaveBeenCalled();
+  });
+
+  it('should calculate thisMonth workouts', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 10 },
+      { count: 2 },
+      { count: 4 },
+      { total: 12000 },
+      { total: 60 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.thisMonth).toBe(4);
+  });
+
+  it('should calculate totalVolume from all completed sets', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 5 },
+      { count: 2 },
+      { count: 3 },
+      { total: 10000 },
+      { total: 50 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.totalVolume).toBe(10000);
+  });
+
+  it('should calculate totalSets from all completed sets', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 5 },
+      { count: 2 },
+      { count: 3 },
+      { total: 8000 },
+      { total: 50 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.totalSets).toBe(50);
+  });
+
+  it('should return zero values when no data exists', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      null,
+      null,
+      null,
+      { total: 0 },
+      { total: 0 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.totalWorkouts).toBe(0);
+    expect(result.thisWeek).toBe(0);
+    expect(result.thisMonth).toBe(0);
+    expect(result.totalVolume).toBe(0);
+    expect(result.totalSets).toBe(0);
+  });
+
+  it('should calculate all stats correctly', async () => {
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 10 },
+      { count: 3 },
+      { count: 5 },
+      { total: 15000 },
+      { total: 100 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result).toEqual({
+      totalWorkouts: 10,
+      thisWeek: 3,
+      thisMonth: 5,
+      totalVolume: 15000,
+      totalSets: 100,
+    });
+  });
+
+  it('should handle week boundary correctly (Monday start)', async () => {
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+
+    let callIndex = 0;
+    const mockResponses = [
+      { count: 8 },
+      { count: 2 },
+      { count: 4 },
+      { total: 5000 },
+      { total: 30 },
+    ];
+
+    mockDrizzleDb.select.mockImplementation(() => {
+      if (callIndex < 3) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+            }),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                get: vi.fn().mockResolvedValue(mockResponses[callIndex++]),
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const { getWorkoutHistoryStats } = await import('../../src/lib/db/workout');
+
+    const result = await getWorkoutHistoryStats(mockDb, 'user-1');
+
+    expect(result.thisWeek).toBe(2);
+  });
+});

@@ -29,6 +29,7 @@ import { Route as ApiExercisesRouteImport } from './routes/api/exercises'
 import { Route as WorkoutsIdSummaryRouteImport } from './routes/workouts.$id_.summary'
 import { Route as TemplatesIdEditRouteImport } from './routes/templates.$id.edit'
 import { Route as ExercisesIdEditRouteImport } from './routes/exercises.$id.edit'
+import { Route as ApiWorkoutsStatsRouteImport } from './routes/api/workouts.stats'
 import { Route as ApiWorkoutsSetsRouteImport } from './routes/api/workouts.sets'
 import { Route as ApiWorkoutsIdRouteImport } from './routes/api/workouts.$id'
 import { Route as ApiTemplatesIdRouteImport } from './routes/api/templates.$id'
@@ -146,6 +147,11 @@ const ExercisesIdEditRoute = ExercisesIdEditRouteImport.update({
   path: '/edit',
   getParentRoute: () => ExercisesIdRoute,
 } as any)
+const ApiWorkoutsStatsRoute = ApiWorkoutsStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => ApiWorkoutsRoute,
+} as any)
 const ApiWorkoutsSetsRoute = ApiWorkoutsSetsRouteImport.update({
   id: '/sets',
   path: '/sets',
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/sets': typeof ApiWorkoutsSetsRouteWithChildren
+  '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/sets': typeof ApiWorkoutsSetsRouteWithChildren
+  '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
@@ -334,6 +342,7 @@ export interface FileRoutesById {
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/sets': typeof ApiWorkoutsSetsRouteWithChildren
+  '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id_/summary': typeof WorkoutsIdSummaryRoute
@@ -374,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/sets'
+    | '/api/workouts/stats'
     | '/exercises/$id/edit'
     | '/templates/$id/edit'
     | '/workouts/$id/summary'
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/sets'
+    | '/api/workouts/stats'
     | '/exercises/$id/edit'
     | '/templates/$id/edit'
     | '/workouts/$id/summary'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/sets'
+    | '/api/workouts/stats'
     | '/exercises/$id/edit'
     | '/templates/$id/edit'
     | '/workouts/$id_/summary'
@@ -628,6 +640,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/exercises/$id/edit'
       preLoaderRoute: typeof ExercisesIdEditRouteImport
       parentRoute: typeof ExercisesIdRoute
+    }
+    '/api/workouts/stats': {
+      id: '/api/workouts/stats'
+      path: '/stats'
+      fullPath: '/api/workouts/stats'
+      preLoaderRoute: typeof ApiWorkoutsStatsRouteImport
+      parentRoute: typeof ApiWorkoutsRoute
     }
     '/api/workouts/sets': {
       id: '/api/workouts/sets'
@@ -856,11 +875,13 @@ const ApiWorkoutsSetsRouteWithChildren = ApiWorkoutsSetsRoute._addFileChildren(
 interface ApiWorkoutsRouteChildren {
   ApiWorkoutsIdRoute: typeof ApiWorkoutsIdRouteWithChildren
   ApiWorkoutsSetsRoute: typeof ApiWorkoutsSetsRouteWithChildren
+  ApiWorkoutsStatsRoute: typeof ApiWorkoutsStatsRoute
 }
 
 const ApiWorkoutsRouteChildren: ApiWorkoutsRouteChildren = {
   ApiWorkoutsIdRoute: ApiWorkoutsIdRouteWithChildren,
   ApiWorkoutsSetsRoute: ApiWorkoutsSetsRouteWithChildren,
+  ApiWorkoutsStatsRoute: ApiWorkoutsStatsRoute,
 }
 
 const ApiWorkoutsRouteWithChildren = ApiWorkoutsRoute._addFileChildren(

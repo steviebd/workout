@@ -41,13 +41,14 @@ function NewWorkout() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-   const [workoutName, setWorkoutName] = useState('');
+  const [workoutName, setWorkoutName] = useState('');
 
     const _handleAddExercise = useCallback((exercise: Exercise) => {
      console.log('handleAddExercise called:', exercise);
@@ -79,16 +80,17 @@ function NewWorkout() {
 
      setStarting(true);
 
-     try {
-       const res = await fetch('/api/workouts', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         credentials: 'include',
-         body: JSON.stringify({
-           name: workoutName,
-           exerciseIds: selectedExercises.map((e) => e.id),
-         }),
-       });
+      try {
+        const res = await fetch('/api/workouts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: workoutName,
+            exerciseIds: selectedExercises.map((e) => e.id),
+            templateId: selectedTemplate?.id,
+          }),
+        });
 
         if (res.ok) {
           const workout: Workout = await res.json();
@@ -100,7 +102,7 @@ function NewWorkout() {
      } finally {
        setStarting(false);
      }
-     }, [workoutName, selectedExercises]);
+      }, [workoutName, selectedExercises, selectedTemplate]);
 
 
 
@@ -182,31 +184,32 @@ function NewWorkout() {
     }, []);
 
       const handleStartFromTemplate = useCallback(async (template: Template) => {
-       setMode('blank');
-       setWorkoutName(template.name);
+        setMode('blank');
+        setSelectedTemplate(template);
+        setWorkoutName(template.name);
 
-      try {
-        const res = await fetch(`/api/templates/${template.id}`, {
-          credentials: 'include',
-        });
+       try {
+         const res = await fetch(`/api/templates/${template.id}`, {
+           credentials: 'include',
+         });
 
-        if (res.ok) {
-          const templateExercisesRes = await fetch(`/api/templates/${template.id}/exercises`, {
-            credentials: 'include',
-          });
+         if (res.ok) {
+           const templateExercisesRes = await fetch(`/api/templates/${template.id}/exercises`, {
+             credentials: 'include',
+           });
 
-          if (templateExercisesRes.ok) {
-            const templateExercises: TemplateExercise[] = await templateExercisesRes.json();
-            const exerciseIds = templateExercises.map((te) => te.exerciseId);
+           if (templateExercisesRes.ok) {
+             const templateExercises: TemplateExercise[] = await templateExercisesRes.json();
+             const exerciseIds = templateExercises.map((te) => te.exerciseId);
 
-            const exerciseDetails = exercises.filter((e) => exerciseIds.includes(e.id));
-            setSelectedExercises(exerciseDetails);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load template details:', err);
-      }
-    }, [exercises]);
+             const exerciseDetails = exercises.filter((e) => exerciseIds.includes(e.id));
+             setSelectedExercises(exerciseDetails);
+           }
+         }
+       } catch (err) {
+         console.error('Failed to load template details:', err);
+       }
+     }, [exercises]);
 
     const _handleStartFromTemplateClick = useCallback((e: React.MouseEvent) => {
       const id = (e.currentTarget as HTMLElement).getAttribute('data-template-id');
