@@ -10,12 +10,12 @@ export function ToastProvider({ children }: { readonly children: ReactNode }): R
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#fff',
-            color: '#1f2937',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-            borderRadius: '0.5rem',
+            background: 'oklch(0.14 0 0)',
+            color: 'oklch(0.98 0 0)',
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2)',
+            borderRadius: '0.75rem',
             padding: '1rem',
-            border: '1px solid #e5e7eb',
+            border: '1px solid oklch(0.25 0 0)',
           },
         }}
       />

@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { Button } from './ui/Button';
 import type { ComponentType, ReactNode } from 'react';
 
 interface EmptyStateProps {
@@ -104,17 +105,16 @@ export function EmptyState({
   return (
     <div className={`text-center py-12 ${className}`}>
       <div className="flex items-center justify-center mb-4">
-        <IconComponent size={48} className="text-gray-400" />
+        <IconComponent size={48} className="text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
-      {description ? <p className="text-gray-600 mb-4 max-w-sm mx-auto">{description}</p> : null}
-      {actionLabel && onAction ? <button
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          onClick={onAction}
-      >
+      <h3 className="text-lg font-medium text-foreground mb-2">{title}</h3>
+      {description ? <p className="text-muted-foreground mb-4 max-w-sm mx-auto">{description}</p> : null}
+      {actionLabel && onAction ? (
+        <Button onClick={onAction}>
           <Plus size={18} />
           {actionLabel}
-                                 </button> : null}
+        </Button>
+      ) : null}
     </div>
   );
 }

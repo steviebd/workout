@@ -4,16 +4,15 @@ import { type Exercise } from '@/lib/db/schema';
 
 const ExerciseOption = ({ exercise, selectedId, onSelect }: { readonly exercise: Exercise; readonly selectedId?: string; readonly onSelect: (id: string) => void }) => (
   <button
-    className={`w-full px-4 py-2 text-left hover:bg-gray-100 cursor-pointer transition-colors ${
-      selectedId === exercise.id ? 'bg-blue-50 text-blue-900' : ''
+    className={`w-full px-4 py-2 text-left hover:bg-secondary cursor-pointer transition-colors ${
+      selectedId === exercise.id ? 'bg-primary/10 text-primary' : ''
     }`}
-    // eslint-disable-next-line react/jsx-no-bind
     onClick={() => onSelect(exercise.id)}
     type="button"
   >
     <div className="font-medium text-sm">{exercise.name}</div>
     {exercise.muscleGroup ? (
-      <div className="text-xs text-gray-500">{exercise.muscleGroup}</div>
+      <div className="text-xs text-muted-foreground">{exercise.muscleGroup}</div>
     ) : null}
   </button>
 );
@@ -95,26 +94,26 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow w-full"
+        className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow w-full"
         onClick={handleToggle}
         type="button"
       >
-        <span className={selectedExercise ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={selectedExercise ? 'text-foreground' : 'text-muted-foreground'}>
           {selectedExercise?.name ?? 'Select exercise...'}
         </span>
         {loading ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400" />
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground" />
         ) : (
           <ChevronDown size={20} />
         )}
       </button>
 
       {isOpen ? (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-60 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-10 max-h-60 overflow-hidden">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
             <input
-              className="w-full pl-10 pr-4 py-2 border-b border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border-b border-border focus:outline-none focus:ring-2 focus:ring-primary"
               onChange={handleSearchChange}
               placeholder="Search exercises..."
               type="text"
@@ -125,10 +124,10 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
           <div className="max-h-48 overflow-y-auto">
             {loading && exercises.length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
             ) : filteredExercises.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500">
+              <div className="px-4 py-8 text-center text-muted-foreground">
                 {search ? 'No exercises found' : 'No exercises available'}
               </div>
             ) : (

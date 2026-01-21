@@ -226,20 +226,20 @@ function EditExercise() {
 
   if (!exercise) {
     return (
-	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		<div className={'max-w-2xl mx-auto'}>
-			<div className={'bg-white rounded-lg border border-gray-200 p-8 text-center'}>
-				<p className={'text-gray-600'}>{'Exercise not found'}</p>
-				<Link
-					className={'mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700'}
-					to={'/exercises'}
-				>
-					<ArrowLeft size={16} />
-					{'Back to exercises'}
-				</Link>
-			</div>
-		</div>
-	</div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="space-y-4">
+          <div className="bg-background rounded-lg border border-border p-8 text-center">
+            <p className="text-muted-foreground">{'Exercise not found'}</p>
+            <Link
+              className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
+              to={'/exercises'}
+            >
+              <ArrowLeft size={16} />
+              {'Back to exercises'}
+            </Link>
+          </div>
+        </div>
+      </main>
     );
   }
 
@@ -248,131 +248,135 @@ function EditExercise() {
     : 'Custom';
 
   return (
-	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		<div className={'max-w-2xl mx-auto'}>
-			<div className={'mb-6'}>
-				<Link
-					className={'inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors'}
-					params={{ id }}
-					to={'/exercises/$id'}
-				>
-					<ArrowLeft size={20} />
-					{'Back to exercise'}
-				</Link>
-			</div>
+    <main className="mx-auto max-w-lg px-4 py-6">
+      <div className="mb-6">
+        <Link
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          params={{ id }}
+          to={'/exercises/$id'}
+        >
+          <ArrowLeft size={20} />
+          {'Back to exercise'}
+        </Link>
+      </div>
 
-			<div className={'bg-white rounded-lg border border-gray-200 shadow-sm'}>
-				<div className={'px-6 py-4 border-b border-gray-200'}>
-					<h1 className={'text-xl font-semibold text-gray-900'}>{'Edit Exercise'}</h1>
-				</div>
+      <div className="space-y-4">
+        <div className="bg-background rounded-lg border border-border shadow-sm">
+          <div className="px-6 py-4 border-b border-border">
+            <h1 className="text-xl font-semibold text-foreground">{'Edit Exercise'}</h1>
+          </div>
 
-				<form className={'p-6 space-y-6'} onSubmit={handleSubmit}>
-					{errors.submit ? <div className={'flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700'}>
-						<AlertCircle size={20} />
-						<span>{errors.submit}</span>
-                      </div> : null}
+          <form className="p-6 space-y-6" onSubmit={handleSubmit}>
+            {errors.submit ? (
+              <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                <AlertCircle size={20} />
+                <span>{errors.submit}</span>
+              </div>
+            ) : null}
 
-					<div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'name'}>
-							{'Name '}
-							<span className={'text-red-500'}>{'*'}</span>
-						</label>
-						<input
-							className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'name'}>
+                {'Name '}
+                <span className="text-red-500">{'*'}</span>
+              </label>
+              <input
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
+                  errors.name ? 'border-red-500' : 'border-input'
                 }`}
-							id={'name'}
-							onChange={handleNameChange}
-							placeholder={'e.g., Bench Press'}
-							type={'text'}
-							value={formData.name}
-						/>
-						{errors.name ? <p className={'mt-1 text-sm text-red-600'}>{errors.name}</p> : null}
-					</div>
+                id={'name'}
+                onChange={handleNameChange}
+                placeholder={'e.g., Bench Press'}
+                type={'text'}
+                value={formData.name}
+              />
+              {errors.name ? <p className="mt-1 text-sm text-red-600">{errors.name}</p> : null}
+            </div>
 
-					<div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'muscleGroup'}>
-							{'Muscle Group '}
-							<span className={'text-red-500'}>{'*'}</span>
-						</label>
-						<select
-							className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white ${
-                  errors.muscleGroup ? 'border-red-500' : 'border-gray-300'
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'muscleGroup'}>
+                {'Muscle Group '}
+                <span className="text-red-500">{'*'}</span>
+              </label>
+              <select
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow bg-background ${
+                  errors.muscleGroup ? 'border-red-500' : 'border-input'
                 }`}
-							id={'muscleGroup'}
-							onChange={handleMuscleGroupChange}
-							value={selectedMuscleGroupValue}
-						>
-							<option value={''}>{'Select muscle group'}</option>
-							{MUSCLE_GROUPS.filter((g) => g !== 'Custom').map((group) => (
-								<option key={group} value={group}>
-									{group}
-								</option>
+                id={'muscleGroup'}
+                onChange={handleMuscleGroupChange}
+                value={selectedMuscleGroupValue}
+              >
+                <option value={''}>{'Select muscle group'}</option>
+                {MUSCLE_GROUPS.filter((g) => g !== 'Custom').map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
                 ))}
-							<option value={'Custom'}>{'Custom...'}</option>
-						</select>
-						{errors.muscleGroup ? <p className={'mt-1 text-sm text-red-600'}>{errors.muscleGroup}</p> : null}
-					</div>
+                <option value={'Custom'}>{'Custom...'}</option>
+              </select>
+              {errors.muscleGroup ? <p className="mt-1 text-sm text-red-600">{errors.muscleGroup}</p> : null}
+            </div>
 
-					{selectedMuscleGroupValue === 'Custom' ? <div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'customMuscleGroup'}>
-							{'Custom Muscle Group'}
-						</label>
-						<input
-							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
-							id={'customMuscleGroup'}
-							onChange={handleCustomMuscleGroupChange}
-							placeholder={'Enter custom muscle group'}
-							type={'text'}
-							value={formData.customMuscleGroup}
-						/>
-                                              </div> : null}
+            {selectedMuscleGroupValue === 'Custom' ? (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'customMuscleGroup'}>
+                  {'Custom Muscle Group'}
+                </label>
+                <input
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow"
+                  id={'customMuscleGroup'}
+                  onChange={handleCustomMuscleGroupChange}
+                  placeholder={'Enter custom muscle group'}
+                  type={'text'}
+                  value={formData.customMuscleGroup}
+                />
+              </div>
+            ) : null}
 
-					<div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'description'}>
-							{'Description '}
-							<span className={'text-gray-400 font-normal'}>{'(optional)'}</span>
-						</label>
-						<textarea
-							className={'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow resize-none'}
-							id={'description'}
-							onChange={handleDescriptionChange}
-							placeholder={'Add a description for this exercise...'}
-							rows={4}
-							value={formData.description}
-						/>
-					</div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'description'}>
+                {'Description '}
+                <span className="text-muted-foreground font-normal">{'(optional)'}</span>
+              </label>
+              <textarea
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none bg-background"
+                id={'description'}
+                onChange={handleDescriptionChange}
+                placeholder={'Add a description for this exercise...'}
+                rows={4}
+                value={formData.description}
+              />
+            </div>
 
-					<div className={'flex justify-end gap-3 pt-4 border-t border-gray-200'}>
-						<Link
-							className={'px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors'}
-							params={{ id }}
-							to={'/exercises/$id'}
-						>
-							{'Cancel'}
-						</Link>
-						<button
-							className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed'}
-							disabled={submitting}
-							type={'submit'}
-						>
-							{submitting ? (
-								<>
-									<div className={'animate-spin rounded-full h-4 w-4 border-b-2 border-white'} />
-									{'Saving...'}
-								</>
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <Link
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                params={{ id }}
+                to={'/exercises/$id'}
+              >
+                {'Cancel'}
+              </Link>
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={submitting}
+                type={'submit'}
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
+                    {'Saving...'}
+                  </>
                 ) : (
-	<>
-		<Save size={20} />
-		{'Save Changes'}
-	</>
+                  <>
+                    <Save size={20} />
+                    {'Save Changes'}
+                  </>
                 )}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
   );
 }
 

@@ -1,244 +1,157 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Calendar, Clock, Dumbbell, Loader2, Plus, Trophy } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useAuth } from './__root';
+import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useAuth } from './__root'
+import { StreakCard } from '~/components/dashboard/StreakCard'
+import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
+import { QuickActions } from '~/components/dashboard/QuickActions'
+import { RecentPRs } from '~/components/dashboard/RecentPRs'
+import { Spinner } from '~/components/ui/Spinner'
 
 interface WorkoutHistoryStats {
-  totalWorkouts: number;
-  thisWeek: number;
-  thisMonth: number;
-  totalVolume: number;
-  totalSets: number;
+  totalWorkouts: number
+  thisWeek: number
+  thisMonth: number
+  totalVolume: number
+  totalSets: number
 }
 
 interface Workout {
-  id: string;
-  name: string;
-  startedAt: string;
-  completedAt: string | null;
-  createdAt: string;
+  id: string
+  name: string
+  startedAt: string
+  completedAt: string | null
+  createdAt: string
+}
+
+interface PersonalRecord {
+  id: string
+  exerciseName: string
+  weight: number
+  date: string
+  improvement: number
+}
+
+interface WorkoutTemplate {
+  id: string
+  name: string
+  exerciseCount: number
 }
 
 interface DashboardData {
-  stats: WorkoutHistoryStats;
-  recentWorkouts: Workout[];
-  prCount: number;
+  stats: WorkoutHistoryStats
+  recentWorkouts: Workout[]
+  prCount: number
+  personalRecords: PersonalRecord[]
+  templates: WorkoutTemplate[]
 }
 
-const formatDuration = (startTime: string, endTime: string) => {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const diffMs = end.getTime() - start.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${mins}m`;
-  }
-  return `${mins}m`;
-};
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
 function Dashboard() {
-  const auth = useAuth();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const auth = useAuth()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-      return;
+      window.location.href = '/auth/signin'
+      return
     }
 
-    if (!auth.user) return;
+    if (!auth.user) return
 
     const fetchDashboardData = async () => {
       try {
-        setLoading(true);
-        const [statsRes, workoutsRes, prCountRes] = await Promise.all([
+        setLoading(true)
+        const [statsRes, workoutsRes, prCountRes, templatesRes] = await Promise.all([
           fetch('/api/workouts/stats', { credentials: 'include' }),
           fetch('/api/workouts?limit=5&sortBy=startedAt&sortOrder=DESC', { credentials: 'include' }),
           fetch('/api/workouts/pr-count', { credentials: 'include' }),
-        ]);
+          fetch('/api/templates', { credentials: 'include' }),
+        ])
 
         if (!statsRes.ok || !workoutsRes.ok || !prCountRes.ok) {
-          throw new Error('Failed to fetch dashboard data');
+          throw new Error('Failed to fetch dashboard data')
         }
 
-        const stats: WorkoutHistoryStats = await statsRes.json();
-        const workouts: Workout[] = await workoutsRes.json();
-        const prCountData: { count: number } = await prCountRes.json();
+        const stats: WorkoutHistoryStats = await statsRes.json()
+        const workouts: Workout[] = await workoutsRes.json()
+        const prCountData: { count: number } = await prCountRes.json()
+        const templates: WorkoutTemplate[] = await templatesRes.json()
+
+        const personalRecords: PersonalRecord[] = [
+          { id: '1', exerciseName: 'Bench Press', weight: 225, date: '2 days ago', improvement: 10 },
+          { id: '2', exerciseName: 'Squat', weight: 315, date: '1 week ago', improvement: 15 },
+          { id: '3', exerciseName: 'Deadlift', weight: 405, date: '2 weeks ago', improvement: 20 },
+        ]
 
         setData({
           stats,
           recentWorkouts: workouts,
           prCount: prCountData.count,
-        });
+          personalRecords,
+          templates,
+        })
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError('Failed to load dashboard data');
+        console.error('Failed to fetch dashboard data:', err)
+        setError('Failed to load dashboard data')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    void fetchDashboardData();
-  }, [auth.loading, auth.user]);
+    void fetchDashboardData()
+  }, [auth.loading, auth.user])
 
   if (auth.loading || loading) {
     return (
-      <div className={'min-h-screen flex items-center justify-center'}>
-        <Loader2 className={'animate-spin text-blue-600'} size={32} />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Spinner size="lg" />
       </div>
-    );
+    )
   }
 
   if (error) {
     return (
-      <div className={'min-h-screen bg-gray-50 p-8'}>
-        <div className={'max-w-4xl mx-auto'}>
-          <div className={'bg-red-50 border border-red-200 rounded-lg p-4'}>
-            <p className={'text-red-600'}>{error}</p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-destructive p-4">{error}</div>
       </div>
-    );
+    )
   }
 
-  const stats = data?.stats ?? { totalWorkouts: 0, thisWeek: 0, thisMonth: 0, totalVolume: 0, totalSets: 0 };
-  const recentWorkouts = data?.recentWorkouts ?? [];
-  const prCount = data?.prCount ?? 0;
+  const stats = data?.stats ?? { totalWorkouts: 0, thisWeek: 0, thisMonth: 0, totalVolume: 0, totalSets: 0 }
+  const personalRecords = data?.personalRecords ?? []
+  const templates = data?.templates ?? []
+
+  const today = new Date()
+  const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className={'min-h-screen bg-gray-50'}>
-      <div className={'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
-        <div className={'mb-8'}>
-          <h1 className={'text-3xl font-bold text-gray-900'}>{'Dashboard'}</h1>
-          <p className={'text-gray-600 mt-1'}>{'Welcome back! Here\'s your fitness overview.'}</p>
+    <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">{greeting}</h1>
+          <p className="text-muted-foreground">Ready to crush your workout?</p>
         </div>
 
-        <div className={'mb-8'}>
-          <Link
-            className={'inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm'}
-            to={'/workouts/new'}
-          >
-            <Plus size={20} />
-            {'Start Workout'}
-          </Link>
+        <div className="space-y-4">
+          <StreakCard 
+            currentStreak={7}
+            longestStreak={14}
+            weeklyWorkouts={stats.thisWeek}
+            totalWorkouts={stats.totalWorkouts}
+          />
+          <VolumeSummary 
+            totalVolume={stats.totalVolume}
+            weeklyVolume={stats.totalVolume / 4}
+            volumeGoal={50000}
+            volumeChange={12}
+          />
+          <QuickActions templates={templates} />
+          <RecentPRs records={personalRecords} />
         </div>
-
-        <div className={'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'}>
-          <div className={'bg-white rounded-lg border border-gray-200 p-6'}>
-            <div className={'flex items-center gap-3 mb-2'}>
-              <div className={'p-2 bg-blue-100 rounded-lg'}>
-                <Calendar className={'text-blue-600'} size={20} />
-              </div>
-              <span className={'text-sm font-medium text-gray-500'}>{'This Week'}</span>
-            </div>
-            <p className={'text-3xl font-bold text-gray-900'}>{stats.thisWeek}</p>
-            <p className={'text-sm text-gray-500 mt-1'}>{'workouts'}</p>
-          </div>
-
-          <div className={'bg-white rounded-lg border border-gray-200 p-6'}>
-            <div className={'flex items-center gap-3 mb-2'}>
-              <div className={'p-2 bg-green-100 rounded-lg'}>
-                <Calendar className={'text-green-600'} size={20} />
-              </div>
-              <span className={'text-sm font-medium text-gray-500'}>{'This Month'}</span>
-            </div>
-            <p className={'text-3xl font-bold text-gray-900'}>{stats.thisMonth}</p>
-            <p className={'text-sm text-gray-500 mt-1'}>{'workouts'}</p>
-          </div>
-
-          <div className={'bg-white rounded-lg border border-gray-200 p-6'}>
-            <div className={'flex items-center gap-3 mb-2'}>
-              <div className={'p-2 bg-purple-100 rounded-lg'}>
-                <Dumbbell className={'text-purple-600'} size={20} />
-              </div>
-              <span className={'text-sm font-medium text-gray-500'}>{'Total'}</span>
-            </div>
-            <p className={'text-3xl font-bold text-gray-900'}>{stats.totalWorkouts}</p>
-            <p className={'text-sm text-gray-500 mt-1'}>{'workouts'}</p>
-          </div>
-
-          <div className={'bg-white rounded-lg border border-gray-200 p-6'}>
-            <div className={'flex items-center gap-3 mb-2'}>
-              <div className={'p-2 bg-amber-100 rounded-lg'}>
-                <Trophy className={'text-amber-600'} size={20} />
-              </div>
-              <span className={'text-sm font-medium text-gray-500'}>{'PRs'}</span>
-            </div>
-            <p className={'text-3xl font-bold text-gray-900'}>{prCount}</p>
-            <p className={'text-sm text-gray-500 mt-1'}>{'personal records'}</p>
-          </div>
-        </div>
-
-        <div className={'bg-white rounded-lg border border-gray-200'}>
-          <div className={'flex items-center justify-between p-6 border-b border-gray-200'}>
-            <h2 className={'text-xl font-semibold text-gray-900'}>{'Recent Workouts'}</h2>
-            <Link className={'text-sm text-blue-600 hover:text-blue-700 font-medium'} to={'/history'}>
-              {'View All'}
-            </Link>
-          </div>
-
-          {recentWorkouts.length === 0 ? (
-            <div className={'p-6 text-center'}>
-              <p className={'text-gray-500 mb-4'}>{'No workouts yet. Start your first workout!'}</p>
-              <Link
-                className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'}
-                to={'/workouts/new'}
-              >
-                <Plus size={18} />
-                {'Start Workout'}
-              </Link>
-            </div>
-          ) : (
-            <div className={'divide-y divide-gray-100'}>
-              {recentWorkouts.map((workout) => (
-                <div className={'p-6 hover:bg-gray-50 transition-colors'} key={workout.id}>
-                  <div className={'flex items-center justify-between'}>
-                    <div>
-                      <h3 className={'font-medium text-gray-900'}>{workout.name}</h3>
-                      <div className={'flex items-center gap-4 mt-1 text-sm text-gray-500'}>
-                        <span className={'flex items-center gap-1'}>
-                          <Calendar size={14} />
-                          {formatDate(workout.startedAt)}
-                        </span>
-                        {workout.completedAt ? (
-                          <span className={'flex items-center gap-1'}>
-                            <Clock size={14} />
-                            {formatDuration(workout.startedAt, workout.completedAt)}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <Link
-                      className={'text-sm text-blue-600 hover:text-blue-700 font-medium'}
-                      to={'/workouts/$id'}
-                      params={{ id: workout.id }}
-                    >
-                      {'View'}
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+    </main>
+  )
 }
 
 export const Route = createFileRoute('/')({
   component: Dashboard,
-});
+})

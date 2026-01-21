@@ -1,12 +1,15 @@
 /* eslint-disable import/no-unassigned-import */
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Link, Scripts, createRootRoute, useLocation , useNavigate } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useLocation , useNavigate } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 import '../styles.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastProvider } from '@/components/ToastProvider'
+import { Header } from '@/components/Header'
+import { BottomNav } from '@/components/BottomNav'
+import { UnitProvider } from '@/lib/context/UnitContext'
 
 type User = { id: string; email: string; name: string } | null;
 
@@ -43,7 +46,6 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       try {
         const response = await fetch('/api/auth/me', { credentials: 'include' });
         if (response.ok) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
           const userData = (await response.json()) as User;
           setUser(userData);
         } else {
@@ -59,81 +61,43 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-	<AuthContext.Provider value={{ user, loading, setUser, signOut }}>
-		<html lang={'en'}>
-			<head>
-				<HeadContent />
-			</head>
-			<body className={'min-h-screen bg-gray-50'}>
-				<div className={'min-h-screen flex flex-col'}>
-					<header className={'bg-white shadow'}>
-						<div className={'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
-							<div className={'flex justify-between h-16'}>
-								<div className={'flex'}>
-									<Link className={'flex-shrink-0 flex items-center'} to={'/'}>
-										<span className={'text-xl font-bold text-gray-900'}>{'Fit Workout'}</span>
-									</Link>
-									<div className={'hidden sm:ml-6 sm:flex sm:space-x-8'}>
-										<Link className={'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300'} to={'/exercises'}>
-											{'Exercises'}
-										</Link>
-										<Link className={'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300'} to={'/templates'}>
-											{'Templates'}
-										</Link>
-										<Link className={'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300'} to={'/workouts/new'}>
-											{'Start Workout'}
-										</Link>
-										<Link className={'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300'} to={'/history'}>
-											{'History'}
-										</Link>
-									</div>
+  	<AuthContext.Provider value={{ user, loading, setUser, signOut }}>
+			<html lang={'en'}>
+				<head>
+					<HeadContent />
+				</head>
+				<body className={'min-h-screen bg-background'}>
+					<div className={'min-h-screen flex flex-col'}>
+						<UnitProvider>
+							<Header />
+							<main className={'flex-1 pb-20'}>
+								<div className="mx-auto max-w-lg px-4">
+									<ErrorBoundary>
+										<ToastProvider>
+											{children}
+										</ToastProvider>
+									</ErrorBoundary>
 								</div>
-								<div className={'flex items-center'}>
-									{loading ? (
-										<span className={'text-sm text-gray-500'}>{'Loading...'}</span>
-									) : user ? (
-	<div className={'flex items-center space-x-4'}>
-		<span className={'text-sm text-gray-700'}>{user.name}</span>
-		<button
-			className={'text-sm text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer p-0'}
-			onClick={signOut}
-		>
-			{'Sign Out'}
-		</button>
-	</div>
-									) : (
-	<a className={'text-sm text-blue-600 hover:text-blue-500'} href={'/auth/signin'}>
-		{'Sign In'}
-	</a>
-									)}
-								</div>
-							</div>
-						</div>
-					</header>
-					<main className={'flex-1'}>
-						<ErrorBoundary>
-							<ToastProvider>
-								{children}
-							</ToastProvider>
-						</ErrorBoundary>
-					</main>
-				</div>
-				<TanStackDevtools
-					config={{
+							</main>
+							<BottomNav />
+						</UnitProvider>
+					</div>
+					<TanStackDevtools
+						config={{
                 		position: 'bottom-right',
               		}}
-					plugins={[
-                	{
+						plugins={[
+                		{
                   		name: 'Tanstack Router',
                   		render: <TanStackRouterDevtoolsPanel />,
                 	},
               	]}
-				/>
-				<Scripts />
-			</body>
-		</html>
-	</AuthContext.Provider>
-  )
+					/>
+					<Scripts />
+				</body>
+			</html>
+   </AuthContext.Provider>
+		)
 }
 
 export const Route = createRootRoute({

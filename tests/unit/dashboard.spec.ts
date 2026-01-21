@@ -62,9 +62,13 @@ describe('Dashboard Loader Functions', () => {
     it('should fetch recent workouts with limit=5', async () => {
       mockDrizzleDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue(mockWorkouts),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue(mockWorkouts),
+                }),
+              }),
             }),
           }),
         }),
@@ -81,9 +85,13 @@ describe('Dashboard Loader Functions', () => {
     it('should order workouts by startedAt descending', async () => {
       mockDrizzleDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue(mockWorkouts),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue(mockWorkouts),
+                }),
+              }),
             }),
           }),
         }),
@@ -99,9 +107,13 @@ describe('Dashboard Loader Functions', () => {
     it('should return empty array when no workouts exist', async () => {
       mockDrizzleDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([]),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([]),
+                }),
+              }),
             }),
           }),
         }),
@@ -117,9 +129,13 @@ describe('Dashboard Loader Functions', () => {
     it('should only return completed workouts', async () => {
       mockDrizzleDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue(mockWorkouts),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue(mockWorkouts),
+                }),
+              }),
             }),
           }),
         }),

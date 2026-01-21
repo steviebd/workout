@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { Card, CardContent } from './ui/Card';
 import type { ReactNode } from 'react';
 
 interface LoadingSpinnerProps {
@@ -15,17 +16,17 @@ const sizeClasses = {
 export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps): ReactNode {
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <Loader2 className={`${sizeClasses[size]} animate-spin text-blue-600`} />
+      <Loader2 className={`${sizeClasses[size]} animate-spin text-primary`} />
     </div>
   );
 }
 
 export function LoadingPage(): ReactNode {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-        <p className="text-gray-600">Loading...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     </div>
   );
@@ -33,27 +34,31 @@ export function LoadingPage(): ReactNode {
 
 export function LoadingCard(): ReactNode {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
-      <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
-      <div className="h-3 bg-gray-200 rounded w-2/3 mb-2" />
-      <div className="h-3 bg-gray-200 rounded w-1/2" />
-    </div>
+    <Card className="animate-pulse">
+      <CardContent className="p-6">
+        <div className="h-4 bg-muted rounded w-1/3 mb-4" />
+        <div className="h-3 bg-muted rounded w-2/3 mb-2" />
+        <div className="h-3 bg-muted rounded w-1/2" />
+      </CardContent>
+    </Card>
   );
 }
 
 export function SkeletonCard(): ReactNode {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-      <div className="flex items-start justify-between mb-3">
-        <div className="h-5 bg-gray-200 rounded w-1/2" />
-        <div className="h-5 bg-gray-200 rounded w-16" />
-      </div>
-      <div className="h-3 bg-gray-200 rounded w-full mb-4" />
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <div className="h-3 bg-gray-200 rounded w-20" />
-        <div className="h-3 bg-gray-200 rounded w-16" />
-      </div>
-    </div>
+    <Card className="animate-pulse">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="h-5 bg-muted rounded w-1/2" />
+          <div className="h-5 bg-muted rounded w-16" />
+        </div>
+        <div className="h-3 bg-muted rounded w-full mb-4" />
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div className="h-3 bg-muted rounded w-20" />
+          <div className="h-3 bg-muted rounded w-16" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

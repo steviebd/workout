@@ -10,6 +10,14 @@ interface Exercise {
   muscleGroup: string | null;
 }
 
+interface TemplateWithExercises {
+  id: string;
+  name: string;
+  description: string | null;
+  exerciseCount: number;
+  exercises: TemplateExercise[];
+}
+
 interface Template {
   id: string;
   name: string;
@@ -20,6 +28,16 @@ interface Template {
 interface TemplateExercise {
   exerciseId: string;
   orderIndex?: number;
+  name: string;
+  muscleGroup: string | null;
+}
+
+interface TemplateWithExercises {
+  id: string;
+  name: string;
+  description: string | null;
+  exerciseCount: number;
+  exercises: TemplateExercise[];
 }
 
 interface Workout {
@@ -28,8 +46,6 @@ interface Workout {
   startedAt: string;
   completedAt?: string;
 }
-
-
 
 
 
@@ -119,69 +135,51 @@ function NewWorkout() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  useEffect(() => {
-    window.addEventListener('error', (e) => {
-      console.error('Window error:', e.error);
-    });
+   useEffect(() => {
+     window.addEventListener('error', (e) => {
+       console.error('Window error:', e.error);
+     });
    }, []);
 
-  async function _fetchData() {
-    try {
-      setLoading(true);
+   async function _fetchData() {
+     try {
+       setLoading(true);
 
-      const [templatesRes, exercisesRes] = await Promise.all([
-        fetch('/api/templates', { credentials: 'include' }),
-        fetch('/api/exercises', { credentials: 'include' }),
-      ]);
+       const [templatesRes, exercisesRes] = await Promise.all([
+         fetch('/api/templates', { credentials: 'include' }),
+         fetch('/api/exercises', { credentials: 'include' }),
+       ]);
 
-        if (templatesRes.ok) {
-          const data: Template[] = await templatesRes.json();
-          setTemplates(data);
-        }
+         if (templatesRes.ok) {
+           const data: Template[] = await templatesRes.json();
+           setTemplates(data);
+         }
 
-        if (exercisesRes.ok) {
-          const data: Exercise[] = await exercisesRes.json();
-          setExercises(data);
-        }
+         if (exercisesRes.ok) {
+           const data: Exercise[] = await exercisesRes.json();
+           setExercises(data);
+         }
 
-      const historyRes = await fetch('/api/workouts?sortBy=startedAt&sortOrder=DESC&limit=5', {
-        credentials: 'include',
-      });
+       const historyRes = await fetch('/api/workouts?sortBy=startedAt&sortOrder=DESC&limit=5', {
+         credentials: 'include',
+       });
 
-        if (historyRes.ok) {
-          const data: Workout[] = await historyRes.json();
-          setRecentWorkouts(data);
-        }
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+         if (historyRes.ok) {
+           const data: Workout[] = await historyRes.json();
+           setRecentWorkouts(data);
+         }
+     } catch (err) {
+       console.error('Failed to fetch data:', err);
+     } finally {
+       setLoading(false);
+     }
+   }
 
     useEffect(() => {
       if (!auth.loading && auth.user) {
         void _fetchData();
       }
     }, [auth.loading, auth.user]);
-
 
 
 
@@ -196,28 +194,25 @@ function NewWorkout() {
         setSelectedTemplate(template);
         setWorkoutName(template.name);
 
-       try {
-         const res = await fetch(`/api/templates/${template.id}`, {
-           credentials: 'include',
-         });
+        try {
+          const res = await fetch(`/api/templates/${template.id}`, {
+            credentials: 'include',
+          });
 
-         if (res.ok) {
-           const templateExercisesRes = await fetch(`/api/templates/${template.id}/exercises`, {
-             credentials: 'include',
-           });
-
-           if (templateExercisesRes.ok) {
-             const templateExercises: TemplateExercise[] = await templateExercisesRes.json();
-             const exerciseIds = templateExercises.map((te) => te.exerciseId);
-
-             const exerciseDetails = exercises.filter((e) => exerciseIds.includes(e.id));
-             setSelectedExercises(exerciseDetails);
-           }
-         }
-       } catch (err) {
-         console.error('Failed to load template details:', err);
-       }
-     }, [exercises]);
+          if (res.ok) {
+            const data: TemplateWithExercises = await res.json();
+            const templateExercises: TemplateExercise[] = data.exercises;
+            const exerciseDetails = templateExercises.map((te) => ({
+              id: te.exerciseId,
+              name: te.name,
+              muscleGroup: te.muscleGroup,
+            }));
+            setSelectedExercises(exerciseDetails);
+          }
+        } catch (err) {
+          console.error('Failed to load template details:', err);
+        }
+      }, []);
 
     const _handleStartFromTemplateClick = useCallback((e: React.MouseEvent) => {
       const id = (e.currentTarget as HTMLElement).getAttribute('data-template-id');
@@ -294,419 +289,428 @@ function NewWorkout() {
 
 
 
+    if (auth.loading || redirecting) {
+      return (
+        <main className="mx-auto max-w-lg px-4 py-6">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-muted-foreground">Redirecting to sign in...</p>
+          </div>
+        </main>
+      );
+    }
 
-  if (auth.loading || redirecting) {
-    return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-gray-600'}>{'Redirecting to sign in...'}</p>
-	</div>
-    );
-  }
-
-  if (mode === 'templates') {
-    return (
-	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		<div className={'max-w-4xl mx-auto'}>
-			<div className={'mb-6'}>
-				<a
-					className={'inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors'}
-					href={'/'}
-				>
-					<ArrowLeft size={20} />
-					{'Back to dashboard'}
-				</a>
-			</div>
-
-			<h1 className={'text-3xl font-bold text-gray-900 mb-8'}>{'Start Workout'}</h1>
-
-			{loading ? (
-				<div className={'flex items-center justify-center py-12'}>
-					<Loader2 className={'animate-spin text-blue-600'} size={32} />
-				</div>
-          ) : (
-	<div className={'space-y-6'}>
-		<div className={'bg-white rounded-lg shadow-sm border border-gray-200 p-6'}>
-			<h2 className={'text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2'}>
-				<Dumbbell className={'text-blue-600'} size={20} />
-				{'Start from Template'}
-			</h2>
-			<p className={'text-gray-600 mb-4'}>{'Choose a pre-built workout template'}</p>
-
-			{templates.length === 0 ? (
-				<div className={'text-center py-8 text-gray-500'}>
-					<p>{'No templates yet'}</p>
-					<a
-						className={'text-blue-600 hover:text-blue-700 mt-2 inline-block'}
-						href={'/templates/new'}
-					>
-						{'Create your first template'}
-					</a>
-				</div>
-                ) : (
-	<div className={'grid gap-3'}>
-		{templates.map((templateItem) => (
-			<button
-				className={'flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left'}
-				data-template-id={templateItem.id}
-				key={templateItem.id}
-				onClick={_handleStartFromTemplateClick}
-			>
-				<div>
-					<p className={'font-medium text-gray-900'}>{templateItem.name}</p>
-					<p className={'text-sm text-gray-500'}>
-						{templateItem.exerciseCount}
-						{' '}
-						{'exercises'}
-						{templateItem.description ? ` • ${templateItem.description}` : null}
-					</p>
-				</div>
-				<ChevronRight className={'text-gray-400'} size={20} />
-			</button>
-                    ))}
-	</div>
-                )}
-		</div>
-
-		<div className={'bg-white rounded-lg shadow-sm border border-gray-200 p-6'}>
-			<h2 className={'text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2'}>
-				<History className={'text-blue-600'} size={20} />
-				{'Copy Recent Workout'}
-			</h2>
-			<p className={'text-gray-600 mb-4'}>{'Start from one of your recent workouts'}</p>
-
-			{recentWorkouts.filter((w) => w.completedAt).length === 0 ? (
-				<div className={'text-center py-8 text-gray-500'}>
-					<p>{'No completed workouts yet'}</p>
-				</div>
-                ) : (
-	<div className={'grid gap-3'}>
-		{recentWorkouts
-                    .filter((w) => w.completedAt)
-                    .map((workoutItem) => (
-		<button
-			className={'flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left'}
-			data-workout-id={workoutItem.id}
-			key={workoutItem.id}
-			onClick={_handleCopyFromRecentClick}
-		>
-			<div>
-				<p className={'font-medium text-gray-900'}>{workoutItem.name}</p>
-				<p className={'text-sm text-gray-500'}>
-					{new Date(workoutItem.startedAt).toLocaleDateString()}
-					{workoutItem.completedAt ? ' • Completed' : null}
-				</p>
-			</div>
-			<ChevronRight className={'text-gray-400'} size={20} />
-		</button>
-                    ))}
-	</div>
-                )}
-		</div>
-
-		<div className={'bg-white rounded-lg shadow-sm border border-gray-200 p-6'}>
-			<h2 className={'text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2'}>
-				<FilePlus className={'text-blue-600'} size={20} />
-				{'Build Your Own'}
-			</h2>
-			<p className={'text-gray-600 mb-4'}>{'Select exercises to create a custom workout'}</p>
-
-			{selectedExercises.length === 0 ? (
-				<button
-					className={'w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors'}
-					onClick={handleStartBlankClick}
-				>
-					{'Start with blank workout'}
-				</button>
-                ) : (
-	<div className={'space-y-3'}>
-		{selectedExercises.map((exercise, index) => (
-			<div
-				className={'flex items-center gap-3 p-3 bg-gray-50 rounded-lg'}
-				key={exercise.id}
-			>
-				<span className={'flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-sm font-medium rounded'}>
-					{index + 1}
-				</span>
-				<div className={'flex-1'}>
-					<p className={'font-medium text-gray-900'}>{exercise.name}</p>
-					{exercise.muscleGroup ? <p className={'text-sm text-gray-500'}>{exercise.muscleGroup}</p> : null}
-				</div>
-				<button
-					className={'p-1 text-gray-400 hover:text-red-600'}
-					data-id={exercise.id}
-					onClick={handleRemoveExerciseClick}
-				>
-					<X size={18} />
-				</button>
-			</div>
-                    ))}
-		<button
-			className={'w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2'}
-						onClick={handleAddExerciseClick}
-		>
-			<Plus size={18} />
-			{'Add more exercises'}
-		</button>
-		<button
-			className={'w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400'}
-			disabled={starting}
-			onClick={handleStartWorkoutWrapper}
-		>
-			{starting ? 'Starting...' : 'Start Workout'}
-		</button>
-	</div>
-                )}
-		</div>
-	</div>
-          )}
-		</div>
-
-		{showExerciseSelector ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col'}>
-				<div className={'flex items-center justify-between p-4 border-b'}>
-					<h2 className={'text-lg font-semibold text-gray-900'}>{'Add Exercise'}</h2>
-					<button
-						className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
-						onClick={handleCloseExerciseSelector}
-					>
-						<X size={20} />
-					</button>
-				</div>
-
-				<div className={'p-4 border-b'}>
-					<div className={'relative'}>
-						<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
-						<input
-							autoFocus={true}
-							className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={handleExerciseSearchChange}
-							placeholder={'Search exercises...'}
-							type={'text'}
-							value={exerciseSearch}
-						/>
-					</div>
-				</div>
-
-				<div className={'flex-1 overflow-y-auto p-4'}>
-					{loading ? (
-						<div className={'flex items-center justify-center py-8'}>
-							<Loader2 className={'animate-spin text-blue-600'} size={32} />
-						</div>
-                ) : filteredExercises.length === 0 ? (
-	<div className={'text-center py-8 text-gray-500'}>
-		{'No exercises found'}
-	</div>
-                 ) : (
-	<div className={'space-y-2'}>
-		{filteredExercises.map((exercise) => (
-			<button
-				className={'w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'}
-				data-id={exercise.id}
-				disabled={selectedExercises.some((se) => se.id === exercise.id)}
-				key={exercise.id}
-				onClick={_handleAddExerciseClickShared}
-			>
-				<div className={'flex items-center justify-between'}>
-					<div>
-						<h3 className={'font-medium text-gray-900'}>{exercise.name}</h3>
-						{exercise.muscleGroup ? <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
-							{exercise.muscleGroup}
-                              </span> : null}
-					</div>
-					{selectedExercises.some((se) => se.id === exercise.id) ? <span className={'text-green-600 text-sm font-medium'}>{'Added'}</span> : null}
-				</div>
-			</button>
-                    ))}
-	</div>
-                )}
-				</div>
-			</div>
-                          </div> : null}
-	</div>
-    );
-  }
-
-  return (
-	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		<div className={'max-w-4xl mx-auto'}>
-			<div className={'mb-6'}>
-				<button
-					className={'inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors'}
-					onClick={handleModeChange}
-				>
-					<ArrowLeft size={20} />
-					{'Back to options'}
-				</button>
-			</div>
-
-			<div className={'bg-white rounded-lg shadow-sm border border-gray-200 p-6'}>
-				<h1 className={'text-2xl font-bold text-gray-900 mb-6'}>{'Build Your Workout'}</h1>
-
-				{error ? <div className={'mb-4 p-4 bg-red-50 border border-red-200 rounded-lg'}>
-					<p className={'text-sm text-red-600'}>{error}</p>
-             </div> : null}
-
-				<div className={'space-y-6'}>
-					<div>
-						<label className={'block text-sm font-medium text-gray-700 mb-1'} htmlFor={'name'}>
-							{'Workout Name '}
-							<span className={'text-red-500'}>{'*'}</span>
-						</label>
-						<input
-							className={'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow'}
-							id={'name'}
-							onChange={handleWorkoutNameChange}
-							placeholder={'e.g., Upper Body Workout'}
-							type={'text'}
-							value={workoutName}
-						/>
-					</div>
-
-					<div>
-						<div className={'flex items-center justify-between mb-2'}>
-							<label className={'block text-sm font-medium text-gray-700'}>
-								{'Exercises '}
-								<span className={'text-red-500'}>{'*'}</span>
-							</label>
-							<button
-								className={'inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors'}
-						onClick={handleAddExerciseClick}
-								type={'button'}
-							>
-								<Plus size={16} />
-								{'Add Exercise'}
-							</button>
-						</div>
-
-						{selectedExercises.length === 0 ? (
-							<div className={'border-2 border-dashed border-gray-300 rounded-lg p-8 text-center'}>
-								<p className={'text-gray-500'}>{'No exercises added yet'}</p>
-								<p className={'text-sm text-gray-400 mt-1'}>
-									{'Click "Add Exercise" to add exercises to this workout'}
-								</p>
-							</div>
-              ) : (
-        <div className={'space-y-2'}>
-          {selectedExercises.map((exercise, index) => (
-            <div
-              className={'flex items-center gap-3 p-3 bg-gray-50 rounded-lg'}
-              key={exercise.id}
+    if (mode === 'templates') {
+      return (
+        <main className="mx-auto max-w-lg px-4 py-6">
+          <div className="mb-6">
+            <a
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              href="/"
             >
-              <span className={'flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-sm font-medium rounded'}>
-                {index + 1}
-              </span>
-              <div className={'flex-1'}>
-                <p className={'font-medium text-gray-900'}>{exercise.name}</p>
-                {exercise.muscleGroup ? <p className={'text-sm text-gray-500'}>{exercise.muscleGroup}</p> : null}
+              <ArrowLeft size={20} />
+              Back to dashboard
+            </a>
+          </div>
+
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">Start Workout</h1>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-card rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Dumbbell className="text-primary" size={20} />
+                  Start from Template
+                </h2>
+                <p className="text-muted-foreground mb-4">Choose a pre-built workout template</p>
+
+                {templates.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No templates yet</p>
+                    <a
+                      className="text-primary hover:text-primary mt-2 inline-block"
+                      href="/templates/new"
+                    >
+                      Create your first template
+                    </a>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {templates.map((templateItem) => (
+                      <button
+                        className="flex items-center justify-between p-4 bg-secondary rounded-lg hover:bg-secondary transition-colors text-left"
+                        data-template-id={templateItem.id}
+                        key={templateItem.id}
+                        onClick={_handleStartFromTemplateClick}
+                      >
+                        <div>
+                          <p className="font-medium">{templateItem.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {templateItem.exerciseCount} exercises
+                            {templateItem.description ? ` • ${templateItem.description}` : null}
+                          </p>
+                        </div>
+                        <ChevronRight className="text-muted-foreground/70" size={20} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              <div className="bg-card rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <History className="text-primary" size={20} />
+                  Copy Recent Workout
+                </h2>
+                <p className="text-muted-foreground mb-4">Start from one of your recent workouts</p>
+
+                {recentWorkouts.filter((w) => w.completedAt).length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No completed workouts yet</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {recentWorkouts
+                      .filter((w) => w.completedAt)
+                      .map((workoutItem) => (
+                        <button
+                          className="flex items-center justify-between p-4 bg-secondary rounded-lg hover:bg-secondary transition-colors text-left"
+                          data-workout-id={workoutItem.id}
+                          key={workoutItem.id}
+                          onClick={_handleCopyFromRecentClick}
+                        >
+                          <div>
+                            <p className="font-medium">{workoutItem.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(workoutItem.startedAt).toLocaleDateString()}
+                              {workoutItem.completedAt ? ' • Completed' : null}
+                            </p>
+                          </div>
+                          <ChevronRight className="text-muted-foreground/70" size={20} />
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-card rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <FilePlus className="text-primary" size={20} />
+                  Build Your Own
+                </h2>
+                <p className="text-muted-foreground mb-4">Select exercises to create a custom workout</p>
+
+                {selectedExercises.length === 0 ? (
+                  <button
+                    className="w-full p-4 border-2 border-dashed border-input rounded-lg text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                    onClick={handleStartBlankClick}
+                  >
+                    Start with blank workout
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedExercises.map((exercise, index) => (
+                      <div
+                        className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
+                        key={exercise.id}
+                      >
+                        <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <p className="font-medium">{exercise.name}</p>
+                          {exercise.muscleGroup ? <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p> : null}
+                        </div>
+                        <button
+                          className="p-1 text-muted-foreground/70 hover:text-destructive"
+                          data-id={exercise.id}
+                          onClick={handleRemoveExerciseClick}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      className="w-full p-3 border-2 border-dashed border-input rounded-lg text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                      onClick={handleAddExerciseClick}
+                    >
+                      <Plus size={18} />
+                      Add more exercises
+                    </button>
+                    <button
+                      className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:bg-primary/50"
+                      disabled={starting}
+                      onClick={handleStartWorkoutWrapper}
+                    >
+                      {starting ? 'Starting...' : 'Start Workout'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showExerciseSelector ? (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="text-lg font-semibold">Add Exercise</h2>
+                  <button
+                    className="p-2 text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary rounded-lg transition-colors"
+                    onClick={handleCloseExerciseSelector}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-4 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70" size={18} />
+                    <input
+                      autoFocus={true}
+                      className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      onChange={handleExerciseSearchChange}
+                      placeholder="Search exercises..."
+                      type="text"
+                      value={exerciseSearch}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="animate-spin text-primary" size={32} />
+                    </div>
+                  ) : filteredExercises.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No exercises found
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredExercises.map((exercise) => (
+                        <button
+                          className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-id={exercise.id}
+                          disabled={selectedExercises.some((se) => se.id === exercise.id)}
+                          key={exercise.id}
+                          onClick={_handleAddExerciseClickShared}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-medium">{exercise.name}</h3>
+                              {exercise.muscleGroup ? (
+                                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
+                                  {exercise.muscleGroup}
+                                </span>
+                              ) : null}
+                            </div>
+                            {selectedExercises.some((se) => se.id === exercise.id) ? (
+                              <span className="text-green-600 text-sm font-medium">Added</span>
+                            ) : null}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </main>
+      );
+    }
+
+    return (
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <button
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={handleModeChange}
+          >
+            <ArrowLeft size={20} />
+            Back to options
+          </button>
+        </div>
+
+        <div className="bg-card rounded-lg border p-6">
+          <h1 className="text-2xl font-bold mb-6">Build Your Workout</h1>
+
+          {error ? (
+            <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          ) : null}
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1" htmlFor="name">
+                Workout Name <span className="text-destructive">*</span>
+              </label>
+              <input
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow"
+                id="name"
+                onChange={handleWorkoutNameChange}
+                placeholder="e.g., Upper Body Workout"
+                type="text"
+                value={workoutName}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="block text-sm font-medium text-muted-foreground">
+                  Exercises <span className="text-destructive">*</span>
+                </span>
+                <button
+                  className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                  onClick={handleAddExerciseClick}
+                  type="button"
+                >
+                  <Plus size={16} />
+                  Add Exercise
+                </button>
+              </div>
+
+              {selectedExercises.length === 0 ? (
+                <div className="border-2 border-dashed border-input rounded-lg p-8 text-center">
+                  <p className="text-muted-foreground">No exercises added yet</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Click "Add Exercise" to add exercises to this workout
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedExercises.map((exercise, index) => (
+                    <div
+                      className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
+                      key={exercise.id}
+                    >
+                      <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
+                        {index + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="font-medium">{exercise.name}</p>
+                        {exercise.muscleGroup ? <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p> : null}
+                      </div>
+                      <button
+                        className="p-1 text-muted-foreground/70 hover:text-destructive"
+                        data-id={exercise.id}
+                        onClick={handleRemoveExerciseClickShared}
+                        type="button"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <button
-                className={'p-1 text-gray-400 hover:text-red-600'}
-                data-id={exercise.id}
-                onClick={handleRemoveExerciseClickShared}
-                type={'button'}
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={handleModeChange}
+                type="button"
               >
-                <X size={18} />
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:bg-primary/50"
+                disabled={starting}
+                onClick={handleStartWorkoutWrapper}
+              >
+                {starting ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Dumbbell size={18} />
+                    Start Workout
+                  </>
+                )}
               </button>
             </div>
-          ))}
+          </div>
         </div>
-               )}
-					</div>
 
-					<div className={'flex justify-end gap-3 pt-4 border-t border-gray-200'}>
-						<button
-							className={'px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors'}
-					onClick={handleModeChange}
-							type={'button'}
-						>
-							{'Cancel'}
-						</button>
-						<button
-							className={'inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400'}
-							disabled={starting}
-			onClick={handleStartWorkoutWrapper}
-						>
-							{starting ? (
-								<>
-									<Loader2 className={'animate-spin'} size={18} />
-									{'Starting...'}
-								</>
+        {showExerciseSelector ? (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-lg font-semibold">Add Exercise</h2>
+                <button
+                  className="p-2 text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary rounded-lg transition-colors"
+                  onClick={handleCloseExerciseSelector}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70" size={18} />
+                  <input
+                    autoFocus={true}
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    onChange={handleExerciseSearchChange}
+                    placeholder="Search exercises..."
+                    type="text"
+                    value={exerciseSearch}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4">
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin text-primary" size={32} />
+                  </div>
+                ) : filteredExercises.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No exercises found
+                  </div>
                 ) : (
-	<>
-		<Dumbbell size={18} />
-		{'Start Workout'}
-	</>
+                  <div className="space-y-2">
+                    {filteredExercises.map((exercise) => (
+                      <button
+                        className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-id={exercise.id}
+                        disabled={selectedExercises.some((se) => se.id === exercise.id)}
+                        key={exercise.id}
+                        onClick={_handleAddExerciseClickShared}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{exercise.name}</h3>
+                            {exercise.muscleGroup ? (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
+                                {exercise.muscleGroup}
+                              </span>
+                            ) : null}
+                          </div>
+                          {selectedExercises.some((se) => se.id === exercise.id) ? (
+                            <span className="text-green-600 text-sm font-medium">Added</span>
+                          ) : null}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		{showExerciseSelector ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col'}>
-				<div className={'flex items-center justify-between p-4 border-b'}>
-					<h2 className={'text-lg font-semibold text-gray-900'}>{'Add Exercise'}</h2>
-					<button
-						className={'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors'}
-						onClick={handleCloseExerciseSelector}
-					>
-						<X size={20} />
-					</button>
-				</div>
-
-				<div className={'p-4 border-b'}>
-					<div className={'relative'}>
-						<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
-						<input
-							autoFocus={true}
-							className={'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={handleExerciseSearchChange}
-							placeholder={'Search exercises...'}
-							type={'text'}
-							value={exerciseSearch}
-						/>
-					</div>
-				</div>
-
-				<div className={'flex-1 overflow-y-auto p-4'}>
-					{loading ? (
-						<div className={'flex items-center justify-center py-8'}>
-							<Loader2 className={'animate-spin text-blue-600'} size={32} />
-						</div>
-              ) : filteredExercises.length === 0 ? (
-	<div className={'text-center py-8 text-gray-500'}>
-		{'No exercises found'}
-	</div>
-              ) : (
-	<div className={'space-y-2'}>
-		{filteredExercises.map((exercise) => (
-			<button
-				className={'w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'}
-				data-id={exercise.id}
-				disabled={selectedExercises.some((se) => se.id === exercise.id)}
-				key={exercise.id}
-				onClick={_handleAddExerciseClickShared}
-			>
-				<div className={'flex items-center justify-between'}>
-					<div>
-						<h3 className={'font-medium text-gray-900'}>{exercise.name}</h3>
-						{exercise.muscleGroup ? <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full'}>
-							{exercise.muscleGroup}
-                              </span> : null}
-					</div>
-					{selectedExercises.some((se) => se.id === exercise.id) ? <span className={'text-green-600 text-sm font-medium'}>{'Added'}</span> : null}
-				</div>
-			</button>
-                  ))}
-	</div>
-              )}
-				</div>
-			</div>
-                          </div> : null}
-	</div>
-  );
-}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    );
+ }
 
 export const Route = createFileRoute('/workouts/new')({
   component: NewWorkout,

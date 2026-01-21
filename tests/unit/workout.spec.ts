@@ -416,8 +416,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should return only completed workouts', async () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+            }),
+          }),
         }),
       }),
     });
@@ -435,8 +439,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
 
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(filtered),
+            }),
+          }),
         }),
       }),
     });
@@ -457,8 +465,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
 
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(filtered),
+            }),
+          }),
         }),
       }),
     });
@@ -478,8 +490,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
 
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(filtered),
+            }),
+          }),
         }),
       }),
     });
@@ -498,12 +514,25 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by exerciseId', async () => {
     const filtered = [completedWorkouts[0], completedWorkouts[2]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+    mockDrizzleDb.select.mockImplementation((columns) => {
+      if (columns && 'value' in columns) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ workoutId: 'workout-1' }, { workoutId: 'workout-3' }]),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
+            }),
+          }),
         }),
-      }),
+      };
     });
 
     const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
@@ -520,12 +549,25 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts with multiple exercises by exerciseId', async () => {
     const filtered = [completedWorkouts[1]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+    mockDrizzleDb.select.mockImplementation((columns) => {
+      if (columns && 'value' in columns) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ workoutId: 'workout-2' }]),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
+            }),
+          }),
         }),
-      }),
+      };
     });
 
     const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
@@ -541,12 +583,25 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by date and exerciseId combined', async () => {
     const filtered = [completedWorkouts[2]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(filtered),
+    mockDrizzleDb.select.mockImplementation((columns) => {
+      if (columns && 'value' in columns) {
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ workoutId: 'workout-3' }]),
+          }),
+        };
+      }
+      return {
+        from: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
+            }),
+          }),
         }),
-      }),
+      };
     });
 
     const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
@@ -563,10 +618,14 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should apply limit and offset for pagination', async () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockReturnValue({
-            offset: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                offset: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
+                }),
+              }),
             }),
           }),
         }),
@@ -587,8 +646,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should sort by createdAt when specified', async () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+            }),
+          }),
         }),
       }),
     });
@@ -601,7 +664,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.where.mock.results[0].value.orderBy;
+    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.leftJoin.mock.results[0].value.where.mock.results[0].value.groupBy.mock.results[0].value.orderBy;
 
     expect(orderByCall).toHaveBeenCalled();
   });
@@ -609,8 +672,12 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should handle empty results', async () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue([]),
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([]),
+            }),
+          }),
         }),
       }),
     });
@@ -1579,5 +1646,316 @@ describe('Exercise History', () => {
 
     expect(result.length).toBe(1);
     expect(result[0].maxWeight).toBe(100);
+  });
+});
+
+describe('Workout Session - addSetToBackend API behavior', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('API returns created set with real backend ID', async () => {
+    const realBackendSetId = 'backend-gen-id-12345';
+    const mockCreatedSet: WorkoutSet = {
+      id: realBackendSetId,
+      workoutExerciseId: 'workout-exercise-1',
+      setNumber: 1,
+      weight: 80,
+      reps: 8,
+      rpe: 7.5,
+      isComplete: false,
+      completedAt: null,
+      createdAt: '2024-01-15T12:00:00.000Z',
+    };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockCreatedSet),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await fetch('/api/workouts/sets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        workoutExerciseId: 'workout-exercise-1',
+        setNumber: 1,
+        weight: 80,
+        reps: 8,
+        rpe: 7.5,
+      }),
+    });
+
+    expect(result.ok).toBe(true);
+    const set: WorkoutSet = await result.json();
+    expect(set.id).toBe(realBackendSetId);
+    expect(set.id).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  });
+
+  it('API returns null for set when request fails', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await fetch('/api/workouts/sets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        workoutExerciseId: 'workout-exercise-1',
+        setNumber: 1,
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('Workout Session - Set update failure handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('returns 404 for non-existent set ID in update', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: vi.fn().mockResolvedValue({ error: 'Set not found or does not belong to you' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await fetch('/api/workouts/sets/fake-id-123', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ weight: 100 }),
+    });
+
+    expect(result.status).toBe(404);
+  });
+
+  it('returns 404 for non-existent set ID in complete', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: vi.fn().mockResolvedValue({ error: 'Set not found or does not belong to you' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await fetch('/api/workouts/sets/fake-id-456', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ isComplete: true, completedAt: new Date().toISOString() }),
+    });
+
+    expect(result.status).toBe(404);
+  });
+
+  it('returns 404 for non-existent set ID in delete', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: vi.fn().mockResolvedValue({ error: 'Set not found or does not belong to you' }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await fetch('/api/workouts/sets/fake-id-789', {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    expect(result.status).toBe(404);
+  });
+
+  it('handles network errors gracefully', async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(
+      fetch('/api/workouts/sets/some-id', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ weight: 100 }),
+      })
+    ).rejects.toThrow('Network error');
+  });
+
+  it('returns proper error messages for different failure cases', async () => {
+    const mockFetch = vi.fn();
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: vi.fn().mockResolvedValue({ error: 'Not authenticated' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValue({ error: 'Invalid set ID' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: vi.fn().mockResolvedValue({ error: 'Set not found or does not belong to you' }),
+      });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const authError = await fetch('/api/workouts/sets/id-1', {
+      method: 'PUT',
+      credentials: 'include',
+      body: JSON.stringify({ weight: 100 }),
+    });
+    expect(authError.status).toBe(401);
+
+    const invalidIdError = await fetch('/api/workouts/sets/id-2', {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    expect(invalidIdError.status).toBe(400);
+
+    const notFoundError = await fetch('/api/workouts/sets/id-3', {
+      method: 'PUT',
+      credentials: 'include',
+      body: JSON.stringify({ weight: 100 }),
+    });
+    expect(notFoundError.status).toBe(404);
+  });
+});
+
+describe('Workout Session - Frontend set ID consistency', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('ensures frontend uses the same set ID that backend creates', async () => {
+    const backendGeneratedId = 'drizzle-gen-id-abc123';
+    const mockCreatedSet: WorkoutSet = {
+      id: backendGeneratedId,
+      workoutExerciseId: 'workout-exercise-1',
+      setNumber: 1,
+      weight: 100,
+      reps: 5,
+      rpe: 8,
+      isComplete: false,
+      completedAt: null,
+      createdAt: '2024-01-15T12:00:00.000Z',
+    };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockCreatedSet),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const createResponse = await fetch('/api/workouts/sets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        workoutExerciseId: 'workout-exercise-1',
+        setNumber: 1,
+        weight: 100,
+        reps: 5,
+        rpe: 8,
+      }),
+    });
+
+    expect(createResponse.ok).toBe(true);
+    const createdSet: WorkoutSet = await createResponse.json();
+
+    expect(createdSet.id).toBe(backendGeneratedId);
+    expect(createdSet.id).toBeDefined();
+    expect(createdSet.id).not.toBe('');
+
+    const updateResponse = await fetch(`/api/workouts/sets/${createdSet.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ weight: 110 }),
+    });
+
+    expect(updateResponse.ok).toBe(true);
+  });
+
+  it('verifies set ID format matches database-generated IDs', async () => {
+    const drizzleId = 'rec_abc123def456';
+    const nanoidId = 'abc123def456';
+
+    const mockFetch = vi.fn();
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          id: drizzleId,
+          workoutExerciseId: 'workout-exercise-1',
+          setNumber: 1,
+          weight: null,
+          reps: null,
+          rpe: null,
+          isComplete: false,
+          completedAt: null,
+          createdAt: '2024-01-15T12:00:00.000Z',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          id: nanoidId,
+          workoutExerciseId: 'workout-exercise-2',
+          setNumber: 1,
+          weight: null,
+          reps: null,
+          rpe: null,
+          isComplete: false,
+          completedAt: null,
+          createdAt: '2024-01-15T12:00:00.000Z',
+        }),
+      });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const response1 = await fetch('/api/workouts/sets', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ workoutExerciseId: 'workout-exercise-1', setNumber: 1 }),
+    });
+    const set1: WorkoutSet = await response1.json();
+    expect(set1.id).toBe(drizzleId);
+
+    const response2 = await fetch('/api/workouts/sets', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ workoutExerciseId: 'workout-exercise-2', setNumber: 1 }),
+    });
+    const set2: WorkoutSet = await response2.json();
+    expect(set2.id).toBe(nanoidId);
+
+    expect(set1.id).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(set2.id).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 });

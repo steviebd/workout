@@ -392,11 +392,20 @@ export async function getWorkoutWithExercises(
   } as WorkoutWithExercises;
 }
 
+export interface WorkoutWithExerciseCount {
+  id: string;
+  userId: string;
+  name: string;
+  startedAt: string;
+  completedAt: string | null;
+  exerciseCount: number;
+}
+
 export async function getWorkoutsByUserId(
   db: D1Database,
   userId: string,
   options: GetWorkoutsOptions = {}
-): Promise<Workout[]> {
+): Promise<WorkoutWithExerciseCount[]> {
   const drizzleDb = createDb(db);
 
   const { sortBy = 'startedAt', sortOrder = 'DESC', limit, offset, fromDate, toDate, exerciseId } = options;
@@ -419,9 +428,18 @@ export async function getWorkoutsByUserId(
   }
 
   let query = drizzleDb
-    .select()
+    .select({
+      id: workouts.id,
+      userId: workouts.userId,
+      name: workouts.name,
+      startedAt: workouts.startedAt,
+      completedAt: workouts.completedAt,
+      exerciseCount: sql<number>`count(${workoutExercises.id})`,
+    })
     .from(workouts)
-    .where(and(...conditions));
+    .leftJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .where(and(...conditions))
+    .groupBy(workouts.id);
 
   if (sortBy === 'startedAt') {
     query = sortOrder === 'DESC'
@@ -443,7 +461,7 @@ export async function getWorkoutsByUserId(
 
   const results = await query;
 
-  return results as Workout[];
+  return results as WorkoutWithExerciseCount[];
 }
 
 export async function updateWorkout(

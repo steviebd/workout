@@ -1,8 +1,16 @@
 # Fit Workout App - UI Transformation Plan
 
-This document outlines the comprehensive plan to transform the Fit Workout App from its current basic styling to match the example project's dark bold, mobile-first design with gamification features.
-
 ## Overview
+
+This document outlines the comprehensive plan to **refactor the existing Fit Workout App** to match the design and user experience of the `example/` project. The refactor will transform the application from its current basic styling to a dark bold, mobile-first design with gamification features, while maintaining the TanStack Start architecture.
+
+**Key Principles:**
+- Keep TanStack Start framework and routing
+- Create new route files alongside existing ones (progress.tsx, achievements.tsx, workouts.$id.start.tsx, history.tsx)
+- Replace existing components with improved implementations
+- Use the exact same oklch() color palette as the example
+- Mobile-first layout with 480px max-width centered on desktop
+- Reuse patterns from `/home/steven/workout/example/` as the design reference
 
 **Target Design**: Dark bold theme with orange primary (#oklch 0.65 0.24 30), blue accent (#oklch 0.7 0.15 195), mobile-first bottom navigation, gamification (streaks, badges, PR tracking).
 
@@ -958,88 +966,86 @@ export function cn(...inputs: ClassValue[]) {
 
 ## Implementation Checklist
 
-### Phase 0: Dependencies
-- [ ] Task 0.1 - Install required dependencies
-
 ### Phase 1: Foundation
-- [ ] Task 1.1.1 - Update src/styles.css with CSS variables
-- [ ] Task 1.1.2 - Add Tailwind theme configuration
-- [ ] Task 1.2.1 - Create cn utility function
-- [ ] Task 1.3.1 - Create Button component
-- [ ] Task 1.3.2 - Create Card component
-- [ ] Task 1.3.3 - Create Input component
-- [ ] Task 1.3.4 - Create Badge component
-- [ ] Task 1.3.5 - Create Progress component
-- [ ] Task 1.3.6 - Create Tabs component
-- [ ] Task 1.3.7 - Create Dialog component
-- [ ] Task 1.3.8 - Create Toast components
-- [ ] Task 1.3.9 - Create Select component
-- [ ] Task 1.3.10 - Create Dropdown Menu component
-- [ ] Task 1.3.11 - Create Drawer component
-- [ ] Task 1.3.12 - Create Skeleton component
-- [ ] Task 1.3.13 - Create Label component
-- [ ] Task 1.3.14 - Create Checkbox component
-- [ ] Task 1.3.15 - Create Separator component
-- [ ] Task 1.3.16 - Create Scroll Area component
-- [ ] Task 1.3.17 - Create Alert Dialog component
-- [ ] Task 1.3.18 - Create Chart wrapper component
-- [ ] Task 1.3.19 - Create Spinner component
-- [ ] Task 1.3.20 - Create UI barrel export
+- [x] Task 0.1 - Install required dependencies
+- [x] Task 1.1.1 - Update src/styles.css with CSS variables
+- [x] Task 1.1.2 - Add Tailwind theme configuration
+- [x] Task 1.2.1 - Create cn utility function
+- [x] Task 1.3.1 - Create Button component
+- [x] Task 1.3.2 - Create Card component
+- [x] Task 1.3.3 - Create Input component
+- [x] Task 1.3.4 - Create Badge component
+- [x] Task 1.3.5 - Create Progress component
+- [x] Task 1.3.6 - Create Tabs component
+- [x] Task 1.3.7 - Create Dialog component
+- [x] Task 1.3.8 - Create Toast components
+- [x] Task 1.3.9 - Create Select component
+- [x] Task 1.3.10 - Create Dropdown Menu component
+- [x] Task 1.3.11 - Create Drawer component
+- [x] Task 1.3.12 - Create Skeleton component
+- [x] Task 1.3.13 - Create Label component
+- [x] Task 1.3.14 - Create Checkbox component
+- [x] Task 1.3.15 - Create Separator component
+- [x] Task 1.3.16 - Create Scroll Area component
+- [x] Task 1.3.17 - Create Alert Dialog component
+- [x] Task 1.3.18 - Create Chart wrapper component
+- [x] Task 1.3.19 - Create Spinner component
+- [x] Task 1.3.20 - Create UI barrel export
 
 ### Phase 2: Navigation & Layout
-- [ ] Task 2.1.1 - Create BottomNav component
-- [ ] Task 2.1.2 - Redesign Header component
-- [ ] Task 2.1.3 - Update Root layout for responsive nav
-- [ ] Task 2.2.1 - Create Progress route
-- [ ] Task 2.2.2 - Create Achievements route
-- [ ] Task 2.2.3 - Create Active Workout route
-- [ ] Task 2.2.4 - Create/Update History route
+- [x] Task 2.1.1 - Create BottomNav component
+- [x] Task 2.1.2 - Redesign Header component
+- [x] Task 2.1.3 - Update Root layout for responsive nav
+- [x] Task 2.2.1 - Create Progress route
+- [x] Task 2.2.2 - Create Achievements route
+- [x] Task 2.2.3 - Create Active Workout route
+- [x] Task 2.2.4 - Create/Update History route
 
 ### Phase 3: Dashboard Redesign
-- [ ] Task 3.1.1 - Create StreakCard component
-- [ ] Task 3.1.2 - Create VolumeSummary component
-- [ ] Task 3.1.3 - Create QuickActions component
-- [ ] Task 3.1.4 - Create RecentPRs component
-- [ ] Task 3.2.1 - Update Index route (dashboard)
+- [x] Task 3.1.1 - Create StreakCard component
+- [x] Task 3.1.2 - Create VolumeSummary component
+- [x] Task 3.1.3 - Create QuickActions component
+- [x] Task 3.1.4 - Create RecentPRs component
+- [x] Task 3.2.1 - Update Index route (dashboard)
 
 ### Phase 4: Charts & Progress
-- [ ] Task 4.1.1 - Create StrengthChart component
-- [ ] Task 4.1.2 - Create WeeklyVolumeChart component
-- [ ] Task 4.1.3 - Create ExerciseSelector component
-- [ ] Task 4.1.4 - Create PRBoard component
-- [ ] Task 4.2.1 - Update ExerciseHistoryChart styling
+- [x] Task 4.1.1 - Create StrengthChart component
+- [x] Task 4.1.2 - Create WeeklyVolumeChart component
+- [x] Task 4.1.3 - Create ExerciseSelector component
+- [x] Task 4.1.4 - Create PRBoard component
+- [x] Task 4.2.1 - Update ExerciseHistoryChart styling
 
 ### Phase 5: Workout Experience
-- [ ] Task 5.1.1 - Create ExerciseLogger component
-- [ ] Task 5.1.2 - Create SetLogger component
-- [ ] Task 5.1.3 - Create WorkoutTemplateCard component
-- [ ] Task 5.2.1 - Update Workouts list page
-- [ ] Task 5.2.2 - Update Workout creation page
-- [ ] Task 5.2.3 - Update Active Workout page
+- [x] Task 5.1.1 - Create ExerciseLogger component
+- [x] Task 5.1.2 - Create SetLogger component
+- [x] Task 5.1.3 - Create WorkoutTemplateCard component
+- [x] Task 5.2.1 - Update Workouts list page
+- [x] Task 5.2.2 - Update Workout creation page
+- [x] Task 5.2.3 - Update Active Workout page
 
 ### Phase 6: Gamification Features
-- [ ] Task 6.1.1 - Create BadgeCard component
-- [ ] Task 6.1.2 - Create StreakDisplay component
-- [ ] Task 6.2.1 - Implement Achievements route
+- [x] Task 6.1.1 - Create BadgeCard component
+- [x] Task 6.1.2 - Create StreakDisplay component
+- [x] Task 6.2.1 - Implement Achievements route
 
 ### Phase 7: Polish & Mobile
-- [ ] Task 7.1.1 - Add mobile detection hook
-- [ ] Task 7.1.2 - Update global styles for mobile
-- [ ] Task 7.1.3 - Add loading skeletons
-- [ ] Task 7.2.1 - Update EmptyState component
-- [ ] Task 7.3.1 - Implement Toast system
+- [x] Task 7.1.1 - Add mobile detection hook
+- [x] Task 7.1.2 - Update global styles for mobile
+- [x] Task 7.1.3 - Add loading skeletons
+- [x] Task 7.2.1 - Update EmptyState component
+- [x] Task 7.3.1 - Implement Toast system
 
 ### Phase 8: Existing Route Migrations
-- [ ] Task 8.1.1 - Update Exercises list page
-- [ ] Task 8.1.2 - Update Exercise detail page
-- [ ] Task 8.1.3 - Update Exercise edit page
-- [ ] Task 8.1.4 - Update New Exercise page
-- [ ] Task 8.2.1 - Update Templates list page
-- [ ] Task 8.2.2 - Update Template detail page
-- [ ] Task 8.2.3 - Update Template edit page
-- [ ] Task 8.2.4 - Update New Template page
-- [ ] Task 8.3.1 - Update Workout summary page
-- [ ] Task 8.4.1 - Create Desktop Sidebar (optional)
+- [x] Task 8.1.1 - Update Exercises list page
+- [x] Task 8.1.2 - Update Exercise detail page
+- [x] Task 8.1.3 - Update Exercise edit page
+- [x] Task 8.1.4 - Update New Exercise page
+- [x] Task 8.2.1 - Update Templates list page
+- [x] Task 8.2.2 - Update Template detail page
+- [x] Task 8.2.3 - Update Template edit page
+- [x] Task 8.2.4 - Update New Template page
+- [x] Task 8.3.1 - Update Workout summary page
+- [x] Task 8.4.1 - Create Desktop Sidebar (optional)
 
 ---
 

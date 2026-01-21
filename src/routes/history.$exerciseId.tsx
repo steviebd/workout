@@ -197,240 +197,234 @@ function ExerciseHistory() {
 
   if (auth.loading || redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Redirecting to sign in...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Redirecting to sign in...</p>
       </div>
     );
   }
 
   if (!data && !loading && error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <Link to="/history" className="text-blue-600 hover:underline text-sm">
-              ← Back to History
-            </Link>
-          </div>
-          <div className="bg-white rounded-lg border border-red-200 p-6 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertCircle className="text-red-600" size={24} />
-              <h2 className="text-lg font-semibold text-gray-900">Unable to Load Exercise History</h2>
-            </div>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <div className="bg-gray-50 rounded p-4 mb-4">
-              <p className="text-sm text-gray-500 mb-2">Debug Information:</p>
-              <p className="text-sm font-mono text-gray-700">Exercise ID: {params.exerciseId}</p>
-            </div>
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              type="button"
-            >
-              Try Again
-            </button>
-          </div>
-          <div className="text-center">
-            <Link to="/history" className="text-blue-600 hover:underline">
-              ← Back to Workout History
-            </Link>
-          </div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <Link to="/history" className="text-primary hover:underline text-sm">
+            ← Back to History
+          </Link>
         </div>
-      </div>
+        <div className="bg-card border border-destructive p-6 mb-6 rounded-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertCircle className="text-destructive" size={24} />
+            <h2 className="text-lg font-semibold text-foreground">Unable to Load Exercise History</h2>
+          </div>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <div className="bg-secondary rounded p-4 mb-4">
+            <p className="text-sm text-muted-foreground mb-2">Debug Information:</p>
+            <p className="text-sm font-mono text-foreground">Exercise ID: {params.exerciseId}</p>
+          </div>
+          <button
+            onClick={handleRetry}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            type="button"
+          >
+            Try Again
+          </button>
+        </div>
+        <div className="text-center">
+          <Link to="/history" className="text-primary hover:underline">
+            ← Back to Workout History
+          </Link>
+        </div>
+      </main>
     );
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <Link to="/history" className="text-blue-600 hover:underline text-sm">
-              ← Back to History
-            </Link>
-          </div>
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-blue-600" size={32} />
-            <span className="ml-2 text-gray-600">Loading exercise history...</span>
-          </div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <Link to="/history" className="text-primary hover:underline text-sm">
+            ← Back to History
+          </Link>
         </div>
-      </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <span className="ml-2 text-muted-foreground">Loading exercise history...</span>
+        </div>
+      </main>
     );
   }
 
   const { exercise, stats, history } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <Link to="/history" className="text-blue-600 hover:underline text-sm">
-            ← Back to History
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mt-2">{exercise.name}</h1>
-          {exercise.muscleGroup ? <p className="text-gray-600">{exercise.muscleGroup}</p> : null}
+    <main className="mx-auto max-w-lg px-4 py-6">
+      <div className="mb-6">
+        <Link to="/history" className="text-primary hover:underline text-sm">
+          ← Back to History
+        </Link>
+        <h1 className="text-3xl font-bold text-foreground mt-2">{exercise.name}</h1>
+        {exercise.muscleGroup ? <p className="text-muted-foreground">{exercise.muscleGroup}</p> : null}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="text-amber-600" size={18} />
+            <span className="text-sm text-muted-foreground">Max Weight</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.maxWeight} kg</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="text-amber-600" size={18} />
-              <span className="text-sm text-gray-500">Max Weight</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.maxWeight} kg</p>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="text-green-600" size={18} />
+            <span className="text-sm text-muted-foreground">Est. 1RM</span>
           </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="text-green-600" size={18} />
-              <span className="text-sm text-gray-500">Est. 1RM</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.est1rm} kg</p>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="text-blue-600" size={18} />
-              <span className="text-sm text-gray-500">Workouts</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalWorkouts}</p>
-          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.est1rm} kg</p>
         </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Progress Over Time</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    chartType === 'weight'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  onClick={chartType === 'volume' ? handleChartTypeChange : undefined}
-                  type="button"
-                >
-                  Weight
-                </button>
-                <button
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    chartType === 'volume'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  onClick={chartType === 'weight' ? handleChartTypeChange : undefined}
-                  type="button"
-                >
-                  Volume
-                </button>
-              </div>
-            </div>
-            <Suspense fallback={<ChartSkeleton />}>
-              <ExerciseHistoryChart data={history} chartType={chartType} />
-            </Suspense>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="text-blue-600" size={18} />
+            <span className="text-sm text-muted-foreground">Workouts</span>
           </div>
-
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              !fromDate && !toDate
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
-             onClick={() => handleQuickFilter('allTime')} // eslint-disable-line react/jsx-no-bind
-            type="button"
-          >
-            All Time
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              fromDate && fromDate === getThisWeekRange().from
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
-             onClick={() => handleQuickFilter('thisWeek')} // eslint-disable-line react/jsx-no-bind
-            type="button"
-          >
-            This Week
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              fromDate && fromDate === getThisMonthRange().from
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
-             onClick={() => handleQuickFilter('thisMonth')} // eslint-disable-line react/jsx-no-bind
-            type="button"
-          >
-            This Month
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              fromDate && fromDate === getThisYearRange().from
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
-             onClick={() => handleQuickFilter('thisYear')} // eslint-disable-line react/jsx-no-bind
-            type="button"
-          >
-            This Year
-          </button>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          <input
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
-            onChange={handleFromDateChange}
-            type="date"
-            value={fromDate ? fromDate.split('T')[0] : ''}
-          />
-
-          <input
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
-            onChange={handleToDateChange}
-            type="date"
-            value={toDate ? toDate.split('T')[0] : ''}
-          />
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {history.length === 0 ? (
-            <EmptyExerciseHistory />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Workout</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Max Weight</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Reps</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Est. 1RM</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item) => (
-                    <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50" key={item.workoutId}>
-                      <td className="py-3 px-4 text-sm text-gray-900">{formatDate(item.workoutDate)}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{item.workoutName}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{item.maxWeight} kg</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{item.repsAtMax}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{item.est1rm} kg</td>
-                      <td className="py-3 px-4 text-sm">
-                        {item.isPR ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                            🏆 PR
-                                     </span> : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <p className="text-2xl font-bold text-foreground">{stats.totalWorkouts}</p>
         </div>
       </div>
-    </div>
+
+        <div className="bg-card border border-border rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Progress Over Time</h2>
+            <div className="flex items-center gap-2">
+              <button
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartType === 'weight'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+                onClick={chartType === 'volume' ? handleChartTypeChange : undefined}
+                type="button"
+              >
+                Weight
+              </button>
+              <button
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  chartType === 'volume'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+                onClick={chartType === 'weight' ? handleChartTypeChange : undefined}
+                type="button"
+              >
+                Volume
+              </button>
+            </div>
+          </div>
+          <Suspense fallback={<ChartSkeleton />}>
+            <ExerciseHistoryChart data={history} chartType={chartType} />
+          </Suspense>
+        </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            !fromDate && !toDate
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+            onClick={() => handleQuickFilter('allTime')}
+          type="button"
+        >
+          All Time
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            fromDate && fromDate === getThisWeekRange().from
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+           onClick={() => handleQuickFilter('thisWeek')}
+          type="button"
+        >
+          This Week
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            fromDate && fromDate === getThisMonthRange().from
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+           onClick={() => handleQuickFilter('thisMonth')}
+          type="button"
+        >
+          This Month
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            fromDate && fromDate === getThisYearRange().from
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+           onClick={() => handleQuickFilter('thisYear')}
+          type="button"
+        >
+          This Year
+        </button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <input
+          className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
+          onChange={handleFromDateChange}
+          type="date"
+          value={fromDate ? fromDate.split('T')[0] : ''}
+        />
+
+        <input
+          className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
+          onChange={handleToDateChange}
+          type="date"
+          value={toDate ? toDate.split('T')[0] : ''}
+        />
+      </div>
+
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
+        {history.length === 0 ? (
+          <EmptyExerciseHistory />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Workout</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Max Weight</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Reps</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Est. 1RM</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground" />
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((item) => (
+                  <tr className="border-b border-border last:border-0 hover:bg-muted/50" key={item.workoutId}>
+                    <td className="py-3 px-4 text-sm text-foreground">{formatDate(item.workoutDate)}</td>
+                    <td className="py-3 px-4 text-sm text-foreground">{item.workoutName}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-foreground">{item.maxWeight} kg</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.repsAtMax}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.est1rm} kg</td>
+                    <td className="py-3 px-4 text-sm">
+                      {item.isPR ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                          🏆 PR
+                                   </span> : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
 

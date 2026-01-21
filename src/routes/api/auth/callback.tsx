@@ -69,9 +69,15 @@ export const Route = createFileRoute('/api/auth/callback')({
           return createSessionResponse(token, '/');
         } catch (err) {
           console.error('Auth callback error:', err);
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+          console.error('Auth callback error details:', {
+            message: errorMessage,
+            stack: err instanceof Error ? err.stack : undefined,
+            code: code ? 'present' : 'missing',
+          });
           return new Response(null, {
             status: 302,
-            headers: { Location: '/?error=auth_failed' },
+            headers: { Location: `/?error=auth_failed&details=${encodeURIComponent(errorMessage)}` },
           });
         }
       },

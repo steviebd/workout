@@ -1,7 +1,8 @@
 import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeft, Check, Clock, Dumbbell, Home, Scale, Target, Trophy } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Dumbbell, Home, Scale, Target, Trophy, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import { cn } from '@/lib/cn';
 
 interface WorkoutSet {
   id: string;
@@ -44,7 +45,6 @@ function WorkoutSummary() {
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       window.location.href = '/auth/signin';
-      
     }
   }, [auth.loading, auth.user]);
 
@@ -55,24 +55,12 @@ function WorkoutSummary() {
       const stateWorkout = (router.state.location.state as { workout?: Workout }).workout;
 
       if (stateWorkout) {
-        console.log('[Summary] Using workout from router state:', {
-          id: stateWorkout.id,
-          name: stateWorkout.name,
-          exercisesCount: stateWorkout.exercises.length,
-          exercises: stateWorkout.exercises.map((e) => ({
-            id: e.id,
-            name: e.name,
-            setsCount: e.sets.length,
-            sets: e.sets
-          }))
-        });
         setWorkout(stateWorkout);
         setLoading(false);
         return;
       }
 
       try {
-        console.log('[Summary] Fetching workout from API:', params.id);
         const res = await fetch(`/api/workouts/${params.id}`, {
           credentials: 'include',
         });
@@ -82,20 +70,8 @@ function WorkoutSummary() {
         }
 
         const data: Workout = await res.json();
-        console.log('[Summary] Fetched workout:', {
-          id: data.id,
-          name: data.name,
-          exercisesCount: data.exercises.length,
-          exercises: data.exercises.map((e) => ({
-            id: e.id,
-            name: e.name,
-            setsCount: e.sets.length,
-            sets: e.sets
-          }))
-        });
         setWorkout(data);
       } catch (err: unknown) {
-        console.error('[Summary] Error loading workout:', err);
         setError(err instanceof Error ? err.message : 'Failed to load workout');
       } finally {
         setLoading(false);
@@ -110,9 +86,9 @@ function WorkoutSummary() {
       if (!loading && workout && !workout.completedAt) {
         try {
           await router.navigate({ to: `/workouts/${params.id}`, replace: true });
-      } catch (err) {
-        console.error('Navigation error:', err);
-      }
+        } catch (err) {
+          console.error('Navigation error:', err);
+        }
       }
     };
 
@@ -121,24 +97,24 @@ function WorkoutSummary() {
 
   if (auth.loading || loading) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
-	</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
     );
   }
 
   if (error || !workout) {
     return (
-	<div className={'min-h-screen bg-gray-50 p-8'}>
-		<div className={'max-w-4xl mx-auto'}>
-			<div className={'bg-red-50 border border-red-200 rounded-lg p-4'}>
-				<p className={'text-red-600'}>{error ?? 'Workout not found'}</p>
-				<a className={'text-blue-600 hover:text-blue-700 mt-2 inline-block'} href={'/'}>
-					{'Go to dashboard'}
-				</a>
-			</div>
-		</div>
-	</div>
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <p className="text-destructive">{error ?? 'Workout not found'}</p>
+            <a className="text-primary hover:text-primary/80 mt-2 inline-block" href="/">
+              Go to dashboard
+            </a>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -210,29 +186,29 @@ function WorkoutSummary() {
 
   const totalVolume = calculateTotalVolume();
   const personalRecords = getPersonalRecords();
-  return (
-	<div className={'min-h-screen bg-gray-50 p-4 sm:p-8'}>
-		<div className={'max-w-4xl mx-auto'}>
-			<div className={'mb-6'}>
-				<a
-					className={'inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors'}
-					href={'/'}
-				>
-					<ArrowLeft size={20} />
-					{'Back to dashboard'}
-				</a>
-			</div>
 
-			<div className={'bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6'}>
-				<div className={'flex items-center gap-3 mb-2'}>
-					<div className={'p-2 bg-green-100 rounded-full'}>
-						<Check className={'text-green-600'} size={24} />
-					</div>
-					<h1 className={'text-2xl font-bold text-gray-900'}>{'Workout Complete!'}</h1>
-				</div>
-				<p className={'text-gray-600'}>{workout.name}</p>
-				<p className={'text-sm text-gray-500 mt-1'}>
-					{workout.completedAt ? new Date(workout.completedAt).toLocaleDateString('en-US', {
+  return (
+    <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <a
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            href="/"
+          >
+            <ArrowLeft size={20} />
+            Back to dashboard
+          </a>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-success/20 rounded-full">
+              <Check className="text-success" size={24} />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Workout Complete!</h1>
+          </div>
+          <p className="text-muted-foreground">{workout.name}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {workout.completedAt ? new Date(workout.completedAt).toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -240,138 +216,138 @@ function WorkoutSummary() {
               hour: '2-digit',
               minute: '2-digit',
             }) : null}
-				</p>
-			</div>
+          </p>
+        </div>
 
-			<div className={'grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6'}>
-				<div className={'bg-white rounded-lg border border-gray-200 p-4'}>
-					<div className={'flex items-center gap-2 text-gray-500 mb-1'}>
-						<Clock size={18} />
-						<span className={'text-sm font-medium'}>{'Duration'}</span>
-					</div>
-					<p className={'text-2xl font-bold text-gray-900'}>
-						{formatDuration(workout.startedAt, workout.completedAt ?? workout.startedAt)}
-					</p>
-				</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Clock size={18} />
+              <span className="text-sm font-medium">Duration</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {formatDuration(workout.startedAt, workout.completedAt ?? workout.startedAt)}
+            </p>
+          </div>
 
-				<div className={'bg-white rounded-lg border border-gray-200 p-4'}>
-					<div className={'flex items-center gap-2 text-gray-500 mb-1'}>
-						<Dumbbell size={18} />
-						<span className={'text-sm font-medium'}>{'Total Sets'}</span>
-					</div>
-					<p className={'text-2xl font-bold text-gray-900'}>
-						{totalSetsCount}
-					</p>
-				</div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Dumbbell size={18} />
+              <span className="text-sm font-medium">Total Sets</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {totalSetsCount}
+            </p>
+          </div>
 
-				<div className={'bg-white rounded-lg border border-gray-200 p-4'}>
-					<div className={'flex items-center gap-2 text-gray-500 mb-1'}>
-						<Scale size={18} />
-						<span className={'text-sm font-medium'}>{'Volume'}</span>
-					</div>
-					<p className={'text-2xl font-bold text-gray-900'}>
-						{totalVolume.toLocaleString()} 
-						{' '}
-						<span className={'text-sm font-normal'}>{'kg'}</span>
-					</p>
-				</div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Scale size={18} />
+              <span className="text-sm font-medium">Volume</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {totalVolume.toLocaleString()}
+              {' '}
+              <span className="text-sm font-normal text-muted-foreground">kg</span>
+            </p>
+          </div>
 
-				<div className={'bg-white rounded-lg border border-gray-200 p-4'}>
-					<div className={'flex items-center gap-2 text-gray-500 mb-1'}>
-						<Target size={18} />
-						<span className={'text-sm font-medium'}>{'Exercises'}</span>
-					</div>
-					<p className={'text-2xl font-bold text-gray-900'}>
-						{workout.exercises.length}
-					</p>
-				</div>
-			</div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Target size={18} />
+              <span className="text-sm font-medium">Exercises</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {workout.exercises.length}
+            </p>
+          </div>
+        </div>
 
-			{personalRecords.length > 0 ? <div className={'bg-white rounded-lg border border-gray-200 p-6 mb-6'}>
-				<h2 className={'text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2'}>
-					<Trophy className={'text-yellow-500'} size={20} />
-					{'Personal Records'}
-				</h2>
-				<div className={'grid gap-3'}>
-					{personalRecords.map((pr) => (
-						<div
-							className={'flex items-center justify-between p-3 bg-yellow-50 rounded-lg'}
-							key={pr.exerciseName}
-						>
-							<span className={'font-medium text-gray-900'}>{pr.exerciseName}</span>
-							<span className={'text-yellow-700 font-medium'}>
-								{pr.weight}
-								{'kg ×'}
-								{pr.reps}
-							</span>
-						</div>
-              ))}
-				</div>
-                                 </div> : null}
+        {personalRecords.length > 0 ? <div className="bg-card border border-border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Trophy className="text-yellow-500" size={20} />
+            Personal Records
+          </h2>
+          <div className="grid gap-3">
+            {personalRecords.map((pr) => (
+              <div
+                className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
+                key={pr.exerciseName}
+              >
+                <span className="font-medium text-foreground">{pr.exerciseName}</span>
+                <span className="text-amber-400 font-medium">
+                  {pr.weight}
+                  kg ×
+                  {pr.reps}
+                </span>
+              </div>
+            ))}
+          </div>
+                                      </div> : null}
 
-			<div className={'bg-white rounded-lg border border-gray-200 p-6 mb-6'}>
-				<h2 className={'text-lg font-semibold text-gray-900 mb-4'}>{'Exercise Summary'}</h2>
-				<div className={'space-y-4'}>
-					{workout.exercises.map((exercise) => {
+        <div className="bg-card border border-border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Summary</h2>
+          <div className="space-y-4">
+            {workout.exercises.map((exercise) => {
               const completedSets = exercise.sets.filter((s) => s.isComplete).length;
               const totalSets = exercise.sets.length;
 
               return (
-	<div className={'border-b border-gray-100 last:border-0 pb-4 last:pb-0'} key={exercise.id}>
-		<div className={'flex items-center justify-between mb-2'}>
-			<div>
-				<p className={'font-medium text-gray-900'}>{exercise.name}</p>
-				{exercise.muscleGroup ? <p className={'text-sm text-gray-500'}>{exercise.muscleGroup}</p> : null}
-			</div>
-			<span className={'text-sm text-gray-500'}>
-				{completedSets}
-				{'/'}
-				{totalSets}
-				{' '}
-				{'sets'}
-			</span>
-		</div>
-		<div className={'flex flex-wrap gap-2'}>
-			{exercise.sets.map((set) => (
-				<span
-					className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${
-                            set.isComplete
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-500'
-                          }`}
-					key={set.id}
-				>
-					{set.weight ? <span>
-						{set.weight}
-						{'kg'}
-                   </span> : null}
-					{set.weight && set.reps ? <span>{'×'}</span> : null}
-					{set.reps ? <span>{set.reps}</span> : null}
-				</span>
-                      ))}
-		</div>
-	</div>
+                <div className="border-b border-border last:border-0 pb-4 last:pb-0" key={exercise.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium text-foreground">{exercise.name}</p>
+                      {exercise.muscleGroup ? <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p> : null}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {completedSets}
+                      /
+                      {totalSets}
+                      {' '}
+                      sets
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {exercise.sets.map((set) => (
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-1 rounded text-sm',
+                          set.isComplete
+                            ? 'bg-success/20 text-success'
+                            : 'bg-secondary text-muted-foreground'
+                        )}
+                        key={set.id}
+                      >
+                        {set.weight ? <span>
+                          {set.weight}
+                          kg
+                                      </span> : null}
+                        {set.weight && set.reps ? <span>×</span> : null}
+                        {set.reps ? <span>{set.reps}</span> : null}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               );
             })}
-				</div>
-			</div>
+          </div>
+        </div>
 
-			{workout.notes ? <div className={'bg-white rounded-lg border border-gray-200 p-6 mb-6'}>
-				<h2 className={'text-lg font-semibold text-gray-900 mb-2'}>{'Notes'}</h2>
-				<p className={'text-gray-600'}>{workout.notes}</p>
-                    </div> : null}
+        {workout.notes ? <div className="bg-card border border-border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-2">Notes</h2>
+          <p className="text-muted-foreground">{workout.notes}</p>
+                         </div> : null}
 
-			<div className={'flex justify-center'}>
-				<a
-					className={'inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium'}
-					href={'/'}
-				>
-					<Home size={18} />
-					{'Back to Dashboard'}
-				</a>
-			</div>
-		</div>
-	</div>
+        <div className="flex justify-center">
+          <a
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+            href="/"
+          >
+            <Home size={18} />
+            Back to Dashboard
+          </a>
+        </div>
+    </main>
   );
 }
 

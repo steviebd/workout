@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import {
   type UpdateTemplateData,
   getTemplateById,
+  getTemplateExercises,
   softDeleteTemplate,
   updateTemplate
 } from '../../lib/db/template';
@@ -29,7 +30,9 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          return Response.json(template);
+          const exercises = await getTemplateExercises(db, params.id, session.userId);
+
+          return Response.json({ ...template, exercises });
         } catch (err) {
           console.error('Get template error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });

@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unnecessary-condition, no-alert */
+/* eslint-disable @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-condition, no-alert */
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import { Button, Card, CardContent } from '~/components/ui';
 
 interface Exercise {
   id: string;
@@ -98,7 +99,7 @@ function ExerciseDetail() {
   if (auth.loading || (!auth.user && !auth.loading)) {
     return (
 	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-gray-600'}>{'Loading...'}</p>
+		<p className={'text-muted-foreground'}>{'Loading...'}</p>
 	</div>
     );
   }
@@ -106,105 +107,106 @@ function ExerciseDetail() {
   if (loading) {
     return (
 	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-gray-600'}>{'Loading exercise...'}</p>
+		<p className={'text-muted-foreground'}>{'Loading exercise...'}</p>
 	</div>
     );
   }
 
   if (error) {
     return (
-	<div className={'min-h-screen bg-gray-50 p-8'}>
-		<div className={'max-w-2xl mx-auto'}>
-			<div className={'bg-red-50 border border-red-200 rounded-lg p-4'}>
-				<p className={'text-red-600'}>{error}</p>
-			</div>
-		</div>
-	</div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">{error}</p>
+          </CardContent>
+        </Card>
+      </main>
     );
   }
 
   if (!exercise) {
     return (
-	<div className={'min-h-screen bg-gray-50 p-8'}>
-		<div className={'max-w-2xl mx-auto'}>
-			<div className={'bg-white shadow rounded-lg p-6'}>
-				<h1 className={'text-2xl font-bold text-gray-900 mb-4'}>{'Exercise Not Found'}</h1>
-				<p className={'text-gray-600 mb-4'}>{'The exercise you\'re looking for doesn\'t exist or has been deleted.'}</p>
-				<a className={'text-blue-600 hover:text-blue-500'} href={'/exercises'}>
-					{'← Back to Exercises'}
-				</a>
-			</div>
-		</div>
-	</div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <h1 className="text-2xl font-bold text-foreground">{'Exercise Not Found'}</h1>
+            <p className="text-muted-foreground">{"The exercise you're looking for doesn't exist or has been deleted."}</p>
+            <a className="text-primary hover:text-primary/80 inline-block" href={'/exercises'}>
+              {'← Back to Exercises'}
+            </a>
+          </CardContent>
+        </Card>
+      </main>
     );
   }
 
   return (
-	<div className={'min-h-screen bg-gray-50 p-8'}>
-		<div className={'max-w-2xl mx-auto'}>
-			<div className={'mb-6'}>
-				<a className={'text-blue-600 hover:text-blue-500 text-sm'} href={'/exercises'}>
-					{'← Back to Exercises'}
-				</a>
-			</div>
+    <main className="mx-auto max-w-lg px-4 py-6">
+      <div className="mb-6">
+        <a className="text-primary hover:text-primary/80 text-sm" href={'/exercises'}>
+          {'← Back to Exercises'}
+        </a>
+      </div>
 
-			<div className={'bg-white shadow rounded-lg overflow-hidden'}>
-				<div className={'px-6 py-4 border-b border-gray-200 flex justify-between items-center'}>
-					<h1 className={'text-2xl font-bold text-gray-900'}>{exercise.name}</h1>
-					<div className={'flex space-x-3'}>
-						<a
-							className={'inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50'}
-							href={`/exercises/${exercise.id}/edit`}
-						>
-							{'Edit'}
-						</a>
-						<button
-							className={'inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50'}
-							disabled={deleting}
-							onClick={handleDeleteClick}
-						>
-							{deleting ? 'Deleting...' : 'Delete'}
-						</button>
-					</div>
-				</div>
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-foreground">{exercise.name}</h1>
+            <div className="flex space-x-3">
+              <Button variant="outline" asChild={true}>
+                <a href={`/exercises/${exercise.id}/edit`}>
+                  {'Edit'}
+                </a>
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={deleting}
+                onClick={handleDeleteClick}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
 
-				<div className={'px-6 py-4 space-y-4'}>
-					{exercise.muscleGroup ? <div>
-						<label className={'block text-sm font-medium text-gray-500'}>{'Muscle Group'}</label>
-						<p className={'mt-1 text-gray-900'}>{exercise.muscleGroup}</p>
-                             </div> : null}
+          {exercise.muscleGroup ? (
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground">{'Muscle Group'}</label>
+              <p className="text-foreground">{exercise.muscleGroup}</p>
+            </div>
+          ) : null}
 
-					{exercise.description ? <div>
-						<label className={'block text-sm font-medium text-gray-500'}>{'Description'}</label>
-						<p className={'mt-1 text-gray-900 whitespace-pre-wrap'}>{exercise.description}</p>
-                             </div> : null}
+          {exercise.description ? (
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground">{'Description'}</label>
+              <p className="text-foreground whitespace-pre-wrap">{exercise.description}</p>
+            </div>
+          ) : null}
 
-					<div className={'grid grid-cols-2 gap-4 pt-4'}>
-						<div>
-							<label className={'block text-sm font-medium text-gray-500'}>{'Created'}</label>
-							<p className={'mt-1 text-gray-900 text-sm'}>
-								{new Date(exercise.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-							</p>
-						</div>
-						<div>
-							<label className={'block text-sm font-medium text-gray-500'}>{'Last Updated'}</label>
-							<p className={'mt-1 text-gray-900 text-sm'}>
-								{new Date(exercise.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground">{'Created'}</label>
+              <p className="text-foreground text-sm">
+                {new Date(exercise.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground">{'Last Updated'}</label>
+              <p className="text-foreground text-sm">
+                {new Date(exercise.updatedAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </main>
   );
 }
 

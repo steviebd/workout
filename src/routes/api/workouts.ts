@@ -50,41 +50,52 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
         }
       },
-      POST: async ({ request }) => {
-        try {
-          const session = await getSession(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       POST: async ({ request }) => {
+         try {
+           const session = await getSession(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
-          const body = await request.json();
-          const { name, templateId, notes, exerciseIds } = body as CreateWorkoutData & { exerciseIds?: string[] };
+           console.log('API: Create workout - session userId:', session.userId);
 
-          if (!name) {
-            return Response.json({ error: 'Name is required' }, { status: 400 });
-          }
+           const body = await request.json();
+           const { name, templateId, notes, exerciseIds } = body as CreateWorkoutData & { exerciseIds?: string[] };
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+           console.log('API: Create workout request:', { name, templateId, exerciseIdsCount: exerciseIds?.length });
 
-          let exercisesToAdd = exerciseIds ?? [];
+           if (!name) {
+             return Response.json({ error: 'Name is required' }, { status: 400 });
+           }
 
-          if (exercisesToAdd.length === 0 && templateId) {
-            const templateExercises = await getTemplateExercises(db, templateId, session.userId);
-            exercisesToAdd = templateExercises.map((te) => te.exerciseId);
-          }
+           const db = (env as { DB?: D1Database }).DB;
+           if (!db) {
+             return Response.json({ error: 'Database not available' }, { status: 500 });
+           }
 
-          const workout = await createWorkoutWithDetails(db, {
-            userId: session.userId,
-            name,
-            templateId,
-            notes,
-            exerciseIds: exercisesToAdd,
-          });
+           let exercisesToAdd = exerciseIds ?? [];
 
-          return Response.json(workout, { status: 201 });
+           if (exercisesToAdd.length === 0 && templateId) {
+             const templateExercises = await getTemplateExercises(db, templateId, session.userId);
+             console.log('API: Template exercises found:', templateExercises.length);
+             exercisesToAdd = templateExercises.map((te) => te.exerciseId);
+           }
+
+           const workout = await createWorkoutWithDetails(db, {
+             userId: session.userId,
+             name,
+             templateId,
+             notes,
+             exerciseIds: exercisesToAdd,
+           });
+
+           console.log('API: Workout created successfully:', {
+             workoutId: workout.id,
+             userId: session.userId,
+             workoutUserId: workout.userId,
+           });
+
+           return Response.json(workout, { status: 201 });
         } catch (err) {
           console.error('Create workout error:', err);
           const errorMessage = err instanceof Error ? err.message : String(err);

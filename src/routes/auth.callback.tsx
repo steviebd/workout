@@ -1,5 +1,5 @@
  
-import { createFileRoute , useSearch } from '@tanstack/react-router';
+import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { trackEvent } from '@/lib/posthog';
 
@@ -23,22 +23,26 @@ function Callback() {
 
   if (error) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<div className={'text-center'}>
-			<h1 className={'text-xl font-semibold text-red-600 mb-2'}>{'Authentication Failed'}</h1>
-			<p className={'text-gray-600'}>{error}</p>
-			<a className={'text-blue-600 hover:underline mt-4 block'} href={'/auth/signin'}>
-				{'Try again'}
-			</a>
-		</div>
-	</div>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className={'min-h-[50vh] flex items-center justify-center'}>
+          <div className={'text-center'}>
+            <h1 className={'text-xl font-semibold text-destructive mb-2'}>{'Authentication Failed'}</h1>
+            <p className={'text-muted-foreground'}>{error}</p>
+            <a className={'text-primary hover:underline mt-4 block'} href={'/auth/signin'}>
+              {'Try again'}
+            </a>
+          </div>
+        </div>
+      </main>
     );
   }
 
   return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-gray-600'}>{'Completing sign in...'}</p>
-	</div>
+    <main className="mx-auto max-w-lg px-4 py-6">
+      <div className={'min-h-[50vh] flex items-center justify-center'}>
+        <p className={'text-muted-foreground'}>{'Completing sign in...'}</p>
+      </div>
+    </main>
   );
 }
 
