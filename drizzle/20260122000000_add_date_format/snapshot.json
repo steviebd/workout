@@ -1,0 +1,28 @@
+{
+  "version": "2",
+  "dialect": "sqlite",
+  "id": "20260122000000_add_date_format",
+  "prevId": "20260118235744_lethal_stingray",
+  "tables": {
+    "user_preferences": {
+      "name": "user_preferences",
+      "columns": {
+        "date_format": {
+          "name": "date_format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'dd/mm/yyyy'"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "foreignKeys": {},
+      "indexes": {}
+    }
+  },
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {}
+  }
+}

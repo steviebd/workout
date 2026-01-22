@@ -33,7 +33,7 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Dumbbell className="h-5 w-5 text-accent" />
+            <Dumbbell className="h-5 w-5 text-emerald-500" />
             Weekly Volume
           </CardTitle>
           <span className="text-xs text-muted-foreground">
@@ -70,7 +70,7 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
               />
               <Bar
                 dataKey="volume"
-                fill="hsl(var(--accent))"
+                fill="#10b981"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

@@ -1170,3 +1170,264 @@ export async function getPrCount(
 
   return prCount;
 }
+
+export interface WeeklyVolumeData {
+  week: string;
+  weekStart: string;
+  volume: number;
+}
+
+export interface GetWeeklyVolumeOptions {
+  fromDate?: string;
+  toDate?: string;
+  exerciseId?: string;
+}
+
+export async function getWeeklyVolume(
+  db: D1Database,
+  userId: string,
+  options: GetWeeklyVolumeOptions = {}
+): Promise<WeeklyVolumeData[]> {
+  const drizzleDb = createDb(db);
+  const { fromDate, toDate, exerciseId } = options;
+
+  const baseConditions = [
+    eq(workouts.userId, userId),
+    eq(workoutSets.isComplete, true),
+    sql`${workoutSets.weight} > 0`,
+    sql`${workoutSets.reps} > 0`,
+  ];
+
+  if (fromDate) {
+    baseConditions.push(sql`${workouts.startedAt} >= ${fromDate}`);
+  }
+
+  if (toDate) {
+    baseConditions.push(sql`${workouts.startedAt} <= ${toDate}`);
+  }
+
+  const allConditions = exerciseId
+    ? [...baseConditions, eq(workoutExercises.exerciseId, exerciseId)]
+    : baseConditions;
+
+  const results = await drizzleDb
+    .select({
+      weekStart: sql<string>`date(${workouts.startedAt}, 'weekday 0', '-6 days')`.mapWith(String),
+      volume: sql<number>`COALESCE(SUM(${workoutSets.weight} * ${workoutSets.reps}), 0)`.mapWith(Number),
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(...allConditions))
+    .groupBy(sql`date(${workouts.startedAt}, 'weekday 0', '-6 days')`)
+    .orderBy(sql`date(${workouts.startedAt}, 'weekday 0', '-6 days')`)
+    .all();
+
+  return results.map(r => ({
+    week: `Week of ${r.weekStart}`,
+    weekStart: r.weekStart,
+    volume: r.volume,
+  }));
+}
+
+export interface StrengthDataPoint {
+  date: string;
+  workoutId: string;
+  weight: number;
+  reps: number;
+  est1rm: number;
+}
+
+export interface GetStrengthHistoryOptions {
+  fromDate?: string;
+  toDate?: string;
+  limit?: number;
+}
+
+export async function getStrengthHistory(
+  db: D1Database,
+  userId: string,
+  exerciseId: string,
+  options: GetStrengthHistoryOptions = {}
+): Promise<StrengthDataPoint[]> {
+  const drizzleDb = createDb(db);
+  const { fromDate, toDate, limit = 50 } = options;
+
+  const conditions = [
+    eq(workouts.userId, userId),
+    eq(workoutExercises.exerciseId, exerciseId),
+    isNotNull(workouts.completedAt),
+    sql`${workoutSets.weight} > 0`,
+  ];
+
+  if (fromDate) {
+    conditions.push(sql`${workouts.startedAt} >= ${fromDate}`);
+  }
+
+  if (toDate) {
+    conditions.push(sql`${workouts.startedAt} <= ${toDate}`);
+  }
+
+  const setsData = await drizzleDb
+    .select({
+      workoutId: workouts.id,
+      workoutDate: workouts.startedAt,
+      weight: workoutSets.weight,
+      reps: workoutSets.reps,
+    })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .innerJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+    .where(and(...conditions))
+    .orderBy(asc(workouts.startedAt))
+    .limit(limit * 10)
+    .all();
+
+  const workoutMaxMap = new Map<string, { maxWeight: number; repsAtMax: number; date: string }>();
+
+  for (const set of setsData) {
+    if (set.weight === null) continue;
+
+    const existing = workoutMaxMap.get(set.workoutId);
+    if (!existing || set.weight > existing.maxWeight) {
+      workoutMaxMap.set(set.workoutId, {
+        maxWeight: set.weight,
+        repsAtMax: set.reps ?? 1,
+        date: set.workoutDate,
+      });
+    }
+  }
+
+  const result: StrengthDataPoint[] = [];
+  for (const [workoutId, data] of workoutMaxMap) {
+    result.push({
+      date: data.date.split('T')[0],
+      workoutId,
+      weight: data.maxWeight,
+      reps: data.repsAtMax,
+      est1rm: calculateE1RM(data.maxWeight, data.repsAtMax),
+    });
+  }
+
+  return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+export interface PersonalRecord {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  date: string;
+  weight: number;
+  reps: number;
+  est1rm: number;
+  previousRecord?: number;
+}
+
+export async function getRecentPRs(
+  db: D1Database,
+  userId: string,
+  limit: number = 5
+): Promise<PersonalRecord[]> {
+  const drizzleDb = createDb(db);
+
+  const workoutMaxes = await drizzleDb
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      exerciseName: exercises.name,
+      workoutId: workouts.id,
+      workoutDate: workouts.startedAt,
+      maxWeight: sql<number>`max(${workoutSets.weight})`.mapWith(Number),
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(
+      eq(workouts.userId, userId),
+      eq(workoutSets.isComplete, true),
+      sql`${workoutSets.weight} > 0`
+    ))
+    .groupBy(workoutExercises.exerciseId, workouts.id, workouts.startedAt, exercises.name)
+    .orderBy(desc(workouts.startedAt))
+    .limit(limit * 3)
+    .all();
+
+  if (workoutMaxes.length === 0) {
+    return [];
+  }
+
+  const workoutExerciseIds: string[] = [];
+
+  const workoutIdToData = new Map<string, { exerciseId: string; exerciseName: string; workoutDate: string; maxWeight: number }>();
+
+  for (const wm of workoutMaxes) {
+    workoutIdToData.set(wm.workoutId, {
+      exerciseId: wm.exerciseId,
+      exerciseName: wm.exerciseName,
+      workoutDate: wm.workoutDate,
+      maxWeight: wm.maxWeight,
+    });
+    workoutExerciseIds.push(wm.workoutId);
+  }
+
+  const setsWithMaxWeight = await drizzleDb
+    .select({
+      workoutExerciseId: workoutExercises.id,
+      workoutId: workouts.id,
+      weight: workoutSets.weight,
+      reps: workoutSets.reps,
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(
+      eq(workouts.userId, userId),
+      eq(workoutSets.isComplete, true),
+      inArray(workouts.id, workoutExerciseIds)
+    ))
+    .all();
+
+  const repsAtMaxMap = new Map<string, number>();
+
+  for (const set of setsWithMaxWeight) {
+    if (set.weight === null) continue;
+
+    const data = workoutIdToData.get(set.workoutId);
+    if (!data) continue;
+
+    if (set.weight === data.maxWeight) {
+      const key = set.workoutId;
+      const currentReps = repsAtMaxMap.get(key) ?? 0;
+      if (set.reps !== null && set.reps > currentReps) {
+        repsAtMaxMap.set(key, set.reps);
+      }
+    }
+  }
+
+  const prs: PersonalRecord[] = [];
+  const previousMaxByExercise: Record<string, number> = {};
+
+  for (const workoutMax of workoutMaxes) {
+    const prevMax = previousMaxByExercise[workoutMax.exerciseId] ?? 0;
+    const isPR = workoutMax.maxWeight > prevMax;
+    const repsAtMax = repsAtMaxMap.get(workoutMax.workoutId) ?? 1;
+
+    if (isPR) {
+      prs.push({
+        id: `${workoutMax.workoutId}-${workoutMax.exerciseId}`,
+        exerciseId: workoutMax.exerciseId,
+        exerciseName: workoutMax.exerciseName,
+        date: workoutMax.workoutDate.split('T')[0],
+        weight: workoutMax.maxWeight,
+        reps: repsAtMax,
+        est1rm: calculateE1RM(workoutMax.maxWeight, repsAtMax),
+        previousRecord: prevMax > 0 ? prevMax : undefined,
+      });
+      previousMaxByExercise[workoutMax.exerciseId] = workoutMax.maxWeight;
+    }
+
+    previousMaxByExercise[workoutMax.exerciseId] = workoutMax.maxWeight;
+  }
+
+  return prs.slice(0, limit);
+}

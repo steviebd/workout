@@ -472,6 +472,7 @@ function NewTemplate() {
                     variant="outline"
                     disabled={selectedExercises.some((se) => se.exerciseId === exerciseItem.id)}
                     key={exerciseItem.id}
+                    data-id={exerciseItem.id}
                     onClick={handleExerciseSelectorClick}
                   >
                     <div className="flex items-center justify-between flex-1">

@@ -1,6 +1,12 @@
 'use client'
 
-import { cn } from '@/lib/cn'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/Select'
 
 interface Exercise {
   id: string
@@ -14,26 +20,22 @@ interface ExerciseSelectorProps {
 }
 
 export function ExerciseSelector({ exercises, selectedId, onSelect }: ExerciseSelectorProps) {
-  function handleClick(id: string) {
-    return () => onSelect(id)
-  }
+  const selectedExercise = exercises.find(e => e.id === selectedId)
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-      {exercises.map((exercise) => (
-        <button
-          key={exercise.id}
-          onClick={handleClick(exercise.id)}
-          className={cn(
-            'flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all',
-            selectedId === exercise.id
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
-          )}
-        >
-          {exercise.name}
-        </button>
-      ))}
-    </div>
+    <Select value={selectedId} onValueChange={onSelect}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select exercise">
+          {selectedExercise?.name ?? 'Select exercise'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {exercises.map(exercise => (
+          <SelectItem key={exercise.id} value={exercise.id}>
+            {exercise.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
