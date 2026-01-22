@@ -30,6 +30,7 @@
         "@tanstack/react-start": "^1.132.0",
         "@tanstack/router-plugin": "^1.132.0",
         "@workos-inc/node": "^7.0.0",
+        "buffer": "^6.0.3",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "drizzle-orm": "^1.0.0-beta.11-05230d9",
@@ -74,6 +75,9 @@
         "wrangler": "^4.59.2",
       },
     },
+  },
+  "overrides": {
+    "iron-webcrypto": "1.2.0",
   },
   "packages": {
     "@acemir/cssom": ["@acemir/cssom@0.9.31", "", {}, "sha512-ZnR3GSaH+/vJ0YlHau21FjfLYjMpYVIzTD8M8vIEQvIGxeOXyXdzCI140rrCY862p/C/BbzWsjc1dgnM9mkoTA=="],
@@ -1200,7 +1204,7 @@
 
     "iron-session": ["iron-session@6.3.1", "", { "dependencies": { "@peculiar/webcrypto": "^1.4.0", "@types/cookie": "^0.5.1", "@types/express": "^4.17.13", "@types/koa": "^2.13.5", "@types/node": "^17.0.41", "cookie": "^0.5.0", "iron-webcrypto": "^0.2.5" }, "peerDependencies": { "express": ">=4", "koa": ">=2", "next": ">=10" }, "optionalPeers": ["express", "koa", "next"] }, "sha512-3UJ7y2vk/WomAtEySmPgM6qtYF1cZ3tXuWX5GsVX4PJXAcs5y/sV9HuSfpjKS6HkTL/OhZcTDWJNLZ7w+Erx3A=="],
 
-    "iron-webcrypto": ["iron-webcrypto@0.2.8", "", { "dependencies": { "buffer": "^6" } }, "sha512-YPdCvjFMOBjXaYuDj5tiHst5CEk6Xw84Jo8Y2+jzhMceclAnb3+vNPP/CTtb5fO2ZEuXEaO4N+w62Vfko757KA=="],
+    "iron-webcrypto": ["iron-webcrypto@1.2.0", "", {}, "sha512-mUUJGEoA0ubQJ2i20muSREr7OeuSgcr78nrRmXjsR/evv9eoTWhY/lUQIuIpGZSBZD0FA+uF/DcslVDtAfGdMQ=="],
 
     "is-array-buffer": ["is-array-buffer@3.0.5", "", { "dependencies": { "call-bind": "^1.0.8", "call-bound": "^1.0.3", "get-intrinsic": "^1.2.6" } }, "sha512-DDfANUiiG2wC1qawP66qlTugJeL5HyzMpfr8lLK+jMQirGzNod0B12cFB/9q838Ru27sBwfw78/rdoU7RERz6A=="],
 

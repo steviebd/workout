@@ -3,7 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && WRANGLER_ENV=dev bun run build && bun run wrangler dev --env dev'",
+		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && vite dev --port 8787'",
+		"dev:wrangler": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && WRANGLER_ENV=dev bun run build && bun run wrangler dev --env dev'",
 		"deploy:staging": "infisical run --env staging -- sh -c 'scripts/generate-wrangler-config.sh --env staging && bun run build && bun run wrangler deploy'",
 		"deploy:prod": "infisical run --env prod -- sh -c 'scripts/generate-wrangler-config.sh --env prod && bun run build && bun run wrangler deploy'",
 		"build": "vite build",
@@ -48,6 +49,7 @@
 		"@tanstack/react-start": "^1.132.0",
 		"@tanstack/router-plugin": "^1.132.0",
 		"@workos-inc/node": "^7.0.0",
+		"buffer": "^6.0.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"drizzle-orm": "^1.0.0-beta.11-05230d9",
@@ -64,6 +66,9 @@
 		"vaul": "^1.1.2",
 		"vite-tsconfig-paths": "^5.1.4",
 		"zod": "^4.3.5"
+	},
+	"overrides": {
+		"iron-webcrypto": "1.2.0"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.57.0",
