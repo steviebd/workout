@@ -66,7 +66,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl',
+              'flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0',
               badge.unlocked
                 ? categoryIconColors[badge.category]
                 : 'bg-muted text-muted-foreground'
@@ -80,18 +80,18 @@ export function BadgeCard({ badge }: BadgeCardProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold truncate">{badge.name}</p>
-              {badge.unlocked ? <span className="flex-shrink-0 text-xs text-success font-medium">Unlocked</span> : null}
+              {badge.unlocked ? <span className="flex-shrink-0 text-xs bg-success/20 text-success px-2 py-0.5 rounded-full font-medium">Unlocked</span> : null}
             </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
               {badge.description}
             </p>
           </div>
         </div>
 
         {!badge.unlocked && (
-          <div className="mt-3">
+          <div className="mt-3 ml-[3.75rem]">
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Progress</span>
               <span className="font-medium">
@@ -114,7 +114,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
         )}
 
         {badge.unlocked && badge.unlockedAt ? (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 ml-[3.75rem] text-xs text-muted-foreground">
             Earned{' '}
             {formatDateLong(badge.unlockedAt)}
           </p>

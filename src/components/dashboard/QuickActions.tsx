@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, Plus, Loader2 } from 'lucide-react'
+import { Play, Plus, Loader2, History } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
 import { useState, type MouseEvent } from 'react'
 import { Button } from '~/components/ui/Button'
@@ -110,6 +110,12 @@ export function QuickActions({ templates }: QuickActionsProps) {
             <a href="/workouts/new">
               <Plus className="mr-2 h-4 w-4" />
               New Workout
+            </a>
+          </Button>
+          <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
+            <a href="/history">
+              <History className="mr-2 h-4 w-4" />
+              History
             </a>
           </Button>
         </div>

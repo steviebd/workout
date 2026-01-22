@@ -67,7 +67,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
 				<head>
 					<HeadContent />
 				</head>
-				<body className={'min-h-screen bg-background'}>
+				<body className={'min-h-screen bg-background font-sans antialiased'}>
 					<div className={'min-h-screen flex flex-col'}>
 						<UnitProvider>
 							<DateFormatProvider>

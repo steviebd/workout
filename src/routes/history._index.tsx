@@ -322,7 +322,7 @@ function History() {
               type="button"
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <Trophy className="text-blue-600" size={16} />
+                <Trophy className="text-primary" size={16} />
                 <span className="text-xs text-muted-foreground">Total Workouts</span>
               </div>
               <p className="text-xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
@@ -334,7 +334,7 @@ function History() {
               type="button"
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <Calendar className="text-green-600" size={16} />
+                <Calendar className="text-accent" size={16} />
                 <span className="text-xs text-muted-foreground">This Week</span>
               </div>
               <p className="text-xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
@@ -346,7 +346,7 @@ function History() {
               type="button"
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <Calendar className="text-purple-600" size={16} />
+                <Calendar className="text-chart-5" size={16} />
                 <span className="text-xs text-muted-foreground">This Month</span>
               </div>
               <p className="text-xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
@@ -354,7 +354,7 @@ function History() {
 
             <div className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1.5">
-                <Scale className="text-orange-600" size={16} />
+                <Scale className="text-chart-4" size={16} />
                 <span className="text-xs text-muted-foreground">Total Volume</span>
               </div>
               <p className="text-xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
@@ -362,7 +362,7 @@ function History() {
 
             <div className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1.5">
-                <Dumbbell className="text-red-600" size={16} />
+                <Dumbbell className="text-destructive" size={16} />
                 <span className="text-xs text-muted-foreground">Total Sets</span>
               </div>
               <p className="text-xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>

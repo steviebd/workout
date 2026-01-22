@@ -263,7 +263,7 @@ function ExerciseHistory() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Trophy className="text-amber-600" size={18} />
+            <Trophy className="text-chart-4" size={18} />
             <span className="text-sm text-muted-foreground">Max Weight</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{stats.maxWeight} kg</p>
@@ -271,7 +271,7 @@ function ExerciseHistory() {
 
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="text-green-600" size={18} />
+            <TrendingUp className="text-chart-3" size={18} />
             <span className="text-sm text-muted-foreground">Est. 1RM</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{stats.est1rm} kg</p>
@@ -279,7 +279,7 @@ function ExerciseHistory() {
 
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="text-blue-600" size={18} />
+            <Calendar className="text-chart-2" size={18} />
             <span className="text-sm text-muted-foreground">Workouts</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{stats.totalWorkouts}</p>
@@ -407,7 +407,7 @@ function ExerciseHistory() {
                     <td className="py-3 px-4 text-sm text-muted-foreground">{item.repsAtMax}</td>
                     <td className="py-3 px-4 text-sm text-muted-foreground">{item.est1rm} kg</td>
                     <td className="py-3 px-4 text-sm">
-                      {item.isPR ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                      {item.isPR ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-chart-4/20 text-chart-4">
                           🏆 PR
                                    </span> : null}
                     </td>

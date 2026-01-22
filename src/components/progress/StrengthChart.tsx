@@ -37,7 +37,7 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-5 w-5 text-blue-500" />
+            <TrendingUp className="h-5 w-5 text-primary" />
             {exerciseName} Progress
           </CardTitle>
           {improvement > 0 && (
@@ -83,10 +83,10 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
               <Line
                 type="monotone"
                 dataKey="weight"
-                stroke="#3b82f6"
+                stroke="var(--primary)"
                 strokeWidth={2}
-                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: '#2563eb' }}
+                dot={{ fill: 'var(--primary)', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, fill: 'var(--primary)' }}
               />
             </LineChart>
           </ResponsiveContainer>

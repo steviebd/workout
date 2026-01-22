@@ -94,14 +94,14 @@ export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, char
               color: 'var(--foreground)',
             }}
            />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="hsl(var(--primary))"
-            strokeWidth={2}
-            dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
-          />
+           <Line
+             type="monotone"
+             dataKey="value"
+             stroke="var(--primary)"
+             strokeWidth={2}
+             dot={{ r: 4, fill: 'var(--primary)', strokeWidth: 2 }}
+             activeDot={{ r: 6, fill: 'var(--primary)' }}
+           />
           {prPoints.map((point) => (
             <ReferenceDot
               key={`${point.x}-${point.y}`}

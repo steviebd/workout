@@ -15,7 +15,7 @@
   --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.72 0 0);
+  --muted-foreground: oklch(0.6 0 0);
   --accent: oklch(0.7 0.15 195);
   --accent-foreground: oklch(0.1 0 0);
   --success: oklch(0.72 0.19 142);
@@ -24,14 +24,14 @@
   --warning-foreground: oklch(0.1 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.35 0 0);
+  --border: oklch(0.25 0 0);
   --input: oklch(0.2 0 0);
   --ring: oklch(0.65 0.24 30);
-  --chart-1: oklch(0.65 0.24 30);
-  --chart-2: oklch(0.7 0.15 195);
-  --chart-3: oklch(0.72 0.19 142);
-  --chart-4: oklch(0.8 0.18 85);
-  --chart-5: oklch(0.7 0.2 280);
+  --chart-1: oklch(0.65 0.32 30);
+  --chart-2: oklch(0.7 0.28 195);
+  --chart-3: oklch(0.72 0.28 142);
+  --chart-4: oklch(0.75 0.3 70);
+  --chart-5: oklch(0.7 0.3 280);
   --radius: 0.75rem;
   --sidebar: oklch(0.12 0 0);
   --sidebar-foreground: oklch(0.98 0 0);
@@ -95,4 +95,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Dumbbell, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
+import { Card, CardContent } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UnitContext'
 
 interface VolumeSummaryProps {
@@ -11,48 +11,36 @@ interface VolumeSummaryProps {
   volumeChange: number
 }
 
-export function VolumeSummary({ totalVolume, weeklyVolume, volumeGoal, volumeChange }: VolumeSummaryProps) {
+export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeSummaryProps) {
   const { formatVolume } = useUnit()
   const volumePercentage = Math.min((totalVolume / volumeGoal) * 100, 100)
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Dumbbell className="h-5 w-5 text-accent" />
-          Volume Summary
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-3xl font-bold">{formatVolume(totalVolume)}</p>
-            <p className="text-sm text-muted-foreground">Total Volume Lifted</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20">
+              <Dumbbell className="h-6 w-6 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Volume</p>
+              <p className="text-2xl font-bold">{formatVolume(totalVolume)}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-success">
-            <TrendingUp className="h-4 w-4" />
-            <span className="text-sm font-medium">+{volumeChange}%</span>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Progress to {volumeGoal.toLocaleString()} Club</span>
-            <span className="font-medium text-accent">{totalVolume.toLocaleString()}/{volumeGoal.toLocaleString()}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-accent transition-all duration-500"
-              style={{ width: `${volumePercentage}%` }}
-            />
+          <div className="flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-1 text-success">
+            <TrendingUp className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">+{volumeChange}%</span>
           </div>
         </div>
-
-        <div className="rounded-lg bg-secondary/50 p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">This Week</span>
-            <span className="font-semibold">{formatVolume(weeklyVolume)}</span>
-          </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          {Math.round((volumeGoal - totalVolume) / 1000)}k lbs until {volumeGoal.toLocaleString()} Club badge
+        </p>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-full rounded-full bg-accent transition-all duration-500"
+            style={{ width: `${volumePercentage}%` }}
+          />
         </div>
       </CardContent>
     </Card>

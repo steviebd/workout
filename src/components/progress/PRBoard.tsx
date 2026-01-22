@@ -2,10 +2,8 @@
 
 import { Trophy, TrendingUp, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { useUnit } from '@/lib/context/UnitContext'
-import { useDateFormat } from '@/lib/context/DateFormatContext'
 
-interface PersonalRecord {
+export interface PersonalRecord {
   id: string
   exerciseName: string
   date: string
@@ -19,9 +17,6 @@ interface PRBoardProps {
 }
 
 export function PRBoard({ records }: PRBoardProps) {
-  const { formatWeight } = useUnit()
-  const { formatDateLong } = useDateFormat()
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -45,18 +40,22 @@ export function PRBoard({ records }: PRBoardProps) {
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {formatDateLong(record.date)}
+                  {new Date(record.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </span>
                 <span>{record.reps} rep{record.reps > 1 ? 's' : ''}</span>
               </div>
             </div>
 
             <div className="text-right">
-              <p className="text-xl font-bold text-chart-4">{formatWeight(record.weight)}</p>
+              <p className="text-xl font-bold text-chart-4">{record.weight} lbs</p>
               {record.previousRecord ? (
                 <p className="flex items-center justify-end gap-1 text-xs text-success">
                   <TrendingUp className="h-3 w-3" />
-                  +{formatWeight(record.weight - record.previousRecord)}
+                  +{record.weight - record.previousRecord} lbs
                 </p>
               ) : null}
             </div>
