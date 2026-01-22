@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && vite dev --port 8787'",
-		"dev:wrangler": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && WRANGLER_ENV=dev bun run build && bun run wrangler dev --env dev'",
+		"dev:wrangler": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && REMOTE=true WRANGLER_ENV=dev bun run build && REMOTE=true bun run wrangler dev'",
 		"deploy:staging": "infisical run --env staging -- sh -c 'scripts/generate-wrangler-config.sh --env staging && bun run build && bun run wrangler deploy'",
 		"deploy:prod": "infisical run --env prod -- sh -c 'scripts/generate-wrangler-config.sh --env prod && bun run build && bun run wrangler deploy'",
 		"build": "vite build",
@@ -20,6 +20,7 @@
 		"db:generate": "drizzle-kit generate",
 		"db:init:dev": "echo 'Initializing local D1 database with migrations...' && for dir in $(ls -d drizzle/*/ 2>/dev/null | sort); do migration_file=\"$dir/migration.sql\"; if [ -f \"$migration_file\" ]; then echo \"Applying migration: $(basename $dir)\"; npx wrangler d1 execute workout-dev-db --local --file=\"$migration_file\" || echo \"Migration may already be applied\"; fi; done && echo 'Database initialization complete. Run \\\"bun run dev\\\" to start the server.'",
 		"db:push:dev": "for dir in drizzle/*/; do npx wrangler d1 execute workout-dev-db --local --file=\"$dir/migration.sql\" 2>/dev/null || true; done",
+		"db:push:wrangler": "infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && drizzle-kit push --force'",
 		"db:push:staging": "infisical run --env staging -- drizzle-kit push --force",
 		"db:push:prod": "infisical run --env prod -- drizzle-kit push --force"
 	},

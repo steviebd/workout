@@ -49,12 +49,23 @@ else
   ENVIRONMENT_VALUE="$TARGET_ENV"
 fi
 
+if [ "${REMOTE:-}" = "true" ]; then
+  USE_REMOTE="true"
+else
+  USE_REMOTE="false"
+fi
+
 case "$ENVIRONMENT_VALUE" in
   dev)
     WORKER_NAME="workout-dev"
     DB_NAME="workout-dev-db"
-    DB_ID="00000000-0000-0000-0000-000000000000"
-    REMOTE="false"
+    if [ "$USE_REMOTE" = "true" ]; then
+      DB_ID="${CLOUDFLARE_D1_DATABASE_ID:-}"
+      REMOTE="true"
+    else
+      DB_ID="00000000-0000-0000-0000-000000000000"
+      REMOTE="false"
+    fi
     ;;
   staging)
     WORKER_NAME="workout-staging"
@@ -76,7 +87,10 @@ case "$ENVIRONMENT_VALUE" in
     ;;
 esac
 
-if [ "$ENVIRONMENT_VALUE" != "dev" ] && [ -z "$DB_ID" ]; then
+if [ "$ENVIRONMENT_VALUE" = "dev" ] && [ "${REMOTE:-false}" = "true" ] && [ -z "$DB_ID" ]; then
+  echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID for remote dev"
+  exit 1
+elif [ "$ENVIRONMENT_VALUE" != "dev" ] && [ -z "$DB_ID" ]; then
   echo "Error: Could not retrieve CLOUDFLARE_D1_DATABASE_ID for '$TARGET_ENV'"
   exit 1
 fi
