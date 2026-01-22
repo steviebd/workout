@@ -6,10 +6,12 @@ import { useAuth } from './__root';
 import { Template, TemplateExerciseWithDetails as TemplateExercise } from '@/lib/db/template';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 function TemplateDetail() {
   const params = useParams({ from: '/templates/$id' });
   const auth = useAuth();
+  const { formatDateLong } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [template, setTemplate] = useState<Template | null>(null);
   const [exercises, setExercises] = useState<TemplateExercise[]>([]);
@@ -271,21 +273,13 @@ function TemplateDetail() {
               <div>
                 <span className="block text-sm font-medium text-muted-foreground">Created</span>
                 <p className="mt-1 text-foreground text-sm">
-                  {new Date(template.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                  {formatDateLong(template.createdAt)}
                 </p>
               </div>
               <div>
                 <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
                 <p className="mt-1 text-foreground text-sm">
-                  {new Date(template.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                  {formatDateLong(template.updatedAt)}
                 </p>
               </div>
             </div>

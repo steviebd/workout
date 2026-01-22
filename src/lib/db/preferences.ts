@@ -6,10 +6,12 @@ export type { UserPreference, NewUserPreference };
 
 export type WeightUnit = 'kg' | 'lbs';
 export type Theme = 'dark' | 'light';
+export type DateFormat = 'dd/mm/yyyy' | 'mm/dd/yyyy';
 
 export interface UpdatePreferencesData {
   weightUnit?: WeightUnit;
   theme?: Theme;
+  dateFormat?: DateFormat;
 }
 
 export async function getUserPreferences(
@@ -59,6 +61,7 @@ export async function upsertUserPreferences(
     .values({
       userId,
       weightUnit: data.weightUnit ?? 'kg',
+      dateFormat: data.dateFormat ?? 'dd/mm/yyyy',
       theme: data.theme ?? 'light',
     })
     .returning()

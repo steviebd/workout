@@ -4,6 +4,7 @@ import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tool
 import { TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UnitContext'
+import { useDateFormat } from '@/lib/context/DateFormatContext'
 
 interface ProgressDataPoint {
   date: string
@@ -17,17 +18,18 @@ interface StrengthChartProps {
 
 export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
   const { weightUnit, convertWeight, formatWeight } = useUnit()
+  const { formatDateShort, formatDateLong } = useDateFormat()
   const latestWeight = data[data.length - 1]?.weight ?? 0
   const firstWeight = data[0]?.weight ?? 0
   const improvement = latestWeight - firstWeight
   const improvementPercent = firstWeight > 0 ? Math.round((improvement / firstWeight) * 100) : 0
 
-  function formatDate(value: string | number | Date): string {
-    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  function formatChartDate(value: string | number | Date): string {
+    return formatDateShort(value.toString())
   }
 
-  function formatFullDate(value: string | number | Date): string {
-    return new Date(value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  function formatFullChartDate(value: string | number | Date): string {
+    return formatDateLong(value.toString())
   }
 
   return (
@@ -59,7 +61,7 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
                 tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
                 tickLine={{ stroke: 'var(--border)' }}
                 axisLine={{ stroke: 'var(--border)' }}
-                tickFormatter={formatDate}
+                tickFormatter={formatChartDate}
               />
               <YAxis
                 tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
@@ -75,7 +77,7 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
                   borderRadius: '8px',
                   color: 'var(--foreground)',
                 }}
-                labelFormatter={formatFullDate}
+                labelFormatter={formatFullChartDate}
                 formatter={(value: number | undefined) => [formatWeight(value ?? 0), 'Weight']}
               />
               <Line

@@ -10,6 +10,7 @@ import { ToastProvider } from '@/components/ToastProvider'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
+import { DateFormatProvider } from '@/lib/context/DateFormatContext'
 
 type User = { id: string; email: string; name: string } | null;
 
@@ -69,17 +70,19 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
 				<body className={'min-h-screen bg-background'}>
 					<div className={'min-h-screen flex flex-col'}>
 						<UnitProvider>
-							<Header />
-							<main className={'flex-1 pb-20'}>
-								<div className="mx-auto max-w-lg px-4">
-									<ErrorBoundary>
-										<ToastProvider>
-											{children}
-										</ToastProvider>
-									</ErrorBoundary>
-								</div>
-							</main>
-							<BottomNav />
+							<DateFormatProvider>
+								<Header />
+								<main className={'flex-1 pb-20'}>
+									<div className="mx-auto max-w-lg px-4">
+										<ErrorBoundary>
+											<ToastProvider>
+												{children}
+											</ToastProvider>
+										</ErrorBoundary>
+									</div>
+								</main>
+								<BottomNav />
+							</DateFormatProvider>
 						</UnitProvider>
 					</div>
 					<TanStackDevtools

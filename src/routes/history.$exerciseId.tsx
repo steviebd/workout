@@ -3,6 +3,7 @@ import { AlertCircle, Calendar, Loader2, Trophy, TrendingUp } from 'lucide-react
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { EmptyExerciseHistory } from '@/components/EmptyState';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 const ExerciseHistoryChart = lazy(() => import('@/components/ExerciseHistoryChart').then(module => ({ default: module.ExerciseHistoryChart })));
 import { ChartSkeleton } from '@/components/ChartSkeleton';
@@ -86,17 +87,10 @@ const getThisWeekRange = () => {
   };
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
-
 function ExerciseHistory() {
   const auth = useAuth();
   const params = useParams({ from: '/history/$exerciseId' });
+  const { formatDateLong } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ExerciseHistoryResponse | null>(null);
@@ -407,7 +401,7 @@ function ExerciseHistory() {
               <tbody>
                 {history.map((item) => (
                   <tr className="border-b border-border last:border-0 hover:bg-muted/50" key={item.workoutId}>
-                    <td className="py-3 px-4 text-sm text-foreground">{formatDate(item.workoutDate)}</td>
+                    <td className="py-3 px-4 text-sm text-foreground">{formatDateLong(item.workoutDate)}</td>
                     <td className="py-3 px-4 text-sm text-foreground">{item.workoutName}</td>
                     <td className="py-3 px-4 text-sm font-medium text-foreground">{item.maxWeight} kg</td>
                     <td className="py-3 px-4 text-sm text-muted-foreground">{item.repsAtMax}</td>

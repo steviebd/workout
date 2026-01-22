@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronRight, Dumbbell, FilePlus, History, Loader2, Plus, Se
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { trackEvent } from '@/lib/posthog';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface Exercise {
   id: string;
@@ -53,6 +54,7 @@ type StartMode = 'blank' | 'recent' | 'templates';
 
 function NewWorkout() {
   const auth = useAuth();
+  const { formatDate } = useDateFormat();
   const [redirecting, _setRedirecting] = useState(false);
   const [mode, setMode] = useState<StartMode>('templates');
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -387,7 +389,7 @@ function NewWorkout() {
                           <div>
                             <p className="font-medium">{workoutItem.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(workoutItem.startedAt).toLocaleDateString()}
+                              {formatDate(workoutItem.startedAt)}
                               {workoutItem.completedAt ? ' • Completed' : null}
                             </p>
                           </div>

@@ -43,6 +43,7 @@ const mockUserPreferenceData: UserPreference = {
   id: 'prefs-1',
   userId: 'user-1',
   weightUnit: 'kg',
+  dateFormat: 'dd/mm/yyyy',
   theme: 'light',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',

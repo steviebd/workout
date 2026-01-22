@@ -6,6 +6,7 @@ import { EmptyWorkouts } from '@/components/EmptyState';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import { Card } from '~/components/ui/Card';
 import { useUnit } from '@/lib/context/UnitContext';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface WorkoutHistoryItem {
   id: string;
@@ -77,6 +78,7 @@ const getThisMonthRange = () => {
 function History() {
   const auth = useAuth();
   const { formatVolume } = useUnit();
+  const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
   const [stats, setStats] = useState<WorkoutStats | null>(null);
@@ -313,57 +315,57 @@ function History() {
         <h1 className="text-3xl font-bold text-foreground">Workout History</h1>
       </div>
       <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <button
-              className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
               onClick={handleTotalWorkoutsClick}
               type="button"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="text-blue-600" size={18} />
-                <span className="text-sm text-muted-foreground">Total Workouts</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Trophy className="text-blue-600" size={16} />
+                <span className="text-xs text-muted-foreground">Total Workouts</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
+              <p className="text-xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
             </button>
 
             <button
-              className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
               onClick={handleThisWeekStatClick}
               type="button"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="text-green-600" size={18} />
-                <span className="text-sm text-muted-foreground">This Week</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Calendar className="text-green-600" size={16} />
+                <span className="text-xs text-muted-foreground">This Week</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
+              <p className="text-xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
             </button>
 
             <button
-              className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
               onClick={handleThisMonthStatClick}
               type="button"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="text-purple-600" size={18} />
-                <span className="text-sm text-muted-foreground">This Month</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Calendar className="text-purple-600" size={16} />
+                <span className="text-xs text-muted-foreground">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
+              <p className="text-xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
             </button>
 
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Scale className="text-orange-600" size={18} />
-                <span className="text-sm text-muted-foreground">Total Volume</span>
+            <div className="bg-card border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Scale className="text-orange-600" size={16} />
+                <span className="text-xs text-muted-foreground">Total Volume</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
+              <p className="text-xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Dumbbell className="text-red-600" size={18} />
-                <span className="text-sm text-muted-foreground">Total Sets</span>
+            <div className="bg-card border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Dumbbell className="text-red-600" size={16} />
+                <span className="text-xs text-muted-foreground">Total Sets</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>
+              <p className="text-xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>
             </div>
           </div>
 
@@ -403,8 +405,8 @@ function History() {
           </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
             <input
               className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
@@ -415,45 +417,47 @@ function History() {
             />
           </div>
 
-          <select
-            className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
-            onChange={handleExerciseFilterChange}
-            value={exerciseFilter}
-          >
-            <option value="">All Exercises</option>
-            {exercises.map((exercise) => (
-              <option key={exercise.id} value={exercise.id}>
-                {exercise.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            <select
+              className="flex-1 min-w-[120px] max-w-[160px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+              onChange={handleExerciseFilterChange}
+              value={exerciseFilter}
+            >
+              <option value="">All Exercises</option>
+              {exercises.map((exercise) => (
+                <option key={exercise.id} value={exercise.id}>
+                  {exercise.name}
+                </option>
+              ))}
+            </select>
 
-          <input
-            className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
-            onChange={handleFromDateChange}
-            type="date"
-            value={fromDate ? fromDate.split('T')[0] : ''}
-          />
+            <input
+              className="flex-1 min-w-[100px] max-w-[130px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+              onChange={handleFromDateChange}
+              type="date"
+              value={fromDate ? fromDate.split('T')[0] : ''}
+            />
 
-          <input
-            className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
-            onChange={handleToDateChange}
-            type="date"
-            value={toDate ? toDate.split('T')[0] : ''}
-          />
+            <input
+              className="flex-1 min-w-[100px] max-w-[130px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+              onChange={handleToDateChange}
+              type="date"
+              value={toDate ? toDate.split('T')[0] : ''}
+            />
 
-          <select
-            className="px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
-            onChange={handleSortChange}
-            value={`${sortBy}-${sortOrder}`}
-          >
-            <option value="startedAt-DESC">Newest First</option>
-            <option value="startedAt-ASC">Oldest First</option>
-            <option value="volume-DESC">Most Volume</option>
-            <option value="volume-ASC">Least Volume</option>
-            <option value="duration-DESC">Longest Duration</option>
-            <option value="duration-ASC">Shortest Duration</option>
-          </select>
+            <select
+              className="flex-1 min-w-[120px] max-w-[160px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+              onChange={handleSortChange}
+              value={`${sortBy}-${sortOrder}`}
+            >
+              <option value="startedAt-DESC">Newest First</option>
+              <option value="startedAt-ASC">Oldest First</option>
+              <option value="volume-DESC">Most Volume</option>
+              <option value="volume-ASC">Least Volume</option>
+              <option value="duration-DESC">Longest Duration</option>
+              <option value="duration-ASC">Shortest Duration</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -485,7 +489,7 @@ function History() {
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar size={14} />
-                          {new Date(workout.startedAt).toLocaleDateString()}
+                          {formatDate(workout.startedAt)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock size={14} />

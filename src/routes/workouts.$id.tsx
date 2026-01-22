@@ -19,6 +19,7 @@ import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/cn';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 
 interface WorkoutExercise {
@@ -63,6 +64,7 @@ function WorkoutSession() {
   const router = useRouter();
   const params = useParams({ from: '/workouts/$id' });
   const toast = useToast();
+  const { formatDate } = useDateFormat();
   const [workoutId, setWorkoutId] = useState<string | null>(null);
   const [workoutName, setWorkoutName] = useState('');
   const [startedAt, setStartedAt] = useState('');
@@ -610,7 +612,7 @@ function WorkoutSession() {
 							<div className={'flex items-center gap-4 text-sm text-muted-foreground mt-1'}>
 								<span className={'flex items-center gap-1'}>
 									<Calendar size={14} />
-									{new Date(startedAt).toLocaleDateString()}
+									{formatDate(startedAt)}
 								</span>
 								<span className={'flex items-center gap-1'}>
 									<Dumbbell size={14} />

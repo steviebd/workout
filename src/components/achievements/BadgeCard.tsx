@@ -5,6 +5,7 @@ import React from "react"
 import { Flame, Crown, Trophy, Dumbbell, Medal, Star, Zap, Footprints, Lock } from 'lucide-react'
 import { Card, CardContent } from '~/components/ui/Card'
 import { cn } from '~/lib/cn'
+import { useDateFormat } from '@/lib/context/DateFormatContext'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   flame: Flame,
@@ -50,6 +51,7 @@ interface BadgeCardProps {
 export function BadgeCard({ badge }: BadgeCardProps) {
   const Icon = iconMap[badge.icon] ?? Trophy
   const progressPercent = Math.min((badge.progress / badge.requirement) * 100, 100)
+  const { formatDateLong } = useDateFormat()
 
   return (
     <Card
@@ -114,11 +116,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
         {badge.unlocked && badge.unlockedAt ? (
           <p className="mt-2 text-xs text-muted-foreground">
             Earned{' '}
-            {new Date(badge.unlockedAt).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
+            {formatDateLong(badge.unlockedAt)}
           </p>
         ) : null}
       </CardContent>

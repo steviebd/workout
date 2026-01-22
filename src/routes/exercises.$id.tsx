@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button, Card, CardContent } from '~/components/ui';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface Exercise {
   id: string;
@@ -16,6 +17,7 @@ interface Exercise {
 function ExerciseDetail() {
   const { id } = Route.useParams();
   const auth = useAuth();
+  const { formatDateLong } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,21 +188,13 @@ function ExerciseDetail() {
             <div>
               <label className="block text-sm font-medium text-muted-foreground">{'Created'}</label>
               <p className="text-foreground text-sm">
-                {new Date(exercise.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                {formatDateLong(exercise.createdAt)}
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-muted-foreground">{'Last Updated'}</label>
               <p className="text-foreground text-sm">
-                {new Date(exercise.updatedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                {formatDateLong(exercise.updatedAt)}
               </p>
             </div>
           </div>

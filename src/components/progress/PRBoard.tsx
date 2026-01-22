@@ -3,6 +3,7 @@
 import { Trophy, TrendingUp, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UnitContext'
+import { useDateFormat } from '@/lib/context/DateFormatContext'
 
 interface PersonalRecord {
   id: string
@@ -19,6 +20,7 @@ interface PRBoardProps {
 
 export function PRBoard({ records }: PRBoardProps) {
   const { formatWeight } = useUnit()
+  const { formatDateLong } = useDateFormat()
 
   return (
     <Card>
@@ -43,11 +45,7 @@ export function PRBoard({ records }: PRBoardProps) {
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {new Date(record.date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatDateLong(record.date)}
                 </span>
                 <span>{record.reps} rep{record.reps > 1 ? 's' : ''}</span>
               </div>

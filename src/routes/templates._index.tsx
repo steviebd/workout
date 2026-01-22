@@ -9,6 +9,7 @@ import { Card, CardContent } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Badge } from '~/components/ui/Badge';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 type Template = {
   id: string;
@@ -22,6 +23,7 @@ type Template = {
 
 function Templates() {
   const auth = useAuth();
+  const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ function Templates() {
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Calendar className="mr-1 h-3 w-3" />
-                      {new Date(template.createdAt).toLocaleDateString()}
+                      {formatDate(template.createdAt)}
                     </div>
                     <div className="flex items-center gap-1">
                       <button

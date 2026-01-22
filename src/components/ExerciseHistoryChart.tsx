@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { useMemo, useState, useEffect, type FC } from 'react';
 import { useUnit } from '@/lib/context/UnitContext';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface ExerciseHistoryItem {
   workoutId: string;
@@ -23,6 +24,7 @@ interface ExerciseHistoryChartProps {
 
 export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, chartType }) => {
   const { weightUnit, convertWeight } = useUnit();
+  const { formatDateShort } = useDateFormat();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -36,13 +38,15 @@ export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, char
 
   const chartData = useMemo(() => {
     const sortedData = [...data].sort((a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime());
-    return sortedData.map((item, index) => ({
-      ...item,
-      date: new Date(item.workoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: chartType === 'weight' ? item.maxWeight : item.maxWeight * item.repsAtMax,
-      prIndex: item.isPR ? index : -1,
-    }));
-  }, [data, chartType]);
+    return sortedData.map((item, index) => {
+      return {
+        ...item,
+        date: formatDateShort(item.workoutDate),
+        value: chartType === 'weight' ? item.maxWeight : item.maxWeight * item.repsAtMax,
+        prIndex: item.isPR ? index : -1,
+      };
+    });
+  }, [data, chartType, formatDateShort]);
 
   const prPoints = useMemo(() => {
     return chartData.filter((d) => d.isPR).map((d) => ({ x: d.date, y: d.value }));

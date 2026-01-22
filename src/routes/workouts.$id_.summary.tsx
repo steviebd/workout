@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Clock, Dumbbell, Home, Scale, Target, Trophy, Loader2
 import { useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { cn } from '@/lib/cn';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface WorkoutSet {
   id: string;
@@ -38,6 +39,7 @@ function WorkoutSummary() {
   const auth = useAuth();
   const params = useParams({ from: '/workouts/$id_/summary' });
   const router = useRouter();
+  const { formatDateTimeLong } = useDateFormat();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -208,14 +210,7 @@ function WorkoutSummary() {
           </div>
           <p className="text-muted-foreground">{workout.name}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {workout.completedAt ? new Date(workout.completedAt).toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }) : null}
+            {workout.completedAt ? formatDateTimeLong(workout.completedAt) : null}
           </p>
         </div>
 

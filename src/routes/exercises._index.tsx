@@ -9,6 +9,7 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Badge } from '~/components/ui/Badge';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface Exercise {
   id: string;
@@ -20,6 +21,7 @@ interface Exercise {
 
 function Exercises() {
   const auth = useAuth();
+  const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ function Exercises() {
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Calendar className="mr-1 h-3 w-3" />
-                      {new Date(exercise.createdAt).toLocaleDateString()}
+                      {formatDate(exercise.createdAt)}
                     </div>
                     <span className="text-xs text-primary font-medium">View Details</span>
                   </div>

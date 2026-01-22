@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProgressRouteImport } from './routes/progress'
-import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
@@ -62,11 +61,6 @@ const ProgressRoute = ProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AchievementsRoute = AchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
@@ -108,13 +102,14 @@ const TemplatesIdRoute = TemplatesIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryIndexRoute = HistoryIndexRouteImport.update({
-  id: '/_index',
-  getParentRoute: () => HistoryRoute,
+  id: '/history/_index',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryExerciseIdRoute = HistoryExerciseIdRouteImport.update({
-  id: '/$exerciseId',
-  path: '/$exerciseId',
-  getParentRoute: () => HistoryRoute,
+  id: '/history/$exerciseId',
+  path: '/history/$exerciseId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ExercisesNewRoute = ExercisesNewRouteImport.update({
   id: '/exercises/new',
@@ -302,7 +297,6 @@ const ApiTemplatesIdExercisesExerciseIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/history': typeof HistoryIndexRoute
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
@@ -315,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
   '/history/$exerciseId': typeof HistoryExerciseIdRoute
+  '/history': typeof HistoryIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
   '/templates/new': typeof TemplatesNewRoute
@@ -350,7 +345,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/history': typeof HistoryIndexRoute
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
@@ -363,6 +357,7 @@ export interface FileRoutesByTo {
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
   '/history/$exerciseId': typeof HistoryExerciseIdRoute
+  '/history': typeof HistoryIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
   '/templates/new': typeof TemplatesNewRoute
@@ -399,7 +394,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
-  '/history': typeof HistoryRouteWithChildren
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
@@ -450,7 +444,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/achievements'
-    | '/history'
     | '/progress'
     | '/api/exercises'
     | '/api/preferences'
@@ -463,6 +456,7 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/exercises/new'
     | '/history/$exerciseId'
+    | '/history'
     | '/templates/$id'
     | '/templates'
     | '/templates/new'
@@ -498,7 +492,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/achievements'
-    | '/history'
     | '/progress'
     | '/api/exercises'
     | '/api/preferences'
@@ -511,6 +504,7 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/exercises/new'
     | '/history/$exerciseId'
+    | '/history'
     | '/templates/$id'
     | '/templates'
     | '/templates/new'
@@ -546,7 +540,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/achievements'
-    | '/history'
     | '/progress'
     | '/api/exercises'
     | '/api/preferences'
@@ -596,7 +589,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
-  HistoryRoute: typeof HistoryRouteWithChildren
   ProgressRoute: typeof ProgressRoute
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
   ApiPreferencesRoute: typeof ApiPreferencesRoute
@@ -608,6 +600,8 @@ export interface RootRouteChildren {
   ExercisesIdRoute: typeof ExercisesIdRouteWithChildren
   ExercisesIndexRoute: typeof ExercisesIndexRoute
   ExercisesNewRoute: typeof ExercisesNewRoute
+  HistoryExerciseIdRoute: typeof HistoryExerciseIdRoute
+  HistoryIndexRoute: typeof HistoryIndexRoute
   TemplatesIdRoute: typeof TemplatesIdRouteWithChildren
   TemplatesIndexRoute: typeof TemplatesIndexRoute
   TemplatesNewRoute: typeof TemplatesNewRoute
@@ -628,13 +622,6 @@ declare module '@tanstack/react-router' {
       path: '/progress'
       fullPath: '/progress'
       preLoaderRoute: typeof ProgressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/achievements': {
@@ -695,17 +682,17 @@ declare module '@tanstack/react-router' {
     }
     '/history/_index': {
       id: '/history/_index'
-      path: ''
+      path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryIndexRouteImport
-      parentRoute: typeof HistoryRoute
+      parentRoute: typeof rootRouteImport
     }
     '/history/$exerciseId': {
       id: '/history/$exerciseId'
-      path: '/$exerciseId'
+      path: '/history/$exerciseId'
       fullPath: '/history/$exerciseId'
       preLoaderRoute: typeof HistoryExerciseIdRouteImport
-      parentRoute: typeof HistoryRoute
+      parentRoute: typeof rootRouteImport
     }
     '/exercises/new': {
       id: '/exercises/new'
@@ -955,19 +942,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface HistoryRouteChildren {
-  HistoryExerciseIdRoute: typeof HistoryExerciseIdRoute
-  HistoryIndexRoute: typeof HistoryIndexRoute
-}
-
-const HistoryRouteChildren: HistoryRouteChildren = {
-  HistoryExerciseIdRoute: HistoryExerciseIdRoute,
-  HistoryIndexRoute: HistoryIndexRoute,
-}
-
-const HistoryRouteWithChildren =
-  HistoryRoute._addFileChildren(HistoryRouteChildren)
-
 interface ApiExercisesIdRouteChildren {
   ApiExercisesIdLastWorkoutRoute: typeof ApiExercisesIdLastWorkoutRoute
   ApiExercisesIdLastWorkoutSetsRoute: typeof ApiExercisesIdLastWorkoutSetsRoute
@@ -1126,7 +1100,6 @@ const TemplatesIdRouteWithChildren = TemplatesIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
-  HistoryRoute: HistoryRouteWithChildren,
   ProgressRoute: ProgressRoute,
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
   ApiPreferencesRoute: ApiPreferencesRoute,
@@ -1138,6 +1111,8 @@ const rootRouteChildren: RootRouteChildren = {
   ExercisesIdRoute: ExercisesIdRouteWithChildren,
   ExercisesIndexRoute: ExercisesIndexRoute,
   ExercisesNewRoute: ExercisesNewRoute,
+  HistoryExerciseIdRoute: HistoryExerciseIdRoute,
+  HistoryIndexRoute: HistoryIndexRoute,
   TemplatesIdRoute: TemplatesIdRouteWithChildren,
   TemplatesIndexRoute: TemplatesIndexRoute,
   TemplatesNewRoute: TemplatesNewRoute,

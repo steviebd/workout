@@ -1,22 +1,24 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { WifiOff, Flame, User, LogOut, Settings } from 'lucide-react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from './ui/Button'
 import { useAuth } from '@/routes/__root'
 import { useUnit } from '@/lib/context/UnitContext'
+import { useDateFormat } from '@/lib/context/DateFormatContext'
 
 export function Header() {
   const [isOnline, setIsOnline] = useState(true)
   const [streak] = useState(7)
-  const { user, loading, signOut } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { weightUnit, setWeightUnit } = useUnit()
+  const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
 
   useEffect(() => {
     setIsOnline(navigator.onLine)
@@ -54,6 +56,10 @@ export function Header() {
   const handleUnitToggle = () => {
     const newUnit = weightUnit === 'kg' ? 'lbs' : 'kg'
     void setWeightUnit(newUnit)
+  }
+
+  const handleDateFormatChange = (format: 'dd/mm/yyyy' | 'mm/dd/yyyy') => {
+    void setDateFormat(format)
   }
 
   const getUserInitials = (name: string) => {
@@ -126,12 +132,43 @@ export function Header() {
                     </button>
                   </div>
                 </div>
+                <div className="px-4 py-3">
+                  <p className="text-sm text-muted-foreground mb-2">Date Format</p>
+                  {dateLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDateFormatChange('dd/mm/yyyy')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          dateFormat === 'dd/mm/yyyy'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        DD/MM/YY
+                      </button>
+                      <button
+                        onClick={() => handleDateFormatChange('mm/dd/yyyy')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          dateFormat === 'mm/dd/yyyy'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        MM/DD/YY
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>
 
           <div className="relative" ref={menuRef}>
-            {loading ? (
+            {authLoading ? (
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
                 <div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
               </div>

@@ -17,6 +17,7 @@ export const userPreferences = sqliteTable('user_preferences', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   weightUnit: text('weight_unit').default('kg'),
+  dateFormat: text('date_format').default('dd/mm/yyyy'),
   theme: text('theme').default('light'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
