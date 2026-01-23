@@ -25,7 +25,7 @@ Before implementing, understand these key design decisions:
 
 ### Why This Matters
 The original plan had 3 overlapping caches which would cause stale/inconsistent data:
-1. ~~TanStack Query persistence~~ → Removed
+1. ~~TanStack Query persistence~~ → Removed (already using for UI state only)
 2. ~~SW runtimeCaching for `/api/*`~~ → Removed  
 3. Dexie for domain data → **This is the single source of truth**
 
@@ -33,6 +33,16 @@ The original plan had 3 overlapping caches which would cause stale/inconsistent 
 - All local entities have `localId` (UUID) and optional `serverId` (D1 ID)
 - On create, server returns `serverId` which must be stored locally
 - Child entities (workout_exercises, workout_sets) must update their parent references after sync
+
+### Plan Verification Summary (Updated Jan 2026)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TanStack Query | Already installed | `@tanstack/react-query: ^5.90.19` in package.json |
+| API Endpoints | Use TanStack Router | Server handlers, not traditional REST |
+| incrementRetry bug | Fixed | Parameter renamed from `operationId` to `id` |
+| OfflineOperation.id | Documented | Numeric IndexedDB key vs UUID operationId |
+| useActiveWorkout | To refactor | Currently uses localStorage, needs Dexie |
 
 ---
 
@@ -67,13 +77,15 @@ The original plan had 3 overlapping caches which would cause stale/inconsistent 
 | LocalStorage Active Workout | Partial | useActiveWorkout hook persists active workout |
 | Service Worker | None | No offline caching or request interception |
 | IndexedDB | None | No local database for comprehensive data |
-| TanStack Query | None | Direct fetch pattern used throughout |
+| TanStack Query | Active | Already installed (`@tanstack/react-query: ^5.90.19`) for UI state |
 
 ### Current Data Flow
 
 ```
-User Action → useEffect → fetch('/api/*') → Cloudflare Worker → D1 → Response → useState → UI
+User Action → useEffect → fetch('/api/*') → TanStack Router Server Handlers → D1 → Response → useState → UI
 ```
+
+**Note**: API routes use TanStack Router's server handlers (server-side functions), not traditional REST endpoints. This affects how the sync engine interacts with the server.
 
 ### Identified Issues for Offline Use
 
@@ -191,14 +203,12 @@ bun add -D vite-plugin-pwa
 # IndexedDB wrapper with TypeScript
 bun add dexie
 
-# TanStack Query for data fetching (UI state only, NO persistence)
-bun add @tanstack/react-query
-
 # UUID generation
 bun add uuid
 bun add -D @types/uuid
 ```
 
+> **Note**: `@tanstack/react-query` is already installed. We use it for UI state only (NO cache persistence).
 > **Note**: We intentionally do NOT install `@tanstack/query-persist-client` or `@tanstack/query-sync-storage-persister`. Dexie is the single source of truth for offline data.
 
 ### 1.2 Configure Vite for PWA
@@ -615,8 +625,8 @@ export interface LocalWorkoutSet {
 }
 
 export interface OfflineOperation {
-  id?: number;
-  operationId: string;
+  id?: number;              // IndexedDB auto-increment primary key
+  operationId: string;      // UUID for tracking in sync engine
   type: 'create' | 'update' | 'delete';
   entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set';
   localId: string;
@@ -950,7 +960,7 @@ export async function removeOperation(id: number): Promise<void> {
   await localDB.offlineQueue.delete(id);
 }
 
-export async function incrementRetry(operationId: number): Promise<void> {
+export async function incrementRetry(id: number): Promise<void> {
   const op = await localDB.offlineQueue.get(id);
   if (op) {
     await localDB.offlineQueue.update(id, { retryCount: op.retryCount + 1 });
@@ -1787,25 +1797,110 @@ export function StorageUsage() {
 | File | Changes |
 |------|---------|
 | `src/routes/__root.tsx` | AuthProvider with offline support, SW registration |
-| `package.json` | Add new dependencies |
+| `package.json` | Add new dependencies (already has TanStack Query) |
 | `src/lib/db/schema.ts` | Reference for local DB schema |
-| `src/routes/*` | Replace useEffect+fetch with React Query |
+| `src/hooks/useActiveWorkout.ts` | Refactor to use Dexie instead of localStorage |
+| `src/components/Header.tsx` | Update offline indicator with sync status |
+| `src/routes/exercises._index.tsx` | Add Dexie read + background sync |
+| `src/routes/templates._index.tsx` | Add Dexie read + background sync |
+| `src/routes/workouts._index.tsx` | Add Dexie read + background sync |
 
-### Files Using React Query Pattern (to create)
+### Refactoring Pattern: useActiveWorkout
 
-| File | Pattern |
-|------|---------|
-| `src/routes/exercises._index.tsx` | useQuery + useMutation |
-| `src/routes/exercises.new.tsx` | useMutation |
-| `src/routes/templates._index.tsx` | useQuery + useMutation |
-| `src/routes/templates.new.tsx` | useMutation |
-| `src/routes/workouts._index.tsx` | useQuery + useMutation |
-| `src/routes/workouts.$id.tsx` | useQuery + useMutation |
-| `src/routes/index.tsx` | useQuery (parallel) |
+The existing `useActiveWorkout` hook uses localStorage. Refactor to use Dexie:
+
+**Current**: `localStorage.setItem('activeWorkout', JSON.stringify(workout))`
+**New**: Store in `localDB.workouts` with `syncStatus: 'pending'`
+
+---
+
+## TanStack Router Integration
+
+### Loader Behavior
+
+TanStack Router loaders run on the server. For offline-first, we need a hybrid approach:
+
+1. **Initial load**: Loader fetches from server (D1), returns data
+2. **Client-side**: Store data in Dexie for offline access
+3. **Subsequent visits**: Read from Dexie first, background-fetch for updates
+
+**Pattern for route loaders:**
+
+```typescript
+// src/routes/exercises._index.tsx
+export const Route = createFileRoute('/exercises/_index')({
+  loader: async ({ context }) => {
+    // Server-side: fetch fresh data
+    const exercises = await getExercisesByUserId(context.db, context.user.id);
+    return { exercises };
+  },
+  component: ExercisesComponent,
+});
+```
+
+**Client-side hook pattern:**
+
+```typescript
+// src/hooks/useExercises.ts
+export function useExercises() {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['exercises', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // 1. Read from Dexie (instant, works offline)
+      const localExercises = await getExercises(user.id);
+      
+      // 2. If online, fetch from server in background and update Dexie
+      if (navigator.onLine) {
+        fetchAndSyncExercises(user.id).catch(console.error);
+      }
+      
+      return localExercises;
+    },
+    enabled: !!user?.id,
+  });
+}
+```
+
+### Initial Data Load Strategy
+
+On first login:
+1. Fetch all user data (exercises, templates, workouts) from server
+2. Store complete dataset in Dexie
+3. Set initial sync timestamp
+
+```typescript
+// In AuthProvider or a dedicated initialization hook
+async function seedLocalDatabase(userId: string) {
+  const [exercises, templates, workouts] = await Promise.all([
+    fetch('/api/exercises', { credentials: 'include' }).then(r => r.json()),
+    fetch('/api/templates', { credentials: 'include' }).then(r => r.json()),
+    fetch('/api/workouts', { credentials: 'include' }).then(r => r.json()),
+  ]);
+  
+  // Store in Dexie with syncStatus: 'synced'
+  await bulkStoreExercises(exercises);
+  await bulkStoreTemplates(templates);
+  await bulkStoreWorkouts(workouts);
+  
+  await setLastSyncTime('fullSync');
+}
+```
 
 ---
 
 ## API Changes
+
+### Important: TanStack Router Server Handlers
+
+The app uses TanStack Router's server handlers, not traditional REST endpoints. This means:
+
+- **Handlers are server-side functions** defined in route files
+- **Sync engine calls them via fetch** to `/api/*` endpoints
+- **Handlers return typed data** directly, not wrapped in `Response.json()`
 
 ### New Endpoint: Sync API
 
@@ -1831,7 +1926,11 @@ Response:
 
 ### Modified Endpoints
 
-All POST/PUT/DELETE endpoints should accept `localId` field and return it in response:
+All POST/PUT/DELETE endpoints must:
+
+1. **Accept `localId` in request body** for create operations (for ID mapping)
+2. **Return `localId` in response** along with server `id`
+3. **Return `updatedAt` timestamp** for conflict detection
 
 **POST** `/api/exercises`
 ```json
@@ -1845,9 +1944,30 @@ All POST/PUT/DELETE endpoints should accept `localId` field and return it in res
 // Response
 {
   "id": "server-id",
-  "localId": "uuid-from-local-db"
+  "localId": "uuid-from-local-db",
+  "updatedAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+**PUT** `/api/exercises/:id`
+```json
+// Request
+{
+  "localId": "uuid-from-local-db",
+  "name": "Updated Name",
+  "updatedAt": "2024-01-15T10:30:00Z"  // Client's last known update time
+}
+
+// Response
+{
+  "id": "server-id",
+  "localId": "uuid-from-local-db",
+  "name": "Updated Name",
+  "updatedAt": "2024-01-15T11:00:00Z"  // Server's update time
+}
+```
+
+**DELETE** `/api/exercises/:id`
 
 ---
 
@@ -1882,8 +2002,6 @@ All POST/PUT/DELETE endpoints should accept `localId` field and return it in res
 | Package | Size (gzip) |
 |---------|-------------|
 | dexie | ~30KB |
-| @tanstack/react-query | ~14KB |
-| @tanstack/query-persist-client | ~2KB |
 | vite-plugin-pwa | ~5KB (runtime) |
 
 ### Sync Optimization
