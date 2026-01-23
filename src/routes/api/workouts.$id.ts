@@ -85,7 +85,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
           }
 
           const body = await request.json();
-          const { name, notes, completedAt } = body as UpdateWorkoutData;
+          const { name, notes, completedAt } = body as UpdateWorkoutData & { localId?: string };
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

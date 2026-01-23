@@ -15,12 +15,13 @@ export const Route = createFileRoute('/api/workouts/sets')({
           }
 
           const body = await request.json();
-          const { workoutExerciseId, setNumber, weight, reps, rpe } = body as {
+          const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
             workoutExerciseId: string;
             setNumber: number;
             weight?: number;
             reps?: number;
             rpe?: number;
+            localId?: string;
           };
 
           if (!workoutExerciseId || setNumber === undefined) {
@@ -39,7 +40,8 @@ export const Route = createFileRoute('/api/workouts/sets')({
             setNumber,
             weight,
             reps,
-            rpe
+            rpe,
+            localId
           );
 
           if (!workoutSet) {

@@ -9,6 +9,7 @@ export interface CreateExerciseData {
   name: string;
   muscleGroup?: string;
   description?: string;
+  localId?: string;
 }
 
 export interface UpdateExerciseData {
@@ -40,6 +41,7 @@ export async function createExercise(
       name: data.name,
       muscleGroup: data.muscleGroup,
       description: data.description,
+      localId: data.localId,
     })
     .returning()
     .get();

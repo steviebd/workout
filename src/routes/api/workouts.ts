@@ -50,58 +50,59 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
         }
       },
-       POST: async ({ request }) => {
-         try {
-           const session = await getSession(request);
-           if (!session) {
-             return Response.json({ error: 'Not authenticated' }, { status: 401 });
-           }
+        POST: async ({ request }) => {
+          try {
+            const session = await getSession(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
-           console.log('API: Create workout - session userId:', session.userId);
+            console.log('API: Create workout - session userId:', session.userId);
 
-           const body = await request.json();
-           const { name, templateId, notes, exerciseIds } = body as CreateWorkoutData & { exerciseIds?: string[] };
+            const body = await request.json();
+            const { name, templateId, notes, exerciseIds, localId } = body as CreateWorkoutData & { exerciseIds?: string[]; localId?: string };
 
-           console.log('API: Create workout request:', { name, templateId, exerciseIdsCount: exerciseIds?.length });
+            console.log('API: Create workout request:', { name, templateId, exerciseIdsCount: exerciseIds?.length });
 
-           if (!name) {
-             return Response.json({ error: 'Name is required' }, { status: 400 });
-           }
+            if (!name) {
+              return Response.json({ error: 'Name is required' }, { status: 400 });
+            }
 
-           const db = (env as { DB?: D1Database }).DB;
-           if (!db) {
-             return Response.json({ error: 'Database not available' }, { status: 500 });
-           }
+            const db = (env as { DB?: D1Database }).DB;
+            if (!db) {
+              return Response.json({ error: 'Database not available' }, { status: 500 });
+            }
 
-           let exercisesToAdd = exerciseIds ?? [];
+            let exercisesToAdd = exerciseIds ?? [];
 
-           if (exercisesToAdd.length === 0 && templateId) {
-             const templateExercises = await getTemplateExercises(db, templateId, session.userId);
-             console.log('API: Template exercises found:', templateExercises.length);
-             exercisesToAdd = templateExercises.map((te) => te.exerciseId);
-           }
+            if (exercisesToAdd.length === 0 && templateId) {
+              const templateExercises = await getTemplateExercises(db, templateId, session.userId);
+              console.log('API: Template exercises found:', templateExercises.length);
+              exercisesToAdd = templateExercises.map((te) => te.exerciseId);
+            }
 
-           const workout = await createWorkoutWithDetails(db, {
-             userId: session.userId,
-             name,
-             templateId,
-             notes,
-             exerciseIds: exercisesToAdd,
-           });
+            const workout = await createWorkoutWithDetails(db, {
+              userId: session.userId,
+              name,
+              templateId,
+              notes,
+              exerciseIds: exercisesToAdd,
+              localId,
+            });
 
-           console.log('API: Workout created successfully:', {
-             workoutId: workout.id,
-             userId: session.userId,
-             workoutUserId: workout.userId,
-           });
+            console.log('API: Workout created successfully:', {
+              workoutId: workout.id,
+              userId: session.userId,
+              workoutUserId: workout.userId,
+            });
 
-           return Response.json(workout, { status: 201 });
-        } catch (err) {
-          console.error('Create workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+            return Response.json(workout, { status: 201 });
+         } catch (err) {
+           console.error('Create workout error:', err);
+           const errorMessage = err instanceof Error ? err.message : String(err);
+           return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+         }
+       },
     },
   },
 });

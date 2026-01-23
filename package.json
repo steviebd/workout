@@ -18,8 +18,9 @@
 		"check": "bun run lint && bun run typecheck",
 		"cf-typegen": "wrangler types",
 		"db:generate": "drizzle-kit generate",
-		"db:init:dev": "echo 'Initializing local D1 database with migrations...' && for dir in $(ls -d drizzle/*/ 2>/dev/null | sort); do migration_file=\"$dir/migration.sql\"; if [ -f \"$migration_file\" ]; then echo \"Applying migration: $(basename $dir)\"; npx wrangler d1 execute workout-dev-db --local --file=\"$migration_file\" || echo \"Migration may already be applied\"; fi; done && echo 'Database initialization complete. Run \\\"bun run dev\\\" to start the server.'",
+		"db:init:dev": "echo 'Initializing local D1 database with migrations...' && for dir in $(ls -d drizzle/*/ 2>/dev/null | sort); do migration_file=\"$dir/migration.sql\"; if [ -f \"$migration_file\" ]; then echo \"Applying migration: $(basename $dir)\"; npx wrangler d1 execute workout-dev-db --local --file=\"$migration_file\" || echo \"Migration may already be applied\"; fi; done && echo 'Database initialization complete. Run bun run dev to start the server.'",
 		"db:push:dev": "for dir in drizzle/*/; do npx wrangler d1 execute workout-dev-db --local --file=\"$dir/migration.sql\" 2>/dev/null || true; done",
+		"db:migrate": "infisical run --env staging -- drizzle-kit push --force",
 		"db:push:wrangler": "infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && drizzle-kit push --force'",
 		"db:push:staging": "infisical run --env staging -- drizzle-kit push --force",
 		"db:push:prod": "infisical run --env prod -- drizzle-kit push --force"
@@ -53,6 +54,7 @@
 		"buffer": "^6.0.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"dexie": "^4.2.1",
 		"drizzle-orm": "^1.0.0-beta.11-05230d9",
 		"jose": "^5.2.0",
 		"lucide-react": "^0.544.0",
@@ -64,6 +66,7 @@
 		"tailwind-merge": "^3.4.0",
 		"tailwindcss": "^4.0.6",
 		"tw-animate-css": "^1.4.0",
+		"uuid": "^13.0.0",
 		"vaul": "^1.1.2",
 		"vite-tsconfig-paths": "^5.1.4",
 		"zod": "^4.3.5"
@@ -79,6 +82,7 @@
 		"@types/node": "^25.0.9",
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
+		"@types/uuid": "^11.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.53.0",
 		"@typescript-eslint/parser": "^8.53.0",
 		"@vitejs/plugin-react": "^5.0.4",
@@ -93,6 +97,7 @@
 		"typescript": "^5.7.2",
 		"typescript-eslint": "^8.53.0",
 		"vite": "^7.1.7",
+		"vite-plugin-pwa": "^1.2.0",
 		"vitest": "^3.0.5",
 		"web-vitals": "^5.1.0",
 		"wrangler": "^4.59.2"

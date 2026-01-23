@@ -66,7 +66,7 @@ export const Route = createFileRoute('/api/auth/callback')({
             workosSessionId
           );
 
-          return createSessionResponse(token, '/');
+          return createSessionResponse(token, request, '/');
         } catch (err) {
           console.error('Auth callback error:', err);
           const errorMessage = err instanceof Error ? err.message : 'Unknown error';

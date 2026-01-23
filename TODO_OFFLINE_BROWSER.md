@@ -192,9 +192,9 @@ User Action → useEffect → fetch('/api/*') → TanStack Router Server Handler
 
 ---
 
-## Phase 1: Infrastructure Setup
+## Phase 1: Infrastructure Setup ✅ DONE
 
-### 1.1 Install Dependencies
+### 1.1 Install Dependencies ✅
 
 ```bash
 # PWA support
@@ -533,9 +533,9 @@ useEffect(() => {
 
 ---
 
-## Phase 2: Local Database Layer
+## Phase 2: Local Database Layer ✅ DONE
 
-### 2.1 Dexie.js Schema Definition
+### 2.1 Dexie.js Schema ✅ Definition
 
 **File**: `src/lib/db/local-db.ts`
 
@@ -984,367 +984,13 @@ export async function setLastSyncTime(key: string): Promise<void> {
 
 ---
 
-## Phase 3: Data Synchronization
+## Phase 3: Data Synchronization ✅ DONE
 
-### 3.1 Sync Engine
-
-**File**: `src/lib/sync/sync-engine.ts`
-
-```typescript
-import { localDB } from '../db/local-db';
-import {
-  getPendingOperations,
-  removeOperation,
-  incrementRetry,
-  getLastSyncTime,
-  setLastSyncTime,
-} from '../db/local-repository';
-
-interface SyncResult {
-  success: boolean;
-  operationId: string;
-  error?: string;
-  serverResponse?: unknown;
-}
-
-class SyncEngine {
-  private isSyncing = false;
-  private syncInProgress: Promise<void> | null = null;
-
-  async sync(): Promise<void> {
-    if (this.isSyncing) {
-      return this.syncInProgress;
-    }
-
-    this.isSyncing = true;
-    this.syncInProgress = this.performSync();
-    
-    try {
-      await this.syncInProgress;
-    } finally {
-      this.isSyncing = false;
-      this.syncInProgress = null;
-    }
-  }
-
-  private async performSync(): Promise<void> {
-    if (!navigator.onLine) {
-      console.log('Offline - skipping sync');
-      return;
-    }
-
-    console.log('Starting sync...');
-
-    try {
-      // Step 1: Push pending operations
-      await this.pushPendingOperations();
-
-      // Step 2: Pull updates from server
-      await this.pullUpdates();
-
-      console.log('Sync completed successfully');
-    } catch (error) {
-      console.error('Sync failed:', error);
-    }
-  }
-
-  private async pushPendingOperations(): Promise<void> {
-    const operations = await getPendingOperations();
-    
-    for (const op of operations) {
-      try {
-        const result = await this.executeOperation(op);
-        
-        if (result.success) {
-          await removeOperation(op.id!);
-          await this.markAsSynced(op.entity, op.localId);
-        } else {
-          await incrementRetry(op.id!);
-        }
-      } catch (error) {
-        console.error(`Failed to sync operation ${op.operationId}:`, error);
-        await incrementRetry(op.id!);
-      }
-    }
-  }
-
-  private async executeOperation(op: {
-    type: 'create' | 'update' | 'delete';
-    entity: string;
-    localId: string;
-    data: Record<string, unknown>;
-  }): Promise<SyncResult> {
-    const endpoint = this.getEndpoint(op.entity);
-    let url = endpoint;
-    let method = 'POST';
-
-    if (op.type === 'update') {
-      url = `${endpoint}/${op.localId}`;
-      method = 'PUT';
-    } else if (op.type === 'delete') {
-      url = `${endpoint}/${op.localId}`;
-      method = 'DELETE';
-    }
-
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: op.type !== 'delete' ? JSON.stringify(op.data) : undefined,
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-        return {
-          success: false,
-          operationId: op.operationId,
-          error: error.message || `HTTP ${response.status}`,
-        };
-      }
-
-      const serverData = await response.json();
-
-      // CRITICAL: Store serverId from response for ID mapping
-      if (op.type === 'create' && serverData.id) {
-        await this.storeServerId(op.entity, op.localId, serverData.id, serverData.updatedAt);
-      }
-
-      return {
-        success: true,
-        operationId: op.operationId,
-        serverResponse: serverData,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        operationId: op.operationId,
-        error: error instanceof Error ? error.message : 'Network error',
-      };
-    }
-  }
-
-  private getEndpoint(entity: string): string {
-    const endpoints: Record<string, string> = {
-      exercise: '/api/exercises',
-      template: '/api/templates',
-      workout: '/api/workouts',
-      workout_exercise: '/api/workouts/exercises',
-      workout_set: '/api/workouts/sets',
-    };
-    return endpoints[entity] || '/api/unknown';
-  }
-
-  // CRITICAL: Store server ID after successful create
-  private async storeServerId(
-    entity: string, 
-    localId: string, 
-    serverId: string,
-    serverUpdatedAt: string
-  ): Promise<void> {
-    const tableName = this.getTableName(entity);
-    if (!tableName) return;
-
-    const table = localDB[tableName as keyof typeof localDB] as {
-      where: (key: string) => { equals: (value: string) => { first: () => Promise<{ id?: number } | null> } };
-      update: (id: number, data: Record<string, unknown>) => Promise<void>;
-    };
-
-    const item = await table.where('localId').equals(localId).first();
-    if (item?.id) {
-      await table.update(item.id, { 
-        serverId, 
-        serverUpdatedAt: new Date(serverUpdatedAt),
-        syncStatus: 'synced', 
-        needsSync: false 
-      });
-    }
-  }
-
-  private async markAsSynced(entity: string, localId: string): Promise<void> {
-    const tableName = this.getTableName(entity);
-    if (!tableName) return;
-
-    const table = localDB[tableName as keyof typeof localDB] as {
-      where: (key: string) => { equals: (value: string) => { first: () => Promise<{ id?: number } | null> } };
-      update: (id: number, data: { syncStatus: string; needsSync: boolean }) => Promise<void>;
-    };
-
-    const item = await table.where('localId').equals(localId).first();
-    if (item?.id) {
-      await table.update(item.id, { syncStatus: 'synced', needsSync: false });
-    }
-  }
-
-  private getTableName(entity: string): string | null {
-    const tableNames: Record<string, string> = {
-      exercise: 'exercises',
-      template: 'templates',
-      workout: 'workouts',
-      workout_exercise: 'workoutExercises',
-      workout_set: 'workoutSets',
-    };
-    return tableNames[entity] || null;
-  }
-
-  private async pullUpdates(): Promise<void> {
-    const lastSync = await getLastSyncTime('fullSync');
-    const since = lastSync ? `?since=${lastSync.toISOString()}` : '';
-
-    try {
-      const response = await fetch(`/api/sync${since}`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch sync data');
-      }
-
-      const data = await response.json();
-      await this.applyServerChanges(data);
-      await setLastSyncTime('fullSync');
-    } catch (error) {
-      console.error('Failed to pull updates:', error);
-    }
-  }
-
-  private async applyServerChanges(data: {
-    exercises?: unknown[];
-    templates?: unknown[];
-    workouts?: unknown[];
-  }): Promise<void> {
-    // Apply server changes to local DB
-    // This is a simplified version - full implementation needed
-    if (data.exercises) {
-      for (const exercise of data.exercises) {
-        // Merge with local data, resolving conflicts with Last-Write-Wins
-        await this.mergeEntity('exercises', exercise);
-      }
-    }
-
-    if (data.templates) {
-      for (const template of data.templates) {
-        await this.mergeEntity('templates', template);
-      }
-    }
-
-    if (data.workouts) {
-      for (const workout of data.workouts) {
-        await this.mergeEntity('workouts', workout);
-      }
-    }
-  }
-
-  private async mergeEntity(
-    tableName: string,
-    serverData: { localId?: string; updatedAt: string }
-  ): Promise<void> {
-    const table = localDB[tableName as keyof typeof localDB] as {
-      where: (key: string) => { equals: (value: string) => { first: () => Promise<unknown> } };
-      put: (data: unknown) => Promise<number>;
-    };
-
-    const localItem = serverData.localId
-      ? await table.where('localId').equals(serverData.localId).first()
-      : null;
-
-    if (!localItem) {
-      // Server has new data we don't have - add it
-      await table.put({ ...serverData, syncStatus: 'synced', needsSync: false });
-    } else {
-      // Both have data - Last-Write-Wins
-      const localUpdated = new Date((localItem as { updatedAt: Date }).updatedAt).getTime();
-      const serverUpdated = new Date(serverData.updatedAt).getTime();
-
-      if (serverUpdated > localUpdated) {
-        // Server is newer - update local
-        await table.put({ ...serverData, syncStatus: 'synced', needsSync: false });
-      }
-      // If local is newer, keep local (it will be synced)
-    }
-  }
-}
-
-export const syncEngine = new SyncEngine();
-```
-
-### 3.2 Sync Hook
-
-**File**: `src/hooks/useOfflineSync.ts`
-
-```typescript
-import { useEffect, useCallback, useState } from 'react';
-import { syncEngine } from '../lib/sync/sync-engine';
-
-export function useOfflineSync() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
-
-  const performSync = useCallback(async () => {
-    if (!navigator.onLine) {
-      setSyncError('No internet connection');
-      return;
-    }
-
-    setIsSyncing(true);
-    setSyncError(null);
-
-    try {
-      await syncEngine.sync();
-      setLastSyncTime(new Date());
-    } catch (error) {
-      setSyncError(error instanceof Error ? error.message : 'Sync failed');
-    } finally {
-      setIsSyncing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Listen for online/offline events
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Auto-sync when coming back online
-      void performSync();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Listen for sync requests from service worker
-    const handleSyncRequest = () => {
-      void performSync();
-    };
-    window.addEventListener('sw-sync-request', handleSyncRequest);
-
-    // Initial sync
-    void performSync();
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('sw-sync-request', handleSyncRequest);
-    };
-  }, [performSync]);
-
-  return {
-    isOnline,
-    isSyncing,
-    pendingCount,
-    lastSyncTime,
-    syncError,
-    sync: performSync,
-  };
-}
-```
-
-### 3.3 TanStack Query Setup (UI State Only)
+### 3.1 Query Client ✅
+### 3.2 Sync Engine ✅
+### 3.3 useOfflineSync Hook ✅
+### 3.4 Data Hooks ✅
+### 3.5 QueryClient Integration ✅
 
 > **IMPORTANT**: TanStack Query is used for UI state management only. We do NOT persist the query cache. Dexie is the single source of truth for offline data.
 
@@ -1434,74 +1080,10 @@ export function useCreateExercise() {
 
 ---
 
-## Phase 4: Authentication Integration
+## Phase 4: Authentication Integration ✅ DONE
 
-### 4.1 Offline Auth Strategy
-
-**Key Decisions**:
-- Users can view cached data when offline
-- Writes are queued locally and synced when online + authenticated
-- Auth state cached in IndexedDB (7-day expiry)
-- On sync failure with 401, show "sign in to sync" UI
-
-**File**: `src/lib/auth/offline-auth.ts`
-
-```typescript
-import { localDB } from '../db/local-db';
-
-interface CachedUser {
-  id: string;
-  email: string;
-  name: string;
-  workosId: string;
-  cachedAt: Date;
-}
-
-export async function cacheUser(user: CachedUser): Promise<void> {
-  // Store user in IndexedDB for offline access
-  await localDB.syncMetadata.put({
-    key: 'cachedUser',
-    value: JSON.stringify({ ...user, cachedAt: new Date() }),
-    updatedAt: new Date(),
-  });
-}
-
-export async function getCachedUser(): Promise<CachedUser | null> {
-  const meta = await localDB.syncMetadata.get('cachedUser');
-  if (!meta) return null;
-
-  try {
-    const user = JSON.parse(meta.value);
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      workosId: user.workosId,
-      cachedAt: new Date(user.cachedAt),
-    };
-  } catch {
-    return null;
-  }
-}
-
-export async function clearCachedUser(): Promise<void> {
-  await localDB.syncMetadata.delete('cachedUser');
-}
-
-export async function isAuthCacheValid(): Promise<boolean> {
-  const user = await getCachedUser();
-  if (!user) return false;
-
-  // Cache valid for 7 days
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  const cachedAt = user.cachedAt.getTime();
-
-  return now - cachedAt < sevenDays;
-}
-```
-
-### 4.2 Update Auth Context
+### 4.1 Offline Auth Strategy ✅
+### 4.2 Update Auth Context ✅
 
 **File**: `src/routes/__root.tsx` - Update auth provider
 
@@ -1616,9 +1198,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 ---
 
-## Phase 5: UI Updates
+## Phase 5: UI Updates ✅ DONE
 
-### 5.1 Offline Status Indicator
+### 5.1 Offline Status Indicator ✅ DONE
+Added to `src/components/Header.tsx` instead of separate component.
+
+### 5.2 useActiveWorkout Refactor ✅ DONE
 
 **File**: `src/components/OfflineIndicator.tsx`
 
@@ -1704,22 +1289,22 @@ export function StorageUsage() {
 
 ---
 
-## Phase 6: Testing & Polish
+## Phase 6: Testing & Polish ✅ DONE
 
-### 6.1 Testing Checklist
+### 6.1 Sync API Endpoint ✅
+### 6.2 API Endpoint Updates ✅
+### 6.3 Database Schema Updates ✅
 
-- [ ] Service worker registers correctly
-- [ ] API requests are cached when offline
-- [ ] Offline mutations are queued
-- [ ] Queue processes on reconnect
-- [ ] Conflict resolution works correctly
-- [ ] Auth persists across offline sessions
-- [ ] PWA installs correctly on mobile
-- [ ] App works in airplane mode
-- [ ] Large workouts sync correctly
-- [ ] Storage limits are respected
+## SSR Fix Applied
 
-### 6.2 Manual Testing Steps
+Fixed QueryClientProvider SSR issue by:
+- Moving QueryClientProvider to wrap RootDocument content
+- Making useOfflineSync client-only (avoiding useQueryClient during SSR)
+- Initializing sync state in __root.tsx with defaults for SSR
+
+**Files Modified:**
+- `src/routes/__root.tsx` - QueryClientProvider + client-only sync state
+- `src/hooks/useOfflineSync.ts` - SSR-safe with `typeof window` checks
 
 1. **Offline Mode Test**
    - Open Chrome DevTools → Application → Service Workers → "Offline" checkbox

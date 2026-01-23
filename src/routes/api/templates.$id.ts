@@ -46,7 +46,7 @@ export const Route = createFileRoute('/api/templates/$id')({
           }
 
           const body = await request.json();
-          const { name, description, notes } = body as UpdateTemplateData;
+          const { name, description, notes } = body as UpdateTemplateData & { localId?: string };
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

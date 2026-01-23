@@ -18,6 +18,7 @@ const mockDrizzleDb = {
 
 const mockWorkoutData: Workout = {
   id: 'workout-1',
+  localId: null,
   userId: 'user-1',
   templateId: 'template-1',
   name: 'Upper Body Workout',
@@ -29,6 +30,7 @@ const mockWorkoutData: Workout = {
 
 const mockWorkoutSetData: WorkoutSet = {
   id: 'workout-set-1',
+  localId: null,
   workoutExerciseId: 'workout-exercise-1',
   setNumber: 1,
   weight: 80,
@@ -1666,6 +1668,7 @@ describe('Workout Session - addSetToBackend API behavior', () => {
     const realBackendSetId = 'backend-gen-id-12345';
     const mockCreatedSet: WorkoutSet = {
       id: realBackendSetId,
+      localId: null,
       workoutExerciseId: 'workout-exercise-1',
       setNumber: 1,
       weight: 80,
@@ -1858,6 +1861,7 @@ describe('Workout Session - Frontend set ID consistency', () => {
     const backendGeneratedId = 'drizzle-gen-id-abc123';
     const mockCreatedSet: WorkoutSet = {
       id: backendGeneratedId,
+      localId: null,
       workoutExerciseId: 'workout-exercise-1',
       setNumber: 1,
       weight: 100,

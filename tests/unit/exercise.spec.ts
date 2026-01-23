@@ -3,6 +3,7 @@ import type { Exercise } from '../../src/lib/db/schema';
 
 const mockExerciseData = {
   id: 'exercise-1',
+  localId: null,
   userId: 'user-1',
   name: 'Bench Press',
   muscleGroup: 'Chest',
@@ -112,6 +113,7 @@ describe('Exercise CRUD Operations', () => {
         muscleGroup: 'Chest',
         description: 'Classic chest exercise',
         isDeleted: false,
+        localId: null,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',
       });
@@ -279,6 +281,7 @@ describe('Exercise CRUD Operations', () => {
     it('creates exercise from library item', async () => {
       const libraryExerciseData = {
         id: 'new-exercise-1',
+        localId: null,
         userId: 'user-1',
         name: 'Library Push Up',
         muscleGroup: 'Chest',
@@ -307,6 +310,7 @@ describe('Exercise CRUD Operations', () => {
     it('creates exercise with minimal library data', async () => {
       const libraryExerciseData = {
         id: 'new-exercise-2',
+        localId: null,
         userId: 'user-1',
         name: 'Library Squat',
         muscleGroup: 'Legs',

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { WifiOff, Flame, User, LogOut, Settings, Loader2 } from 'lucide-react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from './ui/Button'
 import { useAuth } from '@/routes/__root'
@@ -9,9 +9,8 @@ import { useUnit } from '@/lib/context/UnitContext'
 import { useDateFormat } from '@/lib/context/DateFormatContext'
 
 export function Header() {
-  const [isOnline, setIsOnline] = useState(true)
+  const { user, loading: authLoading, signOut, isOnline, isSyncing, pendingCount } = useAuth()
   const [streak] = useState(7)
-  const { user, loading: authLoading, signOut } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -19,20 +18,6 @@ export function Header() {
   const navigate = useNavigate()
   const { weightUnit, setWeightUnit } = useUnit()
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
-
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -86,13 +71,27 @@ export function Header() {
             <Flame className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold">{streak}</span>
           </div>
-          
+
           {!isOnline && (
             <div className="flex items-center gap-1 rounded-full bg-warning/20 px-2 py-1 text-warning">
               <WifiOff className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">Offline</span>
             </div>
           )}
+
+          {isSyncing ? (
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span className="text-xs font-medium">Syncing...</span>
+            </div>
+          ) : null}
+
+          {isOnline && pendingCount > 0 ? (
+            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+              <CloudUpload className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">{pendingCount} pending</span>
+            </div>
+          ) : null}
 
           <div className="relative" ref={settingsRef}>
             <button

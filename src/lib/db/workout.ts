@@ -20,6 +20,7 @@ export interface CreateWorkoutData {
   name: string;
   templateId?: string;
   notes?: string;
+  localId?: string;
 }
 
 export interface UpdateWorkoutData {
@@ -42,7 +43,13 @@ export interface WorkoutWithExercises extends Workout {
   exercises: WorkoutExerciseWithDetails[];
 }
 
-export interface WorkoutExerciseWithDetails extends WorkoutExercise {
+export interface WorkoutExerciseWithDetails {
+  id: string;
+  localId: string | null;
+  workoutId: string;
+  exerciseId: string;
+  orderIndex: number;
+  notes: string | null;
   exercise?: {
     id: string;
     name: string;
@@ -72,6 +79,7 @@ export async function createWorkout(
       templateId: data.templateId,
       notes: data.notes,
       startedAt: new Date().toISOString(),
+      localId: data.localId,
     })
     .returning()
     .get();
@@ -166,6 +174,7 @@ export async function getWorkoutExercises(
   const results = await drizzleDb
     .select({
       id: workoutExercises.id,
+      localId: workoutExercises.localId,
       workoutId: workoutExercises.workoutId,
       exerciseId: workoutExercises.exerciseId,
       orderIndex: workoutExercises.orderIndex,
@@ -177,6 +186,7 @@ export async function getWorkoutExercises(
       },
       sets: {
         id: workoutSets.id,
+        localId: workoutSets.localId,
         workoutExerciseId: workoutSets.workoutExerciseId,
         setNumber: workoutSets.setNumber,
         weight: workoutSets.weight,
@@ -211,6 +221,7 @@ export async function getWorkoutExercises(
     } else {
       exerciseMap.set(row.id, {
         id: row.id,
+        localId: row.localId,
         workoutId: row.workoutId,
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
@@ -238,6 +249,7 @@ export async function createWorkoutWithDetails(
       templateId: data.templateId,
       notes: data.notes,
       startedAt: new Date().toISOString(),
+      localId: data.localId,
     })
     .returning()
     .get();
@@ -336,6 +348,7 @@ export async function getWorkoutWithExercises(
   const exercisesWithSets = await drizzleDb
     .select({
       id: workoutExercises.id,
+      localId: workoutExercises.localId,
       workoutId: workoutExercises.workoutId,
       exerciseId: workoutExercises.exerciseId,
       orderIndex: workoutExercises.orderIndex,
@@ -347,6 +360,7 @@ export async function getWorkoutWithExercises(
       },
       sets: {
         id: workoutSets.id,
+        localId: workoutSets.localId,
         workoutExerciseId: workoutSets.workoutExerciseId,
         setNumber: workoutSets.setNumber,
         weight: workoutSets.weight,
@@ -376,6 +390,7 @@ export async function getWorkoutWithExercises(
     } else {
       exerciseMap.set(row.id, {
         id: row.id,
+        localId: row.localId,
         workoutId: row.workoutId,
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
@@ -514,7 +529,8 @@ export async function createWorkoutExercise(
   userId: string,
   exerciseId: string,
   orderIndex: number,
-  notes?: string
+  notes?: string,
+  localId?: string
 ): Promise<WorkoutExercise | null> {
   const drizzleDb = createDb(db);
 
@@ -536,6 +552,7 @@ export async function createWorkoutExercise(
       exerciseId,
       orderIndex,
       notes,
+      localId,
     })
     .returning()
     .get();
@@ -618,7 +635,8 @@ export async function createWorkoutSet(
   setNumber: number,
   weight?: number,
   reps?: number,
-  rpe?: number
+  rpe?: number,
+  localId?: string
 ): Promise<WorkoutSet | null> {
   const drizzleDb = createDb(db);
 
@@ -648,6 +666,7 @@ export async function createWorkoutSet(
       reps,
       rpe,
       isComplete: false,
+      localId,
     })
     .returning()
     .get();

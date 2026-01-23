@@ -15,17 +15,19 @@ export const Route = createFileRoute('/auth/signout')({
           const payload = await verifyToken(token);
           if (payload?.workosSessionId) {
             const signOutUrl = `https://api.workos.com/user_management/sessions/logout?session_id=${payload.workosSessionId}&return_to=${encodeURIComponent(request.url.split('?')[0])}`;
+            const isLocalhost = new URL(request.url).hostname === 'localhost';
+            const secure = isLocalhost ? '' : ' Secure';
             return new Response(null, {
               status: 302,
               headers: {
-                'Set-Cookie': 'session_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
+                'Set-Cookie': `session_token=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`,
                 'Location': signOutUrl,
               },
             });
           }
         }
 
-        return destroySessionResponse('/');
+        return destroySessionResponse(request, '/');
       },
     },
   },

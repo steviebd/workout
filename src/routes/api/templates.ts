@@ -55,7 +55,7 @@ export const Route = createFileRoute('/api/templates')({
           }
 
           const body = await request.json();
-          const { name, description, notes } = body as CreateTemplateData;
+          const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };
 
           if (!name) {
             return Response.json({ error: 'Name is required' }, { status: 400 });
@@ -71,6 +71,7 @@ export const Route = createFileRoute('/api/templates')({
             name,
             description,
             notes,
+            localId,
           });
 
           return Response.json(template, { status: 201 });

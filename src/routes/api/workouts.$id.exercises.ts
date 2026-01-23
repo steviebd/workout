@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           }
 
           const body = await request.json();
-          const { exerciseId, orderIndex, notes } = body as { exerciseId: string; orderIndex: number; notes?: string };
+          const { exerciseId, orderIndex, notes, localId } = body as { exerciseId: string; orderIndex: number; notes?: string; localId?: string };
 
           if (!exerciseId || orderIndex === undefined) {
             return Response.json({ error: 'Exercise ID and order index are required' }, { status: 400 });
@@ -58,7 +58,8 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             session.userId,
             exerciseId,
             orderIndex,
-            notes
+            notes,
+            localId
           );
 
           if (!workoutExercise) {

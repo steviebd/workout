@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           }
 
           const body = await request.json();
-          const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number };
+          const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number; localId?: string };
 
           if (!exerciseId) {
             return Response.json({ error: 'Exercise ID is required' }, { status: 400 });

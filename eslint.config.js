@@ -17,7 +17,8 @@ export default tseslint.config(
 			'.wrangler',
 			'node_modules',
 			'*.config.*',
-			'*.d.ts'
+			'*.d.ts',
+			'public'
 		]
 	},
 	js.configs.recommended,

@@ -28,6 +28,7 @@ import { Route as AuthSigninRouteImport } from './routes/auth.signin'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
 import { Route as ApiTemplatesRouteImport } from './routes/api/templates'
+import { Route as ApiSyncRouteImport } from './routes/api/sync'
 import { Route as ApiProgressRouteImport } from './routes/api/progress'
 import { Route as ApiPreferencesRouteImport } from './routes/api/preferences'
 import { Route as ApiExercisesRouteImport } from './routes/api/exercises'
@@ -150,6 +151,11 @@ const ApiWorkoutsRoute = ApiWorkoutsRouteImport.update({
 const ApiTemplatesRoute = ApiTemplatesRouteImport.update({
   id: '/api/templates',
   path: '/api/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSyncRoute = ApiSyncRouteImport.update({
+  id: '/api/sync',
+  path: '/api/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProgressRoute = ApiProgressRouteImport.update({
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
   '/api/progress': typeof ApiProgressRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
   '/api/progress': typeof ApiProgressRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
@@ -406,6 +414,7 @@ export interface FileRoutesById {
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
   '/api/progress': typeof ApiProgressRoute
+  '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/api/exercises'
     | '/api/preferences'
     | '/api/progress'
+    | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
     | '/auth/callback'
@@ -506,6 +516,7 @@ export interface FileRouteTypes {
     | '/api/exercises'
     | '/api/preferences'
     | '/api/progress'
+    | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
     | '/auth/callback'
@@ -555,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/exercises'
     | '/api/preferences'
     | '/api/progress'
+    | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
     | '/auth/callback'
@@ -605,6 +617,7 @@ export interface RootRouteChildren {
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
   ApiPreferencesRoute: typeof ApiPreferencesRoute
   ApiProgressRoute: typeof ApiProgressRoute
+  ApiSyncRoute: typeof ApiSyncRoute
   ApiTemplatesRoute: typeof ApiTemplatesRouteWithChildren
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/api/templates'
       fullPath: '/api/templates'
       preLoaderRoute: typeof ApiTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync': {
+      id: '/api/sync'
+      path: '/api/sync'
+      fullPath: '/api/sync'
+      preLoaderRoute: typeof ApiSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/progress': {
@@ -1124,6 +1144,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
   ApiPreferencesRoute: ApiPreferencesRoute,
   ApiProgressRoute: ApiProgressRoute,
+  ApiSyncRoute: ApiSyncRoute,
   ApiTemplatesRoute: ApiTemplatesRouteWithChildren,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,

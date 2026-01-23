@@ -17,6 +17,7 @@ export interface CreateTemplateData {
   name: string;
   description?: string;
   notes?: string;
+  localId?: string;
 }
 
 export interface UpdateTemplateData {
@@ -50,6 +51,7 @@ export async function createTemplate(
       name: data.name,
       description: data.description,
       notes: data.notes,
+      localId: data.localId,
     })
     .returning()
     .get();

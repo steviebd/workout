@@ -24,6 +24,7 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             reps?: number | null;
             rpe?: number | null;
             isComplete?: boolean;
+            localId?: string;
           };
 
           console.log('Update set request:', {

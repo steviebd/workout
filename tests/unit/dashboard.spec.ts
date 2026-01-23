@@ -16,6 +16,7 @@ const mockDrizzleDb = {
 const mockWorkouts: Workout[] = [
   {
     id: 'workout-1',
+    localId: null,
     userId: 'user-1',
     templateId: 'template-1',
     name: 'Upper Body Workout',
@@ -26,6 +27,7 @@ const mockWorkouts: Workout[] = [
   },
   {
     id: 'workout-2',
+    localId: null,
     userId: 'user-1',
     templateId: 'template-2',
     name: 'Lower Body Workout',
@@ -36,6 +38,7 @@ const mockWorkouts: Workout[] = [
   },
   {
     id: 'workout-3',
+    localId: null,
     userId: 'user-1',
     templateId: null,
     name: 'Cardio Session',
