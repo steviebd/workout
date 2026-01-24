@@ -1,244 +1,390 @@
-import { describe, expect, it } from 'vitest';
-import type { OfflineOperation } from '../../src/lib/db/local-db';
+import { describe, expect, it, beforeEach } from 'vitest';
+import 'fake-indexeddb/auto';
+import { localDB } from '../../src/lib/db/local-db';
+import {
+  getPendingOperations,
+  removeOperation,
+  incrementRetry,
+  queueOperationOp,
+} from '../../src/lib/db/local-repository';
 
-describe('Offline Queue - Operation Structure', () => {
-  it('should have correct structure for create operation', () => {
-    const operation: OfflineOperation = {
-      id: 1,
-      operationId: 'uuid-1',
-      type: 'create',
-      entity: 'exercise',
-      localId: 'local-1',
-      data: { name: 'Test Exercise' },
-      timestamp: new Date(),
-      retryCount: 0,
-      maxRetries: 3,
-    };
-
-    expect(operation.type).toBe('create');
-    expect(operation.entity).toBe('exercise');
-    expect(operation.retryCount).toBe(0);
-    expect(operation.maxRetries).toBe(3);
+describe('Offline Queue Operations', () => {
+  beforeEach(async () => {
+    await localDB.offlineQueue.clear();
   });
 
-  it('should have correct structure for update operation', () => {
-    const operation: OfflineOperation = {
-      id: 2,
-      operationId: 'uuid-2',
-      type: 'update',
-      entity: 'workout',
-      localId: 'local-2',
-      data: { name: 'Updated Workout' },
-      timestamp: new Date(),
-      retryCount: 1,
-      maxRetries: 3,
-    };
+  describe('queueOperationOp', () => {
+    it('should add operation to queue with correct fields', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
 
-    expect(operation.type).toBe('update');
-    expect(operation.entity).toBe('workout');
-    expect(operation.retryCount).toBe(1);
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(1);
+      expect(ops[0]?.type).toBe('create');
+      expect(ops[0]?.entity).toBe('exercise');
+      expect(ops[0]?.localId).toBe('local-1');
+      expect(ops[0]?.retryCount).toBe(0);
+      expect(ops[0]?.maxRetries).toBe(3);
+      expect(ops[0]?.operationId).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('should support all operation types', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('update', 'exercise', 'local-2', {});
+      await queueOperationOp('delete', 'exercise', 'local-3', {});
+
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(3);
+      expect(ops.map(op => op.type)).toEqual(['create', 'update', 'delete']);
+    });
+
+    it('should support all entity types', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'template', 'local-2', {});
+      await queueOperationOp('create', 'workout', 'local-3', {});
+      await queueOperationOp('create', 'workout_exercise', 'local-4', {});
+      await queueOperationOp('create', 'workout_set', 'local-5', {});
+
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(5);
+      expect(ops.map(op => op.entity)).toEqual([
+        'exercise', 'template', 'workout', 'workout_exercise', 'workout_set'
+      ]);
+    });
+
+    it('should store data payload correctly', async () => {
+      const data = { name: 'Bench Press', muscleGroup: 'Chest', weight: 225 };
+      await queueOperationOp('create', 'exercise', 'local-1', data);
+
+      const ops = await getPendingOperations();
+      expect(ops[0]?.data).toEqual(data);
+    });
+
+    it('should generate unique operationId for each operation', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+
+      const ops = await getPendingOperations();
+      expect(ops[0]?.operationId).not.toBe(ops[1]?.operationId);
+    });
+
+    it('should set timestamp to current time', async () => {
+      const before = new Date();
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      const after = new Date();
+
+      const ops = await getPendingOperations();
+      expect(ops[0]?.timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(ops[0]?.timestamp.getTime()).toBeLessThanOrEqual(after.getTime());
+    });
+
+    it('should add multiple operations to queue', async () => {
+      for (let i = 1; i <= 10; i++) {
+        await queueOperationOp('create', 'exercise', `local-${i}`, { index: i });
+      }
+
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(10);
+    });
   });
 
-  it('should have correct structure for delete operation', () => {
-    const operation: OfflineOperation = {
-      id: 3,
-      operationId: 'uuid-3',
-      type: 'delete',
-      entity: 'template',
-      localId: 'local-3',
-      data: { localId: 'local-3' },
-      timestamp: new Date(),
-      retryCount: 0,
-      maxRetries: 3,
-    };
+  describe('getPendingOperations', () => {
+    it('should return operations ordered by timestamp', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
+      await queueOperationOp('create', 'exercise', 'local-3', {});
 
-    expect(operation.type).toBe('delete');
-    expect(operation.entity).toBe('template');
-    expect(operation.retryCount).toBe(0);
-  });
-});
+      const ops = await getPendingOperations();
+      expect(ops[0]?.localId).toBe('local-1');
+      expect(ops[1]?.localId).toBe('local-2');
+      expect(ops[2]?.localId).toBe('local-3');
+    });
 
-describe('Offline Queue - Operation Priority', () => {
-  it('should sort operations by timestamp', () => {
-    const operations: OfflineOperation[] = [
-      {
-        id: 1,
-        operationId: 'uuid-1',
-        type: 'create',
-        entity: 'exercise',
-        localId: 'local-1',
-        data: {},
-        timestamp: new Date('2024-01-15T10:00:00.000Z'),
-        retryCount: 0,
-        maxRetries: 3,
-      },
-      {
-        id: 2,
-        operationId: 'uuid-2',
-        type: 'create',
-        entity: 'exercise',
-        localId: 'local-2',
-        data: {},
-        timestamp: new Date('2024-01-15T09:00:00.000Z'),
-        retryCount: 0,
-        maxRetries: 3,
-      },
-      {
-        id: 3,
-        operationId: 'uuid-3',
-        type: 'create',
-        entity: 'exercise',
-        localId: 'local-3',
-        data: {},
-        timestamp: new Date('2024-01-15T11:00:00.000Z'),
-        retryCount: 0,
-        maxRetries: 3,
-      },
-    ];
+    it('should return empty array when queue is empty', async () => {
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(0);
+    });
 
-    const sorted = [...operations].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    it('should return all pending operations', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('update', 'template', 'local-2', {});
+      await queueOperationOp('delete', 'workout', 'local-3', {});
 
-    expect(sorted[0].operationId).toBe('uuid-2');
-    expect(sorted[1].operationId).toBe('uuid-1');
-    expect(sorted[2].operationId).toBe('uuid-3');
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(3);
+    });
+
+    it('should return operations with all fields populated', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
+
+      const ops = await getPendingOperations();
+      expect(ops[0]?.id).toBeDefined();
+      expect(ops[0]?.operationId).toBeDefined();
+      expect(ops[0]?.type).toBeDefined();
+      expect(ops[0]?.entity).toBeDefined();
+      expect(ops[0]?.localId).toBeDefined();
+      expect(ops[0]?.data).toBeDefined();
+      expect(ops[0]?.timestamp).toBeDefined();
+      expect(ops[0]?.retryCount).toBeDefined();
+      expect(ops[0]?.maxRetries).toBeDefined();
+    });
   });
 
-  it('should filter operations by retry count', () => {
-    const operations: OfflineOperation[] = [
-      { id: 1, operationId: 'uuid-1', type: 'create', entity: 'exercise', localId: 'local-1', data: {}, timestamp: new Date(), retryCount: 0, maxRetries: 3 },
-      { id: 2, operationId: 'uuid-2', type: 'create', entity: 'exercise', localId: 'local-2', data: {}, timestamp: new Date(), retryCount: 2, maxRetries: 3 },
-      { id: 3, operationId: 'uuid-3', type: 'create', entity: 'exercise', localId: 'local-3', data: {}, timestamp: new Date(), retryCount: 3, maxRetries: 3 },
-    ];
+  describe('removeOperation', () => {
+    it('should remove operation from queue', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(1);
 
-    const pendingOperations = operations.filter(op => op.retryCount < op.maxRetries);
+      const opId = ops[0]?.id;
+      if (opId !== undefined) {
+        await removeOperation(opId);
+      }
 
-    expect(pendingOperations).toHaveLength(2);
-    expect(pendingOperations.map(op => op.operationId)).toContain('uuid-1');
-    expect(pendingOperations.map(op => op.operationId)).toContain('uuid-2');
-    expect(pendingOperations.map(op => op.operationId)).not.toContain('uuid-3');
-  });
-});
+      const remainingOps = await getPendingOperations();
+      expect(remainingOps).toHaveLength(0);
+    });
 
-describe('Offline Queue - Retry Behavior', () => {
-  it('should correctly determine if operation can be retried', () => {
-    const canRetry = (retryCount: number, maxRetries: number) => retryCount < maxRetries;
+    it('should remove specific operation while keeping others', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperationOp('create', 'exercise', 'local-3', {});
 
-    expect(canRetry(0, 3)).toBe(true);
-    expect(canRetry(1, 3)).toBe(true);
-    expect(canRetry(2, 3)).toBe(true);
-    expect(canRetry(3, 3)).toBe(false);
-    expect(canRetry(4, 3)).toBe(false);
-  });
+      const ops = await getPendingOperations();
+      const opId = ops[1]?.id;
+      if (opId !== undefined) {
+        await removeOperation(opId);
+      }
 
-  it('should correctly calculate remaining retries', () => {
-    const getRemainingRetries = (retryCount: number, maxRetries: number) => maxRetries - retryCount;
+      const remainingOps = await getPendingOperations();
+      expect(remainingOps).toHaveLength(2);
+      expect(remainingOps.map(op => op.localId)).toEqual(['local-1', 'local-3']);
+    });
 
-    expect(getRemainingRetries(0, 3)).toBe(3);
-    expect(getRemainingRetries(1, 3)).toBe(2);
-    expect(getRemainingRetries(2, 3)).toBe(1);
-    expect(getRemainingRetries(3, 3)).toBe(0);
-  });
+    it('should not affect other operations when removing non-existent id', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
 
-  it('should correctly determine operation failure status', () => {
-    const isFailed = (retryCount: number, maxRetries: number) => retryCount >= maxRetries;
+      await removeOperation(99999);
 
-    expect(isFailed(0, 3)).toBe(false);
-    expect(isFailed(2, 3)).toBe(false);
-    expect(isFailed(3, 3)).toBe(true);
-    expect(isFailed(4, 3)).toBe(true);
-  });
-});
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(2);
+    });
 
-describe('Offline Queue - Operation Data', () => {
-  it('should store exercise data correctly', () => {
-    const exerciseData = {
-      name: 'Bench Press',
-      muscleGroup: 'Chest',
-      description: 'Classic chest exercise',
-    };
+    it('should not throw when removing non-existent operation', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      
+      await expect(removeOperation(99999)).resolves.not.toThrow();
+    });
 
-    const operation: OfflineOperation = {
-      id: 1,
-      operationId: 'uuid-1',
-      type: 'create',
-      entity: 'exercise',
-      localId: 'local-1',
-      data: exerciseData,
-      timestamp: new Date(),
-      retryCount: 0,
-      maxRetries: 3,
-    };
+    it('should remove operation and allow adding new ones', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      const ops = await getPendingOperations();
+      const opId = ops[0]?.id;
+      if (opId !== undefined) {
+        await removeOperation(opId);
+      }
 
-    expect(operation.data.name).toBe('Bench Press');
-    expect(operation.data.muscleGroup).toBe('Chest');
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      const newOps = await getPendingOperations();
+      expect(newOps).toHaveLength(1);
+      expect(newOps[0]?.localId).toBe('local-2');
+    });
   });
 
-  it('should store workout data correctly', () => {
-    const workoutData = {
-      name: 'Morning Workout',
-      status: 'in_progress',
-    };
+  describe('incrementRetry', () => {
+    it('should increment retryCount', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      const ops = await getPendingOperations();
+      expect(ops[0]?.retryCount).toBe(0);
 
-    const operation: OfflineOperation = {
-      id: 1,
-      operationId: 'uuid-1',
-      type: 'create',
-      entity: 'workout',
-      localId: 'local-1',
-      data: workoutData,
-      timestamp: new Date(),
-      retryCount: 0,
-      maxRetries: 3,
-    };
+      const opId = ops[0]?.id;
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+      }
 
-    expect(operation.data.name).toBe('Morning Workout');
-    expect(operation.data.status).toBe('in_progress');
+      const updatedOps = await getPendingOperations();
+      expect(updatedOps[0]?.retryCount).toBe(1);
+    });
+
+    it('should increment retryCount multiple times', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      const ops = await getPendingOperations();
+      const opId = ops[0]?.id;
+
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+        await incrementRetry(opId);
+        await incrementRetry(opId);
+      }
+
+      const updatedOps = await getPendingOperations();
+      expect(updatedOps[0]?.retryCount).toBe(3);
+    });
+
+    it('should not affect other operations when incrementing', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      
+      const ops = await getPendingOperations();
+      const opId = ops[0]?.id;
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+      }
+
+      const updatedOps = await getPendingOperations();
+      expect(updatedOps[0]?.retryCount).toBe(1);
+      expect(updatedOps[1]?.retryCount).toBe(0);
+    });
+
+    it('should not throw when incrementing non-existent operation', async () => {
+      await expect(incrementRetry(99999)).resolves.not.toThrow();
+    });
+
+    it('should preserve other fields when incrementing retry', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
+      const ops = await getPendingOperations();
+      const originalId = ops[0]?.id;
+      const originalOperationId = ops[0]?.operationId;
+      const originalData = ops[0]?.data;
+      const opId = ops[0]?.id;
+
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+      }
+
+      const updatedOps = await getPendingOperations();
+      expect(updatedOps[0]?.id).toBe(originalId);
+      expect(updatedOps[0]?.operationId).toBe(originalOperationId);
+      expect(updatedOps[0]?.data).toEqual(originalData);
+      expect(updatedOps[0]?.type).toBe('create');
+      expect(updatedOps[0]?.entity).toBe('exercise');
+      expect(updatedOps[0]?.localId).toBe('local-1');
+    });
   });
 
-  it('should store workout set data correctly', () => {
-    const setData = {
-      workoutExerciseId: 'workout-exercise-1',
-      setNumber: 1,
-      weight: 135,
-      reps: 8,
-      rpe: 7,
-    };
+  describe('retry filtering', () => {
+    it('should filter out exhausted retries', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      
+      const ops = await getPendingOperations();
+      const opId = ops[0]?.id;
+      
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+        await incrementRetry(opId);
+        await incrementRetry(opId);
+      }
 
-    const operation: OfflineOperation = {
-      id: 1,
-      operationId: 'uuid-1',
-      type: 'create',
-      entity: 'workout_set',
-      localId: 'local-1',
-      data: setData,
-      timestamp: new Date(),
-      retryCount: 0,
-      maxRetries: 3,
-    };
+      const allOps = await getPendingOperations();
+      const pendingOps = allOps.filter(op => op.retryCount < op.maxRetries);
 
-    expect(operation.data.weight).toBe(135);
-    expect(operation.data.reps).toBe(8);
+      expect(allOps).toHaveLength(2);
+      expect(pendingOps).toHaveLength(1);
+      expect(pendingOps[0]?.localId).toBe('local-2');
+    });
+
+    it('should identify operations at max retries', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      
+      const ops = await getPendingOperations();
+      const opId = ops[0]?.id;
+      
+      if (opId !== undefined) {
+        for (let i = 0; i < 3; i++) {
+          await incrementRetry(opId);
+        }
+      }
+
+      const allOps = await getPendingOperations();
+      const exhaustedOps = allOps.filter(op => op.retryCount >= op.maxRetries);
+
+      expect(exhaustedOps).toHaveLength(1);
+      expect(exhaustedOps[0]?.localId).toBe('local-1');
+    });
+
+    it('should calculate remaining retries correctly', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      
+      const ops = await getPendingOperations();
+      const remainingBefore = (ops[0]?.maxRetries ?? 0) - (ops[0]?.retryCount ?? 0);
+      expect(remainingBefore).toBe(3);
+
+      const opId = ops[0]?.id;
+      if (opId !== undefined) {
+        await incrementRetry(opId);
+      }
+      
+      const updatedOps = await getPendingOperations();
+      const remainingAfter = (updatedOps[0]?.maxRetries ?? 0) - (updatedOps[0]?.retryCount ?? 0);
+      expect(remainingAfter).toBe(2);
+    });
   });
-});
 
-describe('Offline Queue - Operation ID Generation', () => {
-  it('should generate unique operation IDs', () => {
-    const generateOperationId = () => crypto.randomUUID();
+  describe('queue operations with retry', () => {
+    it('should track retry state across multiple operations', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('update', 'template', 'local-2', {});
+      await queueOperationOp('delete', 'workout', 'local-3', {});
+      
+      let ops = await getPendingOperations();
+      const id1 = ops[0]?.id;
+      const id2 = ops[1]?.id;
+      
+      if (id1 !== undefined) await incrementRetry(id1);
+      if (id2 !== undefined) {
+        await incrementRetry(id2);
+        await incrementRetry(id2);
+      }
+      
+      ops = await getPendingOperations();
+      expect(ops[0]?.retryCount).toBe(1);
+      expect(ops[1]?.retryCount).toBe(2);
+      expect(ops[2]?.retryCount).toBe(0);
+    });
 
-    const id1 = generateOperationId();
-    const id2 = generateOperationId();
-    const id3 = generateOperationId();
+    it('should maintain order after removing and adding operations', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
+      await queueOperationOp('create', 'exercise', 'local-2', {});
+      
+      let ops = await getPendingOperations();
+      const id1 = ops[0]?.id;
+      if (id1 !== undefined) {
+        await removeOperation(id1);
+      }
+      
+      await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
+      await queueOperationOp('create', 'exercise', 'local-3', {});
+      
+      ops = await getPendingOperations();
+      expect(ops).toHaveLength(2);
+      expect(ops[0]?.localId).toBe('local-2');
+      expect(ops[1]?.localId).toBe('local-3');
+    });
 
-    expect(id1).not.toBe(id2);
-    expect(id2).not.toBe(id3);
-    expect(id1).not.toBe(id3);
-  });
-
-  it('should generate valid UUID format', () => {
-    const generateOperationId = () => crypto.randomUUID();
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-    const id = generateOperationId();
-    expect(uuidRegex.test(id)).toBe(true);
+    it('should handle mixed entity operations correctly', async () => {
+      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperationOp('update', 'workout', 'local-2', {});
+      await queueOperationOp('delete', 'template', 'local-3', {});
+      await queueOperationOp('create', 'workout_exercise', 'local-4', {});
+      await queueOperationOp('update', 'workout_set', 'local-5', {});
+      
+      const ops = await getPendingOperations();
+      expect(ops).toHaveLength(5);
+      
+      const id3 = ops[2]?.id;
+      if (id3 !== undefined) {
+        await incrementRetry(id3);
+      }
+      
+      const updatedOps = await getPendingOperations();
+      expect(updatedOps[2]?.retryCount).toBe(1);
+      expect(updatedOps[2]?.type).toBe('delete');
+      expect(updatedOps[2]?.entity).toBe('template');
+    });
   });
 });

@@ -23,10 +23,6 @@ export interface ServerSyncResponse {
 
 type TableType = 'exercises' | 'templates' | 'workouts';
 
-interface LocalEntityWithUpdatedAt {
-  updatedAt: Date;
-}
-
 class SyncEngine {
   private syncInProgress: Promise<SyncResult> | null = null;
 
@@ -230,7 +226,7 @@ class SyncEngine {
     }
   }
 
-  private async mergeEntity(
+  async mergeEntity(
     tableName: TableType,
     serverData: ServerEntity
   ): Promise<void> {
@@ -248,9 +244,14 @@ class SyncEngine {
 
     const serverUpdatedAt = new Date(serverData.updatedAt).getTime();
 
-    const localUpdatedAt = 'updatedAt' in localItem
-      ? (localItem as LocalEntityWithUpdatedAt).updatedAt.getTime()
-      : 0;
+    let localUpdatedAt: number;
+    if ('updatedAt' in localItem && localItem.updatedAt instanceof Date) {
+      localUpdatedAt = localItem.updatedAt.getTime();
+    } else if ('startedAt' in localItem && localItem.startedAt instanceof Date) {
+      localUpdatedAt = localItem.startedAt.getTime();
+    } else {
+      localUpdatedAt = 0;
+    }
 
     if (serverUpdatedAt > localUpdatedAt && localItem.id !== undefined) {
       await table.update(localItem.id, {

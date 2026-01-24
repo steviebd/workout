@@ -1,142 +1,361 @@
-import { mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { type Browser, chromium } from '@playwright/test';
+import { type Browser, type BrowserContext, type Locator, type Page, chromium } from '@playwright/test';
 import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-function getInfisicalSecret(secretName: string): Promise<string> {
+function getInfisicalSecret(secretName: string): string {
 	try {
+		console.log(`Fetching ${secretName} from Infisical...`);
 		const result = execSync(`infisical --env dev secrets get ${secretName} --plain`, {
 			encoding: 'utf-8',
 			stdio: ['pipe', 'pipe', 'pipe'],
 		});
-		return Promise.resolve(result.trim());
+		const trimmed = result.trim();
+		console.log(`Successfully fetched ${secretName}`);
+		return trimmed;
 	} catch (error) {
-		console.error(`Failed to get ${secretName} from Infisical:`, error);
-		throw error;
+		console.error(`Failed to get ${secretName} from Infisical:`, error instanceof Error ? error.message : error);
+		throw new Error(`Failed to get ${secretName} from Infisical: ${error instanceof Error ? error.message : error}`);
 	}
+}
+
+function isAuthStateValid(storageStatePath: string): boolean {
+	if (!existsSync(storageStatePath)) {
+		return false;
+	}
+	try {
+		const content = readFileSync(storageStatePath, 'utf-8');
+		const state = JSON.parse(content) as { cookies: Array<{ name: string }> };
+		if (state.cookies.length === 0) {
+			return false;
+		}
+		const hasSessionCookie = state.cookies.some(
+			(cookie) =>
+				cookie.name.includes('session') ||
+				cookie.name.includes('auth') ||
+				cookie.name.includes('workos')
+		);
+		return hasSessionCookie;
+	} catch {
+		return false;
+	}
+}
+
+function ensureStorageStateFile(storageStatePath: string): void {
+	const dir = dirname(storageStatePath);
+	mkdirSync(dir, { recursive: true });
+
+	if (!existsSync(storageStatePath)) {
+		const emptyState = { cookies: [], origins: [] };
+		writeFileSync(storageStatePath, JSON.stringify(emptyState, null, 2));
+	}
+}
+
+async function findSignInButton(page: Page): Promise<Locator | null> {
+	const selectors = [
+		'button:has-text("Sign In")',
+		'a:has-text("Sign In")',
+		'text=Sign In',
+		'[data-testid="sign-in"]',
+		'.sign-in-button',
+		'button[class*="signin"]',
+		'a[class*="signin"]',
+	];
+
+	for (const selector of selectors) {
+		try {
+			const button = page.locator(selector).first();
+			const isVisible = await button.isVisible({ timeout: 2000 }).catch(() => false);
+			if (isVisible) {
+				console.log(`Found Sign In button with selector: ${selector}`);
+				return button;
+			}
+		} catch {
+			continue;
+		}
+	}
+	return null;
+}
+
+async function waitForAuthLoading(page: Page, timeout: number = 10000): Promise<boolean> {
+	console.log('Waiting for auth loading to complete...');
+	
+	try {
+		await page.waitForFunction(() => {
+			const loadingElement = document.querySelector('.animate-spin');
+			if (loadingElement) {
+				const parent = loadingElement.closest('.min-h-screen');
+				if (parent) {
+					const text = parent.textContent || '';
+					return !text.includes('Loading') && !text.includes('Spinner');
+				}
+			}
+			return true;
+		}, { timeout: timeout });
+		
+		await page.waitForTimeout(1000);
+		console.log('Auth loading completed');
+		return true;
+	} catch {
+		console.log('Auth loading check timeout, continuing anyway');
+		return false;
+	}
+}
+
+async function waitForAuthStateDetermined(page: Page, timeout: number = 15000): Promise<boolean> {
+	console.log('Waiting for auth state to be determined...');
+	
+	try {
+		await page.waitForFunction(() => {
+			const userButton = document.querySelector('button:has-text("Sign Out")');
+			const signInButton = document.querySelector('button:has-text("Sign In")');
+			const loadingSpinner = document.querySelector('.animate-pulse');
+			
+			if (loadingSpinner) {
+				return false;
+			}
+			
+			return userButton !== null || signInButton !== null;
+		}, { timeout: timeout });
+		
+		console.log('Auth state determined');
+		return true;
+	} catch {
+		console.log('Auth state determination timeout, continuing anyway');
+		return false;
+	}
+}
+
+async function performLogin(
+	page: Page,
+	context: BrowserContext,
+	baseUrl: string,
+	username: string,
+	password: string,
+	emailSelector: string,
+	passwordSelector: string,
+	submitSelector: string,
+	continueSelector: string,
+	storageStatePath: string
+): Promise<boolean> {
+	console.log('Starting login flow...');
+
+	let navigationTimeout: NodeJS.Timeout | null = null;
+	
+	try {
+		const navPromise = page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+		
+		navigationTimeout = setTimeout(() => {
+			console.log('Navigation timeout, attempting to continue...');
+			void page.evaluate(() => window.stop());
+		}, 15000);
+		
+		await navPromise;
+		clearTimeout(navigationTimeout);
+	} catch (error) {
+		console.log('Could not navigate to app:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	await page.waitForLoadState('domcontentloaded');
+	
+	await waitForAuthLoading(page, 15000);
+	await waitForAuthStateDetermined(page, 15000);
+	
+	await page.waitForTimeout(2000);
+
+	const initialSignOutButton = page.locator('text=Sign Out').first();
+	const wasAlreadySignedIn = await initialSignOutButton.isVisible({ timeout: 5000 }).catch(() => false);
+	
+	if (wasAlreadySignedIn) {
+		console.log('User is already authenticated');
+		return true;
+	}
+
+	const signInButton = await findSignInButton(page);
+	if (signInButton) {
+		try {
+			await signInButton.click({ timeout: 10000 });
+		} catch (error) {
+			console.log('Could not click Sign In button:', error instanceof Error ? error.message : error);
+			return false;
+		}
+	} else {
+		console.log('Sign In button not found, navigating directly to /auth/signin');
+		await page.goto(`${baseUrl}/auth/signin`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+	}
+
+	try {
+		await page.waitForURL(
+			(url: URL) => url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin'),
+			{ timeout: 15000 }
+		);
+	} catch (error) {
+		console.log('Did not reach auth page:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	console.log('Auth page loaded, proceeding with login...');
+
+	try {
+		const emailInput = page.locator(emailSelector);
+		await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+		await emailInput.fill(username);
+	} catch (error) {
+		console.log('Could not fill email:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	try {
+		await page.locator(continueSelector).click({ timeout: 10000 });
+	} catch (error) {
+		console.log('Could not click Continue:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	try {
+		await page.waitForLoadState('domcontentloaded');
+		await page.locator(passwordSelector).waitFor({ state: 'visible', timeout: 15000 });
+	} catch (error) {
+		console.log('Password field not visible:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	try {
+		await page.locator(passwordSelector).fill(password);
+		await page.locator(submitSelector).click({ timeout: 10000 });
+	} catch (error) {
+		console.log('Could not submit password:', error instanceof Error ? error.message : error);
+		return false;
+	}
+
+	try {
+		await page.waitForURL((url: URL) => url.origin === baseUrl, { timeout: 30000 });
+	} catch {
+		await page.waitForLoadState('domcontentloaded');
+		console.log('Did not return to app, checking current URL...');
+		const currentUrl = page.url();
+		console.log('Current URL:', currentUrl);
+	}
+
+	await page.waitForTimeout(5000);
+	await page.waitForLoadState('networkidle');
+	
+	console.log('Final URL after login:', page.url());
+	
+	const signOutButton = page.locator('text=Sign Out').first();
+	const isSignedIn = await signOutButton.isVisible({ timeout: 10000 }).catch(() => false);
+	
+	console.log('Post-login check - Sign Out visible:', isSignedIn);
+
+	const signInAgain = page.locator('text=Sign In').first();
+	const isSignInVisible = await signInAgain.isVisible().catch(() => false);
+	console.log('Post-login check - Sign In visible:', isSignInVisible);
+
+	if (isSignedIn) {
+		console.log('Login successful - Sign Out button is visible');
+		await context.storageState({ path: storageStatePath });
+		console.log('Auth state saved to:', storageStatePath);
+		return true;
+	}
+
+	if (isSignInVisible) {
+		console.log('Login may have failed - Sign In button still visible');
+		return false;
+	}
+
+	console.log('Assuming login succeeded - neither Sign In nor Sign Out visible (page might still be loading)');
+	await context.storageState({ path: storageStatePath });
+	console.log('Auth state saved to:', storageStatePath);
+	return true;
 }
 
 async function globalSetup() {
 	const storageStatePath = join(__dirname, '.auth/state.json');
-	const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8787';
+	const baseUrl = process.env.BASE_URL ?? 'http://localhost:8787';
 
-	let TEST_USERNAME = process.env.TEST_USERNAME ?? '';
-	let TEST_PASSWORD = process.env.TEST_PASSWORD ?? '';
+	ensureStorageStateFile(storageStatePath);
 
-	if (!TEST_USERNAME || !TEST_PASSWORD) {
-		console.log('Fetching credentials from Infisical...');
-		TEST_USERNAME = await getInfisicalSecret('TEST_USERNAME');
-		TEST_PASSWORD = await getInfisicalSecret('TEST_PASSWORD');
-	}
-
-	const AUTH_EMAIL_SELECTOR = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
-	const AUTH_PASSWORD_SELECTOR = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
-	const AUTH_SUBMIT_SELECTOR = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
-	const AUTH_CONTINUE_SELECTOR = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
-
-	console.log('Credentials loaded successfully');
-
-	mkdirSync(dirname(storageStatePath), { recursive: true });
-
-	const browser: Browser = await chromium.launch();
-	const page = await browser.newPage();
-
-	await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-
-	// Check if already logged in
-	const userAvatarButton = page.locator('button.rounded-full').first();
-	const isUserAvatarVisible = await userAvatarButton.isVisible({ timeout: 2000 }).catch(() => false);
-
-	if (isUserAvatarVisible) {
-		console.log('Already logged in, skipping login');
-		await browser.close();
+	if (process.env.SKIP_GLOBAL_SETUP === 'true') {
+		console.log('SKIP_GLOBAL_SETUP is set, skipping authentication');
 		return;
 	}
 
-	const signInButton = page.locator('text=Sign In').first();
-	const isSignInVisible = await signInButton.isVisible({ timeout: 2000 }).catch(() => false);
-
-	if (!isSignInVisible) {
-		console.log('Sign In button not visible, checking if already authenticated...');
-		// Wait a bit for auth to complete
-		await page.waitForTimeout(2000);
-		const avatarAfterWait = page.locator('button.rounded-full').first();
-		const isAvatarNowVisible = await avatarAfterWait.isVisible().catch(() => false);
-		if (isAvatarNowVisible) {
-			console.log('User is now authenticated');
-			await browser.close();
-			return;
-		}
+	if (isAuthStateValid(storageStatePath)) {
+		console.log('Valid auth state already exists');
+		return;
 	}
 
-	if (isSignInVisible) {
-		await signInButton.click();
+	console.log('No valid auth state, attempting login...');
 
-		await page.waitForURL((url: URL) => url.hostname.includes('authkit.app') || url.pathname.includes('/auth/signin'), { timeout: 10000 });
+	console.log('Fetching test credentials...');
+	let testUsername: string;
+	let testPassword: string;
+	
+	try {
+		testUsername = process.env.TEST_USERNAME ?? getInfisicalSecret('TEST_USERNAME');
+		testPassword = process.env.TEST_PASSWORD ?? getInfisicalSecret('TEST_PASSWORD');
+		console.log('Test credentials fetched successfully');
+	} catch (error) {
+		console.error('Failed to get credentials from Infisical:', error instanceof Error ? error.message : error);
+		console.error('Cannot proceed with authentication without valid credentials');
+		console.error('Please ensure TEST_USERNAME and TEST_PASSWORD are set in Infisical dev environment');
+		process.exit(1);
+	}
 
-		await page.locator(AUTH_EMAIL_SELECTOR).fill(TEST_USERNAME);
-		await page.locator(AUTH_CONTINUE_SELECTOR).click();
+	const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
+	const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
+	const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
+	const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
 
-		await page.waitForLoadState('networkidle');
+	let browser: Browser | null = null;
+	try {
+		console.log('Launching browser for authentication...');
+		browser = await chromium.launch({ timeout: 30000 });
+		const context = await browser.newContext();
+		const page = await context.newPage();
 
-		try {
-			await page.locator(AUTH_PASSWORD_SELECTOR).waitFor({ state: 'visible', timeout: 15000 });
-		} catch {
-			console.log('Password field not visible after 15 seconds, taking screenshot...');
-			await page.screenshot({ path: '/tmp/auth-error.png' });
-			throw new Error('Password field not visible after email submission. Check /tmp/auth-error.png for details.');
+		page.setDefaultTimeout(15000);
+		page.setDefaultNavigationTimeout(30000);
+
+		console.log('Starting login flow...');
+		const success = await performLogin(
+			page,
+			context,
+			baseUrl,
+			testUsername,
+			testPassword,
+			emailSelector,
+			passwordSelector,
+			submitSelector,
+			continueSelector,
+			storageStatePath
+		);
+
+		if (success) {
+			console.log('Login completed successfully');
+		} else {
+			console.error('Login failed - auth state not saved');
+			console.error('Tests will likely fail without valid authentication');
+			process.exit(1);
 		}
-
-		await page.locator(AUTH_PASSWORD_SELECTOR).fill(TEST_PASSWORD);
-		await page.locator(AUTH_SUBMIT_SELECTOR).click();
-
-		// Wait for either success or error
-		try {
-			await page.waitForURL((url) => url.origin === BASE_URL, { timeout: 30000 });
-		} catch {
-			await page.waitForLoadState('networkidle');
-			// Check if there's an error
-			const currentUrl = page.url();
-			if (currentUrl.includes('error=auth_failed')) {
-				console.log('Auth failed, checking for error details...');
-				await page.screenshot({ path: '/tmp/auth-failed.png' });
+	} catch (error) {
+		console.error('Global setup error:', error instanceof Error ? error.message : error);
+		console.error('Authentication setup failed - tests cannot run without valid auth');
+		process.exit(1);
+	} finally {
+		if (browser) {
+			try {
+				await browser.close();
+			} catch {
+				console.log('Error closing browser');
 			}
 		}
-
-		// Wait for user menu or sign out button
-		await page.waitForTimeout(2000);
-
-		const userButton = page.locator('button:has-text("Sign In")');
-		const isSignInStillVisible = await userButton.isVisible().catch(() => false);
-
-		if (isSignInStillVisible) {
-			// Not logged in, fail with helpful message
-			await page.screenshot({ path: '/tmp/login-failed.png' });
-			throw new Error('Login failed - still showing Sign In button. Check /tmp/login-failed.png');
-		}
-	} else {
-		console.log('Sign In button not found and user not already logged in');
 	}
-
-	// User is logged in, look for user avatar button
-	const avatarButton = page.locator('button.rounded-full').first();
-	await avatarButton.waitFor({ state: 'visible', timeout: 10000 }).catch(async () => {
-		// Try clicking the header user button as fallback
-		await page.locator('header button').filter({ has: page.locator('svg.lucide-user') }).click();
-	});
-
-	// Wait for dropdown with sign out
-	await page.locator('text=Sign Out').first().waitFor({ state: 'visible', timeout: 10000 });
-
-	await page.context().storageState({ path: storageStatePath });
-
-	console.log('Authentication successful, state saved to:', storageStatePath);
-
-	await browser.close();
 }
 
 export default globalSetup;

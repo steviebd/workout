@@ -41,6 +41,9 @@ import { Route as ApiWorkoutsSetsRouteImport } from './routes/api/workouts.sets'
 import { Route as ApiWorkoutsPrCountRouteImport } from './routes/api/workouts.pr-count'
 import { Route as ApiWorkoutsIdRouteImport } from './routes/api/workouts.$id'
 import { Route as ApiTemplatesIdRouteImport } from './routes/api/templates.$id'
+import { Route as ApiProgressVolumeRouteImport } from './routes/api/progress.volume'
+import { Route as ApiProgressStrengthRouteImport } from './routes/api/progress.strength'
+import { Route as ApiProgressPrsRouteImport } from './routes/api/progress.prs'
 import { Route as ApiExercisesCopyFromLibraryRouteImport } from './routes/api/exercises.copy-from-library'
 import { Route as ApiExercisesIdRouteImport } from './routes/api/exercises.$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
@@ -218,6 +221,21 @@ const ApiTemplatesIdRoute = ApiTemplatesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiTemplatesRoute,
 } as any)
+const ApiProgressVolumeRoute = ApiProgressVolumeRouteImport.update({
+  id: '/volume',
+  path: '/volume',
+  getParentRoute: () => ApiProgressRoute,
+} as any)
+const ApiProgressStrengthRoute = ApiProgressStrengthRouteImport.update({
+  id: '/strength',
+  path: '/strength',
+  getParentRoute: () => ApiProgressRoute,
+} as any)
+const ApiProgressPrsRoute = ApiProgressPrsRouteImport.update({
+  id: '/prs',
+  path: '/prs',
+  getParentRoute: () => ApiProgressRoute,
+} as any)
 const ApiExercisesCopyFromLibraryRoute =
   ApiExercisesCopyFromLibraryRouteImport.update({
     id: '/copy-from-library',
@@ -312,7 +330,7 @@ export interface FileRoutesByFullPath {
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
-  '/api/progress': typeof ApiProgressRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -335,6 +353,9 @@ export interface FileRoutesByFullPath {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/progress/prs': typeof ApiProgressPrsRoute
+  '/api/progress/strength': typeof ApiProgressStrengthRoute
+  '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -362,7 +383,7 @@ export interface FileRoutesByTo {
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
-  '/api/progress': typeof ApiProgressRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -385,6 +406,9 @@ export interface FileRoutesByTo {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/progress/prs': typeof ApiProgressPrsRoute
+  '/api/progress/strength': typeof ApiProgressStrengthRoute
+  '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -413,7 +437,7 @@ export interface FileRoutesById {
   '/progress': typeof ProgressRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
-  '/api/progress': typeof ApiProgressRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -436,6 +460,9 @@ export interface FileRoutesById {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/progress/prs': typeof ApiProgressPrsRoute
+  '/api/progress/strength': typeof ApiProgressStrengthRoute
+  '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -488,6 +515,9 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/progress/prs'
+    | '/api/progress/strength'
+    | '/api/progress/volume'
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -538,6 +568,9 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/progress/prs'
+    | '/api/progress/strength'
+    | '/api/progress/volume'
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -588,6 +621,9 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/progress/prs'
+    | '/api/progress/strength'
+    | '/api/progress/volume'
     | '/api/templates/$id'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -616,7 +652,7 @@ export interface RootRouteChildren {
   ProgressRoute: typeof ProgressRoute
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
   ApiPreferencesRoute: typeof ApiPreferencesRoute
-  ApiProgressRoute: typeof ApiProgressRoute
+  ApiProgressRoute: typeof ApiProgressRouteWithChildren
   ApiSyncRoute: typeof ApiSyncRoute
   ApiTemplatesRoute: typeof ApiTemplatesRouteWithChildren
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
@@ -867,6 +903,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTemplatesIdRouteImport
       parentRoute: typeof ApiTemplatesRoute
     }
+    '/api/progress/volume': {
+      id: '/api/progress/volume'
+      path: '/volume'
+      fullPath: '/api/progress/volume'
+      preLoaderRoute: typeof ApiProgressVolumeRouteImport
+      parentRoute: typeof ApiProgressRoute
+    }
+    '/api/progress/strength': {
+      id: '/api/progress/strength'
+      path: '/strength'
+      fullPath: '/api/progress/strength'
+      preLoaderRoute: typeof ApiProgressStrengthRouteImport
+      parentRoute: typeof ApiProgressRoute
+    }
+    '/api/progress/prs': {
+      id: '/api/progress/prs'
+      path: '/prs'
+      fullPath: '/api/progress/prs'
+      preLoaderRoute: typeof ApiProgressPrsRouteImport
+      parentRoute: typeof ApiProgressRoute
+    }
     '/api/exercises/copy-from-library': {
       id: '/api/exercises/copy-from-library'
       path: '/copy-from-library'
@@ -1012,6 +1069,22 @@ const ApiExercisesRouteWithChildren = ApiExercisesRoute._addFileChildren(
   ApiExercisesRouteChildren,
 )
 
+interface ApiProgressRouteChildren {
+  ApiProgressPrsRoute: typeof ApiProgressPrsRoute
+  ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
+  ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
+}
+
+const ApiProgressRouteChildren: ApiProgressRouteChildren = {
+  ApiProgressPrsRoute: ApiProgressPrsRoute,
+  ApiProgressStrengthRoute: ApiProgressStrengthRoute,
+  ApiProgressVolumeRoute: ApiProgressVolumeRoute,
+}
+
+const ApiProgressRouteWithChildren = ApiProgressRoute._addFileChildren(
+  ApiProgressRouteChildren,
+)
+
 interface ApiTemplatesIdExercisesRouteChildren {
   ApiTemplatesIdExercisesExerciseIdRoute: typeof ApiTemplatesIdExercisesExerciseIdRoute
   ApiTemplatesIdExercisesReorderRoute: typeof ApiTemplatesIdExercisesReorderRoute
@@ -1143,7 +1216,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgressRoute: ProgressRoute,
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
   ApiPreferencesRoute: ApiPreferencesRoute,
-  ApiProgressRoute: ApiProgressRoute,
+  ApiProgressRoute: ApiProgressRouteWithChildren,
   ApiSyncRoute: ApiSyncRoute,
   ApiTemplatesRoute: ApiTemplatesRouteWithChildren,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,

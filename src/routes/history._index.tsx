@@ -3,6 +3,7 @@ import { Calendar, ChevronRight, Clock, Dumbbell, Loader2, Scale, Search, Trophy
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { EmptyWorkouts } from '@/components/EmptyState';
+import { Skeleton } from '~/components/ui/Skeleton';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import { Card } from '~/components/ui/Card';
 import { useUnit } from '@/lib/context/UnitContext';
@@ -82,7 +83,8 @@ function History() {
   const [redirecting, setRedirecting] = useState(false);
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
   const [stats, setStats] = useState<WorkoutStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState('');
@@ -97,6 +99,7 @@ function History() {
 
   const fetchStats = useCallback(async () => {
     try {
+      setIsLoadingStats(true);
       const response = await fetch('/api/workouts/stats', {
         credentials: 'include',
       });
@@ -107,13 +110,15 @@ function History() {
       }
     } catch (err) {
       console.error('Failed to fetch stats:', err);
+    } finally {
+      setIsLoadingStats(false);
     }
   }, []);
 
   const fetchWorkouts = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
       if (!append) {
-        setLoading(true);
+        setIsLoadingWorkouts(true);
       } else {
         setLoadingMore(true);
       }
@@ -162,7 +167,7 @@ function History() {
     } catch (err) {
       console.error('Failed to fetch workouts:', err);
     } finally {
-      setLoading(false);
+      setIsLoadingWorkouts(false);
       setLoadingMore(false);
     }
   }, [fromDate, toDate, exerciseFilter, sortBy, sortOrder, search]);
@@ -206,7 +211,7 @@ function History() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        if (entries[0].isIntersecting && hasMore && !isLoadingWorkouts && !loadingMore) {
           setPage((prev) => prev + 1);
           void fetchWorkouts(page + 1, true);
         }
@@ -224,7 +229,7 @@ function History() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loading, loadingMore, page, fetchWorkouts]);
+  }, [hasMore, isLoadingWorkouts, loadingMore, page, fetchWorkouts]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -316,57 +321,74 @@ function History() {
       </div>
       <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <button
-              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
-              onClick={handleTotalWorkoutsClick}
-              type="button"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Trophy className="text-primary" size={16} />
-                <span className="text-xs text-muted-foreground">Total Workouts</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
-            </button>
+            {isLoadingStats ? (
+              <>
+                <Skeleton className="h-[68px] rounded-lg" />
+                <Skeleton className="h-[68px] rounded-lg" />
+                <Skeleton className="h-[68px] rounded-lg" />
+                <Skeleton className="h-[68px] rounded-lg" />
+              </>
+            ) : (
+              <>
+                <button
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  onClick={handleTotalWorkoutsClick}
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Trophy className="text-primary" size={16} />
+                    <span className="text-xs text-muted-foreground">Total Workouts</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
+                </button>
 
-            <button
-              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
-              onClick={handleThisWeekStatClick}
-              type="button"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Calendar className="text-accent" size={16} />
-                <span className="text-xs text-muted-foreground">This Week</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
-            </button>
+                <button
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  onClick={handleThisWeekStatClick}
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Calendar className="text-accent" size={16} />
+                    <span className="text-xs text-muted-foreground">This Week</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
+                </button>
 
-            <button
-              className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
-              onClick={handleThisMonthStatClick}
-              type="button"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Calendar className="text-chart-5" size={16} />
-                <span className="text-xs text-muted-foreground">This Month</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
-            </button>
+                <button
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  onClick={handleThisMonthStatClick}
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Calendar className="text-chart-5" size={16} />
+                    <span className="text-xs text-muted-foreground">This Month</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
+                </button>
 
-            <div className="bg-card border border-border rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Scale className="text-chart-4" size={16} />
-                <span className="text-xs text-muted-foreground">Total Volume</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
-            </div>
+                <div className="bg-card border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Scale className="text-chart-4" size={16} />
+                    <span className="text-xs text-muted-foreground">Total Volume</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
+                </div>
+              </>
+            )}
+          </div>
 
-            <div className="bg-card border border-border rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Dumbbell className="text-destructive" size={16} />
-                <span className="text-xs text-muted-foreground">Total Sets</span>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {isLoadingStats ? (
+              <Skeleton className="h-[68px] rounded-lg" />
+            ) : (
+              <div className="bg-card border border-border rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Dumbbell className="text-destructive" size={16} />
+                  <span className="text-xs text-muted-foreground">Total Sets</span>
+                </div>
+                <p className="text-xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>
               </div>
-              <p className="text-xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>
-            </div>
+            )}
           </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -460,7 +482,7 @@ function History() {
           </div>
         </div>
 
-        {loading ? (
+        {isLoadingWorkouts ? (
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <SkeletonCard key={i} />

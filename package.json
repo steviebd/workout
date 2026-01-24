@@ -10,8 +10,8 @@
 		"build": "vite build",
 		"serve": "vite preview",
 		"test": "vitest run",
-		"test:e2e": "infisical run --env dev -- npx playwright test",
-		"test:e2e:ui": "infisical run --env dev -- npx playwright test --ui --headed",
+		"test:e2e": "infisical run --env dev -- sh -c 'export TEST_USERNAME=$(infisical --env dev secrets get TEST_USERNAME --plain) && export TEST_PASSWORD=$(infisical --env dev secrets get TEST_PASSWORD --plain) && npx playwright test'",
+		"test:e2e:ui": "infisical run --env dev -- sh -c 'export TEST_USERNAME=$(infisical --env dev secrets get TEST_USERNAME --plain) && export TEST_PASSWORD=$(infisical --env dev secrets get TEST_PASSWORD --plain) && npx playwright test --ui --headed'",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"typecheck": "bun run tsc --noEmit",
@@ -23,7 +23,8 @@
 		"db:migrate": "infisical run --env staging -- drizzle-kit push --force",
 		"db:push:wrangler": "infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && drizzle-kit push --force'",
 		"db:push:staging": "infisical run --env staging -- drizzle-kit push --force",
-		"db:push:prod": "infisical run --env prod -- drizzle-kit push --force"
+		"db:push:prod": "infisical run --env prod -- drizzle-kit push --force",
+		"db:reset": "rm -rf .wrangler/state/v3/d1/miniflare-D1DatabaseObject && bun run db:init:dev"
 	},
 	"dependencies": {
 		"@cloudflare/vite-plugin": "^1.13.8",
@@ -92,6 +93,7 @@
 		"eslint-plugin-jsx-a11y": "^6.10.2",
 		"eslint-plugin-react": "^7.37.5",
 		"eslint-plugin-react-hooks": "^7.0.1",
+		"fake-indexeddb": "^6.2.5",
 		"jsdom": "^27.0.0",
 		"playwright": "^1.57.0",
 		"typescript": "^5.7.2",

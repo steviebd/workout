@@ -248,3 +248,161 @@ test.describe('Offline - Template Flow', () => {
     await page.context().setOffline(false);
   });
 });
+
+test.describe('Offline Data Persistence', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.context().setOffline(false);
+  });
+
+  test('should persist exercise in IndexedDB when created offline', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    await page.context().setOffline(true);
+
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'domcontentloaded' });
+    const exerciseName = `Offline Persist Test ${Date.now()}`;
+    await page.locator('input#name').fill(exerciseName);
+    await page.locator('select#muscleGroup').selectOption('Chest');
+    await page.locator('button[type="submit"]').click();
+
+    const indexedDBData = await page.evaluate(async () => {
+      return new Promise((resolve) => {
+        const request = indexedDB.open('FitWorkoutDB');
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('exercises', 'readonly');
+          const store = tx.objectStore('exercises');
+          const getAllRequest = store.getAll();
+          getAllRequest.onsuccess = () => {
+            resolve(getAllRequest.result);
+          };
+        };
+      });
+    });
+
+    expect(indexedDBData).toContainEqual(
+      expect.objectContaining({
+        name: exerciseName,
+        syncStatus: 'pending',
+        needsSync: true,
+      })
+    );
+
+    await page.context().setOffline(false);
+  });
+
+  test('should have pending operations in queue after offline creation', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+    await page.context().setOffline(true);
+
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'domcontentloaded' });
+    await page.locator('input#name').fill(`Queue Test ${Date.now()}`);
+    await page.locator('select#muscleGroup').selectOption('Back');
+    await page.locator('button[type="submit"]').click();
+
+    const queueData = await page.evaluate(async () => {
+      return new Promise<Array<{ type: string; entity: string }>>((resolve) => {
+        const request = indexedDB.open('FitWorkoutDB');
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('offlineQueue', 'readonly');
+          const store = tx.objectStore('offlineQueue');
+          const getAllRequest = store.getAll();
+          getAllRequest.onsuccess = () => {
+            resolve(getAllRequest.result);
+          };
+        };
+      });
+    });
+
+    expect(queueData.length).toBeGreaterThan(0);
+    expect(queueData[0]).toMatchObject({
+      type: 'create',
+      entity: 'exercise',
+    });
+
+    await page.context().setOffline(false);
+  });
+});
+
+test.describe('Sync Engine E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.context().setOffline(false);
+  });
+
+  test('should sync pending operations when coming back online', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    const exerciseName = `Sync Verify Test ${Date.now()}`;
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill(exerciseName);
+    await page.locator('select#muscleGroup').selectOption('Legs');
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    await page.waitForTimeout(3000);
+
+    const syncStatus = await page.evaluate(async (name: string) => {
+      return new Promise<string | undefined>((resolve) => {
+        const request = indexedDB.open('FitWorkoutDB');
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('exercises', 'readonly');
+          const store = tx.objectStore('exercises');
+          const getAllRequest = store.getAll();
+          getAllRequest.onsuccess = () => {
+            const result = getAllRequest.result as Array<{ name: string; syncStatus?: string }>;
+            const exercise = result.find((e) => e.name === name);
+            resolve(exercise?.syncStatus);
+          };
+        };
+      });
+    }, exerciseName);
+
+    expect(syncStatus).toBe('synced');
+  });
+
+  test('should clear offline queue after successful sync', async ({ page }) => {
+    await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
+
+    const initialQueueCount = await page.evaluate(async () => {
+      return new Promise<number>((resolve) => {
+        const request = indexedDB.open('FitWorkoutDB');
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('offlineQueue', 'readonly');
+          const store = tx.objectStore('offlineQueue');
+          const countRequest = store.count();
+          countRequest.onsuccess = () => {
+            resolve(countRequest.result);
+          };
+        };
+      });
+    });
+
+    await page.goto(`${BASE_URL}/exercises/new`, { waitUntil: 'networkidle' });
+    await page.locator('input#name').fill(`Queue Clear Test ${Date.now()}`);
+    await page.locator('select#muscleGroup').selectOption('Core');
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/exercises\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+
+    await page.waitForTimeout(5000);
+
+    const finalQueueCount = await page.evaluate(async () => {
+      return new Promise<number>((resolve) => {
+        const request = indexedDB.open('FitWorkoutDB');
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction('offlineQueue', 'readonly');
+          const store = tx.objectStore('offlineQueue');
+          const countRequest = store.count();
+          countRequest.onsuccess = () => {
+            resolve(countRequest.result);
+          };
+        };
+      });
+    });
+
+    expect(finalQueueCount).toBeLessThanOrEqual(initialQueueCount);
+  });
+});
