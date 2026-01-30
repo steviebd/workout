@@ -268,7 +268,7 @@ function EditExercise() {
 
           <form className="p-6 space-y-6" onSubmit={handleSubmit}>
             {errors.submit ? (
-              <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
                 <AlertCircle size={20} />
                 <span>{errors.submit}</span>
               </div>

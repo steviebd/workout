@@ -517,7 +517,7 @@ export function TemplateEditor({
             Saving...
                            </div> : null}
 
-        {autoSave.saved ? <div className="mb-4 p-2 bg-green-100 text-green-700 text-sm rounded">
+        {autoSave.saved ? <div className="mb-4 p-2 bg-success/20 text-success/80 text-sm rounded">
             Saved
                           </div> : null}
 
@@ -628,9 +628,9 @@ export function TemplateEditor({
           </div>
          </form>
 
-        {createdTemplate ? <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border">
-            <h3 className="font-semibold mb-2">Template Created!</h3>
-            <p className="text-sm mb-4">Your template "{createdTemplate.name}" is ready.</p>
+        {createdTemplate ? <div className="mt-6 p-4 bg-success/20 border border-success/30 rounded-lg">
+            <h3 className="font-semibold mb-2 text-success">Template Created!</h3>
+            <p className="text-sm mb-4 text-success/80">Your template "{createdTemplate.name}" is ready.</p>
             <div className="flex gap-3">
               <Button asChild={true}>
                 <a href={`/workouts/start/${createdTemplate.id}`}>Start Workout</a>

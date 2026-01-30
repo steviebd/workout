@@ -34,7 +34,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {Math.round((volumeGoal - totalVolume) / 1000)}k lbs until {volumeGoal.toLocaleString()} Club badge
+          {Math.round((volumeGoal - totalVolume) / 1000)}k {formatVolume(1000)} until {formatVolume(volumeGoal)} Club badge
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
           <div

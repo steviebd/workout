@@ -4,6 +4,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { EmptyExerciseHistory } from '@/components/EmptyState';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useUnit } from '@/lib/context/UnitContext';
 
 const ExerciseHistoryChart = lazy(() => import('@/components/ExerciseHistoryChart').then(module => ({ default: module.ExerciseHistoryChart })));
 import { ChartSkeleton } from '@/components/ChartSkeleton';
@@ -91,6 +92,7 @@ function ExerciseHistory() {
   const auth = useAuth();
   const params = useParams({ from: '/history/$exerciseId' });
   const { formatDateLong } = useDateFormat();
+  const { formatWeight } = useUnit();
   const [redirecting, setRedirecting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ExerciseHistoryResponse | null>(null);
@@ -266,7 +268,7 @@ function ExerciseHistory() {
             <Trophy className="text-chart-4" size={18} />
             <span className="text-sm text-muted-foreground">Max Weight</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{stats.maxWeight} kg</p>
+          <p className="text-2xl font-bold text-foreground">{formatWeight(stats.maxWeight)}</p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4">
@@ -274,7 +276,7 @@ function ExerciseHistory() {
             <TrendingUp className="text-chart-3" size={18} />
             <span className="text-sm text-muted-foreground">Est. 1RM</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{stats.est1rm} kg</p>
+          <p className="text-2xl font-bold text-foreground">{formatWeight(stats.est1rm)}</p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4">
@@ -403,9 +405,9 @@ function ExerciseHistory() {
                   <tr className="border-b border-border last:border-0 hover:bg-muted/50" key={item.workoutId}>
                     <td className="py-3 px-4 text-sm text-foreground">{formatDateLong(item.workoutDate)}</td>
                     <td className="py-3 px-4 text-sm text-foreground">{item.workoutName}</td>
-                    <td className="py-3 px-4 text-sm font-medium text-foreground">{item.maxWeight} kg</td>
+                    <td className="py-3 px-4 text-sm font-medium text-foreground">{formatWeight(item.maxWeight)}</td>
                     <td className="py-3 px-4 text-sm text-muted-foreground">{item.repsAtMax}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.est1rm} kg</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">{formatWeight(item.est1rm)}</td>
                     <td className="py-3 px-4 text-sm">
                       {item.isPR ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-chart-4/20 text-chart-4">
                           🏆 PR

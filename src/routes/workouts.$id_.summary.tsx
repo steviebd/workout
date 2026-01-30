@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useUnit } from '@/lib/context/UnitContext';
 
 interface WorkoutSet {
   id: string;
@@ -40,6 +41,7 @@ function WorkoutSummary() {
   const params = useParams({ from: '/workouts/$id_/summary' });
   const router = useRouter();
   const { formatDateTimeLong } = useDateFormat();
+  const { formatWeight } = useUnit();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -271,8 +273,7 @@ function WorkoutSummary() {
               >
                 <span className="font-medium text-foreground">{pr.exerciseName}</span>
                 <span className="text-amber-400 font-medium">
-                  {pr.weight}
-                  kg ×
+                  {formatWeight(pr.weight)} ×
                   {pr.reps}
                 </span>
               </div>
@@ -314,8 +315,7 @@ function WorkoutSummary() {
                         key={set.id}
                       >
                         {set.weight ? <span>
-                          {set.weight}
-                          kg
+                          {formatWeight(set.weight)}
                                       </span> : null}
                         {set.weight && set.reps ? <span>×</span> : null}
                         {set.reps ? <span>{set.reps}</span> : null}

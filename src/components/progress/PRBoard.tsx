@@ -2,6 +2,7 @@
 
 import { Trophy, TrendingUp, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
+import { useUnit } from '@/lib/context/UnitContext'
 
 export interface PersonalRecord {
   id: string
@@ -17,6 +18,7 @@ interface PRBoardProps {
 }
 
 export function PRBoard({ records }: PRBoardProps) {
+  const { formatWeight, convertWeight } = useUnit()
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -51,11 +53,11 @@ export function PRBoard({ records }: PRBoardProps) {
             </div>
 
             <div className="text-right">
-              <p className="text-xl font-bold text-chart-4">{record.weight} lbs</p>
+              <p className="text-xl font-bold text-chart-4">{formatWeight(record.weight)}</p>
               {record.previousRecord ? (
                 <p className="flex items-center justify-end gap-1 text-xs text-success">
                   <TrendingUp className="h-3 w-3" />
-                  +{record.weight - record.previousRecord} lbs
+                  +{convertWeight(record.weight - record.previousRecord)}
                 </p>
               ) : null}
             </div>
