@@ -12,7 +12,7 @@ import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
 import { DateFormatProvider } from '@/lib/context/DateFormatContext'
-import { cacheUser, getCachedUser, clearCachedUser, isAuthCacheValid } from '@/lib/auth/offline-auth'
+import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,23 +105,8 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             setUser(null);
           }
         } else if (response.status === 401) {
-          const hasValidCache = await isAuthCacheValid();
-          if (hasValidCache) {
-            const cachedUser = await getCachedUser();
-            if (cachedUser) {
-              setUser({
-                id: cachedUser.id,
-                email: cachedUser.email,
-                name: cachedUser.name,
-                workosId: cachedUser.workosId,
-              });
-            } else {
-              setUser(null);
-            }
-          } else {
-            await clearCachedUser();
-            setUser(null);
-          }
+          await clearCachedUser();
+          setUser(null);
         } else {
           const cachedUser = await getCachedUser();
           if (cachedUser) {

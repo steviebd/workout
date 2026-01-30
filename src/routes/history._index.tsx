@@ -6,6 +6,8 @@ import { EmptyWorkouts } from '@/components/EmptyState';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import { Card } from '~/components/ui/Card';
+import { Input } from '~/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { useUnit } from '@/lib/context/UnitContext';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 
@@ -88,7 +90,7 @@ function History() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState('');
-  const [exerciseFilter, setExerciseFilter] = useState('');
+  const [exerciseFilter, setExerciseFilter] = useState('all');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [sortBy, setSortBy] = useState<'startedAt' | 'volume' | 'duration'>('startedAt');
@@ -128,7 +130,7 @@ function History() {
       params.set('limit', '10');
       if (fromDate) params.set('fromDate', fromDate);
       if (toDate) params.set('toDate', toDate);
-      if (exerciseFilter) params.set('exerciseId', exerciseFilter);
+      if (exerciseFilter && exerciseFilter !== 'all') params.set('exerciseId', exerciseFilter);
 
       if (search) params.set('search', search);
 
@@ -235,8 +237,8 @@ function History() {
     setSearch(e.target.value);
   }, []);
 
-  const handleExerciseFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setExerciseFilter(e.target.value);
+  const handleExerciseFilterChange = useCallback((value: string) => {
+    setExerciseFilter(value);
   }, []);
 
   const handleFromDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,8 +249,8 @@ function History() {
     setToDate(e.target.value);
   }, []);
 
-  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const [by, order] = e.target.value.split('-');
+  const handleSortChange = useCallback((value: string) => {
+    const [by, order] = value.split('-');
     setSortBy(by as 'startedAt' | 'volume' | 'duration');
     setSortOrder(order as 'ASC' | 'DESC');
   }, []);
@@ -317,7 +319,7 @@ function History() {
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Workout History</h1>
+        <h1 className="text-2xl font-bold text-foreground">Workout History</h1>
       </div>
       <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -331,7 +333,7 @@ function History() {
             ) : (
               <>
                 <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
                   onClick={handleTotalWorkoutsClick}
                   type="button"
                 >
@@ -343,7 +345,7 @@ function History() {
                 </button>
 
                 <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
                   onClick={handleThisWeekStatClick}
                   type="button"
                 >
@@ -355,7 +357,7 @@ function History() {
                 </button>
 
                 <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md transition-all text-left cursor-pointer"
+                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
                   onClick={handleThisMonthStatClick}
                   type="button"
                 >
@@ -393,7 +395,7 @@ function History() {
 
         <div className="flex flex-wrap gap-2 mb-6">
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
               !fromDate && !toDate
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -404,7 +406,7 @@ function History() {
             All Time
           </button>
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
               fromDate && fromDate === getThisWeekRange().from
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -415,7 +417,7 @@ function History() {
             This Week
           </button>
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
               fromDate && fromDate === getThisMonthRange().from
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -430,55 +432,56 @@ function History() {
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
-            <input
-              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground"
+            <Input
+              className="w-full pl-10 pr-4"
               onChange={handleSearchChange}
               placeholder="Search workouts..."
-              type="text"
               value={search}
             />
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <select
-              className="flex-1 min-w-[120px] max-w-[160px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
-              onChange={handleExerciseFilterChange}
-              value={exerciseFilter}
-            >
-              <option value="">All Exercises</option>
-              {exercises.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  {exercise.name}
-                </option>
-              ))}
-            </select>
+            <Select onValueChange={handleExerciseFilterChange} value={exerciseFilter}>
+              <SelectTrigger className="flex-1 min-w-[120px] max-w-[160px]">
+                <SelectValue placeholder="All Exercises" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Exercises</SelectItem>
+                {exercises.map((exercise) => (
+                  <SelectItem key={exercise.id} value={exercise.id}>
+                    {exercise.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <input
-              className="flex-1 min-w-[100px] max-w-[130px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+            <Input
+              className="flex-1 min-w-[100px] max-w-[130px]"
               onChange={handleFromDateChange}
               type="date"
               value={fromDate ? fromDate.split('T')[0] : ''}
             />
 
-            <input
-              className="flex-1 min-w-[100px] max-w-[130px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
+            <Input
+              className="flex-1 min-w-[100px] max-w-[130px]"
               onChange={handleToDateChange}
               type="date"
               value={toDate ? toDate.split('T')[0] : ''}
             />
 
-            <select
-              className="flex-1 min-w-[120px] max-w-[160px] px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-input outline-none transition-shadow bg-background text-foreground text-sm"
-              onChange={handleSortChange}
-              value={`${sortBy}-${sortOrder}`}
-            >
-              <option value="startedAt-DESC">Newest First</option>
-              <option value="startedAt-ASC">Oldest First</option>
-              <option value="volume-DESC">Most Volume</option>
-              <option value="volume-ASC">Least Volume</option>
-              <option value="duration-DESC">Longest Duration</option>
-              <option value="duration-ASC">Shortest Duration</option>
-            </select>
+            <Select onValueChange={handleSortChange} value={`${sortBy}-${sortOrder}`}>
+              <SelectTrigger className="flex-1 min-w-[120px] max-w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="startedAt-DESC">Newest First</SelectItem>
+                <SelectItem value="startedAt-ASC">Oldest First</SelectItem>
+                <SelectItem value="volume-DESC">Most Volume</SelectItem>
+                <SelectItem value="volume-ASC">Least Volume</SelectItem>
+                <SelectItem value="duration-DESC">Longest Duration</SelectItem>
+                <SelectItem value="duration-ASC">Shortest Duration</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

@@ -5,7 +5,7 @@ import { StreakCard } from '~/components/dashboard/StreakCard'
 import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
 import { QuickActions } from '~/components/dashboard/QuickActions'
 import { RecentPRs } from '~/components/dashboard/RecentPRs'
-import { Spinner } from '~/components/ui/Spinner'
+import { Skeleton } from '~/components/ui/Skeleton'
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -69,6 +69,11 @@ function Dashboard() {
           fetch('/api/templates', { credentials: 'include' }),
         ])
 
+        if (statsRes.status === 401 || workoutsRes.status === 401 || prCountRes.status === 401) {
+          window.location.href = '/auth/signin'
+          return
+        }
+
         if (!statsRes.ok || !workoutsRes.ok || !prCountRes.ok) {
           throw new Error('Failed to fetch dashboard data')
         }
@@ -104,8 +109,15 @@ function Dashboard() {
 
   if (auth.loading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Spinner size="lg" />
+      <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-[120px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[200px] rounded-xl" />
+        <Skeleton className="h-[150px] rounded-xl" />
       </div>
     )
   }

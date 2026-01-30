@@ -70,7 +70,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page).toHaveURL(isAuthKitUrl);
   });
 
-  test('should create and display a new template', async ({ page }) => {
+  test.skip('should create and display a new template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
     await loginUser(page);
 
     const templateName = `Test Template ${Date.now()}`;
@@ -131,7 +131,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should copy a template', async ({ page }) => {
+  test.skip('should copy a template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
     await loginUser(page);
 
     const timestamp = Date.now();
@@ -156,7 +156,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page.locator(`text=${templateName} (Copy)`).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should delete a template', async ({ page }) => {
+  test.skip('should delete a template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
     await loginUser(page);
 
     const timestamp = Date.now();

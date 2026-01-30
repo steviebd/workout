@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button } from '~/components/ui/Button';
 import { Spinner } from '~/components/ui/Spinner';
-import { Card } from '~/components/ui/Card';
+import { Card, CardContent } from '~/components/ui/Card';
 import { Input } from '~/components/ui/Input';
 
 interface Template {
@@ -143,20 +143,22 @@ function WorkoutsPage() {
                   params={{ templateId: template.id }}
                   className="block"
                 >
-                  <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{template.name}</h3>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Dumbbell className="h-3 w-3" />
-                            {template.exerciseCount} {template.exerciseCount === 1 ? 'exercise' : 'exercises'}
-                          </span>
+                  <Card className="hover:border-primary/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{template.name}</h3>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <Dumbbell className="h-3 w-3" />
+                              {template.exerciseCount} {template.exerciseCount === 1 ? 'exercise' : 'exercises'}
+                            </span>
+                          </div>
                         </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))}
             </div>
@@ -186,10 +188,12 @@ function WorkoutsPage() {
           </div>
 
           {exercises.length === 0 ? (
-            <div className="text-center py-8 bg-card border border-border rounded-lg">
-              <Dumbbell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No exercises found</p>
-            </div>
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Dumbbell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No exercises found</p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 gap-2">
               {exercises.slice(0, 6).map((exercise) => (
@@ -198,16 +202,18 @@ function WorkoutsPage() {
                   to="/exercises/$id"
                   params={{ id: exercise.id }}
                 >
-                  <Card className="p-3 hover:border-primary/50 transition-colors cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{exercise.name}</h3>
-                        {exercise.muscleGroup ? (
-                          <p className="text-xs text-muted-foreground">{exercise.muscleGroup}</p>
-                        ) : null}
+                  <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium">{exercise.name}</h3>
+                          {exercise.muscleGroup ? (
+                            <p className="text-xs text-muted-foreground">{exercise.muscleGroup}</p>
+                          ) : null}
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    </CardContent>
                   </Card>
                 </Link>
               ))}

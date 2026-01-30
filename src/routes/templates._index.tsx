@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
@@ -113,10 +113,10 @@ function Templates() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Templates</h1>
           <Button asChild={true} size="sm">
-            <a href="/templates/new">
+            <Link to="/templates/new">
               <Plus className="h-4 w-4 mr-1" />
               New
-            </a>
+            </Link>
           </Button>
         </div>
 
@@ -146,12 +146,13 @@ function Templates() {
               <Card key={template.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <a
+                    <Link
                       className="font-semibold hover:text-primary"
-                      href={`/templates/${template.id}`}
+                      to="/templates/$id"
+                      params={{ id: template.id }}
                     >
                       {template.name}
-                    </a>
+                    </Link>
                     <Badge variant="secondary">
                       {template.exerciseCount} exercises
                     </Badge>
@@ -171,13 +172,14 @@ function Templates() {
                       >
                         <Copy className="h-4 w-4" />
                       </button>
-                      <a
+                      <Link
                         className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        href={`/templates/${template.id}/edit`}
+                        to="/templates/$id/edit"
+                        params={{ id: template.id }}
                         title="Edit template"
                       >
                         <Edit className="h-4 w-4" />
-                      </a>
+                      </Link>
                       <button
                         className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                         data-id={template.id}

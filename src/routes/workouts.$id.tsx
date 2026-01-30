@@ -18,6 +18,9 @@ import { useToast } from '@/components/ToastProvider';
 import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
+import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 
@@ -385,14 +388,9 @@ function WorkoutSession() {
      setEditingNotes(false);
    }, []);
 
-   const handleAddExerciseClick = useCallback(() => {
-     setShowExerciseSelector(true);
-   }, []);
-
-   const handleCloseExerciseSelector = useCallback(() => {
-     setShowExerciseSelector(false);
-     setExerciseSearch('');
-   }, []);
+    const handleAddExerciseClick = useCallback(() => {
+      setShowExerciseSelector(true);
+    }, []);
 
    const handleDiscardConfirmClick = useCallback(async () => {
      await handleDiscardWorkout();
@@ -759,106 +757,96 @@ function WorkoutSession() {
 			</div>
 			</main>
 
-			{showExerciseSelector ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-card rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col'}>
-				<div className={'flex items-center justify-between p-4 border-b'}>
-					<h2 className={'text-lg font-semibold text-foreground'}>{'Add Exercise'}</h2>
-					<button
-						className={'p-2 text-gray-400 hover:text-muted-foreground hover:bg-secondary rounded-lg transition-colors'}
-					onClick={handleCloseExerciseSelector}
-					>
-						<X size={20} />
-					</button>
-				</div>
-
-				<div className={'p-4 border-b'}>
-					<div className={'relative'}>
-						<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
-						<input
-							autoFocus={true}
-							className={'w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
-							onChange={handleExerciseSearchChange}
-							placeholder={'Search exercises...'}
-							type={'text'}
-							value={exerciseSearch}
-						/>
-					</div>
-				</div>
-
-				<div className={'flex-1 overflow-y-auto p-4'}>
-					{filteredExercises.length === 0 ? (
-						<div className={'text-center py-8 text-muted-foreground'}>
-							{'No exercises found'}
+			<Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
+				<DrawerContent>
+					<DrawerHeader>
+						<DrawerTitle>{'Add Exercise'}</DrawerTitle>
+					</DrawerHeader>
+					<div className={'p-4 border-b'}>
+						<div className={'relative'}>
+							<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
+							<Input
+								autoFocus={true}
+								className={'pl-10'}
+								onChange={handleExerciseSearchChange}
+								placeholder={'Search exercises...'}
+								type={'text'}
+								value={exerciseSearch}
+							/>
 						</div>
-              ) : (
-	<div className={'space-y-2'}>
-		{filteredExercises.map((exercise) => (
-          <button
-            className={'w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors'}
-            data-id={exercise.id}
-            key={exercise.id}
-            onClick={handleAddExerciseClickSharedWrapped}
-          >
-				<div>
-					<h3 className={'font-medium text-foreground'}>{exercise.name}</h3>
-						{exercise.muscleGroup ?
-							<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full'}>
-								{exercise.muscleGroup}
-							</span> : null}
-				</div>
-          </button>
-                  ))}
-	</div>
-              )}
-				</div>
-			</div>
-                           </div> : null}
+					</div>
+					<div className={'flex-1 overflow-y-auto p-4'}>
+						{filteredExercises.length === 0 ? (
+							<div className={'text-center py-8 text-muted-foreground'}>
+								{'No exercises found'}
+							</div>
+						) : (
+							<div className={'space-y-2'}>
+								{filteredExercises.map((exercise) => (
+									<button
+										className={'w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors'}
+										data-id={exercise.id}
+										key={exercise.id}
+										onClick={handleAddExerciseClickSharedWrapped}
+									>
+										<div>
+											<h3 className={'font-medium text-foreground'}>{exercise.name}</h3>
+											{exercise.muscleGroup ?
+												<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full'}>
+													{exercise.muscleGroup}
+												</span> : null}
+										</div>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+				</DrawerContent>
+			</Drawer>
 
-		{showDiscardConfirm ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-card rounded-xl shadow-xl p-6 max-w-md'}>
-				<h3 className={'text-lg font-semibold text-foreground mb-2'}>{'Discard Workout?'}</h3>
+		<AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>{'Discard Workout?'}</AlertDialogTitle>
+				</AlertDialogHeader>
 				<p className={'text-muted-foreground mb-4'}>
 					{'This will permanently delete this workout. This action cannot be undone.'}
 				</p>
-				<div className={'flex justify-end gap-3'}>
-					<button
-						className={'px-4 py-2 text-foreground hover:text-foreground transition-colors'}
-						onClick={handleDiscardBackClick}
-					>
+				<AlertDialogFooter>
+					<AlertDialogCancel onClick={handleDiscardBackClick}>
 						{'Cancel'}
-					</button>
-					<button
-						className={'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'}
+					</AlertDialogCancel>
+					<AlertDialogAction
+						className={'bg-red-600 text-white hover:bg-red-700'}
 						onClick={handleDiscardConfirmClickWrapped}
 					>
 						{'Discard Workout'}
-					</button>
-				</div>
-			</div>
-                        </div> : null}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 
-		{showIncompleteSetsConfirm ? <div className={'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'}>
-			<div className={'bg-card rounded-xl shadow-xl p-6 max-w-md'}>
-				<h3 className={'text-lg font-semibold text-foreground mb-2'}>{'Incomplete Sets'}</h3>
+		<AlertDialog open={showIncompleteSetsConfirm} onOpenChange={setShowIncompleteSetsConfirm}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>{'Incomplete Sets'}</AlertDialogTitle>
+				</AlertDialogHeader>
 				<p className={'text-muted-foreground mb-4'}>
 					{'You have sets that haven\'t been marked as complete. Are you sure you want to continue?'}
 				</p>
-				<div className={'flex justify-end gap-3'}>
-					<button
-						className={'px-4 py-2 text-foreground hover:text-foreground transition-colors'}
-						onClick={_handleIncompleteSetsBackClickWrapped}
-					>
+				<AlertDialogFooter>
+					<AlertDialogCancel onClick={_handleIncompleteSetsBackClickWrapped}>
 						{'Go Back'}
-					</button>
-					<button
-						className={'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors'}
+					</AlertDialogCancel>
+					<AlertDialogAction
+						className={'bg-green-600 text-white hover:bg-green-700'}
 						onClick={handleIncompleteSetsContinueClickWrapped}
 					>
 						{'Continue'}
-					</button>
-				</div>
-			</div>
-                               </div> : null}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 		</>
    );
 }

@@ -8,6 +8,7 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Badge } from '~/components/ui/Badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useToast } from '@/components/ToastProvider';
 
@@ -172,17 +173,16 @@ function Exercises() {
 
               <div>
                 <label htmlFor="muscle-group" className="block text-sm font-medium mb-1">Muscle Group *</label>
-                <select
-                  id="muscle-group"
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-background"
-                  value={newExercise.muscleGroup}
-                  onChange={e => setNewExercise(prev => ({ ...prev, muscleGroup: e.target.value }))}
-                >
-                  <option value="">Select muscle group</option>
-                  {MUSCLE_GROUPS.map(mg => (
-                    <option key={mg} value={mg}>{mg}</option>
-                  ))}
-                </select>
+                <Select value={newExercise.muscleGroup} onValueChange={value => setNewExercise(prev => ({ ...prev, muscleGroup: value }))}>
+                  <SelectTrigger id="muscle-group" className="w-full px-3 py-2 border border-input rounded-lg bg-background">
+                    <SelectValue placeholder="Select muscle group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MUSCLE_GROUPS.map(mg => (
+                      <SelectItem key={mg} value={mg}>{mg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.muscleGroup ? <p className="text-sm text-destructive mt-1">{errors.muscleGroup}</p> : null}
               </div>
 
