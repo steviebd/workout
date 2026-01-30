@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { removeExerciseFromTemplate } from '../../lib/db/template';
+import { getSession } from '../../lib/session';
 
 interface Params {
   id: string;

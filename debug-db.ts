@@ -1,9 +1,10 @@
 import { schema } from './src/lib/db/index';
 
-async function checkDatabase() {
+function checkDatabase() {
   console.log('Schema tables:', Object.keys(schema));
 }
 
-checkDatabase().catch(console.error);
+checkDatabase();
+console.error('Error checking database');
 
 

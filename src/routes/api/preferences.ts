@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type UpdatePreferencesData, getUserPreferences, upsertUserPreferences } from '../../lib/db/preferences';
 import { getSession } from '../../lib/session';
-import { getUserPreferences, upsertUserPreferences, type UpdatePreferencesData } from '../../lib/db/preferences';
 
 export const Route = createFileRoute('/api/preferences')({
   server: {
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/preferences')({
 
           const preferences = await getUserPreferences(db, session.userId);
 
-          return Response.json(preferences || { weightUnit: 'kg', theme: 'light' });
+          return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy' });
         } catch (err) {
           console.error('Get preferences error:', err);
           const errorMessage = err instanceof Error ? err.message : String(err);
@@ -34,18 +34,19 @@ export const Route = createFileRoute('/api/preferences')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
-          const body = await request.json();
-          const { weightUnit, theme } = body as UpdatePreferencesData;
+        const body = await request.json();
+        const { weightUnit, theme, dateFormat } = body as UpdatePreferencesData;
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+        const db = (env as { DB?: D1Database }).DB;
+        if (!db) {
+          return Response.json({ error: 'Database not available' }, { status: 500 });
+        }
 
-          const preferences = await upsertUserPreferences(db, session.userId, {
-            weightUnit,
-            theme,
-          });
+        const preferences = await upsertUserPreferences(db, session.userId, {
+          weightUnit,
+          theme,
+          dateFormat,
+        });
 
           return Response.json(preferences);
         } catch (err) {

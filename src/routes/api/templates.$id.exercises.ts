@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { addExerciseToTemplate, getTemplateExercises } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
-import { getTemplateExercises, addExerciseToTemplate } from '../../lib/db/template';
 
 export const Route = createFileRoute('/api/templates/$id/exercises')({
   server: {
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           }
 
           const body = await request.json();
-          const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number };
+          const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number; localId?: string };
 
           if (!exerciseId) {
             return Response.json({ error: 'Exercise ID is required' }, { status: 400 });
@@ -48,9 +48,14 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           const templateExercise = await addExerciseToTemplate(
             db,
             params.id,
+            session.userId,
             exerciseId,
             orderIndex ?? 0
           );
+
+          if (!templateExercise) {
+            return Response.json({ error: 'Template not found or does not belong to you' }, { status: 404 });
+          }
 
           return Response.json(templateExercise, { status: 201 });
         } catch (err) {

@@ -1,31 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { Calendar, Plus, Search, X, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { Search, Filter, Plus, Dumbbell, Calendar } from 'lucide-react';
-
-export const Route = createFileRoute('/exercises/_index')({
-  component: Exercises,
-});
-
-const MUSCLE_GROUPS = [
-  'All',
-  'Chest',
-  'Back',
-  'Shoulders',
-  'Biceps',
-  'Triceps',
-  'Forearms',
-  'Core',
-  'Quads',
-  'Hamstrings',
-  'Glutes',
-  'Calves',
-  'Full Body',
-  'Cardio',
-  'Other',
-] as const;
-
-type MuscleGroup = typeof MUSCLE_GROUPS[number];
+import { EmptyExercises } from '@/components/EmptyState';
+import { SkeletonList } from '@/components/LoadingSpinner';
+import { Card } from '~/components/ui/Card';
+import { Button } from '~/components/ui/Button';
+import { Input } from '~/components/ui/Input';
+import { Badge } from '~/components/ui/Badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useToast } from '@/components/ToastProvider';
 
 interface Exercise {
   id: string;
@@ -35,33 +20,88 @@ interface Exercise {
   createdAt: string;
 }
 
+const MUSCLE_GROUPS = [
+  'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Forearms',
+  'Core', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Full Body', 'Cardio', 'Other'
+] as const;
+
 function Exercises() {
   const auth = useAuth();
-  const [redirecting, setRedirecting] = useState(false);
+  const toast = useToast();
+  const { formatDate } = useDateFormat();
+  const [redirecting] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup>('All');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newExercise, setNewExercise] = useState({ name: '', muscleGroup: '', description: '' });
+  const [errors, setErrors] = useState<{ name?: string; muscleGroup?: string }>({});
 
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      setRedirecting(true);
-      window.location.href = '/auth/signin';
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, []);
+
+  const handleCreateClick = useCallback(() => {
+    setShowCreateForm(true);
+  }, []);
+
+  const handleCancelCreate = useCallback(() => {
+    setShowCreateForm(false);
+    setNewExercise({ name: '', muscleGroup: '', description: '' });
+    setErrors({});
+  }, []);
+
+  const handleCreateExercise = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    if (!newExercise.name.trim()) {
+      setErrors({ name: 'Name is required' });
+      return;
     }
-  }, [auth.loading, auth.user]);
-
-  useEffect(() => {
-    if (!auth.loading && auth.user) {
-      fetchExercises();
+    if (!newExercise.muscleGroup) {
+      setErrors({ muscleGroup: 'Muscle group is required' });
+      return;
     }
-  }, [auth.loading, auth.user, search, selectedMuscleGroup]);
 
-  async function fetchExercises() {
+    setCreating(true);
+
+    try {
+      const response = await fetch('/api/exercises', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: newExercise.name,
+          muscleGroup: newExercise.muscleGroup,
+          description: newExercise.description || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data: { message?: string } = await response.json();
+        throw new Error(data.message ?? 'Failed to create exercise');
+      }
+
+      const data: { id: string } = await response.json();
+      toast.success('Exercise created successfully!');
+      setTimeout(() => {
+        window.location.href = `/exercises/${data.id}`;
+      }, 1000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      toast.error(errorMessage);
+    } finally {
+      setCreating(false);
+    }
+  }, [newExercise, toast]);
+
+  const fetchExercises = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (selectedMuscleGroup !== 'All') params.set('muscleGroup', selectedMuscleGroup);
 
       const response = await fetch(`/api/exercises?${params.toString()}`, {
         credentials: 'include',
@@ -76,108 +116,155 @@ function Exercises() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [search]);
+
+  useEffect(() => {
+    if (!auth.loading && !auth.user) {
+      window.location.href = '/auth/signin';
+    }
+  }, [auth.loading, auth.user]);
+
+  useEffect(() => {
+    if (!auth.loading && auth.user) {
+      void fetchExercises();
+    }
+  }, [auth.loading, auth.user, fetchExercises]);
 
   if (auth.loading || redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Redirecting to sign in...</p>
+      <div className={'min-h-screen flex items-center justify-center bg-background'}>
+        <p className={'text-muted-foreground'}>{'Redirecting to sign in...'}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Exercises</h1>
-          <a
-            href="/exercises/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus size={20} />
-            New Exercise
-          </a>
+    <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Exercises</h1>
+          {!showCreateForm && (
+            <Button onClick={handleCreateClick} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              New
+            </Button>
+          )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        {showCreateForm ? <Card className="p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Create Exercise</h2>
+              <Button variant="ghost" size="icon-sm" onClick={handleCancelCreate}>
+                <X size={18} />
+              </Button>
+            </div>
+
+            <form onSubmit={void handleCreateExercise} className="space-y-4">
+              <div>
+                <label htmlFor="exercise-name" className="block text-sm font-medium mb-1">Name *</label>
+                <Input
+                  id="exercise-name"
+                  autoFocus={true}
+                  value={newExercise.name}
+                  onChange={e => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Exercise name"
+                />
+                {errors.name ? <p className="text-sm text-destructive mt-1">{errors.name}</p> : null}
+              </div>
+
+              <div>
+                <label htmlFor="muscle-group" className="block text-sm font-medium mb-1">Muscle Group *</label>
+                <Select value={newExercise.muscleGroup} onValueChange={value => setNewExercise(prev => ({ ...prev, muscleGroup: value }))}>
+                  <SelectTrigger id="muscle-group" className="w-full px-3 py-2 border border-input rounded-lg bg-background">
+                    <SelectValue placeholder="Select muscle group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MUSCLE_GROUPS.map(mg => (
+                      <SelectItem key={mg} value={mg}>{mg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.muscleGroup ? <p className="text-sm text-destructive mt-1">{errors.muscleGroup}</p> : null}
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  id="description"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background resize-none"
+                  rows={2}
+                  value={newExercise.description}
+                  onChange={e => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Optional description"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleCancelCreate} className="flex-1">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={creating} className="flex-1">
+                  {creating ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      Create
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+                          </Card> : null}
+
+        <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              className="pl-10"
+              onChange={handleSearchChange}
               placeholder="Search exercises..."
+              type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
             />
-          </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <select
-              value={selectedMuscleGroup}
-              onChange={(e) => setSelectedMuscleGroup(e.target.value as MuscleGroup)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow appearance-none bg-white"
-            >
-              {MUSCLE_GROUPS.map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
+          <SkeletonList count={6} />
         ) : exercises.length === 0 ? (
-          <div className="text-center py-12">
-            <Dumbbell className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No exercises found</h3>
-            <p className="text-gray-600 mb-4">
-              {search || selectedMuscleGroup !== 'All'
-                ? 'Try adjusting your filters'
-                : 'Get started by creating your first exercise'}
-            </p>
-            {!search && selectedMuscleGroup === 'All' && (
-              <a
-                href="/exercises/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <Plus size={20} />
-                New Exercise
-              </a>
-            )}
-          </div>
+          <EmptyExercises
+            searchActive={!!search}
+            onCreate={handleCreateClick}
+          />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-3">
             {exercises.map((exercise) => (
-              <a
-                key={exercise.id}
-                href={`/exercises/${exercise.id}`}
-                className="block bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-blue-300 transition-all"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900 line-clamp-1">{exercise.name}</h3>
-                  {exercise.muscleGroup && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      {exercise.muscleGroup}
-                    </span>
-                  )}
-                </div>
-                {exercise.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">{exercise.description}</p>
-                )}
-                <div className="flex items-center text-xs text-gray-500">
-                  <Calendar size={14} className="mr-1" />
-                  {new Date(exercise.createdAt).toLocaleDateString()}
-                </div>
-              </a>
+              <Link key={exercise.id} to="/exercises/$id" params={{ id: exercise.id }}>
+                <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold line-clamp-1">{exercise.name}</h3>
+                    {exercise.muscleGroup ? <Badge variant="secondary">{exercise.muscleGroup}</Badge> : null}
+                  </div>
+                  {exercise.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{exercise.description}</p> : null}
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Calendar className="mr-1 h-3 w-3" />
+                      {formatDate(exercise.createdAt)}
+                    </div>
+                    <span className="text-xs text-primary font-medium">View Details</span>
+                  </div>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </main>
   );
 }
+
+export const Route = createFileRoute('/exercises/_index')({
+  component: Exercises,
+});

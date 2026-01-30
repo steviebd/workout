@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { createWorkoutSet } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/sets')({
   server: {
@@ -14,12 +14,13 @@ export const Route = createFileRoute('/api/workouts/sets')({
           }
 
           const body = await request.json();
-          const { workoutExerciseId, setNumber, weight, reps, rpe } = body as {
+          const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
             workoutExerciseId: string;
             setNumber: number;
             weight?: number;
             reps?: number;
             rpe?: number;
+            localId?: string;
           };
 
           if (!workoutExerciseId || setNumber === undefined) {
@@ -34,11 +35,17 @@ export const Route = createFileRoute('/api/workouts/sets')({
           const workoutSet = await createWorkoutSet(
             db,
             workoutExerciseId,
+            session.userId,
             setNumber,
             weight,
             reps,
-            rpe
+            rpe,
+            localId
           );
+
+          if (!workoutSet) {
+            return Response.json({ error: 'Workout exercise not found or does not belong to you' }, { status: 404 });
+          }
 
           return Response.json(workoutSet, { status: 201 });
         } catch (err) {

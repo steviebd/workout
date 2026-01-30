@@ -1,11 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type ExerciseOrder, reorderTemplateExercises } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
-import { reorderTemplateExercises, type ExerciseOrder } from '../../lib/db/template';
-
-interface Params {
-  id: string;
-}
 
 export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
   server: {

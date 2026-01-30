@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import {
+  type ExerciseOrder,
   createWorkoutExercise,
-  removeWorkoutExercise,
-  reorderWorkoutExercises,
   getWorkoutExercises,
-  type ExerciseOrder
+  removeWorkoutExercise,
+  reorderWorkoutExercises
 } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id/exercises')({
   server: {
@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercises = await getWorkoutExercises(db, params.id);
+          const exercises = await getWorkoutExercises(db, params.id, session.userId);
           return Response.json(exercises);
         } catch (err) {
           console.error('Get workout exercises error:', err);
@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           }
 
           const body = await request.json();
-          const { exerciseId, orderIndex, notes } = body as { exerciseId: string; orderIndex: number; notes?: string };
+          const { exerciseId, orderIndex, notes, localId } = body as { exerciseId: string; orderIndex: number; notes?: string; localId?: string };
 
           if (!exerciseId || orderIndex === undefined) {
             return Response.json({ error: 'Exercise ID and order index are required' }, { status: 400 });
@@ -54,10 +54,16 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           const workoutExercise = await createWorkoutExercise(
             db,
             params.id,
+            session.userId,
             exerciseId,
             orderIndex,
-            notes
+            notes,
+            localId
           );
+
+          if (!workoutExercise) {
+            return Response.json({ error: 'Workout not found or does not belong to you' }, { status: 404 });
+          }
 
           return Response.json(workoutExercise, { status: 201 });
         } catch (err) {
@@ -102,7 +108,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
   },
 });
 
-export const Route2 = createFileRoute('/api/workouts/$id/exercises/reorder')({
+export const Route2 = createFileRoute('/api/workouts/$id/exercises/reorder' as const)({
   server: {
     handlers: {
       PUT: async ({ request, params }) => {

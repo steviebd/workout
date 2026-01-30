@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { createDb } from './index';
 import { users } from './schema';
+import { createDb } from './index';
 
 export interface UserFromWorkOS {
   id: string;

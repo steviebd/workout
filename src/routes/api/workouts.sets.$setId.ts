@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type NewWorkoutSet, deleteWorkoutSet, updateWorkoutSet } from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
-import { updateWorkoutSet, deleteWorkoutSet, type NewWorkoutSet } from '../../lib/db/workout';
 
 export const Route = createFileRoute('/api/workouts/sets/$setId')({
   server: {
@@ -13,12 +13,18 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
+          if (!params.setId || typeof params.setId !== 'string') {
+            console.error('Invalid set ID:', params.setId);
+            return Response.json({ error: 'Invalid set ID' }, { status: 400 });
+          }
+
           const body = await request.json();
           const { weight, reps, rpe, isComplete } = body as {
             weight?: number | null;
             reps?: number | null;
             rpe?: number | null;
             isComplete?: boolean;
+            localId?: string;
           };
 
           console.log('Update set request:', {
@@ -72,10 +78,11 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workoutSet = await updateWorkoutSet(db, params.setId, updateData as Partial<NewWorkoutSet>);
+          const workoutSet = await updateWorkoutSet(db, params.setId, session.userId, updateData as Partial<NewWorkoutSet>);
 
           if (!workoutSet) {
-            return Response.json({ error: 'Set not found' }, { status: 404 });
+            console.warn('Set not found or does not belong to user:', { setId: params.setId, userId: session.userId });
+            return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
           return Response.json(workoutSet);
@@ -92,15 +99,21 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
+          if (!params.setId || typeof params.setId !== 'string') {
+            console.error('Invalid set ID for delete:', params.setId);
+            return Response.json({ error: 'Invalid set ID' }, { status: 400 });
+          }
+
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await deleteWorkoutSet(db, params.setId);
+          const deleted = await deleteWorkoutSet(db, params.setId, session.userId);
 
           if (!deleted) {
-            return Response.json({ error: 'Set not found' }, { status: 404 });
+            console.warn('Delete set failed - not found or does not belong to user:', { setId: params.setId, userId: session.userId });
+            return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
           return new Response(null, { status: 204 });

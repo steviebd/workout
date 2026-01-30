@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { type CreateTemplateData, createTemplate, getTemplatesByUserId } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
-import { createTemplate, getTemplatesByUserId, type CreateTemplateData } from '../../lib/db/template';
 
 export const Route = createFileRoute('/api/templates')({
   server: {
@@ -14,11 +14,11 @@ export const Route = createFileRoute('/api/templates')({
           }
 
           const url = new URL(request.url);
-          const search = url.searchParams.get('search') || undefined;
-          const sortBy = url.searchParams.get('sortBy') as 'name' | 'createdAt' | undefined;
+          const search = url.searchParams.get('search') ?? undefined;
+          const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
-          const page = parseInt(url.searchParams.get('page') || '1', 10);
-          const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+          const page = parseInt(url.searchParams.get('page') ?? '1', 10);
+          const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
           const offset = (page - 1) * limit;
 
           const db = (env as { DB?: D1Database }).DB;
@@ -55,7 +55,7 @@ export const Route = createFileRoute('/api/templates')({
           }
 
           const body = await request.json();
-          const { name, description, notes } = body as CreateTemplateData;
+          const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };
 
           if (!name) {
             return Response.json({ error: 'Name is required' }, { status: 400 });
@@ -71,6 +71,7 @@ export const Route = createFileRoute('/api/templates')({
             name,
             description,
             notes,
+            localId,
           });
 
           return Response.json(template, { status: 201 });

@@ -1,7 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+interface LoggedExercise {
+  id: string;
+  name: string;
+  sets: Array<{ isComplete: boolean | null }> | null | undefined;
+}
+
+interface LoggedSet {
+  isComplete: boolean | null;
+}
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import { completeWorkout, getWorkoutWithExercises } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id/complete')({
   server: {
@@ -35,8 +44,8 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             exercises: workout.exercises.map((ex) => ({
               id: ex.id,
               exerciseId: ex.exerciseId,
-              name: ex.exercise?.name || 'Unknown Exercise',
-              muscleGroup: ex.exercise?.muscleGroup || null,
+              name: ex.exercise?.name ?? 'Unknown Exercise',
+              muscleGroup: ex.exercise?.muscleGroup ?? null,
               orderIndex: ex.orderIndex,
               notes: ex.notes,
               sets: ex.sets,
@@ -48,12 +57,12 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             name: response.name,
             completedAt: response.completedAt,
             exercisesCount: response.exercises.length,
-            exercises: response.exercises.map((e: any) => ({
+            exercises: response.exercises.map((e: LoggedExercise) => ({
               id: e.id,
               name: e.name,
               sets: e.sets,
-              setsCount: e.sets?.length || 0,
-              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length || 0
+              setsCount: e.sets?.length ?? 0,
+              completedSetsCount: e.sets?.filter((s: LoggedSet) => s.isComplete).length ?? 0
             }))
           });
 

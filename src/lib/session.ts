@@ -1,4 +1,4 @@
-import { verifyToken, getTokenFromCookie } from './auth';
+import { getTokenFromCookie, verifyToken } from './auth';
 
 const SESSION_COOKIE_NAME = 'session_token';
 
@@ -6,6 +6,11 @@ export interface Session {
   userId: string;
   email: string;
   workosId: string;
+}
+
+function isLocalhost(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 }
 
 export async function getSession(request: Request): Promise<Session | null> {
@@ -24,30 +29,34 @@ export async function getSession(request: Request): Promise<Session | null> {
   };
 }
 
-function createSessionCookie(token: string): string {
-  return `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`;
+function createSessionCookie(token: string, isDev: boolean): string {
+  const secure = isDev ? '' : ' Secure';
+  return `${SESSION_COOKIE_NAME}=${token}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=604800`;
 }
 
-function createClearCookie(): string {
-  return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+function createClearCookie(isDev: boolean): string {
+  const secure = isDev ? '' : ' Secure';
+  return `${SESSION_COOKIE_NAME}=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
-export function createSessionResponse(token: string, redirectTo: string = '/'): Response {
+export function createSessionResponse(token: string, request: Request, redirectTo = '/'): Response {
+  const isDev = isLocalhost(request);
   return new Response(null, {
     status: 302,
     headers: {
-      'Set-Cookie': createSessionCookie(token),
-      Location: redirectTo,
+      'Set-Cookie': createSessionCookie(token, isDev),
+      'Location': redirectTo,
     },
   });
 }
 
-export function destroySessionResponse(redirectTo: string = '/'): Response {
+export function destroySessionResponse(request: Request, redirectTo = '/'): Response {
+  const isDev = isLocalhost(request);
   return new Response(null, {
     status: 302,
     headers: {
-      'Set-Cookie': createClearCookie(),
-      Location: redirectTo,
+      'Set-Cookie': createClearCookie(isDev),
+      'Location': redirectTo,
     },
   });
 }

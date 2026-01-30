@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
 import { env } from 'cloudflare:workers';
-import { createSessionResponse } from '../../../lib/session';
 import { createToken, extractSessionIdFromAccessToken } from '../../../lib/auth';
 import { getOrCreateUser } from '../../../lib/db/user';
+import { createSessionResponse } from '../../../lib/session';
 
-const WORKOS_API_KEY = process.env.WORKOS_API_KEY;
-const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID;
+const {WORKOS_API_KEY} = process.env;
+const {WORKOS_CLIENT_ID} = process.env;
 
 export const Route = createFileRoute('/api/auth/callback')({
   server: {
@@ -32,17 +32,25 @@ export const Route = createFileRoute('/api/auth/callback')({
             });
           }
 
-          const workos = new WorkOS(WORKOS_API_KEY!);
+          if (!WORKOS_API_KEY || !WORKOS_CLIENT_ID) {
+            console.error('WorkOS configuration missing');
+            return new Response(null, {
+              status: 302,
+              headers: { Location: '/?error=config_missing' },
+            });
+          }
+
+          const workos = new WorkOS(WORKOS_API_KEY);
           const { user, accessToken } = await workos.userManagement.authenticateWithCode({
             code,
-            clientId: WORKOS_CLIENT_ID!,
+            clientId: WORKOS_CLIENT_ID,
           });
 
           const localUser = await getOrCreateUser(db, {
             id: user.id,
             email: user.email,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
+            firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '',
           });
 
           const workosSessionId = extractSessionIdFromAccessToken(accessToken) ?? undefined;
@@ -51,19 +59,25 @@ export const Route = createFileRoute('/api/auth/callback')({
             {
               id: user.id,
               email: user.email,
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
+            firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '',
             },
             localUser.id,
             workosSessionId
           );
 
-          return createSessionResponse(token, '/');
+          return createSessionResponse(token, request, '/');
         } catch (err) {
           console.error('Auth callback error:', err);
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+          console.error('Auth callback error details:', {
+            message: errorMessage,
+            stack: err instanceof Error ? err.stack : undefined,
+            code: code ? 'present' : 'missing',
+          });
           return new Response(null, {
             status: 302,
-            headers: { Location: '/?error=auth_failed' },
+            headers: { Location: `/?error=auth_failed&details=${encodeURIComponent(errorMessage)}` },
           });
         }
       },

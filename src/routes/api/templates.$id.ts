@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import {
+  type UpdateTemplateData,
   getTemplateById,
-  updateTemplate,
+  getTemplateExercises,
   softDeleteTemplate,
-  type UpdateTemplateData
+  updateTemplate
 } from '../../lib/db/template';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {
@@ -29,7 +30,9 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          return Response.json(template);
+          const exercises = await getTemplateExercises(db, params.id, session.userId);
+
+          return Response.json({ ...template, exercises });
         } catch (err) {
           console.error('Get template error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });
@@ -43,7 +46,7 @@ export const Route = createFileRoute('/api/templates/$id')({
           }
 
           const body = await request.json();
-          const { name, description, notes } = body as UpdateTemplateData;
+          const { name, description, notes } = body as UpdateTemplateData & { localId?: string };
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

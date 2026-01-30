@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/unit/**/*.spec.ts'],
+    setupFiles: ['./tests/unit/setup-indexeddb.ts'],
   },
   plugins: [
     viteTsConfigPaths({

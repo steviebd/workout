@@ -1,12 +1,22 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+interface LoggedExercise {
+  id: string;
+  name: string;
+  muscleGroup: string | null;
+  sets: Array<{ isComplete: boolean | null }> | null | undefined;
+}
+
+interface LoggedSet {
+  isComplete: boolean | null;
+}
 import { env } from 'cloudflare:workers';
-import { getSession } from '../../lib/session';
 import {
-  getWorkoutWithExercises,
-  updateWorkout,
+  type UpdateWorkoutData,
   deleteWorkout,
-  type UpdateWorkoutData
+  getWorkoutWithExercises,
+  updateWorkout
 } from '../../lib/db/workout';
+import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id')({
   server: {
@@ -23,19 +33,27 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workout = await getWorkoutWithExercises(db, params.id, session.userId);
+           const workout = await getWorkoutWithExercises(db, params.id, session.userId);
 
-          if (!workout) {
-            return Response.json({ error: 'Workout not found' }, { status: 404 });
-          }
+           if (!workout) {
+             console.log('API: Workout not found for id:', params.id, 'userId:', session.userId);
+             return Response.json({ error: 'Workout not found' }, { status: 404 });
+           }
+
+           console.log('API: Workout found:', {
+             workoutId: workout.id,
+             workoutUserId: workout.userId,
+             requestUserId: session.userId,
+             match: workout.userId === session.userId,
+           });
 
           const response = {
             ...workout,
             exercises: workout.exercises.map(ex => ({
               id: ex.id,
               exerciseId: ex.exerciseId,
-              name: ex.exercise?.name || 'Unknown Exercise',
-              muscleGroup: ex.exercise?.muscleGroup || null,
+              name: ex.exercise?.name ?? 'Unknown Exercise',
+              muscleGroup: ex.exercise?.muscleGroup ?? null,
               orderIndex: ex.orderIndex,
               notes: ex.notes,
               sets: ex.sets,
@@ -48,12 +66,12 @@ export const Route = createFileRoute('/api/workouts/$id')({
             completedAt: response.completedAt,
             startedAt: response.startedAt,
             exercisesCount: response.exercises.length,
-            exercises: response.exercises.map((e: any) => ({
+            exercises: response.exercises.map((e: LoggedExercise) => ({
               id: e.id,
               name: e.name,
               muscleGroup: e.muscleGroup,
-              setsCount: e.sets?.length || 0,
-              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length || 0
+              setsCount: e.sets?.length ?? 0,
+              completedSetsCount: e.sets?.filter((s: LoggedSet) => s.isComplete).length ?? 0
             }))
           });
 
@@ -76,7 +94,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
           }
 
           const body = await request.json();
-          const { name, notes, completedAt } = body as UpdateWorkoutData;
+          const { name, notes, completedAt } = body as UpdateWorkoutData & { localId?: string };
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

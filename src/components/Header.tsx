@@ -1,177 +1,217 @@
-import { Link } from '@tanstack/react-router'
+'use client'
 
-import { useState } from 'react'
-import {
-  ChevronDown,
-  ChevronRight,
-  Home,
-  Menu,
-  Network,
-  SquareFunction,
-  StickyNote,
-  X,
-} from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { Button } from './ui/Button'
+import { useAuth } from '@/routes/__root'
+import { useUnit } from '@/lib/context/UnitContext'
+import { useDateFormat } from '@/lib/context/DateFormatContext'
 
-export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [groupedExpanded, setGroupedExpanded] = useState<
-    Record<string, boolean>
-  >({})
+export function Header() {
+  const { user, loading: authLoading, signOut, isOnline, isSyncing, pendingCount } = useAuth()
+  const [streak] = useState(7)
+  const [showMenu, setShowMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const settingsRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const { weightUnit, setWeightUnit } = useUnit()
+  const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleSignOut = () => {
+    setShowMenu(false)
+    void signOut()
+  }
+
+  const handleUnitToggle = () => {
+    const newUnit = weightUnit === 'kg' ? 'lbs' : 'kg'
+    void setWeightUnit(newUnit)
+  }
+
+  const handleDateFormatChange = (format: 'dd/mm/yyyy' | 'mm/dd/yyyy') => {
+    void setDateFormat(format)
+  }
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
-    <>
-      <header className="p-4 flex items-center bg-gray-800 text-white shadow-lg">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="Open menu"
-        >
-          <Menu size={24} />
-        </button>
-        <h1 className="ml-4 text-xl font-semibold">
-          <Link to="/">
-            <img
-              src="/tanstack-word-logo-white.svg"
-              alt="TanStack Logo"
-              className="h-10"
-            />
-          </Link>
-        </h1>
-      </header>
-
-      <aside
-        className={`fixed top-0 left-0 h-full w-80 bg-gray-900 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold">Navigation</h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label="Close menu"
-          >
-            <X size={24} />
-          </button>
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <Flame className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="text-lg font-bold tracking-tight">Fit Workout</span>
         </div>
 
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <Link
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <Home size={20} />
-            <span className="font-medium">Home</span>
-          </Link>
-
-          {/* Demo Links Start */}
-
-          <Link
-            to="/demo/start/server-funcs"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <SquareFunction size={20} />
-            <span className="font-medium">Start - Server Functions</span>
-          </Link>
-
-          <Link
-            to="/demo/start/api-request"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <Network size={20} />
-            <span className="font-medium">Start - API Request</span>
-          </Link>
-
-          <div className="flex flex-row justify-between">
-            <Link
-              to="/demo/start/ssr"
-              onClick={() => setIsOpen(false)}
-              className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-              activeProps={{
-                className:
-                  'flex-1 flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-              }}
-            >
-              <StickyNote size={20} />
-              <span className="font-medium">Start - SSR Demos</span>
-            </Link>
-            <button
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-              onClick={() =>
-                setGroupedExpanded((prev) => ({
-                  ...prev,
-                  StartSSRDemo: !prev.StartSSRDemo,
-                }))
-              }
-            >
-              {groupedExpanded.StartSSRDemo ? (
-                <ChevronDown size={20} />
-              ) : (
-                <ChevronRight size={20} />
-              )}
-            </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+            <Flame className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">{streak}</span>
           </div>
-          {groupedExpanded.StartSSRDemo && (
-            <div className="flex flex-col ml-4">
-              <Link
-                to="/demo/start/ssr/spa-mode"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">SPA Mode</span>
-              </Link>
 
-              <Link
-                to="/demo/start/ssr/full-ssr"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Full SSR</span>
-              </Link>
-
-              <Link
-                to="/demo/start/ssr/data-only"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Data Only</span>
-              </Link>
+          {!isOnline && (
+            <div className="flex items-center gap-1 rounded-full bg-warning/20 px-2 py-1 text-warning">
+              <WifiOff className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">Offline</span>
             </div>
           )}
 
-          {/* Demo Links End */}
-        </nav>
-      </aside>
-    </>
+          {isSyncing ? (
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span className="text-xs font-medium">Syncing...</span>
+            </div>
+          ) : null}
+
+          {isOnline && pendingCount > 0 ? (
+            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+              <CloudUpload className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">{pendingCount} pending</span>
+            </div>
+          ) : null}
+
+          <div className="relative" ref={settingsRef}>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary active:scale-95 transition-colors"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+
+            {showSettings ? (
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border bg-card py-2 shadow-lg">
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-medium text-foreground">Settings</p>
+                </div>
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="text-sm text-muted-foreground mb-2">Weight Unit</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleUnitToggle}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                        weightUnit === 'kg'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Kilograms (kg)
+                    </button>
+                    <button
+                      onClick={handleUnitToggle}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                        weightUnit === 'lbs'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Pounds (lbs)
+                    </button>
+                  </div>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-sm text-muted-foreground mb-2">Date Format</p>
+                  {dateLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDateFormatChange('dd/mm/yyyy')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                          dateFormat === 'dd/mm/yyyy'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        DD/MM/YY
+                      </button>
+                      <button
+                        onClick={() => handleDateFormatChange('mm/dd/yyyy')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                          dateFormat === 'mm/dd/yyyy'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        MM/DD/YY
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="relative" ref={menuRef}>
+            {authLoading ? (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
+                <div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
+              </div>
+            ) : user ? (
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground active:scale-95 transition-colors"
+              >
+                {user.name ? (
+                  <span className="text-sm font-medium">
+                    {getUserInitials(user.name)}
+                  </span>
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
+              </button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { void navigate({ to: '/auth/signin' }) }}
+              >
+                Sign In
+              </Button>
+            )}
+
+            {showMenu && user ? (
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border bg-card py-2 shadow-lg">
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-medium text-foreground truncate">{user.name || 'User'}</p>
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 active:scale-95 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </header>
   )
 }

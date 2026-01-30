@@ -1,6 +1,15 @@
-import { eq, and, like, desc, asc } from 'drizzle-orm';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { and, asc, desc, eq, like } from 'drizzle-orm';
+import { type NewTemplate, type NewTemplateExercise, type Template, type TemplateExercise, exercises, templateExercises, templates } from './schema';
 import { createDb } from './index';
-import { templates, templateExercises, exercises, type Template, type NewTemplate, type TemplateExercise, type NewTemplateExercise } from './schema';
+
+export interface TemplateExerciseWithDetails extends TemplateExercise {
+  exercise?: {
+    id: string;
+    name: string;
+    muscleGroup: string | null;
+  };
+}
 
 export type { Template, NewTemplate, TemplateExercise, NewTemplateExercise };
 
@@ -8,6 +17,7 @@ export interface CreateTemplateData {
   name: string;
   description?: string;
   notes?: string;
+  localId?: string;
 }
 
 export interface UpdateTemplateData {
@@ -18,7 +28,7 @@ export interface UpdateTemplateData {
 
 export interface GetTemplatesOptions {
   search?: string;
-  sortBy?: 'name' | 'createdAt';
+  sortBy?: 'createdAt' | 'name';
   sortOrder?: 'ASC' | 'DESC';
   limit?: number;
   offset?: number;
@@ -26,14 +36,6 @@ export interface GetTemplatesOptions {
 
 export interface TemplateWithExerciseCount extends Template {
   exerciseCount: number;
-}
-
-export interface TemplateExerciseWithDetails extends TemplateExercise {
-  exercise?: {
-    id: string;
-    name: string;
-    muscleGroup: string | null;
-  };
 }
 
 export async function createTemplate(
@@ -49,11 +51,12 @@ export async function createTemplate(
       name: data.name,
       description: data.description,
       notes: data.notes,
+      localId: data.localId,
     })
     .returning()
     .get();
 
-  return template as Template;
+  return template;
 }
 
 export async function getTemplateById(
@@ -69,7 +72,7 @@ export async function getTemplateById(
     .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
     .get();
 
-  return template ? (template as Template) : null;
+  return template ?? null;
 }
 
 export async function getTemplatesByUserId(
@@ -87,7 +90,7 @@ export async function getTemplatesByUserId(
     offset,
   } = options;
 
-  let conditions = [eq(templates.userId, userId), eq(templates.isDeleted, false)];
+  const conditions = [eq(templates.userId, userId), eq(templates.isDeleted, false)];
 
   if (search) {
     conditions.push(like(templates.name, `%${search}%`));
@@ -154,7 +157,8 @@ export async function updateTemplate(
     .returning()
     .get();
 
-  return updated ? (updated as Template) : null;
+   
+  return updated ?? null;
 }
 
 export async function softDeleteTemplate(
@@ -176,6 +180,12 @@ export async function softDeleteTemplate(
   return result.success;
 }
 
+/**
+ * Creates a deep copy of a template including all exercises with their order.
+ * Fetches original template and exercises, creates new template with "(Copy)" suffix,
+ * then copies each exercise reference preserving the original order index.
+ * Used when user wants to modify an existing template without affecting the original.
+ */
 export async function copyTemplate(
   db: D1Database,
   templateId: string,
@@ -221,16 +231,28 @@ export async function copyTemplate(
     await drizzleDb.insert(templateExercises).values(newExercises).run();
   }
 
-  return newTemplate as Template;
+  return newTemplate;
 }
 
 export async function addExerciseToTemplate(
   db: D1Database,
   templateId: string,
+  userId: string,
   exerciseId: string,
   orderIndex: number
-): Promise<TemplateExercise> {
+): Promise<TemplateExercise | null> {
   const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select({ id: templates.id })
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
+    .get();
+
+  if (!template) {
+    console.log('addExerciseToTemplate: Template not found or does not belong to user');
+    return null;
+  }
 
   const templateExercise = await drizzleDb
     .insert(templateExercises)
@@ -242,7 +264,7 @@ export async function addExerciseToTemplate(
     .returning()
     .get();
 
-  return templateExercise as TemplateExercise;
+  return templateExercise;
 }
 
 export async function removeExerciseFromTemplate(
@@ -317,6 +339,11 @@ export interface ExerciseOrder {
   orderIndex: number;
 }
 
+/**
+ * Reorders exercises within a template by updating their orderIndex values.
+ * Validates template ownership first, then applies all order updates in sequence.
+ * Batch update ensures atomic reordering - either all succeed or none do.
+ */
 export async function reorderTemplateExercises(
   db: D1Database,
   templateId: string,
@@ -335,28 +362,44 @@ export async function reorderTemplateExercises(
     return false;
   }
 
-  for (const order of exerciseOrders) {
-    await drizzleDb
+  const updates = exerciseOrders.map(order =>
+    drizzleDb
       .update(templateExercises)
       .set({ orderIndex: order.orderIndex })
       .where(and(
         eq(templateExercises.templateId, templateId),
         eq(templateExercises.exerciseId, order.exerciseId)
       ))
-      .run();
-  }
+      .run()
+  );
+
+  await Promise.all(updates);
 
   return true;
 }
 
 export async function deleteAllTemplateExercises(
   db: D1Database,
-  templateId: string
-): Promise<void> {
+  templateId: string,
+  userId: string
+): Promise<boolean> {
   const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select({ id: templates.id })
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.userId, userId)))
+    .get();
+
+  if (!template) {
+    console.log('deleteAllTemplateExercises: Template not found or does not belong to user');
+    return false;
+  }
 
   await drizzleDb
     .delete(templateExercises)
     .where(eq(templateExercises.templateId, templateId))
     .run();
+
+  return true;
 }

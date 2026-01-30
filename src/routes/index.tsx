@@ -1,38 +1,169 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useAuth } from './__root'
+import { StreakCard } from '~/components/dashboard/StreakCard'
+import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
+import { QuickActions } from '~/components/dashboard/QuickActions'
+import { RecentPRs } from '~/components/dashboard/RecentPRs'
+import { Skeleton } from '~/components/ui/Skeleton'
 
-export const Route = createFileRoute('/')({
-  component: Index,
-})
+interface WorkoutHistoryStats {
+  totalWorkouts: number
+  thisWeek: number
+  thisMonth: number
+  totalVolume: number
+  totalSets: number
+}
 
-function Index() {
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Fit Workout App</h1>
-        <p className="text-gray-600 mb-8">Your personal workout tracking app</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <a href="/exercises" className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Exercises</h2>
-            <p className="text-gray-600">Create and manage your exercises</p>
-          </a>
-          
-          <a href="/templates" className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Templates</h2>
-            <p className="text-gray-600">Create workout templates</p>
-          </a>
-          
-          <a href="/workouts/new" className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Start Workout</h2>
-            <p className="text-gray-600">Begin a new workout session</p>
-          </a>
+interface Workout {
+  id: string
+  name: string
+  startedAt: string
+  completedAt: string | null
+  createdAt: string
+}
+
+interface PersonalRecord {
+  id: string
+  exerciseName: string
+  weight: number
+  date: string
+  improvement: number
+}
+
+interface WorkoutTemplate {
+  id: string
+  name: string
+  exerciseCount: number
+}
+
+interface DashboardData {
+  stats: WorkoutHistoryStats
+  recentWorkouts: Workout[]
+  prCount: number
+  personalRecords: PersonalRecord[]
+  templates: WorkoutTemplate[]
+}
+
+function Dashboard() {
+  const auth = useAuth()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!auth.loading && !auth.user) {
+      window.location.href = '/auth/signin'
+      return
+    }
+
+    if (!auth.user) return
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        const [statsRes, workoutsRes, prCountRes, templatesRes] = await Promise.all([
+          fetch('/api/workouts/stats', { credentials: 'include' }),
+          fetch('/api/workouts?limit=5&sortBy=startedAt&sortOrder=DESC', { credentials: 'include' }),
+          fetch('/api/workouts/pr-count', { credentials: 'include' }),
+          fetch('/api/templates', { credentials: 'include' }),
+        ])
+
+        if (statsRes.status === 401 || workoutsRes.status === 401 || prCountRes.status === 401) {
+          window.location.href = '/auth/signin'
+          return
+        }
+
+        if (!statsRes.ok || !workoutsRes.ok || !prCountRes.ok) {
+          throw new Error('Failed to fetch dashboard data')
+        }
+
+        const stats: WorkoutHistoryStats = await statsRes.json()
+        const workouts: Workout[] = await workoutsRes.json()
+        const prCountData: { count: number } = await prCountRes.json()
+        const templates: WorkoutTemplate[] = await templatesRes.json()
+
+        const personalRecords: PersonalRecord[] = [
+          { id: '1', exerciseName: 'Bench Press', weight: 225, date: '2 days ago', improvement: 10 },
+          { id: '2', exerciseName: 'Squat', weight: 315, date: '1 week ago', improvement: 15 },
+          { id: '3', exerciseName: 'Deadlift', weight: 405, date: '2 weeks ago', improvement: 20 },
+        ]
+
+        setData({
+          stats,
+          recentWorkouts: workouts,
+          prCount: prCountData.count,
+          personalRecords,
+          templates,
+        })
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void fetchDashboardData()
+  }, [auth.loading, auth.user])
+
+  if (auth.loading || loading) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
         </div>
-        
-        <div className="mt-8 p-6 bg-white rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
-          <p className="text-gray-600">No workouts yet. Start your first workout!</p>
-        </div>
+        <Skeleton className="h-[120px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[200px] rounded-xl" />
+        <Skeleton className="h-[150px] rounded-xl" />
       </div>
-    </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-destructive p-4">{error}</div>
+      </div>
+    )
+  }
+
+  const stats = data?.stats ?? { totalWorkouts: 0, thisWeek: 0, thisMonth: 0, totalVolume: 0, totalSets: 0 }
+  const personalRecords = data?.personalRecords ?? []
+  const templates = data?.templates ?? []
+
+  const today = new Date()
+  const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening'
+
+  return (
+    <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">{greeting}</h1>
+          <p className="text-muted-foreground">Ready to crush your workout?</p>
+        </div>
+
+        <div className="space-y-4">
+          <StreakCard 
+            currentStreak={7}
+            longestStreak={14}
+            weeklyWorkouts={stats.thisWeek}
+            totalWorkouts={stats.totalWorkouts}
+          />
+          <VolumeSummary 
+            totalVolume={stats.totalVolume}
+            weeklyVolume={stats.totalVolume / 4}
+            volumeGoal={50000}
+            volumeChange={12}
+          />
+          <QuickActions templates={templates} />
+          <RecentPRs records={personalRecords} />
+        </div>
+    </main>
   )
 }
+
+export const Route = createFileRoute('/')({
+  component: Dashboard,
+})

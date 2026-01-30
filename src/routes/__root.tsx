@@ -1,28 +1,187 @@
-import { HeadContent, Scripts, createRootRoute, Link, useRouter } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+/* eslint-disable import/no-unassigned-import */
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { useLocation } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useLocation , useNavigate } from '@tanstack/react-router'
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 import '../styles.css'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ToastProvider } from '@/components/ToastProvider'
+import { Header } from '@/components/Header'
+import { BottomNav } from '@/components/BottomNav'
+import { UnitProvider } from '@/lib/context/UnitContext'
+import { DateFormatProvider } from '@/lib/context/DateFormatContext'
+import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
-type User = { id: string; email: string; name: string } | null;
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: true,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
-const AuthContext = createContext<{
+type User = { id: string; email: string; name: string; workosId?: string } | null;
+
+interface AuthContextType {
   user: User;
   loading: boolean;
   setUser: (user: User) => void;
   signOut: () => void;
-}>({
+  isOnline: boolean;
+  isSyncing: boolean;
+  pendingCount: number;
+}
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   setUser: () => {},
   signOut: () => {},
+  isOnline: true,
+  isSyncing: false,
+  pendingCount: 0,
 });
 
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+function RootDocument({ children }: { readonly children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Client-only sync state to avoid SSR issues with QueryClient
+  const [syncState, setSyncState] = useState({
+    isOnline: true,
+    isSyncing: false,
+    pendingCount: 0,
+  });
+
+  const signOut = useCallback(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      void fetch('/auth/signout', { method: 'GET', credentials: 'include' }).catch(() => {});
+    }
+    void clearCachedUser();
+    setUser(null);
+    void navigate({ to: '/' });
+  }, [navigate]);
+
+  // Initialize sync state on client only
+  useEffect(() => {
+    setSyncState({
+      isOnline: navigator.onLine,
+      isSyncing: false,
+      pendingCount: 0,
+    });
+  }, []);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        
+        if (response.ok) {
+          const userData = (await response.json()) as User;
+          if (userData) {
+            setUser(userData);
+            await cacheUser({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name,
+              workosId: userData.workosId ?? '',
+              cachedAt: new Date(),
+            });
+          } else {
+            setUser(null);
+          }
+        } else if (response.status === 401) {
+          await clearCachedUser();
+          setUser(null);
+        } else {
+          const cachedUser = await getCachedUser();
+          if (cachedUser) {
+            setUser({
+              id: cachedUser.id,
+              email: cachedUser.email,
+              name: cachedUser.name,
+              workosId: cachedUser.workosId,
+            });
+          } else {
+            setUser(null);
+          }
+        }
+      } catch {
+        const cachedUser = await getCachedUser();
+        if (cachedUser) {
+          setUser({
+            id: cachedUser.id,
+            email: cachedUser.email,
+            name: cachedUser.name,
+            workosId: cachedUser.workosId,
+          });
+        } else {
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    void checkAuth();
+  }, [location.pathname]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+    	<AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
+			<html lang={'en'}>
+				<head>
+					<HeadContent />
+				</head>
+				<body className={'min-h-screen bg-background font-sans antialiased'}>
+					<div className={'min-h-screen flex flex-col'}>
+						<UnitProvider>
+							<DateFormatProvider>
+								<Header />
+								<main className={'flex-1 pb-20'}>
+									<div className="mx-auto max-w-lg px-4">
+										<ErrorBoundary>
+											<ToastProvider>
+												{children}
+											</ToastProvider>
+										</ErrorBoundary>
+									</div>
+								</main>
+								<BottomNav />
+							</DateFormatProvider>
+						</UnitProvider>
+					</div>
+					<TanStackDevtools
+						config={{
+                		position: 'bottom-right',
+              		}}
+						plugins={[
+                		{
+                  		name: 'Tanstack Router',
+                  		render: <TanStackRouterDevtoolsPanel />,
+                	},
+              	]}
+					/>
+					<Scripts />
+				</body>
+			</html>
+     </AuthContext.Provider>
+    </QueryClientProvider>
+  		)
+  }
 
 export const Route = createRootRoute({
   head: () => ({
@@ -42,108 +201,3 @@ export const Route = createRootRoute({
 
   shellComponent: RootDocument,
 })
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(null);
-  const [loading, setLoading] = useState(true);
-  const location = useLocation();
-  const router = useRouter();
-
-  const signOut = useCallback(() => {
-    setUser(null);
-    fetch('/auth/signout', { method: 'GET', credentials: 'include' });
-    router.navigate({ to: '/' });
-  }, [router]);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
-        if (response.ok) {
-          const userData = await response.json() as { id: string; email: string; name: string };
-          setUser(userData);
-        } else {
-          setUser(null);
-        }
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAuth();
-  }, [location.pathname]);
-
-  return (
-      <AuthContext.Provider value={{ user, loading, setUser, signOut }}>
-        <html lang="en">
-          <head>
-            <HeadContent />
-          </head>
-          <body className="min-h-screen bg-gray-50">
-            <div className="min-h-screen flex flex-col">
-              <header className="bg-white shadow">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex justify-between h-16">
-                    <div className="flex">
-                      <Link to="/" className="flex-shrink-0 flex items-center">
-                        <span className="text-xl font-bold text-gray-900">Fit Workout</span>
-                      </Link>
-                      <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <Link to="/exercises" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                          Exercises
-                        </Link>
-                        <Link to="/templates" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                          Templates
-                        </Link>
-                        <Link to="/workouts/new" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                          Start Workout
-                        </Link>
-                        <Link to="/history" className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                          History
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      {loading ? (
-                        <span className="text-sm text-gray-500">Loading...</span>
-                      ) : user ? (
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm text-gray-700">{user.name}</span>
-                          <button
-                            onClick={signOut}
-                            className="text-sm text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer p-0"
-                          >
-                            Sign Out
-                          </button>
-                        </div>
-                      ) : (
-                        <a href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-500">
-                          Sign In
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </header>
-              <main className="flex-1">
-                {children}
-              </main>
-            </div>
-            <TanStackDevtools
-              config={{
-                position: 'bottom-right',
-              }}
-              plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-              ]}
-            />
-            <Scripts />
-          </body>
-        </html>
-      </AuthContext.Provider>
-  )
-}
