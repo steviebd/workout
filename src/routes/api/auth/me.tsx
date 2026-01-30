@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/auth/me')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
           return Response.json({
-            id: session.userId,
+            id: session.workosId,
             email: session.email,
             name: session.email.split('@')[0],
           });

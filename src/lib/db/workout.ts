@@ -67,14 +67,14 @@ export interface LastWorkoutData {
 
 export async function createWorkout(
   db: D1Database,
-  data: CreateWorkoutData & { userId: string }
+  data: CreateWorkoutData & { workosId: string }
 ): Promise<Workout> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .insert(workouts)
     .values({
-      userId: data.userId,
+      workosId: data.workosId,
       name: data.name,
       templateId: data.templateId,
       notes: data.notes,
@@ -89,7 +89,7 @@ export async function createWorkout(
 
 export async function getLastWorkoutSetsForExercises(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseIds: string[]
 ): Promise<Map<string, LastWorkoutSetData[]>> {
   if (exerciseIds.length === 0) {
@@ -108,7 +108,7 @@ export async function getLastWorkoutSetsForExercises(
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       inArray(workoutExercises.exerciseId, exerciseIds),
       isNotNull(workoutSets.completedAt)
     ))
@@ -119,7 +119,14 @@ export async function getLastWorkoutSetsForExercises(
     return new Map();
   }
 
-  const workoutExerciseIds = [...new Set(recentWorkoutExercises.map(r => r.workoutExerciseId))];
+  const latestWeByExercise = new Map<string, string>();
+  for (const rwe of recentWorkoutExercises) {
+    if (!latestWeByExercise.has(rwe.exerciseId)) {
+      latestWeByExercise.set(rwe.exerciseId, rwe.workoutExerciseId);
+    }
+  }
+
+  const workoutExerciseIds = [...latestWeByExercise.values()];
 
   const sets = await drizzleDb
     .select({
@@ -134,31 +141,22 @@ export async function getLastWorkoutSetsForExercises(
     .orderBy(workoutSets.setNumber)
     .all();
 
+  const setsByWe = new Map<string, LastWorkoutSetData[]>();
+  for (const s of sets) {
+    const arr = setsByWe.get(s.workoutExerciseId) ?? [];
+    arr.push({
+      setNumber: s.setNumber,
+      weight: s.weight,
+      reps: s.reps,
+      rpe: s.rpe,
+    });
+    setsByWe.set(s.workoutExerciseId, arr);
+  }
+
   const result = new Map<string, LastWorkoutSetData[]>();
-
   for (const exerciseId of exerciseIds) {
-    const filtered = recentWorkoutExercises
-      .filter(rwe => rwe.exerciseId === exerciseId)
-      .sort((a, b) => {
-        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-        return dateB - dateA;
-      });
-
-    if (filtered.length > 0) {
-      const mostRecentWorkoutExercise = filtered[0];
-      const exerciseSets = sets
-        .filter(s => s.workoutExerciseId === mostRecentWorkoutExercise.workoutExerciseId)
-        .map(s => ({
-          setNumber: s.setNumber,
-          weight: s.weight,
-          reps: s.reps,
-          rpe: s.rpe,
-        }));
-      result.set(exerciseId, exerciseSets);
-    } else {
-      result.set(exerciseId, []);
-    }
+    const weId = latestWeByExercise.get(exerciseId);
+    result.set(exerciseId, weId ? (setsByWe.get(weId) ?? []) : []);
   }
 
   return result;
@@ -167,7 +165,7 @@ export async function getLastWorkoutSetsForExercises(
 export async function getWorkoutExercises(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<WorkoutExerciseWithDetails[]> {
   const drizzleDb = createDb(db);
 
@@ -203,7 +201,7 @@ export async function getWorkoutExercises(
     .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
     .where(and(
       eq(workoutExercises.workoutId, workoutId),
-      eq(exercises.userId, userId),
+      eq(exercises.workosId, workosId),
       eq(exercises.isDeleted, false)
     ))
     .orderBy(workoutExercises.orderIndex, workoutSets.setNumber)
@@ -237,14 +235,14 @@ export async function getWorkoutExercises(
 
 export async function createWorkoutWithDetails(
   db: D1Database,
-  data: CreateWorkoutData & { userId: string; exerciseIds: string[] }
+  data: CreateWorkoutData & { workosId: string; exerciseIds: string[] }
 ): Promise<WorkoutWithExercises> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .insert(workouts)
     .values({
-      userId: data.userId,
+      workosId: data.workosId,
       name: data.name,
       templateId: data.templateId,
       notes: data.notes,
@@ -266,7 +264,7 @@ export async function createWorkoutWithDetails(
     .returning()
     .all();
 
-  const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.userId, data.exerciseIds);
+  const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.workosId, data.exerciseIds);
 
   const setsToInsert: NewWorkoutSet[] = [];
 
@@ -299,7 +297,7 @@ export async function createWorkoutWithDetails(
     await drizzleDb.insert(workoutSets).values(setsToInsert).run();
   }
 
-  const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.userId);
+  const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);
 
   return {
     ...workout,
@@ -310,14 +308,14 @@ export async function createWorkoutWithDetails(
 export async function getWorkoutById(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<Workout | null> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   return workout ?? null;
@@ -331,14 +329,14 @@ export async function getWorkoutById(
 export async function getWorkoutWithExercises(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<WorkoutWithExercises | null> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   if (!workout) {
@@ -409,16 +407,16 @@ export async function getWorkoutWithExercises(
 
 export interface WorkoutWithExerciseCount {
   id: string;
-  userId: string;
+  workosId: string;
   name: string;
   startedAt: string;
   completedAt: string | null;
   exerciseCount: number;
 }
 
-export async function getWorkoutsByUserId(
+export async function getWorkoutsByWorkosId(
   db: D1Database,
-  userId: string,
+  workosId: string,
   options: GetWorkoutsOptions = {}
 ): Promise<WorkoutWithExerciseCount[]> {
   const drizzleDb = createDb(db);
@@ -426,7 +424,7 @@ export async function getWorkoutsByUserId(
   const { sortBy = 'startedAt', sortOrder = 'DESC', limit, offset, fromDate, toDate, exerciseId } = options;
 
   const conditions = [
-    eq(workouts.userId, userId),
+    eq(workouts.workosId, workosId),
     isNotNull(workouts.completedAt),
   ];
 
@@ -445,7 +443,7 @@ export async function getWorkoutsByUserId(
   let query = drizzleDb
     .select({
       id: workouts.id,
-      userId: workouts.userId,
+      workosId: workouts.workosId,
       name: workouts.name,
       startedAt: workouts.startedAt,
       completedAt: workouts.completedAt,
@@ -482,7 +480,7 @@ export async function getWorkoutsByUserId(
 export async function updateWorkout(
   db: D1Database,
   workoutId: string,
-  userId: string,
+  workosId: string,
   data: UpdateWorkoutData
 ): Promise<Workout | null> {
   const drizzleDb = createDb(db);
@@ -490,7 +488,7 @@ export async function updateWorkout(
   const updated = await drizzleDb
     .update(workouts)
     .set(data)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .returning()
     .get();
 
@@ -501,9 +499,9 @@ export async function updateWorkout(
 export async function completeWorkout(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<Workout | null> {
-  return updateWorkout(db, workoutId, userId, {
+  return updateWorkout(db, workoutId, workosId, {
     completedAt: new Date().toISOString(),
   });
 }
@@ -511,13 +509,13 @@ export async function completeWorkout(
 export async function deleteWorkout(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
   const result = await drizzleDb
     .delete(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .run();
 
   return result.success;
@@ -526,7 +524,7 @@ export async function deleteWorkout(
 export async function createWorkoutExercise(
   db: D1Database,
   workoutId: string,
-  userId: string,
+  workosId: string,
   exerciseId: string,
   orderIndex: number,
   notes?: string,
@@ -537,11 +535,10 @@ export async function createWorkoutExercise(
   const workout = await drizzleDb
     .select({ id: workouts.id })
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   if (!workout) {
-    console.log('createWorkoutExercise: Workout not found or does not belong to user');
     return null;
   }
 
@@ -564,14 +561,14 @@ export async function removeWorkoutExercise(
   db: D1Database,
   workoutId: string,
   exerciseId: string,
-  userId: string
+  workosId: string
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   if (!workout) {
@@ -598,14 +595,14 @@ export async function reorderWorkoutExercises(
   db: D1Database,
   workoutId: string,
   exerciseOrders: ExerciseOrder[],
-  userId: string
+  workosId: string
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   if (!workout) {
@@ -631,7 +628,7 @@ export async function reorderWorkoutExercises(
 export async function createWorkoutSet(
   db: D1Database,
   workoutExerciseId: string,
-  userId: string,
+  workosId: string,
   setNumber: number,
   weight?: number,
   reps?: number,
@@ -648,12 +645,11 @@ export async function createWorkoutSet(
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
       eq(workoutExercises.id, workoutExerciseId),
-      eq(workouts.userId, userId)
+      eq(workouts.workosId, workosId)
     ))
     .get();
 
   if (!exerciseWithOwnership) {
-    console.log('createWorkoutSet: Workout exercise not found or does not belong to user');
     return null;
   }
 
@@ -677,12 +673,10 @@ export async function createWorkoutSet(
 export async function updateWorkoutSet(
   db: D1Database,
   setId: string,
-  userId: string,
+  workosId: string,
   data: Partial<NewWorkoutSet>
 ): Promise<WorkoutSet | null> {
   const drizzleDb = createDb(db);
-
-  console.log('updateWorkoutSet:', { setId, userId, data });
 
   const setWithOwnership = await drizzleDb
     .select({
@@ -693,12 +687,11 @@ export async function updateWorkoutSet(
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
       eq(workoutSets.id, setId),
-      eq(workouts.userId, userId)
+      eq(workouts.workosId, workosId)
     ))
     .get();
 
   if (!setWithOwnership) {
-    console.log('updateWorkoutSet: Set not found or does not belong to user');
     return null;
   }
 
@@ -709,18 +702,16 @@ export async function updateWorkoutSet(
     .returning()
     .get();
 
-  console.log('updateWorkoutSet result:', updated);
-
-   
+     
   return updated ?? null;
 }
 
 export async function completeWorkoutSet(
   db: D1Database,
   setId: string,
-  userId: string
+  workosId: string
 ): Promise<WorkoutSet | null> {
-  return updateWorkoutSet(db, setId, userId, {
+  return updateWorkoutSet(db, setId, workosId, {
     isComplete: true,
     completedAt: new Date().toISOString(),
   });
@@ -729,7 +720,7 @@ export async function completeWorkoutSet(
 export async function deleteWorkoutSet(
   db: D1Database,
   setId: string,
-  userId: string
+  workosId: string
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
@@ -742,12 +733,11 @@ export async function deleteWorkoutSet(
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
       eq(workoutSets.id, setId),
-      eq(workouts.userId, userId)
+      eq(workouts.workosId, workosId)
     ))
     .get();
 
   if (!setWithOwnership) {
-    console.log('deleteWorkoutSet: Set not found or does not belong to user');
     return false;
   }
 
@@ -761,7 +751,7 @@ export async function deleteWorkoutSet(
 
 export async function getLastWorkoutForExercise(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseId: string
 ): Promise<LastWorkoutData | null> {
   const drizzleDb = createDb(db);
@@ -777,7 +767,7 @@ export async function getLastWorkoutForExercise(
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       eq(workoutExercises.exerciseId, exerciseId),
       isNotNull(workoutSets.completedAt)
     ))
@@ -802,7 +792,7 @@ export interface LastWorkoutSetData {
 
 export async function getLastWorkoutSetsForExercise(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseId: string
 ): Promise<LastWorkoutSetData[]> {
   const drizzleDb = createDb(db);
@@ -815,7 +805,7 @@ export async function getLastWorkoutSetsForExercise(
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       eq(workoutExercises.exerciseId, exerciseId),
       isNotNull(workoutSets.completedAt)
     ))
@@ -849,7 +839,7 @@ export async function getLastWorkoutSetsForExercise(
 
 export async function getCompletedWorkoutsCount(
   db: D1Database,
-  userId: string
+  workosId: string
 ): Promise<number> {
   const drizzleDb = createDb(db);
 
@@ -857,7 +847,7 @@ export async function getCompletedWorkoutsCount(
     .select({ count: sql<number>`count(*)` })
     .from(workouts)
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       isNotNull(workouts.completedAt)
     ))
     .get();
@@ -868,14 +858,14 @@ export async function getCompletedWorkoutsCount(
 export async function getTotalVolume(
   db: D1Database,
   workoutId: string,
-  userId: string
+  workosId: string
 ): Promise<number> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(workouts)
-    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
     .get();
 
   if (!workout) {
@@ -894,7 +884,7 @@ export async function getTotalVolume(
     ))
     .innerJoin(workouts, and(
       eq(workoutExercises.workoutId, workouts.id),
-      eq(workouts.userId, userId)
+      eq(workouts.workosId, workosId)
     ))
     .where(eq(workoutSets.isComplete, true))
     .all();
@@ -957,7 +947,7 @@ export function calculateE1RM(weight: number, reps: number): number {
  */
 export async function getExerciseHistory(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseId: string,
   options: GetExerciseHistoryOptions = {}
 ): Promise<ExerciseHistoryItem[]> {
@@ -965,7 +955,7 @@ export async function getExerciseHistory(
   const { fromDate, toDate, limit, offset } = options;
 
   const conditions = [
-    eq(workouts.userId, userId),
+    eq(workouts.workosId, workosId),
     isNotNull(workouts.completedAt),
     eq(workoutExercises.exerciseId, exerciseId),
   ];
@@ -977,8 +967,6 @@ export async function getExerciseHistory(
   if (toDate) {
     conditions.push(sql`${workouts.startedAt} <= ${toDate}`);
   }
-
-  console.log('[getExerciseHistory] Querying with:', { userId, exerciseId, fromDate, toDate, limit, offset });
 
   const workoutSetsData = await drizzleDb
     .select({
@@ -995,8 +983,6 @@ export async function getExerciseHistory(
     .orderBy(asc(workouts.startedAt))
     .all();
 
-  console.log('[getExerciseHistory] Raw sets data count:', workoutSetsData.length);
-
   const workoutMap = new Map<string, { maxWeight: number; repsAtMax: number }>();
 
   for (const set of workoutSetsData) {
@@ -1010,8 +996,6 @@ export async function getExerciseHistory(
       });
     }
   }
-
-  console.log('[getExerciseHistory] Unique workouts with sets:', workoutMap.size);
 
   const history: ExerciseHistoryItem[] = [];
   let currentMaxWeight = 0;
@@ -1048,17 +1032,15 @@ export async function getExerciseHistory(
     sortedHistory = sortedHistory.slice(0, limit);
   }
 
-  console.log('[getExerciseHistory] Final history count:', sortedHistory.length);
-
   return sortedHistory;
 }
 
 export async function getExerciseHistoryStats(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseId: string
 ): Promise<ExerciseHistoryStats> {
-  const history = await getExerciseHistory(db, userId, exerciseId);
+  const history = await getExerciseHistory(db, workosId, exerciseId);
 
   let maxWeight = 0;
   let est1rm = 0;
@@ -1079,7 +1061,7 @@ export async function getExerciseHistoryStats(
 
 export async function getWorkoutHistoryStats(
   db: D1Database,
-  userId: string
+  workosId: string
 ): Promise<WorkoutHistoryStats> {
   const drizzleDb = createDb(db);
 
@@ -1099,7 +1081,7 @@ export async function getWorkoutHistoryStats(
       .select({ count: sql<number>`count(*)` })
       .from(workouts)
       .where(and(
-        eq(workouts.userId, userId),
+        eq(workouts.workosId, workosId),
         isNotNull(workouts.completedAt)
       ))
       .get(),
@@ -1107,7 +1089,7 @@ export async function getWorkoutHistoryStats(
       .select({ count: sql<number>`count(*)` })
       .from(workouts)
       .where(and(
-        eq(workouts.userId, userId),
+        eq(workouts.workosId, workosId),
         isNotNull(workouts.completedAt),
         sql`${workouts.startedAt} >= ${weekStart}`
       ))
@@ -1116,7 +1098,7 @@ export async function getWorkoutHistoryStats(
       .select({ count: sql<number>`count(*)` })
       .from(workouts)
       .where(and(
-        eq(workouts.userId, userId),
+        eq(workouts.workosId, workosId),
         isNotNull(workouts.completedAt),
         sql`${workouts.startedAt} >= ${monthStart}`
       ))
@@ -1127,7 +1109,7 @@ export async function getWorkoutHistoryStats(
       .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
       .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
       .where(and(
-        eq(workouts.userId, userId),
+        eq(workouts.workosId, workosId),
         eq(workoutSets.isComplete, true)
       ))
       .get(),
@@ -1137,7 +1119,7 @@ export async function getWorkoutHistoryStats(
       .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
       .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
       .where(and(
-        eq(workouts.userId, userId),
+        eq(workouts.workosId, workosId),
         eq(workoutSets.isComplete, true)
       ))
       .get(),
@@ -1159,7 +1141,7 @@ export async function getWorkoutHistoryStats(
  */
 export async function getPrCount(
   db: D1Database,
-  userId: string
+  workosId: string
 ): Promise<number> {
   const drizzleDb = createDb(db);
   const workoutMaxes = await drizzleDb
@@ -1172,7 +1154,7 @@ export async function getPrCount(
     .from(workoutSets)
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(eq(workouts.userId, userId), eq(workoutSets.isComplete, true), sql`${workoutSets.weight} > 0`))
+    .where(and(eq(workouts.workosId, workosId), eq(workoutSets.isComplete, true), sql`${workoutSets.weight} > 0`))
     .groupBy(workoutExercises.exerciseId, workouts.id, workouts.startedAt)
     .orderBy(workouts.startedAt);
 
@@ -1204,14 +1186,14 @@ export interface GetWeeklyVolumeOptions {
 
 export async function getWeeklyVolume(
   db: D1Database,
-  userId: string,
+  workosId: string,
   options: GetWeeklyVolumeOptions = {}
 ): Promise<WeeklyVolumeData[]> {
   const drizzleDb = createDb(db);
   const { fromDate, toDate, exerciseId } = options;
 
   const baseConditions = [
-    eq(workouts.userId, userId),
+    eq(workouts.workosId, workosId),
     eq(workoutSets.isComplete, true),
     sql`${workoutSets.weight} > 0`,
     sql`${workoutSets.reps} > 0`,
@@ -1265,7 +1247,7 @@ export interface GetStrengthHistoryOptions {
 
 export async function getStrengthHistory(
   db: D1Database,
-  userId: string,
+  workosId: string,
   exerciseId: string,
   options: GetStrengthHistoryOptions = {}
 ): Promise<StrengthDataPoint[]> {
@@ -1273,7 +1255,7 @@ export async function getStrengthHistory(
   const { fromDate, toDate, limit = 50 } = options;
 
   const conditions = [
-    eq(workouts.userId, userId),
+    eq(workouts.workosId, workosId),
     eq(workoutExercises.exerciseId, exerciseId),
     isNotNull(workouts.completedAt),
     sql`${workoutSets.weight} > 0`,
@@ -1344,7 +1326,7 @@ export interface PersonalRecord {
 
 export async function getRecentPRs(
   db: D1Database,
-  userId: string,
+  workosId: string,
   limit: number = 5
 ): Promise<PersonalRecord[]> {
   const drizzleDb = createDb(db);
@@ -1362,7 +1344,7 @@ export async function getRecentPRs(
     .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       eq(workoutSets.isComplete, true),
       sql`${workoutSets.weight} > 0`
     ))
@@ -1400,7 +1382,7 @@ export async function getRecentPRs(
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .where(and(
-      eq(workouts.userId, userId),
+      eq(workouts.workosId, workosId),
       eq(workoutSets.isComplete, true),
       inArray(workouts.id, workoutExerciseIds)
     ))

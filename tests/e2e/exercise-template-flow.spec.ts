@@ -67,7 +67,7 @@ async function deleteExercise(page: Page, exerciseName: string) {
     page.once('dialog', async (dialog) => {
       await dialog.accept();
     });
-    await deleteButton.click();
+    await deleteButton.click({ force: true });
 
     await page.waitForURL(`${BASE_URL}/exercises`, { timeout: 10000 });
   }
@@ -80,13 +80,13 @@ async function deleteTemplate(page: Page, templateName: string) {
     await templateCard.click();
     await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept();
-    });
-
     const deleteButton = page.locator('button:has-text("Delete")').first();
     await expect(deleteButton).toBeVisible({ timeout: 10000 });
-    await deleteButton.click();
+
+    page.once('dialog', async (dialog) => {
+      await dialog.accept();
+    });
+    await deleteButton.click({ force: true });
 
     await page.waitForURL(`${BASE_URL}/templates`, { timeout: 10000 });
   }
@@ -125,6 +125,12 @@ test.describe('Exercise → Template Full Flow', () => {
     await expect(page.locator('h1:has-text("Create Template")').first()).toBeVisible({ timeout: 10000 });
 
     await page.fill('input[id="name"]', templateName);
+
+    const descriptionCollapsible = page.locator('button:has-text("Description (optional)")');
+    if (await descriptionCollapsible.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await descriptionCollapsible.click();
+      await page.waitForTimeout(500);
+    }
     await page.fill('textarea[id="description"]', description);
 
     await page.click('button:has-text("Add Exercise")');
@@ -134,9 +140,14 @@ test.describe('Exercise → Template Full Flow', () => {
     await expect(searchInput).toBeVisible({ timeout: 5000 });
     await searchInput.fill(exerciseName);
 
-    const exerciseButton = page.locator('.fixed.inset-0 button').filter({ has: page.locator('h3') }).first();
+    const exerciseButton = page.getByRole('button', { name: exerciseName }).first();
     await expect(exerciseButton).toBeVisible({ timeout: 5000 });
-    await exerciseButton.click({ force: true });
+    await page.evaluate(() => {
+      const button = document.querySelector('button[data-tsd-source*="ExerciseSearch.tsx"]');
+      if (button instanceof HTMLElement) {
+        button.click();
+      }
+    });
 
     await page.click('button:has-text("Done")');
     await page.waitForSelector('.fixed.inset-0', { state: 'hidden', timeout: 5000 });

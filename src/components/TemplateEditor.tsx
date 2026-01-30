@@ -545,6 +545,7 @@ export function TemplateEditor({
 
           <CollapsibleSection label="Description (optional)" defaultOpen={false}>
             <textarea
+              id="description"
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
               rows={2}
               value={formData.description}

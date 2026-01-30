@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/exercises/$exerciseId/history')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          console.log('[ExerciseHistory] Fetching history for exercise:', params.exerciseId, 'user:', session.userId);
+           console.log('[ExerciseHistory] Fetching history for exercise:', params.exerciseId, 'user:', session.workosId);
 
           const url = new URL(request.url);
           const fromDate = url.searchParams.get('fromDate') ?? undefined;
@@ -31,23 +31,16 @@ export const Route = createFileRoute('/api/exercises/$exerciseId/history')({
           const offset = (page - 1) * limit;
 
           const [history, stats] = await Promise.all([
-            getExerciseHistory(db, session.userId, params.exerciseId, {
+            getExerciseHistory(db, session.workosId, params.exerciseId, {
               fromDate,
               toDate,
               limit,
               offset,
             }),
-            getExerciseHistoryStats(db, session.userId, params.exerciseId),
+            getExerciseHistoryStats(db, session.workosId, params.exerciseId),
           ]);
 
-          console.log('[ExerciseHistory] History result:', { historyCount: history.length, stats });
-
-          if (history.length === 0 && stats.totalWorkouts === 0) {
-            console.log('[ExerciseHistory] No workout data found for this exercise');
-            return Response.json({ error: 'Exercise not found' }, { status: 404 });
-          }
-
-          let exercise = await getExerciseById(db, params.exerciseId, session.userId);
+          let exercise = await getExerciseById(db, params.exerciseId, session.workosId);
           if (!exercise) {
             const fallback = await getExerciseByIdOnly(db, params.exerciseId);
             exercise ??= fallback;

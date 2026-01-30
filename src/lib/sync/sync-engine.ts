@@ -26,18 +26,18 @@ type TableType = 'exercises' | 'templates' | 'workouts';
 class SyncEngine {
   private syncInProgress: Promise<SyncResult> | null = null;
 
-  async sync(userId: string): Promise<SyncResult> {
+  async sync(workosId: string): Promise<SyncResult> {
     if (this.syncInProgress) {
       return this.syncInProgress;
     }
 
-    this.syncInProgress = this.performSync(userId);
+    this.syncInProgress = this.performSync(workosId);
     const result = await this.syncInProgress;
     this.syncInProgress = null;
     return result;
   }
 
-  private async performSync(userId: string): Promise<SyncResult> {
+  private async performSync(workosId: string): Promise<SyncResult> {
     const result: SyncResult = {
       success: true,
       pushed: 0,
@@ -46,8 +46,8 @@ class SyncEngine {
     };
 
     try {
-      await this.pushPendingOperations(userId, result);
-      await this.pullUpdates(userId, result);
+      await this.pushPendingOperations(workosId, result);
+      await this.pullUpdates(result);
       await setLastSyncTime('lastFullSync', new Date().toISOString());
     } catch (error) {
       console.error('Sync error:', error);
@@ -58,7 +58,7 @@ class SyncEngine {
     return result;
   }
 
-  private async pushPendingOperations(_userId: string, result: SyncResult): Promise<void> {
+  private async pushPendingOperations(_workosId: string, result: SyncResult): Promise<void> {
     const operations = await getPendingOperations();
 
     for (const op of operations) {
@@ -184,7 +184,7 @@ class SyncEngine {
     return tables[tableName];
   }
 
-  private async pullUpdates(userId: string, result: SyncResult): Promise<void> {
+  private async pullUpdates(result: SyncResult): Promise<void> {
     try {
       const lastSync = await getLastSyncTime('lastFullSync');
       const url = lastSync ? `/api/sync?since=${encodeURIComponent(lastSync)}` : '/api/sync';
@@ -201,7 +201,7 @@ class SyncEngine {
 
       const data: ServerSyncResponse = await response.json();
 
-      await this.applyServerChanges(data, userId);
+      await this.applyServerChanges(data);
       result.pulled = data.exercises.length + data.templates.length + data.workouts.length;
 
       if (data.lastSync) {
@@ -212,7 +212,7 @@ class SyncEngine {
     }
   }
 
-  private async applyServerChanges(data: ServerSyncResponse, _userId: string): Promise<void> {
+  private async applyServerChanges(data: ServerSyncResponse): Promise<void> {
     for (const exercise of data.exercises) {
       await this.mergeEntity('exercises', exercise);
     }

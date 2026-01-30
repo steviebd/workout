@@ -23,13 +23,92 @@ function getInfisicalSecret(secretName: string): string {
 	}
 }
 
-function isAuthStateValid(storageStatePath: string): boolean {
+interface JwtPayload {
+	exp?: number;
+	iat?: number;
+}
+
+function decodeJwt(token: string): JwtPayload | null {
+	try {
+		const parts = token.split('.');
+		if (parts.length !== 3) {
+			return null;
+		}
+		const payload = Buffer.from(parts[1], 'base64').toString('utf-8');
+		return JSON.parse(payload) as JwtPayload;
+	} catch {
+		return null;
+	}
+}
+
+function isTokenExpired(token: string): boolean {
+	const payload = decodeJwt(token);
+	if (!payload?.exp) {
+		return true;
+	}
+	const now = Math.floor(Date.now() / 1000);
+	return payload.exp < now;
+}
+
+interface StorageState {
+	cookies: Array<{
+		name: string;
+		value: string;
+		domain: string;
+		path: string;
+		expires: number;
+		httpOnly: boolean;
+		secure: boolean;
+		sameSite: string;
+	}>;
+	origins: unknown[];
+}
+
+function getSessionToken(storageStatePath: string): string | null {
+	if (!existsSync(storageStatePath)) {
+		return null;
+	}
+	try {
+		const content = readFileSync(storageStatePath, 'utf-8');
+		const state = JSON.parse(content) as StorageState;
+		const sessionCookie = state.cookies.find((cookie) => cookie.name === 'session_token');
+		return sessionCookie?.value ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function hasValidWorkosSession(storageStatePath: string): boolean {
 	if (!existsSync(storageStatePath)) {
 		return false;
 	}
 	try {
 		const content = readFileSync(storageStatePath, 'utf-8');
-		const state = JSON.parse(content) as { cookies: Array<{ name: string }> };
+		const state = JSON.parse(content) as StorageState;
+		const workosCookies = state.cookies.filter(
+			(cookie) =>
+				cookie.name.includes('__Host-state') ||
+				cookie.name.includes('workos') ||
+				cookie.domain.includes('authkit.app')
+		);
+		const now = Date.now() / 1000;
+		const hasValidWorkosCookie = workosCookies.some((cookie) => {
+			const expiresInFuture = cookie.expires === -1 || cookie.expires > now;
+			return expiresInFuture;
+		});
+		return hasValidWorkosCookie;
+	} catch {
+		return false;
+	}
+}
+
+async function isAuthStateValid(storageStatePath: string): Promise<boolean> {
+	if (!existsSync(storageStatePath)) {
+		return false;
+	}
+	try {
+		const content = readFileSync(storageStatePath, 'utf-8');
+		const state = JSON.parse(content) as StorageState;
 		if (state.cookies.length === 0) {
 			return false;
 		}
@@ -39,8 +118,69 @@ function isAuthStateValid(storageStatePath: string): boolean {
 				cookie.name.includes('auth') ||
 				cookie.name.includes('workos')
 		);
-		return hasSessionCookie;
-	} catch {
+		if (!hasSessionCookie) {
+			return false;
+		}
+		const sessionToken = getSessionToken(storageStatePath);
+		if (!sessionToken) {
+			console.log('No session_token found in auth state');
+			return false;
+		}
+		if (isTokenExpired(sessionToken)) {
+			console.log('Session token has expired');
+			const hasWorkosSession = hasValidWorkosSession(storageStatePath);
+			if (hasWorkosSession) {
+				console.log('WorkOS session cookies are still valid - can attempt refresh');
+			}
+			return hasWorkosSession;
+		}
+		console.log('Session token is valid');
+		return true;
+	} catch (error) {
+		console.error('Error checking auth state validity:', error);
+		return false;
+	}
+}
+
+async function attemptTokenRefresh(
+	page: Page,
+	context: BrowserContext,
+	baseUrl: string,
+	storageStatePath: string
+): Promise<boolean> {
+	console.log('Attempting to refresh session token using WorkOS session...');
+
+	try {
+		const authResponse = await context.request.get(`${baseUrl}/api/auth/me`);
+		if (authResponse.ok()) {
+			console.log('Session token is still valid');
+			await context.storageState({ path: storageStatePath });
+			return true;
+		}
+
+		console.log('Current session token is invalid, checking WorkOS session...');
+
+		await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30000 });
+
+		await page.waitForTimeout(3000);
+
+		const signOutButton = page.locator('text=Sign Out').first();
+		const isSignedIn = await signOutButton.isVisible({ timeout: 10000 }).catch(() => false);
+
+		if (isSignedIn) {
+			console.log('Successfully refreshed session via WorkOS session');
+			await context.storageState({ path: storageStatePath });
+			const newToken = getSessionToken(storageStatePath);
+			if (newToken && !isTokenExpired(newToken)) {
+				console.log('New session token is valid');
+				return true;
+			}
+		}
+
+		console.log('WorkOS session refresh did not produce valid token');
+		return false;
+	} catch (error) {
+		console.error('Error during token refresh:', error);
 		return false;
 	}
 }
@@ -285,44 +425,60 @@ async function globalSetup() {
 		return;
 	}
 
-	if (isAuthStateValid(storageStatePath)) {
+	const authValid = await isAuthStateValid(storageStatePath);
+	if (authValid) {
 		console.log('Valid auth state already exists');
 		return;
 	}
 
-	console.log('No valid auth state, attempting login...');
-
-	console.log('Fetching test credentials...');
-	let testUsername: string;
-	let testPassword: string;
-	
-	try {
-		testUsername = process.env.TEST_USERNAME ?? getInfisicalSecret('TEST_USERNAME');
-		testPassword = process.env.TEST_PASSWORD ?? getInfisicalSecret('TEST_PASSWORD');
-		console.log('Test credentials fetched successfully');
-	} catch (error) {
-		console.error('Failed to get credentials from Infisical:', error instanceof Error ? error.message : error);
-		console.error('Cannot proceed with authentication without valid credentials');
-		console.error('Please ensure TEST_USERNAME and TEST_PASSWORD are set in Infisical dev environment');
-		process.exit(1);
-	}
-
-	const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
-	const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
-	const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
-	const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
+	const sessionToken = getSessionToken(storageStatePath);
+	const hasWorkosSession = sessionToken ? hasValidWorkosSession(storageStatePath) : false;
 
 	let browser: Browser | null = null;
+	let context: BrowserContext | null = null;
+
 	try {
 		console.log('Launching browser for authentication...');
 		browser = await chromium.launch({ timeout: 30000 });
-		const context = await browser.newContext();
+		context = await browser.newContext();
 		const page = await context.newPage();
 
 		page.setDefaultTimeout(15000);
 		page.setDefaultNavigationTimeout(30000);
 
-		console.log('Starting login flow...');
+		if (sessionToken && hasWorkosSession) {
+			console.log('Token expired but WorkOS session is valid - attempting automatic refresh...');
+			const refreshSuccess = await attemptTokenRefresh(page, context, baseUrl, storageStatePath);
+			if (refreshSuccess) {
+				console.log('Session token refreshed successfully via WorkOS session');
+				return;
+			}
+			console.log('WorkOS session refresh failed - falling back to full re-authentication');
+		}
+
+		console.log('Auth state is invalid or expired, attempting re-authentication...');
+
+		console.log('Fetching test credentials...');
+		let testUsername: string;
+		let testPassword: string;
+
+		try {
+			testUsername = process.env.TEST_USERNAME ?? getInfisicalSecret('TEST_USERNAME');
+			testPassword = process.env.TEST_PASSWORD ?? getInfisicalSecret('TEST_PASSWORD');
+			console.log('Test credentials fetched successfully');
+		} catch (error) {
+			console.error('Failed to get credentials from Infisical:', error instanceof Error ? error.message : error);
+			console.error('Cannot proceed with authentication without valid credentials');
+			console.error('Please ensure TEST_USERNAME and TEST_PASSWORD are set in Infisical dev environment');
+			process.exit(1);
+		}
+
+		const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
+		const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
+		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
+		const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
+
+		console.log('Starting full login flow...');
 		const success = await performLogin(
 			page,
 			context,

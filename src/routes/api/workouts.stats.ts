@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/workouts/stats')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const stats = await getWorkoutHistoryStats(db, session.userId);
+           const stats = await getWorkoutHistoryStats(db, session.workosId);
 
           return Response.json(stats);
         } catch (err) {

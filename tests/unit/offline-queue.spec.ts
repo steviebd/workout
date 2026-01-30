@@ -5,7 +5,7 @@ import {
   getPendingOperations,
   removeOperation,
   incrementRetry,
-  queueOperationOp,
+  queueOperation,
 } from '../../src/lib/db/local-repository';
 
 describe('Offline Queue Operations', () => {
@@ -13,9 +13,9 @@ describe('Offline Queue Operations', () => {
     await localDB.offlineQueue.clear();
   });
 
-  describe('queueOperationOp', () => {
+  describe('queueOperation', () => {
     it('should add operation to queue with correct fields', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
+      await queueOperation('create', 'exercise', 'local-1', { name: 'Test' });
 
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(1);
@@ -28,9 +28,9 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should support all operation types', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('update', 'exercise', 'local-2', {});
-      await queueOperationOp('delete', 'exercise', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('update', 'exercise', 'local-2', {});
+      await queueOperation('delete', 'exercise', 'local-3', {});
 
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(3);
@@ -38,11 +38,11 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should support all entity types', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'template', 'local-2', {});
-      await queueOperationOp('create', 'workout', 'local-3', {});
-      await queueOperationOp('create', 'workout_exercise', 'local-4', {});
-      await queueOperationOp('create', 'workout_set', 'local-5', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'template', 'local-2', {});
+      await queueOperation('create', 'workout', 'local-3', {});
+      await queueOperation('create', 'workout_exercise', 'local-4', {});
+      await queueOperation('create', 'workout_set', 'local-5', {});
 
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(5);
@@ -53,15 +53,15 @@ describe('Offline Queue Operations', () => {
 
     it('should store data payload correctly', async () => {
       const data = { name: 'Bench Press', muscleGroup: 'Chest', weight: 225 };
-      await queueOperationOp('create', 'exercise', 'local-1', data);
+      await queueOperation('create', 'exercise', 'local-1', data);
 
       const ops = await getPendingOperations();
       expect(ops[0]?.data).toEqual(data);
     });
 
     it('should generate unique operationId for each operation', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
 
       const ops = await getPendingOperations();
       expect(ops[0]?.operationId).not.toBe(ops[1]?.operationId);
@@ -69,7 +69,7 @@ describe('Offline Queue Operations', () => {
 
     it('should set timestamp to current time', async () => {
       const before = new Date();
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       const after = new Date();
 
       const ops = await getPendingOperations();
@@ -79,7 +79,7 @@ describe('Offline Queue Operations', () => {
 
     it('should add multiple operations to queue', async () => {
       for (let i = 1; i <= 10; i++) {
-        await queueOperationOp('create', 'exercise', `local-${i}`, { index: i });
+        await queueOperation('create', 'exercise', `local-${i}`, { index: i });
       }
 
       const ops = await getPendingOperations();
@@ -89,11 +89,11 @@ describe('Offline Queue Operations', () => {
 
   describe('getPendingOperations', () => {
     it('should return operations ordered by timestamp', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
-      await queueOperationOp('create', 'exercise', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-3', {});
 
       const ops = await getPendingOperations();
       expect(ops[0]?.localId).toBe('local-1');
@@ -107,16 +107,16 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should return all pending operations', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('update', 'template', 'local-2', {});
-      await queueOperationOp('delete', 'workout', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('update', 'template', 'local-2', {});
+      await queueOperation('delete', 'workout', 'local-3', {});
 
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(3);
     });
 
     it('should return operations with all fields populated', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
+      await queueOperation('create', 'exercise', 'local-1', { name: 'Test' });
 
       const ops = await getPendingOperations();
       expect(ops[0]?.id).toBeDefined();
@@ -133,7 +133,7 @@ describe('Offline Queue Operations', () => {
 
   describe('removeOperation', () => {
     it('should remove operation from queue', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(1);
 
@@ -147,9 +147,9 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should remove specific operation while keeping others', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
-      await queueOperationOp('create', 'exercise', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-3', {});
 
       const ops = await getPendingOperations();
       const opId = ops[1]?.id;
@@ -163,8 +163,8 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should not affect other operations when removing non-existent id', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
 
       await removeOperation(99999);
 
@@ -173,20 +173,20 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should not throw when removing non-existent operation', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       
       await expect(removeOperation(99999)).resolves.not.toThrow();
     });
 
     it('should remove operation and allow adding new ones', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       const ops = await getPendingOperations();
       const opId = ops[0]?.id;
       if (opId !== undefined) {
         await removeOperation(opId);
       }
 
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       const newOps = await getPendingOperations();
       expect(newOps).toHaveLength(1);
       expect(newOps[0]?.localId).toBe('local-2');
@@ -195,7 +195,7 @@ describe('Offline Queue Operations', () => {
 
   describe('incrementRetry', () => {
     it('should increment retryCount', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       const ops = await getPendingOperations();
       expect(ops[0]?.retryCount).toBe(0);
 
@@ -209,7 +209,7 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should increment retryCount multiple times', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       const ops = await getPendingOperations();
       const opId = ops[0]?.id;
 
@@ -224,8 +224,8 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should not affect other operations when incrementing', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       
       const ops = await getPendingOperations();
       const opId = ops[0]?.id;
@@ -243,7 +243,7 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should preserve other fields when incrementing retry', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', { name: 'Test' });
+      await queueOperation('create', 'exercise', 'local-1', { name: 'Test' });
       const ops = await getPendingOperations();
       const originalId = ops[0]?.id;
       const originalOperationId = ops[0]?.operationId;
@@ -266,8 +266,8 @@ describe('Offline Queue Operations', () => {
 
   describe('retry filtering', () => {
     it('should filter out exhausted retries', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       
       const ops = await getPendingOperations();
       const opId = ops[0]?.id;
@@ -287,8 +287,8 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should identify operations at max retries', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       
       const ops = await getPendingOperations();
       const opId = ops[0]?.id;
@@ -307,7 +307,7 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should calculate remaining retries correctly', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       
       const ops = await getPendingOperations();
       const remainingBefore = (ops[0]?.maxRetries ?? 0) - (ops[0]?.retryCount ?? 0);
@@ -326,9 +326,9 @@ describe('Offline Queue Operations', () => {
 
   describe('queue operations with retry', () => {
     it('should track retry state across multiple operations', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('update', 'template', 'local-2', {});
-      await queueOperationOp('delete', 'workout', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('update', 'template', 'local-2', {});
+      await queueOperation('delete', 'workout', 'local-3', {});
       
       let ops = await getPendingOperations();
       const id1 = ops[0]?.id;
@@ -347,9 +347,9 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should maintain order after removing and adding operations', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
       await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
-      await queueOperationOp('create', 'exercise', 'local-2', {});
+      await queueOperation('create', 'exercise', 'local-2', {});
       
       let ops = await getPendingOperations();
       const id1 = ops[0]?.id;
@@ -358,7 +358,7 @@ describe('Offline Queue Operations', () => {
       }
       
       await new Promise<void>((resolve) => { setTimeout(resolve, 10); });
-      await queueOperationOp('create', 'exercise', 'local-3', {});
+      await queueOperation('create', 'exercise', 'local-3', {});
       
       ops = await getPendingOperations();
       expect(ops).toHaveLength(2);
@@ -367,11 +367,11 @@ describe('Offline Queue Operations', () => {
     });
 
     it('should handle mixed entity operations correctly', async () => {
-      await queueOperationOp('create', 'exercise', 'local-1', {});
-      await queueOperationOp('update', 'workout', 'local-2', {});
-      await queueOperationOp('delete', 'template', 'local-3', {});
-      await queueOperationOp('create', 'workout_exercise', 'local-4', {});
-      await queueOperationOp('update', 'workout_set', 'local-5', {});
+      await queueOperation('create', 'exercise', 'local-1', {});
+      await queueOperation('update', 'workout', 'local-2', {});
+      await queueOperation('delete', 'template', 'local-3', {});
+      await queueOperation('create', 'workout_exercise', 'local-4', {});
+      await queueOperation('update', 'workout_set', 'local-5', {});
       
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(5);

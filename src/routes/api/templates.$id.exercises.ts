@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercises = await getTemplateExercises(db, params.id, session.userId);
+          const exercises = await getTemplateExercises(db, params.id, session.workosId);
 
           return Response.json(exercises);
         } catch (err) {
@@ -48,7 +48,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           const templateExercise = await addExerciseToTemplate(
             db,
             params.id,
-            session.userId,
+            session.workosId,
             exerciseId,
             orderIndex ?? 0
           );

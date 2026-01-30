@@ -25,12 +25,12 @@ export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const removed = await removeExerciseFromTemplate(
-            db,
-            id,
-            exerciseId,
-            session.userId
-          );
+           const removed = await removeExerciseFromTemplate(
+             db,
+             id,
+             exerciseId,
+             session.workosId
+           );
 
           if (!removed) {
             return Response.json({ error: 'Template or exercise not found' }, { status: 404 });

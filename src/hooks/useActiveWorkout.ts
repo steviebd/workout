@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { localDB, type LocalWorkout, type LocalWorkoutExercise, type LocalWorkoutSet } from '~/lib/db/local-db';
+import { generateLocalId, now, queueOperation } from '~/lib/db/local-repository';
 import { useAuth } from '@/routes/__root';
 
 export interface ActiveWorkoutExercise {
@@ -28,28 +29,6 @@ export interface ActiveWorkout {
   startedAt: string;
   notes?: string;
   exercises: ActiveWorkoutExercise[];
-}
-
-function generateLocalId(): string {
-  return crypto.randomUUID();
-}
-
-function now(): Date {
-  return new Date();
-}
-
-async function queueOperation(type: 'create' | 'update' | 'delete', entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set', localId: string, data: Record<string, unknown>): Promise<void> {
-  const operation = {
-    operationId: generateLocalId(),
-    type,
-    entity,
-    localId,
-    data,
-    timestamp: now(),
-    retryCount: 0,
-    maxRetries: 3,
-  };
-  await localDB.offlineQueue.add(operation);
 }
 
 function mapLocalToActiveWorkout(
@@ -89,7 +68,7 @@ function mapLocalToActiveWorkout(
 
 async function getActiveWorkoutWithDetails(userId: string): Promise<ActiveWorkout | null> {
   const localWorkout = await localDB.workouts
-    .where('userId').equals(userId)
+    .where('workosId').equals(userId)
     .and((w) => w.status === 'in_progress')
     .first();
 
@@ -100,15 +79,22 @@ async function getActiveWorkoutWithDetails(userId: string): Promise<ActiveWorkou
     .equals(localWorkout.localId)
     .toArray();
 
-  const exercisesWithSets = await Promise.all(
-    workoutExercises.map(async (we) => {
-      const sets = await localDB.workoutSets
-        .where('workoutExerciseId')
-        .equals(we.localId)
-        .toArray();
-      return { ...we, sets };
-    })
-  );
+  const weLocalIds = workoutExercises.map(we => we.localId);
+  const allSets = weLocalIds.length > 0
+    ? await localDB.workoutSets.where('workoutExerciseId').anyOf(weLocalIds).toArray()
+    : [];
+
+  const setsByExercise = new Map<string, LocalWorkoutSet[]>();
+  for (const set of allSets) {
+    const existing = setsByExercise.get(set.workoutExerciseId) ?? [];
+    existing.push(set);
+    setsByExercise.set(set.workoutExerciseId, existing);
+  }
+
+  const exercisesWithSets = workoutExercises.map(we => ({
+    ...we,
+    sets: setsByExercise.get(we.localId) ?? [],
+  }));
 
   return mapLocalToActiveWorkout(localWorkout, exercisesWithSets);
 }
@@ -159,7 +145,7 @@ export function useActiveWorkout() {
     const newWorkout: LocalWorkout = {
       id: undefined,
       localId,
-      userId: user.id,
+      workosId: user.id,
       templateId: data.templateId,
       name: data.name,
       startedAt: now(),
@@ -403,20 +389,42 @@ export function useActiveWorkout() {
   const reorderExercises = useCallback(async (exerciseOrders: Array<{ exerciseId: string; orderIndex: number }>) => {
     if (!workout || !user) return;
 
+    const allWorkoutExercises = await localDB.workoutExercises
+      .where('workoutId')
+      .equals(workout.id)
+      .toArray();
+
+    const weByExerciseId = new Map(allWorkoutExercises.map(we => [we.exerciseId, we]));
+
+    const updates: Array<{ id: number; order: number; localId: string }> = [];
     for (const order of exerciseOrders) {
-      const weLocalId = await getWorkoutExerciseLocalId(workout.id, order.exerciseId);
-      if (weLocalId) {
-        const we = await localDB.workoutExercises.where('localId').equals(weLocalId).first();
-        if (we?.id !== undefined) {
-          await localDB.workoutExercises.update(we.id, {
-            order: order.orderIndex,
-            syncStatus: 'pending',
-            needsSync: true,
-          });
-        }
-        await queueOperation('update', 'workout_exercise', weLocalId, { order: order.orderIndex, localId: weLocalId });
+      const we = weByExerciseId.get(order.exerciseId);
+      if (we?.id !== undefined) {
+        updates.push({ id: we.id, order: order.orderIndex, localId: we.localId });
       }
     }
+
+    await localDB.transaction('rw', localDB.workoutExercises, localDB.offlineQueue, async () => {
+      for (const update of updates) {
+        await localDB.workoutExercises.update(update.id, {
+          order: update.order,
+          syncStatus: 'pending',
+          needsSync: true,
+        });
+      }
+
+      const operations = updates.map(update => ({
+        operationId: generateLocalId(),
+        type: 'update' as const,
+        entity: 'workout_exercise' as const,
+        localId: update.localId,
+        data: { order: update.order, localId: update.localId },
+        timestamp: now(),
+        retryCount: 0,
+        maxRetries: 3,
+      }));
+      await localDB.offlineQueue.bulkAdd(operations);
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;
@@ -445,55 +453,37 @@ export function useActiveWorkout() {
     setWorkout(null);
   }, [workout, user]);
 
-  const clearWorkout = useCallback(async () => {
+  const deleteWorkoutInternal = useCallback(async () => {
     if (!workout || !user) return;
 
     const workoutRecord = await localDB.workouts.where('localId').equals(workout.id).first();
-    if (workoutRecord) {
+    if (!workoutRecord) {
+      setWorkout(null);
+      return;
+    }
+
+    await localDB.transaction('rw', localDB.workouts, localDB.workoutExercises, localDB.workoutSets, async () => {
       const exercises = await localDB.workoutExercises.where('workoutId').equals(workout.id).toArray();
-      for (const we of exercises) {
-        const sets = await localDB.workoutSets.where('workoutExerciseId').equals(we.localId).toArray();
-        for (const set of sets) {
-          if (set.id !== undefined) {
-            await localDB.workoutSets.delete(set.id);
-          }
-        }
-        if (we.id !== undefined) {
-          await localDB.workoutExercises.delete(we.id);
-        }
+      const weLocalIds = exercises.map(we => we.localId);
+
+      if (weLocalIds.length > 0) {
+        await localDB.workoutSets.where('workoutExerciseId').anyOf(weLocalIds).delete();
       }
+
+      await localDB.workoutExercises.where('workoutId').equals(workout.id).delete();
+
       if (workoutRecord.id !== undefined) {
         await localDB.workouts.delete(workoutRecord.id);
       }
-    }
+    });
+
+    await queueOperation('delete', 'workout', workout.id, { localId: workout.id });
 
     setWorkout(null);
   }, [workout, user]);
 
-  const discardWorkout = useCallback(async () => {
-    if (!workout || !user) return;
-
-    const workoutRecord = await localDB.workouts.where('localId').equals(workout.id).first();
-    if (workoutRecord) {
-      const exercises = await localDB.workoutExercises.where('workoutId').equals(workout.id).toArray();
-      for (const we of exercises) {
-        const sets = await localDB.workoutSets.where('workoutExerciseId').equals(we.localId).toArray();
-        for (const set of sets) {
-          if (set.id !== undefined) {
-            await localDB.workoutSets.delete(set.id);
-          }
-        }
-        if (we.id !== undefined) {
-          await localDB.workoutExercises.delete(we.id);
-        }
-      }
-      if (workoutRecord.id !== undefined) {
-        await localDB.workouts.delete(workoutRecord.id);
-      }
-    }
-
-    setWorkout(null);
-  }, [workout, user]);
+  const clearWorkout = deleteWorkoutInternal;
+  const discardWorkout = deleteWorkoutInternal;
 
   return {
     workout,

@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "90c32e74-f07c-42cf-a81d-6adcd37fe3b1",
+  "id": "17563ff4-4325-452c-91d9-534a03c117d2",
   "prevIds": [
-    "bd92c643-f0a5-49d1-ae19-0380519af82a"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -16,6 +16,10 @@
     },
     {
       "name": "templates",
+      "entityType": "tables"
+    },
+    {
+      "name": "user_preferences",
       "entityType": "tables"
     },
     {
@@ -46,11 +50,21 @@
     },
     {
       "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "local_id",
+      "entityType": "columns",
+      "table": "exercises"
+    },
+    {
+      "type": "text",
       "notNull": true,
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "user_id",
+      "name": "workos_id",
       "entityType": "columns",
       "table": "exercises"
     },
@@ -81,6 +95,16 @@
       "default": null,
       "generated": null,
       "name": "description",
+      "entityType": "columns",
+      "table": "exercises"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "library_id",
       "entityType": "columns",
       "table": "exercises"
     },
@@ -166,11 +190,21 @@
     },
     {
       "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "local_id",
+      "entityType": "columns",
+      "table": "templates"
+    },
+    {
+      "type": "text",
       "notNull": true,
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "user_id",
+      "name": "workos_id",
       "entityType": "columns",
       "table": "templates"
     },
@@ -216,7 +250,7 @@
     },
     {
       "type": "text",
-      "notNull": false,
+      "notNull": true,
       "autoincrement": false,
       "default": "CURRENT_TIMESTAMP",
       "generated": null,
@@ -226,13 +260,83 @@
     },
     {
       "type": "text",
-      "notNull": false,
+      "notNull": true,
       "autoincrement": false,
       "default": "CURRENT_TIMESTAMP",
       "generated": null,
       "name": "updated_at",
       "entityType": "columns",
       "table": "templates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workos_id",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "'kg'",
+      "generated": null,
+      "name": "weight_unit",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "'dd/mm/yyyy'",
+      "generated": null,
+      "name": "date_format",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "'light'",
+      "generated": null,
+      "name": "theme",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "user_preferences"
     },
     {
       "type": "text",
@@ -296,6 +400,16 @@
     },
     {
       "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "local_id",
+      "entityType": "columns",
+      "table": "workout_exercises"
+    },
+    {
+      "type": "text",
       "notNull": true,
       "autoincrement": false,
       "default": null,
@@ -341,6 +455,16 @@
       "default": null,
       "generated": null,
       "name": "id",
+      "entityType": "columns",
+      "table": "workout_sets"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "local_id",
       "entityType": "columns",
       "table": "workout_sets"
     },
@@ -436,11 +560,21 @@
     },
     {
       "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "local_id",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "text",
       "notNull": true,
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "user_id",
+      "name": "workos_id",
       "entityType": "columns",
       "table": "workouts"
     },
@@ -506,16 +640,16 @@
     },
     {
       "columns": [
-        "user_id"
+        "workos_id"
       ],
       "tableTo": "users",
       "columnsTo": [
-        "id"
+        "workos_id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
-      "name": "fk_exercises_user_id_users_id_fk",
+      "name": "fk_exercises_workos_id_users_workos_id_fk",
       "entityType": "fks",
       "table": "exercises"
     },
@@ -551,18 +685,33 @@
     },
     {
       "columns": [
-        "user_id"
+        "workos_id"
       ],
       "tableTo": "users",
       "columnsTo": [
-        "id"
+        "workos_id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
-      "name": "fk_templates_user_id_users_id_fk",
+      "name": "fk_templates_workos_id_users_workos_id_fk",
       "entityType": "fks",
       "table": "templates"
+    },
+    {
+      "columns": [
+        "workos_id"
+      ],
+      "tableTo": "users",
+      "columnsTo": [
+        "workos_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_user_preferences_workos_id_users_workos_id_fk",
+      "entityType": "fks",
+      "table": "user_preferences"
     },
     {
       "columns": [
@@ -611,16 +760,16 @@
     },
     {
       "columns": [
-        "user_id"
+        "workos_id"
       ],
       "tableTo": "users",
       "columnsTo": [
-        "id"
+        "workos_id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
-      "name": "fk_workouts_user_id_users_id_fk",
+      "name": "fk_workouts_workos_id_users_workos_id_fk",
       "entityType": "fks",
       "table": "workouts"
     },
@@ -664,6 +813,15 @@
       "nameExplicit": false,
       "name": "templates_pk",
       "table": "templates",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "user_preferences_pk",
+      "table": "user_preferences",
       "entityType": "pks"
     },
     {

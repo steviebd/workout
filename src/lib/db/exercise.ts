@@ -31,14 +31,14 @@ export interface GetExercisesOptions {
 
 export async function createExercise(
   db: D1Database,
-  data: CreateExerciseData & { userId: string }
+  data: CreateExerciseData & { workosId: string }
 ): Promise<Exercise> {
   const drizzleDb = createDb(db);
 
   const exercise = await drizzleDb
     .insert(exercises)
     .values({
-      userId: data.userId,
+      workosId: data.workosId,
       name: data.name,
       muscleGroup: data.muscleGroup,
       description: data.description,
@@ -54,14 +54,14 @@ export async function createExercise(
 export async function getExerciseById(
   db: D1Database,
   exerciseId: string,
-  userId: string
+  workosId: string
 ): Promise<Exercise | null> {
   const drizzleDb = createDb(db);
 
   const exercise = await drizzleDb
     .select()
     .from(exercises)
-    .where(and(eq(exercises.id, exerciseId), eq(exercises.userId, userId)))
+    .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
     .get();
 
   return exercise ?? null;
@@ -82,9 +82,9 @@ export async function getExerciseByIdOnly(
   return exercise ?? null;
 }
 
-export async function getExercisesByUserId(
+export async function getExercisesByWorkosId(
   db: D1Database,
-  userId: string,
+  workosId: string,
   options: GetExercisesOptions = {}
 ): Promise<Exercise[]> {
   const drizzleDb = createDb(db);
@@ -99,7 +99,7 @@ export async function getExercisesByUserId(
     offset,
   } = options;
 
-  const conditions = [eq(exercises.userId, userId)];
+  const conditions = [eq(exercises.workosId, workosId)];
 
   if (excludeDeleted) {
     conditions.push(eq(exercises.isDeleted, false));
@@ -150,7 +150,7 @@ export async function getExercisesByUserId(
 export async function updateExercise(
   db: D1Database,
   exerciseId: string,
-  userId: string,
+  workosId: string,
   data: UpdateExerciseData
 ): Promise<Exercise | null> {
   const drizzleDb = createDb(db);
@@ -163,7 +163,7 @@ export async function updateExercise(
   const updated = await drizzleDb
     .update(exercises)
     .set(updateData)
-    .where(and(eq(exercises.id, exerciseId), eq(exercises.userId, userId)))
+    .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
     .returning()
     .get();
 
@@ -174,7 +174,7 @@ export async function updateExercise(
 export async function softDeleteExercise(
   db: D1Database,
   exerciseId: string,
-  userId: string
+  workosId: string
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
@@ -184,7 +184,7 @@ export async function softDeleteExercise(
       isDeleted: true,
       updatedAt: new Date().toISOString(),
     })
-    .where(and(eq(exercises.id, exerciseId), eq(exercises.userId, userId)))
+    .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
     .run();
 
   return result.success;
@@ -198,7 +198,7 @@ export interface LibraryExercise {
 
 export async function copyExerciseFromLibrary(
   db: D1Database,
-  userId: string,
+  workosId: string,
   libraryExercise: LibraryExercise
 ): Promise<Exercise> {
   const drizzleDb = createDb(db);
@@ -206,7 +206,7 @@ export async function copyExerciseFromLibrary(
   const newExercise = await drizzleDb
     .insert(exercises)
     .values({
-      userId,
+      workosId,
       name: libraryExercise.name,
       muscleGroup: libraryExercise.muscleGroup,
       description: libraryExercise.description,

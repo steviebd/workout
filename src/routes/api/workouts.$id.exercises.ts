@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercises = await getWorkoutExercises(db, params.id, session.userId);
+           const exercises = await getWorkoutExercises(db, params.id, session.workosId);
           return Response.json(exercises);
         } catch (err) {
           console.error('Get workout exercises error:', err);
@@ -51,10 +51,10 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workoutExercise = await createWorkoutExercise(
-            db,
-            params.id,
-            session.userId,
+           const workoutExercise = await createWorkoutExercise(
+             db,
+             params.id,
+             session.workosId,
             exerciseId,
             orderIndex,
             notes,
@@ -91,7 +91,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const removed = await removeWorkoutExercise(db, params.id, exerciseId, session.userId);
+           const removed = await removeWorkoutExercise(db, params.id, exerciseId, session.workosId);
 
           if (!removed) {
             return Response.json({ error: 'Exercise not found' }, { status: 404 });
@@ -130,7 +130,7 @@ export const Route2 = createFileRoute('/api/workouts/$id/exercises/reorder' as c
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const reordered = await reorderWorkoutExercises(db, params.id, exerciseOrders, session.userId);
+           const reordered = await reorderWorkoutExercises(db, params.id, exerciseOrders, session.workosId);
 
           if (!reordered) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });

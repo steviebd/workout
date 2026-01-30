@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/templates/$id/copy')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await copyTemplate(db, params.id, session.userId);
+           const template = await copyTemplate(db, params.id, session.workosId);
 
           if (!template) {
             return Response.json({ error: 'Template not found' }, { status: 404 });

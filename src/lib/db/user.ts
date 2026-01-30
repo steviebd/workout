@@ -43,13 +43,13 @@ export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): 
   return newUser as LocalUser;
 }
 
-export async function getUserById(db: D1Database, userId: string): Promise<LocalUser | null> {
+export async function getUserByWorkosId(db: D1Database, workosId: string): Promise<LocalUser | null> {
   const drizzleDb = createDb(db);
 
   const user = await drizzleDb
     .select()
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users.workosId, workosId))
     .get();
 
   return user ? (user as LocalUser) : null;

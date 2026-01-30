@@ -24,13 +24,13 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await getTemplateById(db, params.id, session.userId);
+           const template = await getTemplateById(db, params.id, session.workosId);
 
           if (!template) {
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          const exercises = await getTemplateExercises(db, params.id, session.userId);
+           const exercises = await getTemplateExercises(db, params.id, session.workosId);
 
           return Response.json({ ...template, exercises });
         } catch (err) {
@@ -53,7 +53,7 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await updateTemplate(db, params.id, session.userId, {
+           const template = await updateTemplate(db, params.id, session.workosId, {
             name,
             description,
             notes,
@@ -81,7 +81,7 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await softDeleteTemplate(db, params.id, session.userId);
+           const deleted = await softDeleteTemplate(db, params.id, session.workosId);
 
           if (!deleted) {
             return Response.json({ error: 'Template not found' }, { status: 404 });

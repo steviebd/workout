@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/progress/strength')({
             }
           }
 
-          const strengthHistory = await getStrengthHistory(db, session.userId, exerciseId, { fromDate, toDate });
+           const strengthHistory = await getStrengthHistory(db, session.workosId, exerciseId, { fromDate, toDate });
 
           const strengthData = strengthHistory.map(point => ({
             date: point.date,

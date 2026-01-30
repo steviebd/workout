@@ -78,10 +78,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workoutSet = await updateWorkoutSet(db, params.setId, session.userId, updateData as Partial<NewWorkoutSet>);
+           const workoutSet = await updateWorkoutSet(db, params.setId, session.workosId, updateData as Partial<NewWorkoutSet>);
 
           if (!workoutSet) {
-            console.warn('Set not found or does not belong to user:', { setId: params.setId, userId: session.userId });
+             console.warn('Set not found or does not belong to user:', { setId: params.setId, workosId: session.workosId });
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
@@ -109,10 +109,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await deleteWorkoutSet(db, params.setId, session.userId);
+           const deleted = await deleteWorkoutSet(db, params.setId, session.workosId);
 
           if (!deleted) {
-            console.warn('Delete set failed - not found or does not belong to user:', { setId: params.setId, userId: session.userId });
+             console.warn('Delete set failed - not found or does not belong to user:', { setId: params.setId, workosId: session.workosId });
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 

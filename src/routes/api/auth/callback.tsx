@@ -46,7 +46,7 @@ export const Route = createFileRoute('/api/auth/callback')({
             clientId: WORKOS_CLIENT_ID,
           });
 
-          const localUser = await getOrCreateUser(db, {
+          await getOrCreateUser(db, {
             id: user.id,
             email: user.email,
             firstName: user.firstName ?? '',
@@ -59,10 +59,9 @@ export const Route = createFileRoute('/api/auth/callback')({
             {
               id: user.id,
               email: user.email,
-            firstName: user.firstName ?? '',
-            lastName: user.lastName ?? '',
+              firstName: user.firstName ?? '',
+              lastName: user.lastName ?? '',
             },
-            localUser.id,
             workosSessionId
           );
 

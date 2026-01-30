@@ -1,13 +1,15 @@
 CREATE TABLE `exercises` (
 	`id` text PRIMARY KEY,
-	`user_id` text NOT NULL,
+	`local_id` text,
+	`workos_id` text NOT NULL,
 	`name` text NOT NULL,
 	`muscle_group` text,
 	`description` text,
+	`library_id` text,
 	`is_deleted` integer DEFAULT false,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT `fk_exercises_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+	CONSTRAINT `fk_exercises_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE
 );
 --> statement-breakpoint
 CREATE TABLE `template_exercises` (
@@ -21,14 +23,26 @@ CREATE TABLE `template_exercises` (
 --> statement-breakpoint
 CREATE TABLE `templates` (
 	`id` text PRIMARY KEY,
-	`user_id` text NOT NULL,
+	`local_id` text,
+	`workos_id` text NOT NULL,
 	`name` text NOT NULL,
 	`description` text,
 	`notes` text,
 	`is_deleted` integer DEFAULT false,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT `fk_templates_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE
+);
+--> statement-breakpoint
+CREATE TABLE `user_preferences` (
+	`id` text PRIMARY KEY,
+	`workos_id` text,
+	`weight_unit` text DEFAULT 'kg',
+	`date_format` text DEFAULT 'dd/mm/yyyy',
+	`theme` text DEFAULT 'light',
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT `fk_templates_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+	CONSTRAINT `fk_user_preferences_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
@@ -41,6 +55,7 @@ CREATE TABLE `users` (
 --> statement-breakpoint
 CREATE TABLE `workout_exercises` (
 	`id` text PRIMARY KEY,
+	`local_id` text,
 	`workout_id` text NOT NULL,
 	`exercise_id` text NOT NULL,
 	`order_index` integer NOT NULL,
@@ -51,6 +66,7 @@ CREATE TABLE `workout_exercises` (
 --> statement-breakpoint
 CREATE TABLE `workout_sets` (
 	`id` text PRIMARY KEY,
+	`local_id` text,
 	`workout_exercise_id` text NOT NULL,
 	`set_number` integer NOT NULL,
 	`weight` real,
@@ -64,13 +80,14 @@ CREATE TABLE `workout_sets` (
 --> statement-breakpoint
 CREATE TABLE `workouts` (
 	`id` text PRIMARY KEY,
-	`user_id` text NOT NULL,
+	`local_id` text,
+	`workos_id` text NOT NULL,
 	`template_id` text,
 	`name` text NOT NULL,
 	`started_at` text NOT NULL,
 	`completed_at` text,
 	`notes` text,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT `fk_workouts_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+	CONSTRAINT `fk_workouts_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_workouts_template_id_templates_id_fk` FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON DELETE SET NULL
 );

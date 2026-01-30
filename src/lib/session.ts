@@ -3,14 +3,8 @@ import { getTokenFromCookie, verifyToken } from './auth';
 const SESSION_COOKIE_NAME = 'session_token';
 
 export interface Session {
-  userId: string;
   email: string;
   workosId: string;
-}
-
-function isLocalhost(request: Request): boolean {
-  const url = new URL(request.url);
-  return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 }
 
 export async function getSession(request: Request): Promise<Session | null> {
@@ -23,10 +17,14 @@ export async function getSession(request: Request): Promise<Session | null> {
   if (!payload) return null;
 
   return {
-    userId: payload.userId,
     email: payload.email,
     workosId: payload.sub,
   };
+}
+
+function isLocalhost(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 }
 
 function createSessionCookie(token: string, isDev: boolean): string {

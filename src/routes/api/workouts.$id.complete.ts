@@ -27,13 +27,13 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const completed = await completeWorkout(db, params.id, session.userId);
+           const completed = await completeWorkout(db, params.id, session.workosId);
 
           if (!completed) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          const workout = await getWorkoutWithExercises(db, params.id, session.userId);
+           const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
 
           if (!workout) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });

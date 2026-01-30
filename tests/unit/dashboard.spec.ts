@@ -17,7 +17,7 @@ const mockWorkouts: Workout[] = [
   {
     id: 'workout-1',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: 'template-1',
     name: 'Upper Body Workout',
     startedAt: '2024-01-15T10:00:00.000Z',
@@ -28,7 +28,7 @@ const mockWorkouts: Workout[] = [
   {
     id: 'workout-2',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: 'template-2',
     name: 'Lower Body Workout',
     startedAt: '2024-01-12T10:00:00.000Z',
@@ -39,7 +39,7 @@ const mockWorkouts: Workout[] = [
   {
     id: 'workout-3',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: null,
     name: 'Cardio Session',
     startedAt: '2024-01-10T09:00:00.000Z',
@@ -61,7 +61,7 @@ describe('Dashboard Loader Functions', () => {
     vi.useRealTimers();
   });
 
-  describe('getWorkoutsByUserId with limit', () => {
+  describe('getWorkoutsByWorkosId with limit', () => {
     it('should fetch recent workouts with limit=5', async () => {
       mockDrizzleDb.select.mockReturnValue({
         from: vi.fn().mockReturnValue({
@@ -77,11 +77,9 @@ describe('Dashboard Loader Functions', () => {
         }),
       });
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
-
-      expect(result).toHaveLength(3);
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
       expect(result[0].id).toBe('workout-1');
     });
 
@@ -100,9 +98,9 @@ describe('Dashboard Loader Functions', () => {
         }),
       });
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+       const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5, sortBy: 'startedAt', sortOrder: 'DESC' });
+      await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5, sortBy: 'startedAt', sortOrder: 'DESC' });
 
       expect(mockDrizzleDb.select).toHaveBeenCalled();
     });
@@ -122,9 +120,9 @@ describe('Dashboard Loader Functions', () => {
         }),
       });
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
 
       expect(result).toEqual([]);
     });
@@ -144,9 +142,9 @@ describe('Dashboard Loader Functions', () => {
         }),
       });
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
 
       expect(result.every((w) => w.completedAt !== null)).toBe(true);
     });

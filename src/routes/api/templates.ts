@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { type CreateTemplateData, createTemplate, getTemplatesByUserId } from '../../lib/db/template';
+import { type CreateTemplateData, createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/templates')({
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const templates = await getTemplatesByUserId(db, session.userId, {
+           const templates = await getTemplatesByWorkosId(db, session.workosId, {
             search,
             sortBy,
             sortOrder,
@@ -66,8 +66,8 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await createTemplate(db, {
-            userId: session.userId,
+           const template = await createTemplate(db, {
+             workosId: session.workosId,
             name,
             description,
             notes,

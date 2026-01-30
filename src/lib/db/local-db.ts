@@ -6,7 +6,7 @@ export interface LocalExercise {
   id?: number;
   localId: string;
   serverId?: string;
-  userId: string;
+  workosId: string;
   name: string;
   muscleGroup: string;
   description?: string;
@@ -21,7 +21,7 @@ export interface LocalTemplate {
   id?: number;
   localId: string;
   serverId?: string;
-  userId: string;
+  workosId: string;
   name: string;
   description?: string;
   exercises: TemplateExerciseData[];
@@ -45,7 +45,7 @@ export interface LocalWorkout {
   id?: number;
   localId: string;
   serverId?: string;
-  userId: string;
+  workosId: string;
   templateId?: string;
   name: string;
   startedAt: Date;
@@ -115,12 +115,12 @@ class FitWorkoutDatabase extends DexieLib {
   constructor() {
     super('FitWorkoutDB');
     this.version(1).stores({
-      exercises: '++id, &localId, userId, name, muscleGroup, serverId, syncStatus',
-      templates: '++id, &localId, userId, name, serverId, syncStatus',
-      workouts: '++id, &localId, userId, startedAt, status, serverId, syncStatus',
+      exercises: '++id, &localId, workosId, name, muscleGroup, serverId, syncStatus',
+      templates: '++id, &localId, workosId, name, serverId, syncStatus',
+      workouts: '++id, &localId, workosId, startedAt, status, serverId, syncStatus',
       workoutExercises: '++id, &localId, workoutId, exerciseId, serverId, syncStatus',
       workoutSets: '++id, &localId, workoutExerciseId, serverId, syncStatus',
-      offlineQueue: '++id, operationId, type, entity, timestamp, retryCount',
+      offlineQueue: '++id, operationId, [entity+localId], timestamp',
       syncMetadata: '&key, updatedAt',
     });
   }

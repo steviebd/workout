@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/preferences')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const preferences = await getUserPreferences(db, session.userId);
+           const preferences = await getUserPreferences(db, session.workosId);
 
           return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy' });
         } catch (err) {
@@ -42,7 +42,7 @@ export const Route = createFileRoute('/api/preferences')({
           return Response.json({ error: 'Database not available' }, { status: 500 });
         }
 
-        const preferences = await upsertUserPreferences(db, session.userId, {
+         const preferences = await upsertUserPreferences(db, session.workosId, {
           weightUnit,
           theme,
           dateFormat,

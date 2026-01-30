@@ -28,7 +28,7 @@ const queryClient = new QueryClient({
   },
 });
 
-type User = { id: string; email: string; name: string; workosId?: string } | null;
+type User = { id: string; email: string; name: string } | null;
 
 interface AuthContextType {
   user: User;
@@ -98,7 +98,6 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
               id: userData.id,
               email: userData.email,
               name: userData.name,
-              workosId: userData.workosId ?? '',
               cachedAt: new Date(),
             });
           } else {
@@ -114,7 +113,6 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
               id: cachedUser.id,
               email: cachedUser.email,
               name: cachedUser.name,
-              workosId: cachedUser.workosId,
             });
           } else {
             setUser(null);
@@ -127,7 +125,6 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             id: cachedUser.id,
             email: cachedUser.email,
             name: cachedUser.name,
-            workosId: cachedUser.workosId,
           });
         } else {
           setUser(null);

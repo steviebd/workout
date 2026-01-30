@@ -19,7 +19,7 @@ const mockDrizzleDb = {
 const mockWorkoutData: Workout = {
   id: 'workout-1',
   localId: null,
-  userId: 'user-1',
+  workosId: 'user-1',
   templateId: 'template-1',
   name: 'Upper Body Workout',
   startedAt: '2024-01-01T10:00:00.000Z',
@@ -43,7 +43,7 @@ const mockWorkoutSetData: WorkoutSet = {
 
 const mockUserPreferenceData: UserPreference = {
   id: 'prefs-1',
-  userId: 'user-1',
+  workosId: 'user-1',
   weightUnit: 'kg',
   dateFormat: 'dd/mm/yyyy',
   theme: 'light',
@@ -76,14 +76,14 @@ describe('Workout CRUD Operations', () => {
       const { createWorkout } = await import('../../src/lib/db/workout');
 
       const result = await createWorkout(mockDb, {
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Upper Body Workout',
         templateId: 'template-1',
         notes: 'Great workout',
       });
 
       expect(result.id).toBe('workout-1');
-      expect(result.userId).toBe('user-1');
+      expect(result.workosId).toBe('user-1');
       expect(result.name).toBe('Upper Body Workout');
       expect(result.templateId).toBe('template-1');
       expect(result.notes).toBe('Great workout');
@@ -104,7 +104,7 @@ describe('Workout CRUD Operations', () => {
       const { createWorkout } = await import('../../src/lib/db/workout');
 
       const result = await createWorkout(mockDb, {
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Quick Workout',
       });
 
@@ -287,7 +287,7 @@ describe('User Preferences Operations', () => {
 
       const result = await getUserPreferences(mockDb, 'user-1');
 
-      expect(result?.userId).toBe('user-1');
+      expect(result?.workosId).toBe('user-1');
       expect(result?.weightUnit).toBe('kg');
       expect(result?.theme).toBe('light');
     });
@@ -334,7 +334,7 @@ describe('User Preferences Operations', () => {
         theme: 'dark',
       });
 
-      expect(result.userId).toBe('user-1');
+      expect(result.workosId).toBe('user-1');
       expect(result.weightUnit).toBe('kg');
     });
 
@@ -386,7 +386,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   const completedWorkouts = [
     {
       id: 'workout-1',
-      userId: 'user-1',
+      workosId: 'user-1',
       templateId: 'template-1',
       name: 'Upper Body',
       startedAt: '2024-01-10T10:00:00.000Z',
@@ -396,7 +396,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
     },
     {
       id: 'workout-2',
-      userId: 'user-1',
+      workosId: 'user-1',
       templateId: 'template-2',
       name: 'Lower Body',
       startedAt: '2024-01-12T10:00:00.000Z',
@@ -406,7 +406,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
     },
     {
       id: 'workout-3',
-      userId: 'user-1',
+      workosId: 'user-1',
       templateId: 'template-1',
       name: 'Full Body',
       startedAt: '2024-01-14T10:00:00.000Z',
@@ -429,9 +429,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1');
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1');
 
     expect(result).toHaveLength(3);
     expect(result.every((w) => w.completedAt)).toBe(true);
@@ -452,9 +452,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       fromDate: '2024-01-12T00:00:00.000Z',
     });
 
@@ -478,9 +478,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       toDate: '2024-01-11T23:59:59.999Z',
     });
 
@@ -503,9 +503,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       fromDate: '2024-01-12T00:00:00.000Z',
       toDate: '2024-01-12T23:59:59.999Z',
     });
@@ -538,9 +538,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       };
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       exerciseId: 'bench-press',
     });
 
@@ -573,9 +573,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       };
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       exerciseId: 'squat',
     });
 
@@ -607,9 +607,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       };
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       fromDate: '2024-01-14T00:00:00.000Z',
       exerciseId: 'deadlift',
     });
@@ -635,9 +635,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       limit: 1,
       offset: 1,
     });
@@ -659,9 +659,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    await getWorkoutsByUserId(mockDb, 'user-1', {
+    await getWorkoutsByWorkosId(mockDb, 'user-1', {
       sortBy: 'createdAt',
       sortOrder: 'ASC',
     });
@@ -685,9 +685,9 @@ describe('Workout History - getWorkoutsByUserId', () => {
       }),
     });
 
-    const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+    const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-    const result = await getWorkoutsByUserId(mockDb, 'user-1', {
+    const result = await getWorkoutsByWorkosId(mockDb, 'user-1', {
       fromDate: '2025-01-01T00:00:00.000Z',
     });
 

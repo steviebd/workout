@@ -73,7 +73,7 @@ export const Route = createFileRoute('/api/progress/volume')({
             ? exerciseId
             : undefined;
 
-          const weeklyVolume = await getWeeklyVolume(db, session.userId, {
+           const weeklyVolume = await getWeeklyVolume(db, session.workosId, {
             fromDate,
             toDate,
             exerciseId: exerciseFilter,

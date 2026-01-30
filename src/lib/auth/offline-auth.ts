@@ -4,7 +4,6 @@ interface CachedUser {
   id: string;
   email: string;
   name: string;
-  workosId: string;
   cachedAt: Date;
 }
 

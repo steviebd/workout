@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/progress/prs')({
           const limitParam = url.searchParams.get('limit');
           const limit = limitParam ? parseInt(limitParam, 10) : 5;
 
-          const recentPRs = await getRecentPRs(db, session.userId, limit);
+           const recentPRs = await getRecentPRs(db, session.workosId, limit);
 
           return Response.json({
             recentPRs: recentPRs.map(pr => ({

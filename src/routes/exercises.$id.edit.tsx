@@ -30,7 +30,7 @@ interface Exercise {
   name: string;
   muscleGroup: string | null;
   description: string | null;
-  userId: string;
+  workosId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,7 +40,7 @@ interface ExerciseResponse {
   name: string;
   muscleGroup: string | null;
   description: string | null;
-  userId: string;
+  workosId: string;
   createdAt: string;
   updatedAt: string;
 }
