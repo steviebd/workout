@@ -115,7 +115,7 @@ function WorkoutsPage() {
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Your Templates</h2>
-            <Button asChild={true} variant="outline">
+            <Button asChild={true} variant="outline" size="sm">
               <Link to="/templates/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Template
@@ -188,13 +188,7 @@ function WorkoutsPage() {
           {exercises.length === 0 ? (
             <div className="text-center py-8 bg-card border border-border rounded-lg">
               <Dumbbell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">No exercises found</p>
-              <Button asChild={true} size="sm">
-                <Link to="/exercises/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Exercise
-                </Link>
-              </Button>
+              <p className="text-muted-foreground">No exercises found</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2">
@@ -229,7 +223,7 @@ function WorkoutsPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold mb-4">Create Your Own</h2>
+          <h2 className="text-lg font-semibold mb-4">Create Your Own Workout</h2>
           <Button asChild={true} className="w-full">
             <Link to="/workouts/new">
               <Plus className="h-4 w-4 mr-2" />

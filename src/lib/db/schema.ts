@@ -30,6 +30,7 @@ export const exercises = sqliteTable('exercises', {
   name: text('name').notNull(),
   muscleGroup: text('muscle_group'),
   description: text('description'),
+  libraryId: text('library_id'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
@@ -94,6 +95,7 @@ export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
 export const _exercisesIsDeletedIdx = index('idx_exercises_is_deleted').on(exercises.isDeleted);
 export const _exercisesLocalIdIdx = index('idx_exercises_local_id').on(exercises.localId);
 export const _exercisesUpdatedAtIdx = index('idx_exercises_updated_at').on(exercises.updatedAt);
+export const _exercisesLibraryIdIdx = index('idx_exercises_library_id').on(exercises.libraryId);
 
 export const _templatesUserIdIdx = index('idx_templates_user_id').on(templates.userId);
 export const _templatesIsDeletedIdx = index('idx_templates_is_deleted').on(templates.isDeleted);

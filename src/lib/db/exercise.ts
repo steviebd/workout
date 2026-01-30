@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, like } from 'drizzle-orm';
 import { type Exercise, type NewExercise, exercises } from './schema';
 import { createDb } from './index';
@@ -10,6 +10,7 @@ export interface CreateExerciseData {
   muscleGroup?: string;
   description?: string;
   localId?: string;
+  libraryId?: string;
 }
 
 export interface UpdateExerciseData {
@@ -42,6 +43,7 @@ export async function createExercise(
       muscleGroup: data.muscleGroup,
       description: data.description,
       localId: data.localId,
+      libraryId: data.libraryId,
     })
     .returning()
     .get();
@@ -165,7 +167,7 @@ export async function updateExercise(
     .returning()
     .get();
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   return updated ?? null;
 }
 

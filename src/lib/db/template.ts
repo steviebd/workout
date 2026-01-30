@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, like } from 'drizzle-orm';
 import { type NewTemplate, type NewTemplateExercise, type Template, type TemplateExercise, exercises, templateExercises, templates } from './schema';
 import { createDb } from './index';
@@ -157,7 +157,7 @@ export async function updateTemplate(
     .returning()
     .get();
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   return updated ?? null;
 }
 

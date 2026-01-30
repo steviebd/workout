@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/exercises')({
           }
 
           const body = await request.json();
-          const { name, muscleGroup, description, localId } = body as CreateExerciseData & { localId?: string };
+          const { name, muscleGroup, description, localId, libraryId } = body as CreateExerciseData & { localId?: string; libraryId?: string };
 
           if (!name) {
             return Response.json({ error: 'Name is required' }, { status: 400 });
@@ -69,6 +69,7 @@ export const Route = createFileRoute('/api/exercises')({
             muscleGroup,
             description,
             localId,
+            libraryId,
           });
 
           return Response.json(exercise, { status: 201 });

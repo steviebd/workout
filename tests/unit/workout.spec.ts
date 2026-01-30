@@ -55,7 +55,7 @@ describe('Workout CRUD Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -265,7 +265,7 @@ describe('User Preferences Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -375,7 +375,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -666,7 +666,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
       sortOrder: 'ASC',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+     
     const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.leftJoin.mock.results[0].value.where.mock.results[0].value.groupBy.mock.results[0].value.orderBy;
 
     expect(orderByCall).toHaveBeenCalled();
@@ -699,7 +699,7 @@ describe('Workout History - getWorkoutHistoryStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1050,7 +1050,7 @@ describe('getLastWorkoutForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1215,7 +1215,7 @@ describe('getLastWorkoutSetsForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1429,7 +1429,7 @@ describe('Exercise History', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any); // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 
   afterEach(() => {

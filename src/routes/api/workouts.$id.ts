@@ -1,5 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+interface LoggedExercise {
+  id: string;
+  name: string;
+  muscleGroup: string | null;
+  sets: Array<{ isComplete: boolean | null }> | null | undefined;
+}
+
+interface LoggedSet {
+  isComplete: boolean | null;
+}
 import { env } from 'cloudflare:workers';
 import {
   type UpdateWorkoutData,
@@ -57,12 +66,12 @@ export const Route = createFileRoute('/api/workouts/$id')({
             completedAt: response.completedAt,
             startedAt: response.startedAt,
             exercisesCount: response.exercises.length,
-            exercises: response.exercises.map((e: any) => ({
+            exercises: response.exercises.map((e: LoggedExercise) => ({
               id: e.id,
               name: e.name,
               muscleGroup: e.muscleGroup,
               setsCount: e.sets?.length ?? 0,
-              completedSetsCount: e.sets?.filter((s: any) => s.isComplete).length ?? 0
+              completedSetsCount: e.sets?.filter((s: LoggedSet) => s.isComplete).length ?? 0
             }))
           });
 

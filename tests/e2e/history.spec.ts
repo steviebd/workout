@@ -15,8 +15,8 @@ function isAuthKitUrl(url: URL): boolean {
 async function loginUser(page: Page) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
-  const signOutButton = page.locator('text=Sign Out').first();
-  if (await signOutButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+  const userAvatar = page.locator('button.rounded-full').first();
+  if (await userAvatar.isVisible({ timeout: 2000 }).catch(() => false)) {
     console.log('Already logged in, skipping login');
     return;
   }

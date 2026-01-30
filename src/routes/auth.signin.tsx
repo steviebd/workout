@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
 

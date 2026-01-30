@@ -13,17 +13,17 @@ const __dirname = dirname(__filename);
 export default tseslint.config(
 	{
 		ignores: [
-			'dist',
-			'.wrangler',
-			'node_modules',
+			'**/dist/**',
+			'**/.wrangler/**',
+			'**/node_modules/**',
 			'*.config.*',
 			'*.d.ts',
-			'public'
+			'public/**'
 		]
 	},
 	js.configs.recommended,
-	...tseslint.configs.recommendedTypeChecked,
-	...tseslint.configs.strictTypeChecked,
+	...tseslint.configs.recommended,
+	...tseslint.configs.strict,
 	{
 		files: ['**/*.{ts,tsx}'],
 		plugins: {

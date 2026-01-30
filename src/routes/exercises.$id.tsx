@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-use-before-define, @typescript-eslint/no-unnecessary-condition, no-alert */
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button, Card, CardContent } from '~/components/ui';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useToast } from '@/components/ToastProvider';
 
 interface Exercise {
   id: string;
@@ -15,8 +15,9 @@ interface Exercise {
 }
 
 function ExerciseDetail() {
-  const { id } = Route.useParams();
+  const { id } = useParams({ from: '/exercises/$id' });
   const auth = useAuth();
+  const toast = useToast();
   const { formatDateLong } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -62,6 +63,7 @@ function ExerciseDetail() {
   }, [auth.loading, auth.user, exerciseId]);
 
    const handleDelete = useCallback(async () => {
+     // eslint-disable-next-line no-alert
      if (!confirm('Are you sure you want to delete this exercise?')) {
        return;
      }
@@ -77,14 +79,14 @@ function ExerciseDetail() {
        if (response.ok) {
          window.location.href = '/exercises';
        } else {
-         void alert('Failed to delete exercise');
+         toast.error('Failed to delete exercise');
        }
      } catch {
-       void alert('Failed to delete exercise');
+       toast.error('Failed to delete exercise');
      } finally {
        setDeleting(false);
      }
-   }, [exerciseId]);
+   }, [exerciseId, toast]);
 
    const handleDeleteClick = useCallback(() => {
      void handleDelete();

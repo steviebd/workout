@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import {
   type NewWorkout,
@@ -494,7 +494,7 @@ export async function updateWorkout(
     .returning()
     .get();
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   return updated ?? null;
 }
 
@@ -711,7 +711,7 @@ export async function updateWorkoutSet(
 
   console.log('updateWorkoutSet result:', updated);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   return updated ?? null;
 }
 
