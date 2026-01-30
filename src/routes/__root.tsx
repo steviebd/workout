@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unassigned-import */
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Scripts, createRootRoute, useLocation , useNavigate } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
@@ -54,13 +54,10 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-function RootDocument({ children }: { readonly children: React.ReactNode }) {
+function AppLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
-  const navigate = useNavigate();
   
-  // Client-only sync state to avoid SSR issues with QueryClient
   const [syncState, setSyncState] = useState({
     isOnline: true,
     isSyncing: false,
@@ -68,30 +65,25 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
   });
 
   const signOut = useCallback(() => {
-    if (typeof navigator !== 'undefined' && navigator.onLine) {
-      void fetch('/auth/signout', { method: 'GET', credentials: 'include' }).catch(() => {});
-    }
     void clearCachedUser();
     setUser(null);
-    void navigate({ to: '/' });
-  }, [navigate]);
-
-  // Initialize sync state on client only
-  useEffect(() => {
-    setSyncState({
-      isOnline: navigator.onLine,
-      isSyncing: false,
-      pendingCount: 0,
-    });
+    window.location.href = '/auth/signout';
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function checkAuth() {
+      console.log('[checkAuth] Starting auth check...');
       try {
         const response = await fetch('/api/auth/me', { credentials: 'include' });
+        console.log('[checkAuth] Response status:', response.status);
         
+        if (!isMounted) return;
+
         if (response.ok) {
           const userData = (await response.json()) as User;
+          console.log('[checkAuth] User data received:', userData);
           if (userData) {
             setUser(userData);
             await cacheUser({
@@ -101,12 +93,15 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
               cachedAt: new Date(),
             });
           } else {
+            console.log('[checkAuth] userData was falsy');
             setUser(null);
           }
         } else if (response.status === 401) {
+          console.log('[checkAuth] Got 401, clearing user');
           await clearCachedUser();
           setUser(null);
         } else {
+          console.log('[checkAuth] Non-200/401 response, checking cache');
           const cachedUser = await getCachedUser();
           if (cachedUser) {
             setUser({
@@ -118,67 +113,84 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             setUser(null);
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('[checkAuth] Error:', err);
         const cachedUser = await getCachedUser();
-        if (cachedUser) {
+        if (cachedUser && isMounted) {
           setUser({
             id: cachedUser.id,
             email: cachedUser.email,
             name: cachedUser.name,
           });
-        } else {
+        } else if (isMounted) {
           setUser(null);
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          console.log('[checkAuth] Setting loading to false');
+          setLoading(false);
+        }
       }
     }
+
     void checkAuth();
-  }, [location.pathname]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSyncState({
+      isOnline: navigator.onLine,
+      isSyncing: false,
+      pendingCount: 0,
+    });
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-    	<AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
-			<html lang={'en'}>
-				<head>
-					<HeadContent />
-				</head>
-				<body className={'min-h-screen bg-background font-sans antialiased'}>
-					<div className={'min-h-screen flex flex-col'}>
-						<UnitProvider>
-							<DateFormatProvider>
-								<Header />
-								<main className={'flex-1 pb-20'}>
-									<div className="mx-auto max-w-lg px-4">
-										<ErrorBoundary>
-											<ToastProvider>
-												{children}
-											</ToastProvider>
-										</ErrorBoundary>
-									</div>
-								</main>
-								<BottomNav />
-							</DateFormatProvider>
-						</UnitProvider>
-					</div>
-					<TanStackDevtools
-						config={{
-                		position: 'bottom-right',
-              		}}
-						plugins={[
-                		{
-                  		name: 'Tanstack Router',
-                  		render: <TanStackRouterDevtoolsPanel />,
-                	},
-              	]}
-					/>
-					<Scripts />
-				</body>
-			</html>
-     </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
+        <html lang={'en'}>
+          <head>
+            <HeadContent />
+          </head>
+          <body className={'min-h-screen bg-background font-sans antialiased'}>
+            <div className={'min-h-screen flex flex-col'}>
+              <UnitProvider>
+                <DateFormatProvider>
+                  <Header />
+                  <main className={'flex-1 pb-20'}>
+                    <div className="mx-auto max-w-lg px-4">
+                      <ErrorBoundary>
+                        <ToastProvider>
+                          <Outlet />
+                        </ToastProvider>
+                      </ErrorBoundary>
+                    </div>
+                  </main>
+                  <BottomNav />
+                </DateFormatProvider>
+              </UnitProvider>
+            </div>
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+              ]}
+            />
+            <Scripts />
+          </body>
+        </html>
+      </AuthContext.Provider>
     </QueryClientProvider>
-  		)
-  }
+  );
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -195,6 +207,5 @@ export const Route = createRootRoute({
       },
     ],
   }),
-
-  shellComponent: RootDocument,
+  component: AppLayout,
 })

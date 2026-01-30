@@ -85,14 +85,13 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
-          return Response.json(workoutSet);
-        } catch (err) {
-          console.error('Update set error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
-      DELETE: async ({ request, params }) => {
+           return Response.json(workoutSet);
+         } catch (err) {
+           console.error('Update set error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -116,13 +115,12 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
-          return new Response(null, { status: 204 });
-        } catch (err) {
-          console.error('Delete set error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return new Response(null, { status: 204 });
+         } catch (err) {
+           console.error('Delete set error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { type WeightUnit } from '../units';
+import { useAuth } from '../../routes/__root';
 
 interface UnitContextType {
   weightUnit: WeightUnit;
@@ -28,9 +29,12 @@ interface UnitProviderProps {
 
 export function UnitProvider({ children, initialUnit = 'kg' }: UnitProviderProps) {
   const [weightUnit, setWeightUnitState] = useState<WeightUnit>(initialUnit);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     async function fetchPreferences() {
+      if (loading || !user) return;
+      
       try {
         const res = await fetch('/api/preferences', {
           credentials: 'include',
@@ -46,8 +50,10 @@ export function UnitProvider({ children, initialUnit = 'kg' }: UnitProviderProps
       }
     }
 
-    void fetchPreferences();
-  }, []);
+    if (!loading && user) {
+      void fetchPreferences();
+    }
+  }, [user, loading]);
 
   const setWeightUnit = useCallback(async (unit: WeightUnit) => {
     try {

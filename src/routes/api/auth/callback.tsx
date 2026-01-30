@@ -5,6 +5,14 @@ import { createToken, extractSessionIdFromAccessToken } from '../../../lib/auth'
 import { getOrCreateUser } from '../../../lib/db/user';
 import { createSessionResponse } from '../../../lib/session';
 
+function getStateFromCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  const stateCookie = cookies.find(c => c.startsWith('oauth_state='));
+  if (!stateCookie) return null;
+  return stateCookie.split('=')[1];
+}
+
 const {WORKOS_API_KEY} = process.env;
 const {WORKOS_CLIENT_ID} = process.env;
 
@@ -14,11 +22,21 @@ export const Route = createFileRoute('/api/auth/callback')({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
+        const state = url.searchParams.get('state');
 
         if (!code) {
           return new Response(null, {
             status: 302,
             headers: { Location: '/?error=no_code' },
+          });
+        }
+
+        const storedState = getStateFromCookie(request.headers.get('Cookie'));
+        if (!state || !storedState || state !== storedState) {
+          console.error('OAuth state mismatch or missing');
+          return new Response(null, {
+            status: 302,
+            headers: { Location: '/?error=invalid_state' },
           });
         }
 
@@ -68,15 +86,9 @@ export const Route = createFileRoute('/api/auth/callback')({
           return createSessionResponse(token, request, '/');
         } catch (err) {
           console.error('Auth callback error:', err);
-          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-          console.error('Auth callback error details:', {
-            message: errorMessage,
-            stack: err instanceof Error ? err.stack : undefined,
-            code: code ? 'present' : 'missing',
-          });
           return new Response(null, {
             status: 302,
-            headers: { Location: `/?error=auth_failed&details=${encodeURIComponent(errorMessage)}` },
+            headers: { Location: '/?error=auth_failed' },
           });
         }
       },

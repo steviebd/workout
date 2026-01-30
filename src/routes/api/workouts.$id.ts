@@ -82,8 +82,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
           });
         } catch (err) {
           console.error('Get workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
       PUT: async ({ request, params }) => {
@@ -111,14 +110,13 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          return Response.json(workout);
-        } catch (err) {
-          console.error('Update workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
-      DELETE: async ({ request, params }) => {
+           return Response.json(workout);
+         } catch (err) {
+           console.error('Update workout error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -136,13 +134,12 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          return new Response(null, { status: 204 });
-        } catch (err) {
-          console.error('Delete workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return new Response(null, { status: 204 });
+         } catch (err) {
+           console.error('Delete workout error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

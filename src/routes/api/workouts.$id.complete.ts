@@ -66,17 +66,16 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             }))
           });
 
-          return Response.json(response, {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-            },
-          });
-        } catch (err) {
-          console.error('Complete workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json(response, {
+             headers: {
+               'Cache-Control': 'no-store, no-cache, must-revalidate',
+             },
+           });
+         } catch (err) {
+           console.error('Complete workout error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

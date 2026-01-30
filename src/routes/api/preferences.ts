@@ -20,14 +20,13 @@ export const Route = createFileRoute('/api/preferences')({
 
            const preferences = await getUserPreferences(db, session.workosId);
 
-          return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy' });
-        } catch (err) {
-          console.error('Get preferences error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
-      PUT: async ({ request }) => {
+           return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy' });
+         } catch (err) {
+           console.error('Get preferences error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       PUT: async ({ request }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -48,13 +47,12 @@ export const Route = createFileRoute('/api/preferences')({
           dateFormat,
         });
 
-          return Response.json(preferences);
-        } catch (err) {
-          console.error('Update preferences error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json(preferences);
+         } catch (err) {
+           console.error('Update preferences error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

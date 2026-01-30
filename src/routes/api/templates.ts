@@ -34,20 +34,13 @@ export const Route = createFileRoute('/api/templates')({
             offset,
           });
 
-          return Response.json(templates);
-        } catch (err) {
-          console.error('Get templates error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({
-            error: 'Server error',
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
-        }
-      },
-      POST: async ({ request }) => {
+           return Response.json(templates);
+         } catch (err) {
+           console.error('Get templates error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -74,19 +67,12 @@ export const Route = createFileRoute('/api/templates')({
             localId,
           });
 
-          return Response.json(template, { status: 201 });
-        } catch (err) {
-          console.error('Create template error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({
-            error: 'Server error',
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
-        }
-      },
+           return Response.json(template, { status: 201 });
+         } catch (err) {
+           console.error('Create template error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

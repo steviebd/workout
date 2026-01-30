@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
 import { Button } from './ui/Button'
 import { useAuth } from '@/routes/__root'
 import { useUnit } from '@/lib/context/UnitContext'
@@ -15,7 +14,6 @@ export function Header() {
   const [showSettings, setShowSettings] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
   const { weightUnit, setWeightUnit } = useUnit()
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
 
@@ -188,7 +186,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { void navigate({ to: '/auth/signin' }) }}
+                onClick={() => { window.location.href = '/auth/signin' }}
               >
                 Sign In
               </Button>

@@ -4,11 +4,11 @@ let jwtSecret: Uint8Array | null = null;
 
 function getJwtSecret(): Uint8Array {
   if (!jwtSecret) {
-    const apiKey = process.env.WORKOS_API_KEY;
-    if (!apiKey) {
-      throw new Error('AUTH_CONFIG_ERROR: WORKOS_API_KEY not configured');
+    const secret = process.env.SESSION_JWT_SECRET;
+    if (!secret) {
+      throw new Error('AUTH_CONFIG_ERROR: SESSION_JWT_SECRET not configured');
     }
-    jwtSecret = new TextEncoder().encode(apiKey);
+    jwtSecret = new TextEncoder().encode(secret);
   }
   return jwtSecret;
 }
@@ -34,7 +34,9 @@ export async function createToken(user: UserFromWorkOS, workosSessionId?: string
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('2d')
+    .setIssuer('fit-workout-app')
+    .setAudience('fit-workout-app')
     .sign(getJwtSecret());
 
   return token;
@@ -42,7 +44,16 @@ export async function createToken(user: UserFromWorkOS, workosSessionId?: string
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
+      algorithms: ['HS256'],
+      issuer: 'fit-workout-app',
+      audience: 'fit-workout-app',
+    });
+
+    if (typeof payload.sub !== 'string' || typeof payload.email !== 'string') {
+      return null;
+    }
+
     return payload as SessionPayload;
   } catch {
     return null;

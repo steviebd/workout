@@ -46,8 +46,7 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json(workouts);
         } catch (err) {
           console.error('Get workouts error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
         POST: async ({ request }) => {
@@ -97,12 +96,11 @@ export const Route = createFileRoute('/api/workouts')({
              });
 
             return Response.json(workout, { status: 201 });
-         } catch (err) {
-           console.error('Create workout error:', err);
-           const errorMessage = err instanceof Error ? err.message : String(err);
-           return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-         }
-       },
+          } catch (err) {
+            console.error('Create workout error:', err);
+            return Response.json({ error: 'Server error' }, { status: 500 });
+          }
+        },
     },
   },
 });

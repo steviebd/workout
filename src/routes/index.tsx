@@ -51,13 +51,22 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  console.log('[Dashboard] auth state:', { loading: auth.loading, user: auth.user })
+  console.log('[Dashboard] local state:', { loading, error, hasData: !!data })
+
   useEffect(() => {
+    console.log('[Dashboard useEffect] auth.loading:', auth.loading, 'auth.user:', auth.user)
+    
     if (!auth.loading && !auth.user) {
+      console.log('[Dashboard] No user, redirecting to signin')
       window.location.href = '/auth/signin'
       return
     }
 
-    if (!auth.user) return
+    if (!auth.user) {
+      console.log('[Dashboard] auth.user is null, waiting...')
+      return
+    }
 
     const fetchDashboardData = async () => {
       try {

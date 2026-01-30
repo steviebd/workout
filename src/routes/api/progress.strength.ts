@@ -68,13 +68,12 @@ export const Route = createFileRoute('/api/progress/strength')({
             weight: point.weight,
           }));
 
-          return Response.json({ strengthData });
-        } catch (err) {
-          console.error('Get strength progress error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json({ strengthData });
+         } catch (err) {
+           console.error('Get strength progress error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

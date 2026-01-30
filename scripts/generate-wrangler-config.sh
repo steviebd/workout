@@ -111,6 +111,7 @@ env_vars = {
     'ENVIRONMENT': os.environ.get('ENVIRONMENT', ''),
     'POSTHOG_API_KEY': os.environ.get('POSTHOG_API_KEY', ''),
     'POSTHOG_PROJECT_URL': os.environ.get('POSTHOG_PROJECT_URL', ''),
+    'SESSION_JWT_SECRET': os.environ.get('SESSION_JWT_SECRET', ''),
     'TEST_PASSWORD': os.environ.get('TEST_PASSWORD', ''),
     'TEST_USERNAME': os.environ.get('TEST_USERNAME', ''),
     'WORKOS_API_KEY': os.environ.get('WORKOS_API_KEY', ''),

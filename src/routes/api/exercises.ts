@@ -34,14 +34,7 @@ export const Route = createFileRoute('/api/exercises')({
           return Response.json(exercises);
         } catch (err) {
           console.error('Get exercises error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({ 
-            error: 'Server error', 
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
       POST: async ({ request }) => {
@@ -75,14 +68,7 @@ export const Route = createFileRoute('/api/exercises')({
           return Response.json(exercise, { status: 201 });
         } catch (err) {
           console.error('Create exercise error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({ 
-            error: 'Server error', 
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
     },

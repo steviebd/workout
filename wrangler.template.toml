@@ -17,6 +17,7 @@ name = "workout-dev"
 
   [env.dev.vars]
   ENVIRONMENT = "dev"
+  SESSION_JWT_SECRET = ""
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
 
@@ -25,6 +26,7 @@ name = "workout-staging"
 
   [env.staging.vars]
   ENVIRONMENT = "staging"
+  SESSION_JWT_SECRET = ""
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
 
@@ -42,6 +44,7 @@ name = "workout-prod"
 
   [env.production.vars]
   ENVIRONMENT = "production"
+  SESSION_JWT_SECRET = ""
   WORKOS_CLIENT_ID = ""
   WORKOS_API_KEY = ""
 
