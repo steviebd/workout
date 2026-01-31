@@ -24,6 +24,7 @@ const mockWorkouts: Workout[] = [
     completedAt: '2024-01-15T11:00:00.000Z',
     notes: null,
     createdAt: '2024-01-15T10:00:00.000Z',
+    isDeleted: false,
   },
   {
     id: 'workout-2',
@@ -35,6 +36,7 @@ const mockWorkouts: Workout[] = [
     completedAt: '2024-01-12T11:00:00.000Z',
     notes: null,
     createdAt: '2024-01-12T10:00:00.000Z',
+    isDeleted: false,
   },
   {
     id: 'workout-3',
@@ -46,6 +48,7 @@ const mockWorkouts: Workout[] = [
     completedAt: '2024-01-10T09:30:00.000Z',
     notes: 'Easy jog',
     createdAt: '2024-01-10T09:00:00.000Z',
+    isDeleted: false,
   },
 ];
 

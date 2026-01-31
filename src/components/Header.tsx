@@ -6,16 +6,17 @@ import { Button } from './ui/Button'
 import { useAuth } from '@/routes/__root'
 import { useUnit } from '@/lib/context/UnitContext'
 import { useDateFormat } from '@/lib/context/DateFormatContext'
+import { useStreak } from '@/lib/context/StreakContext'
 
 export function Header() {
   const { user, loading: authLoading, signOut, isOnline, isSyncing, pendingCount } = useAuth()
-  const [streak] = useState(7)
   const [showMenu, setShowMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const { weightUnit, setWeightUnit } = useUnit()
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
+  const { currentStreak, loading: streakLoading } = useStreak()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -64,11 +65,18 @@ export function Header() {
           <span className="text-lg font-bold tracking-tight">Fit Workout</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
-            <Flame className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold">{streak}</span>
-          </div>
+          <div className="flex items-center gap-3">
+            {streakLoading ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+                <Flame className="h-4 w-4 text-primary animate-pulse" />
+                <span className="text-sm font-semibold">...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+                <Flame className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{currentStreak}</span>
+              </div>
+            )}
 
           {!isOnline && (
             <div className="flex items-center gap-1 rounded-full bg-warning/20 px-2 py-1 text-warning">
@@ -208,7 +216,7 @@ export function Header() {
               </div>
             ) : null}
           </div>
-        </div>
+          </div>
       </div>
     </header>
   )

@@ -12,6 +12,7 @@ import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
 import { DateFormatProvider } from '@/lib/context/DateFormatContext'
+import { StreakProvider } from '@/lib/context/StreakContext'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 const queryClient = new QueryClient({
@@ -159,7 +160,9 @@ function AppLayout() {
             <div className={'min-h-screen flex flex-col'}>
               <UnitProvider>
                 <DateFormatProvider>
-                  <Header />
+                  <StreakProvider workosId={user?.id ?? ''}>
+                    <Header />
+                  </StreakProvider>
                   <main className={'flex-1 pb-20'}>
                     <div className="mx-auto max-w-lg px-4">
                       <ErrorBoundary>

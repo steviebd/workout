@@ -64,6 +64,7 @@ export const workouts = sqliteTable('workouts', {
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
   notes: text('notes'),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -89,6 +90,15 @@ export const workoutSets = sqliteTable('workout_sets', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const userStreaks = sqliteTable('user_streaks', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().unique().references(() => users.workosId, { onDelete: 'cascade' }),
+  currentStreak: integer('current_streak').default(0),
+  longestStreak: integer('longest_streak').default(0),
+  lastWorkoutDate: text('last_workout_date'),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
 export const _exercisesMuscleGroupIdx = index('idx_exercises_muscle_group').on(exercises.muscleGroup);
 export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
@@ -107,6 +117,7 @@ export const _workoutsTemplateIdIdx = index('idx_workouts_template_id').on(worko
 export const _workoutsStartedAtIdx = index('idx_workouts_started_at').on(workouts.startedAt);
 export const _workoutsCompletedAtIdx = index('idx_workouts_completed_at').on(workouts.completedAt);
 export const _workoutsLocalIdIdx = index('idx_workouts_local_id').on(workouts.localId);
+export const _workoutsIsDeletedIdx = index('idx_workouts_is_deleted').on(workouts.isDeleted);
 
 export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
 export const _workoutExercisesExerciseIdIdx = index('idx_workout_exercises_exercise_id').on(workoutExercises.exerciseId);
@@ -116,6 +127,9 @@ export const _workoutSetsWorkoutExerciseIdIdx = index('idx_workout_sets_workout_
 export const _workoutSetsCompletedAtIdx = index('idx_workout_sets_completed_at').on(workoutSets.completedAt);
 export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(workoutSets.localId);
 
+export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
+export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);
+
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
 export type Template = typeof templates.$inferSelect;
@@ -124,6 +138,7 @@ export type Workout = typeof workouts.$inferSelect;
 export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type WorkoutSet = typeof workoutSets.$inferSelect;
 export type UserPreference = typeof userPreferences.$inferSelect;
+export type UserStreak = typeof userStreaks.$inferSelect;
 
 export type NewUser = typeof users.$inferInsert;
 export type NewExercise = typeof exercises.$inferInsert;
@@ -133,6 +148,7 @@ export type NewWorkout = typeof workouts.$inferInsert;
 export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
 export type NewWorkoutSet = typeof workoutSets.$inferInsert;
 export type NewUserPreference = typeof userPreferences.$inferInsert;
+export type NewUserStreak = typeof userStreaks.$inferInsert;
 
 export default {
   generateId,
@@ -144,4 +160,5 @@ export default {
   workouts,
   workoutExercises,
   workoutSets,
+  userStreaks,
 };

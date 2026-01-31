@@ -1,0 +1,1 @@
+ALTER TABLE `workouts` ADD `is_deleted` integer DEFAULT false;

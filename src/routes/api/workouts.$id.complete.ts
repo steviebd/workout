@@ -10,6 +10,7 @@ interface LoggedSet {
 }
 import { env } from 'cloudflare:workers';
 import { completeWorkout, getWorkoutWithExercises } from '../../lib/db/workout';
+import { updateStreakAfterWorkout } from '../../lib/streaks';
 import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/workouts/$id/complete')({
@@ -31,6 +32,10 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
 
           if (!completed) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
+          }
+
+          if (completed.completedAt) {
+            await updateStreakAfterWorkout(db, session.workosId, completed.completedAt);
           }
 
            const workout = await getWorkoutWithExercises(db, params.id, session.workosId);

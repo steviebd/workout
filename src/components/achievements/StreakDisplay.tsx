@@ -11,13 +11,19 @@ interface UserStats {
 
 interface StreakDisplayProps {
   stats: UserStats
+  workoutDatesInWeek?: string[]
 }
 
-export function StreakDisplay({ stats }: StreakDisplayProps) {
+export function StreakDisplay({ stats, workoutDatesInWeek = [] as string[] }: StreakDisplayProps) {
   const today = new Date()
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   
-  const workoutDays = [true, false, true, true, false, true, false]
+  const workoutDays = days.map((_, index) => {
+    const date = new Date(today)
+    date.setDate(today.getDay() === 0 ? today.getDate() - 6 : today.getDate() - today.getDay() + index)
+    const dateStr = date.toISOString().split('T')[0]
+    return workoutDatesInWeek.includes(dateStr)
+  })
 
   return (
     <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">

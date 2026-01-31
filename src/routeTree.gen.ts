@@ -29,8 +29,10 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
 import { Route as ApiTemplatesRouteImport } from './routes/api/templates'
 import { Route as ApiSyncRouteImport } from './routes/api/sync'
+import { Route as ApiStreaksRouteImport } from './routes/api/streaks'
 import { Route as ApiPreferencesRouteImport } from './routes/api/preferences'
 import { Route as ApiExercisesRouteImport } from './routes/api/exercises'
+import { Route as ApiBadgesRouteImport } from './routes/api/badges'
 import { Route as WorkoutsStartTemplateIdRouteImport } from './routes/workouts.start.$templateId'
 import { Route as WorkoutsIdSummaryRouteImport } from './routes/workouts.$id_.summary'
 import { Route as TemplatesIdEditRouteImport } from './routes/templates.$id.edit'
@@ -160,6 +162,11 @@ const ApiSyncRoute = ApiSyncRouteImport.update({
   path: '/api/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStreaksRoute = ApiStreaksRouteImport.update({
+  id: '/api/streaks',
+  path: '/api/streaks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPreferencesRoute = ApiPreferencesRouteImport.update({
   id: '/api/preferences',
   path: '/api/preferences',
@@ -168,6 +175,11 @@ const ApiPreferencesRoute = ApiPreferencesRouteImport.update({
 const ApiExercisesRoute = ApiExercisesRouteImport.update({
   id: '/api/exercises',
   path: '/api/exercises',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBadgesRoute = ApiBadgesRouteImport.update({
+  id: '/api/badges',
+  path: '/api/badges',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkoutsStartTemplateIdRoute = WorkoutsStartTemplateIdRouteImport.update({
@@ -322,8 +334,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
+  '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
+  '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -374,8 +388,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
+  '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
+  '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -427,8 +443,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
+  '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
   '/api/preferences': typeof ApiPreferencesRoute
+  '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
@@ -481,8 +499,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/progress'
+    | '/api/badges'
     | '/api/exercises'
     | '/api/preferences'
+    | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
@@ -533,8 +553,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/progress'
+    | '/api/badges'
     | '/api/exercises'
     | '/api/preferences'
+    | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
@@ -585,8 +607,10 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/progress'
+    | '/api/badges'
     | '/api/exercises'
     | '/api/preferences'
+    | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
     | '/api/workouts'
@@ -638,8 +662,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
   ProgressRoute: typeof ProgressRoute
+  ApiBadgesRoute: typeof ApiBadgesRoute
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
   ApiPreferencesRoute: typeof ApiPreferencesRoute
+  ApiStreaksRoute: typeof ApiStreaksRoute
   ApiSyncRoute: typeof ApiSyncRoute
   ApiTemplatesRoute: typeof ApiTemplatesRouteWithChildren
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
@@ -809,6 +835,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/streaks': {
+      id: '/api/streaks'
+      path: '/api/streaks'
+      fullPath: '/api/streaks'
+      preLoaderRoute: typeof ApiStreaksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/preferences': {
       id: '/api/preferences'
       path: '/api/preferences'
@@ -821,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/api/exercises'
       fullPath: '/api/exercises'
       preLoaderRoute: typeof ApiExercisesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/badges': {
+      id: '/api/badges'
+      path: '/api/badges'
+      fullPath: '/api/badges'
+      preLoaderRoute: typeof ApiBadgesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workouts/start/$templateId': {
@@ -1181,8 +1221,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
   ProgressRoute: ProgressRoute,
+  ApiBadgesRoute: ApiBadgesRoute,
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
   ApiPreferencesRoute: ApiPreferencesRoute,
+  ApiStreaksRoute: ApiStreaksRoute,
   ApiSyncRoute: ApiSyncRoute,
   ApiTemplatesRoute: ApiTemplatesRouteWithChildren,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,

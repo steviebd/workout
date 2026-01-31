@@ -6,6 +6,7 @@ import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
 import { QuickActions } from '~/components/dashboard/QuickActions'
 import { RecentPRs } from '~/components/dashboard/RecentPRs'
 import { Skeleton } from '~/components/ui/Skeleton'
+import { useStreak } from '@/lib/context/StreakContext'
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -50,6 +51,7 @@ function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { currentStreak, longestStreak, weeklyWorkouts, totalWorkouts, loading: streakLoading } = useStreak()
 
   console.log('[Dashboard] auth state:', { loading: auth.loading, user: auth.user })
   console.log('[Dashboard] local state:', { loading, error, hasData: !!data })
@@ -155,10 +157,10 @@ function Dashboard() {
 
         <div className="space-y-4">
           <StreakCard 
-            currentStreak={7}
-            longestStreak={14}
-            weeklyWorkouts={stats.thisWeek}
-            totalWorkouts={stats.totalWorkouts}
+            currentStreak={streakLoading ? 0 : currentStreak}
+            longestStreak={streakLoading ? 0 : longestStreak}
+            weeklyWorkouts={streakLoading ? 0 : weeklyWorkouts}
+            totalWorkouts={streakLoading ? 0 : totalWorkouts}
           />
           <VolumeSummary 
             totalVolume={stats.totalVolume}
