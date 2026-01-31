@@ -424,9 +424,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+              }),
             }),
           }),
         }),
@@ -447,9 +449,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(filtered),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
             }),
           }),
         }),
@@ -473,9 +477,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(filtered),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
             }),
           }),
         }),
@@ -498,9 +504,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(filtered),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(filtered),
+              }),
             }),
           }),
         }),
@@ -532,9 +540,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
       return {
         from: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
+            leftJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                groupBy: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockResolvedValue(filtered),
+                }),
               }),
             }),
           }),
@@ -567,9 +577,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
       return {
         from: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
+            leftJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                groupBy: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockResolvedValue(filtered),
+                }),
               }),
             }),
           }),
@@ -601,9 +613,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
       return {
         from: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
+            leftJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                groupBy: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockResolvedValue(filtered),
+                }),
               }),
             }),
           }),
@@ -626,11 +640,13 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                offset: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                  offset: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
+                  }),
                 }),
               }),
             }),
@@ -654,9 +670,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(completedWorkouts),
+              }),
             }),
           }),
         }),
@@ -670,8 +688,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
       sortOrder: 'ASC',
     });
 
-     
-    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.leftJoin.mock.results[0].value.where.mock.results[0].value.groupBy.mock.results[0].value.orderBy;
+    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.leftJoin.mock.results[0].value.leftJoin.mock.results[0].value.where.mock.results[0].value.groupBy.mock.results[0].value.orderBy;
 
     expect(orderByCall).toHaveBeenCalled();
   });
@@ -680,9 +697,11 @@ describe('Workout History - getWorkoutsByUserId', () => {
     mockDrizzleDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            groupBy: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue([]),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue([]),
+              }),
             }),
           }),
         }),

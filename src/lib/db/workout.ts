@@ -412,6 +412,9 @@ export interface WorkoutWithExerciseCount {
   startedAt: string;
   completedAt: string | null;
   exerciseCount: number;
+  totalSets: number;
+  totalVolume: number;
+  duration: number;
 }
 
 export async function getWorkoutsByWorkosId(
@@ -448,9 +451,13 @@ export async function getWorkoutsByWorkosId(
       startedAt: workouts.startedAt,
       completedAt: workouts.completedAt,
       exerciseCount: sql<number>`count(${workoutExercises.id})`,
+      totalSets: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 THEN 1 ELSE 0 END), 0)`,
+      totalVolume: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 AND ${workoutSets.weight} > 0 THEN ${workoutSets.weight} * ${workoutSets.reps} ELSE 0 END), 0)`,
+      duration: sql<number>`COALESCE(ROUND((julianday(${workouts.completedAt}) - julianday(${workouts.startedAt})) * 1440), 0)`,
     })
     .from(workouts)
     .leftJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
     .where(and(...conditions))
     .groupBy(workouts.id);
 
