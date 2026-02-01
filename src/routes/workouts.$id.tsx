@@ -35,6 +35,7 @@ interface WorkoutExercise {
    orderIndex: number;
    sets: WorkoutSet[];
    notes: string | null;
+   isAmrap: boolean;
  }
 
 interface WorkoutSet {
@@ -224,6 +225,7 @@ function WorkoutSession() {
           orderIndex,
           sets: [],
           notes: newExerciseData.notes ?? null,
+          isAmrap: false,
         };
 
         const updatedExercises = [...exercises, workoutExercise];
@@ -505,18 +507,19 @@ function WorkoutSession() {
           });
 
            if (exerciseData.ok) {
-             const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
-             const flattenedExercises = exercisesData.map((e) => ({
-               id: e.id,
-               exerciseId: e.exerciseId,
-               orderIndex: e.orderIndex,
-               notes: e.notes,
-               name: e.exercise?.name ?? '',
-               muscleGroup: e.exercise?.muscleGroup ?? null,
-               sets: e.sets as WorkoutSet[],
-             }));
-             setExercises(flattenedExercises);
-           }
+              const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
+              const flattenedExercises = exercisesData.map((e) => ({
+                id: e.id,
+                exerciseId: e.exerciseId,
+                orderIndex: e.orderIndex,
+                notes: e.notes,
+                name: e.exercise?.name ?? '',
+                muscleGroup: e.exercise?.muscleGroup ?? null,
+                sets: e.sets as WorkoutSet[],
+                isAmrap: e.isAmrap,
+              }));
+              setExercises(flattenedExercises);
+            }
         } else {
           let errorData: { error?: string } = {};
           try {

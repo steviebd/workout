@@ -1,13 +1,17 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "5d85c1ff-1968-49d8-98d6-661624130bfd",
+  "id": "26fd01b7-5b72-4472-ae24-ebee2243bb80",
   "prevIds": [
-    "cf70ae8e-43ab-42f3-ac3b-7859c7a9824d"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
       "name": "exercises",
+      "entityType": "tables"
+    },
+    {
+      "name": "program_cycle_workouts",
       "entityType": "tables"
     },
     {
@@ -20,6 +24,10 @@
     },
     {
       "name": "user_preferences",
+      "entityType": "tables"
+    },
+    {
+      "name": "user_program_cycles",
       "entityType": "tables"
     },
     {
@@ -150,6 +158,96 @@
       "generated": null,
       "name": "id",
       "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "cycle_id",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "template_id",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "week_number",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_number",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_name",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "target_lifts",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_complete",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workout_id",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
       "table": "template_exercises"
     },
     {
@@ -179,6 +277,56 @@
       "default": null,
       "generated": null,
       "name": "order_index",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "target_weight",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sets",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reps",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_amrap",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "set_number",
       "entityType": "columns",
       "table": "template_exercises"
     },
@@ -239,6 +387,16 @@
       "default": null,
       "generated": null,
       "name": "notes",
+      "entityType": "columns",
+      "table": "templates"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "program_cycle_id",
       "entityType": "columns",
       "table": "templates"
     },
@@ -341,6 +499,216 @@
       "name": "updated_at",
       "entityType": "columns",
       "table": "user_preferences"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workos_id",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "program_slug",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "squat_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bench_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deadlift_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ohp_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_squat_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_bench_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_deadlift_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_ohp_1rm",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "1",
+      "generated": null,
+      "name": "current_week",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "1",
+      "generated": null,
+      "name": "current_session",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "total_sessions_completed",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "total_sessions_planned",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "'active'",
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_complete",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "name": "started_at",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "completed_at",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "user_program_cycles"
     },
     {
       "type": "text",
@@ -513,6 +881,26 @@
       "table": "workout_exercises"
     },
     {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_amrap",
+      "entityType": "columns",
+      "table": "workout_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "set_number",
+      "entityType": "columns",
+      "table": "workout_exercises"
+    },
+    {
       "type": "text",
       "notNull": false,
       "autoincrement": false,
@@ -654,6 +1042,16 @@
     },
     {
       "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "program_cycle_id",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "text",
       "notNull": true,
       "autoincrement": false,
       "default": null,
@@ -713,6 +1111,86 @@
       "table": "workouts"
     },
     {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "squat_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bench_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deadlift_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ohp_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_squat_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_bench_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_deadlift_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "starting_ohp_1rm",
+      "entityType": "columns",
+      "table": "workouts"
+    },
+    {
       "columns": [
         "workos_id"
       ],
@@ -726,6 +1204,36 @@
       "name": "fk_exercises_workos_id_users_workos_id_fk",
       "entityType": "fks",
       "table": "exercises"
+    },
+    {
+      "columns": [
+        "cycle_id"
+      ],
+      "tableTo": "user_program_cycles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_program_cycle_workouts_cycle_id_user_program_cycles_id_fk",
+      "entityType": "fks",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "columns": [
+        "template_id"
+      ],
+      "tableTo": "templates",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_program_cycle_workouts_template_id_templates_id_fk",
+      "entityType": "fks",
+      "table": "program_cycle_workouts"
     },
     {
       "columns": [
@@ -786,6 +1294,21 @@
       "name": "fk_user_preferences_workos_id_users_workos_id_fk",
       "entityType": "fks",
       "table": "user_preferences"
+    },
+    {
+      "columns": [
+        "workos_id"
+      ],
+      "tableTo": "users",
+      "columnsTo": [
+        "workos_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_user_program_cycles_workos_id_users_workos_id_fk",
+      "entityType": "fks",
+      "table": "user_program_cycles"
     },
     {
       "columns": [
@@ -891,6 +1414,15 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "program_cycle_workouts_pk",
+      "table": "program_cycle_workouts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "template_exercises_pk",
       "table": "template_exercises",
       "entityType": "pks"
@@ -911,6 +1443,15 @@
       "nameExplicit": false,
       "name": "user_preferences_pk",
       "table": "user_preferences",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "user_program_cycles_pk",
+      "table": "user_program_cycles",
       "entityType": "pks"
     },
     {

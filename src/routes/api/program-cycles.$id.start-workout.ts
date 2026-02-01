@@ -58,7 +58,11 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
               workout.id,
               session.workosId,
               templateExercise.exerciseId,
-              templateExercise.orderIndex
+              templateExercise.orderIndex,
+              undefined,
+              undefined,
+              templateExercise.isAmrap ?? false,
+              templateExercise.setNumber ?? undefined
             );
 
             if (workoutExercise) {
@@ -66,12 +70,12 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
               const targetWeight = templateExercise.targetWeight ?? 0;
               const reps = templateExercise.reps ?? 0;
 
-              for (let setNumber = 1; setNumber <= numSets; setNumber++) {
+              for (let setNum = 1; setNum <= numSets; setNum++) {
                 await createWorkoutSet(
                   db,
                   workoutExercise.id,
                   session.workosId,
-                  setNumber,
+                  setNum,
                   targetWeight,
                   reps,
                   undefined

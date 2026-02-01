@@ -60,6 +60,8 @@ export interface WorkoutExerciseWithDetails {
   exerciseId: string;
   orderIndex: number;
   notes: string | null;
+  isAmrap: boolean;
+  setNumber: number | null;
   exercise?: {
     id: string;
     name: string;
@@ -188,6 +190,8 @@ export async function getWorkoutExercises(
       exerciseId: workoutExercises.exerciseId,
       orderIndex: workoutExercises.orderIndex,
       notes: workoutExercises.notes,
+      isAmrap: workoutExercises.isAmrap,
+      setNumber: workoutExercises.setNumber,
       exercise: {
         id: exercises.id,
         name: exercises.name,
@@ -235,6 +239,8 @@ export async function getWorkoutExercises(
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
         notes: row.notes,
+        isAmrap: row.isAmrap ?? false,
+        setNumber: row.setNumber,
         exercise: row.exercise,
         sets: setData?.id ? [setData] : [],
       });
@@ -264,11 +270,28 @@ export async function createWorkoutWithDetails(
     .returning()
     .get();
 
-  const workoutExercisesData: NewWorkoutExercise[] = data.exerciseIds.map((exerciseId, index) => ({
-    workoutId: workout.id,
-    exerciseId,
-    orderIndex: index,
-  }));
+  let workoutExercisesData: NewWorkoutExercise[];
+
+  if (data.templateId) {
+    const { getTemplateExercises } = await import('./template');
+    const templateExercises = await getTemplateExercises(db, data.templateId, data.workosId);
+
+    workoutExercisesData = templateExercises.map((te) => ({
+      workoutId: workout.id,
+      exerciseId: te.exerciseId,
+      orderIndex: te.orderIndex,
+      isAmrap: te.isAmrap ?? false,
+      setNumber: te.setNumber ?? null,
+    }));
+  } else {
+    workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
+      workoutId: workout.id,
+      exerciseId,
+      orderIndex: index,
+      isAmrap: false,
+      setNumber: null,
+    }));
+  }
 
   const newWorkoutExercises = await drizzleDb
     .insert(workoutExercises)
@@ -363,6 +386,8 @@ export async function getWorkoutWithExercises(
       exerciseId: workoutExercises.exerciseId,
       orderIndex: workoutExercises.orderIndex,
       notes: workoutExercises.notes,
+      isAmrap: workoutExercises.isAmrap,
+      setNumber: workoutExercises.setNumber,
       exercise: {
         id: exercises.id,
         name: exercises.name,
@@ -405,6 +430,8 @@ export async function getWorkoutWithExercises(
         exerciseId: row.exerciseId,
         orderIndex: row.orderIndex,
         notes: row.notes,
+        isAmrap: row.isAmrap ?? false,
+        setNumber: row.setNumber,
         exercise: row.exercise,
         sets: setData?.id ? [setData] : [],
       });
@@ -591,7 +618,9 @@ export async function createWorkoutExercise(
   exerciseId: string,
   orderIndex: number,
   notes?: string,
-  localId?: string
+  localId?: string,
+  isAmrap?: boolean,
+  setNumber?: number
 ): Promise<WorkoutExercise | null> {
   const drizzleDb = createDb(db);
 
@@ -613,6 +642,8 @@ export async function createWorkoutExercise(
       orderIndex,
       notes,
       localId,
+      isAmrap: isAmrap ?? false,
+      setNumber: setNumber ?? null,
     })
     .returning()
     .get();

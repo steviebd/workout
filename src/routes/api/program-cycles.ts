@@ -15,7 +15,7 @@ import { nsuns } from '~/lib/programs/nsuns';
 import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
-import { createTemplate, addExerciseToTemplate } from '~/lib/db/template';
+import { createTemplate, addExerciseToTemplate, getTemplateExerciseSetCount } from '~/lib/db/template';
 import { createExercise, getExercisesByWorkosId } from '~/lib/db/exercise';
 
 const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
@@ -27,6 +27,17 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
 };
+
+function normalizeExerciseName(name: string): string {
+  return name.replace(/\s*\d+(\+)?$/, '').trim();
+}
+
+function getSetInfo(name: string, isAmrap?: boolean): { isAmrap: boolean; setNumber: number } {
+  return {
+    isAmrap: isAmrap ?? name.includes('+'),
+    setNumber: 0,
+  };
+}
 
 async function getOrCreateExercise(db: D1Database, workosId: string, name: string, muscleGroup: string) {
   const exercises = await getExercisesByWorkosId(db, workosId, { search: name, limit: 1 });
@@ -127,17 +138,24 @@ export const Route = createFileRoute('/api/program-cycles')({
 
             let orderIndex = 0;
             for (const exercise of workout.exercises) {
-              const muscleGroup = exercise.lift === 'squat' || exercise.lift === 'deadlift' || exercise.lift === 'row' 
-                ? 'Back' 
-                : exercise.lift === 'bench' || exercise.lift === 'ohp' 
-                  ? 'Chest' 
+              const muscleGroup = exercise.lift === 'squat' || exercise.lift === 'deadlift' || exercise.lift === 'row'
+                ? 'Back'
+                : exercise.lift === 'bench' || exercise.lift === 'ohp'
+                  ? 'Chest'
                   : 'Shoulders';
-              
-              const dbExercise = await getOrCreateExercise(db, session.workosId, exercise.name, muscleGroup);
-              
+
+              const normalizedName = normalizeExerciseName(exercise.name);
+              const dbExercise = await getOrCreateExercise(db, session.workosId, normalizedName, muscleGroup);
+
+              const existingSets = await getTemplateExerciseSetCount(db, template.id, dbExercise.id);
+              const nextSetNumber = existingSets + 1;
+
+              const { isAmrap } = getSetInfo(exercise.name, exercise.isAmrap);
+
               await addExerciseToTemplate(
                 db, template.id, session.workosId, dbExercise.id, orderIndex,
-                exercise.targetWeight, exercise.sets, exercise.reps
+                exercise.targetWeight, exercise.sets, exercise.reps,
+                isAmrap, nextSetNumber
               );
               orderIndex++;
             }

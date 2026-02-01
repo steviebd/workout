@@ -11,6 +11,24 @@ export interface TemplateExerciseWithDetails extends TemplateExercise {
   };
 }
 
+export async function getTemplateExerciseSetCount(
+  db: D1Database,
+  templateId: string,
+  exerciseId: string
+): Promise<number> {
+  const drizzleDb = createDb(db);
+
+  const result = await drizzleDb
+    .select({ count: drizzleDb.$count(templateExercises, and(
+      eq(templateExercises.templateId, templateId),
+      eq(templateExercises.exerciseId, exerciseId)
+    ))})
+    .from(templateExercises)
+    .get();
+
+  return result?.count ?? 0;
+}
+
 export type { Template, NewTemplate, TemplateExercise, NewTemplateExercise };
 
 export interface CreateTemplateData {
@@ -244,7 +262,9 @@ export async function addExerciseToTemplate(
   orderIndex: number,
   targetWeight?: number,
   sets?: number,
-  reps?: number
+  reps?: number,
+  isAmrap?: boolean,
+  setNumber?: number
 ): Promise<TemplateExercise | null> {
   const drizzleDb = createDb(db);
 
@@ -268,6 +288,8 @@ export async function addExerciseToTemplate(
       targetWeight: targetWeight ?? null,
       sets: sets ?? null,
       reps: reps ?? null,
+      isAmrap: isAmrap ?? false,
+      setNumber: setNumber ?? null,
     })
     .returning()
     .get();
@@ -330,6 +352,8 @@ export async function getTemplateExercises(
       targetWeight: templateExercises.targetWeight,
       sets: templateExercises.sets,
       reps: templateExercises.reps,
+      isAmrap: templateExercises.isAmrap,
+      setNumber: templateExercises.setNumber,
       exercise: {
         id: exercises.id,
         name: exercises.name,

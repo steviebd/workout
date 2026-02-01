@@ -15,9 +15,10 @@ interface WorkoutSet {
 }
 
 interface Exercise {
-  id: string
-  name: string
-  muscleGroup: string
+  id: string;
+  name: string;
+  muscleGroup: string;
+  isAmrap?: boolean;
 }
 
 interface ExerciseLoggerProps {
@@ -34,7 +35,7 @@ export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: Exerc
   const totalSets = sets.length
   const allCompleted = completedSets === totalSets && totalSets > 0
 
-  const isAmrapSet = exercise.name.endsWith('3+')
+  const isAmrapSet = exercise.isAmrap ?? exercise.name.endsWith('3+')
 
   const handleSetUpdate = (index: number, updatedSet: WorkoutSet) => {
     const newSets = [...sets]

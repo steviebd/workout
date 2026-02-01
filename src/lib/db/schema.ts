@@ -57,6 +57,8 @@ export const templateExercises = sqliteTable('template_exercises', {
   targetWeight: real('target_weight'),
   sets: integer('sets'),
   reps: integer('reps'),
+  isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
+  setNumber: integer('set_number'),
 });
 
 export const workouts = sqliteTable('workouts', {
@@ -88,6 +90,8 @@ export const workoutExercises = sqliteTable('workout_exercises', {
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
   notes: text('notes'),
+  isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
+  setNumber: integer('set_number'),
 });
 
 export const workoutSets = sqliteTable('workout_sets', {

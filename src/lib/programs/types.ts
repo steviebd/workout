@@ -18,6 +18,7 @@ export interface ProgramExercise {
   lift: LiftType;
   sets: number;
   reps: number;
+  isAmrap?: boolean;
 }
 
 export interface ProgramSession {
@@ -44,6 +45,7 @@ export interface ProgramWorkout {
     sets: number;
     reps: number;
     targetWeight: number;
+    isAmrap?: boolean;
   }>;
 }
 
