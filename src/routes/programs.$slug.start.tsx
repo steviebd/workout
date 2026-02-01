@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { X } from 'lucide-react';
+import { X, HelpCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { PageHeader } from '~/components/PageHeader';
@@ -169,10 +169,39 @@ function ProgramStart() {
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      <PageHeader 
+      <PageHeader
         title={`Start ${program.name}`}
         subtitle="Enter your current 1 Rep Maxes"
       />
+
+      <Card className="mx-4 p-4 bg-muted/30">
+        <div className="flex items-start gap-3">
+          <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-sm">What is 1RM?</h4>
+            <p className="text-xs text-muted-foreground mt-1">
+              Your One-Rep Max (1RM) is the maximum weight you can lift for a single rep with proper form.
+            </p>
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-medium">Not sure what to enter?</p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                <li>
+                  <Link to="/1rm-test" className="text-primary hover:underline">
+                    Test it first
+                  </Link>
+                  {' '}— Complete our guided 1RM test
+                </li>
+                <li>
+                  Estimate — If you can lift X for 5 reps, your 1RM is roughly X × 1.2
+                </li>
+                <li>
+                  Starting out? Use a weight that feels challenging for 5 reps
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <form onSubmit={(e) => { void handleSubmit(e); }} className="px-4 flex flex-col gap-4">
         <Card className="p-6">

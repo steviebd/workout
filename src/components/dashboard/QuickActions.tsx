@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, Plus, Loader2, History } from 'lucide-react'
+import { Play, Plus, Loader2, History, Dumbbell, Calendar } from 'lucide-react'
 import { useRouter, Link } from '@tanstack/react-router'
 import { useState, type MouseEvent } from 'react'
 import { Button } from '~/components/ui/Button'
@@ -21,6 +21,8 @@ export function QuickActions({ templates }: QuickActionsProps) {
   const router = useRouter()
   const toast = useToast()
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
+
+  const hasTemplates = templates.length > 0
 
   const handleStartWorkout = async (template: WorkoutTemplate) => {
     setLoadingTemplateId(template.id)
@@ -70,6 +72,55 @@ export function QuickActions({ templates }: QuickActionsProps) {
     if (template) {
       void handleStartWorkout(template)
     }
+  }
+
+  if (!hasTemplates) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Play className="h-5 w-5 text-primary" />
+            Quick Start
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg border border-border bg-secondary/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-3">
+              No templates yet. Start with a program or create your first workout!
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button asChild={true} className="w-full">
+                <Link to="/programs">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Browse Programs
+                </Link>
+              </Button>
+              <Button asChild={true} variant="outline" className="w-full bg-transparent">
+                <Link to="/1rm-test">
+                  <Dumbbell className="mr-2 h-4 w-4" />
+                  Test Your 1RM
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
+              <Link to="/workouts/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Workout
+              </Link>
+            </Button>
+            <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
+              <Link to="/history">
+                <History className="mr-2 h-4 w-4" />
+                History
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

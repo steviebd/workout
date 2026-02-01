@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as AchievementsRouteImport } from './routes/achievements'
+import { Route as R1rmTestRouteImport } from './routes/1rm-test'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
 import { Route as WorkoutsIndexRouteImport } from './routes/workouts._index'
@@ -87,6 +88,11 @@ const ProgressRoute = ProgressRouteImport.update({
 const AchievementsRoute = AchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R1rmTestRoute = R1rmTestRouteImport.update({
+  id: '/1rm-test',
+  path: '/1rm-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -442,6 +448,7 @@ const ApiTemplatesIdExercisesExerciseIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
@@ -513,6 +520,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
@@ -585,6 +593,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/1rm-test'
     | '/achievements'
     | '/progress'
     | '/api/badges'
@@ -729,6 +739,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/1rm-test'
     | '/achievements'
     | '/progress'
     | '/api/badges'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/1rm-test'
     | '/achievements'
     | '/progress'
     | '/api/badges'
@@ -872,6 +884,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R1rmTestRoute: typeof R1rmTestRoute
   AchievementsRoute: typeof AchievementsRoute
   ProgressRoute: typeof ProgressRoute
   ApiBadgesRoute: typeof ApiBadgesRoute
@@ -929,6 +942,13 @@ declare module '@tanstack/react-router' {
       path: '/achievements'
       fullPath: '/achievements'
       preLoaderRoute: typeof AchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/1rm-test': {
+      id: '/1rm-test'
+      path: '/1rm-test'
+      fullPath: '/1rm-test'
+      preLoaderRoute: typeof R1rmTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -1604,6 +1624,7 @@ const TemplatesIdRouteWithChildren = TemplatesIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R1rmTestRoute: R1rmTestRoute,
   AchievementsRoute: AchievementsRoute,
   ProgressRoute: ProgressRoute,
   ApiBadgesRoute: ApiBadgesRoute,

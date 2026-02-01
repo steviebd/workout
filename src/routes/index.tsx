@@ -5,6 +5,7 @@ import { StreakCard } from '~/components/dashboard/StreakCard'
 import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
 import { QuickActions } from '~/components/dashboard/QuickActions'
 import { RecentPRs } from '~/components/dashboard/RecentPRs'
+import { EmptyStateBanner } from '~/components/dashboard/EmptyStateBanner'
 import { Skeleton } from '~/components/ui/Skeleton'
 import { useStreak } from '@/lib/context/StreakContext'
 
@@ -145,6 +146,8 @@ function Dashboard() {
   const personalRecords = data?.personalRecords ?? []
   const templates = data?.templates ?? []
 
+  const isNewUser = stats.totalWorkouts === 0 && templates.length === 0
+
   const today = new Date()
   const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening'
 
@@ -155,14 +158,16 @@ function Dashboard() {
           <p className="text-muted-foreground">Ready to crush your workout?</p>
         </div>
 
+        {isNewUser ? <EmptyStateBanner /> : null}
+
         <div className="space-y-4">
-          <StreakCard 
+          <StreakCard
             currentStreak={streakLoading ? 0 : currentStreak}
             longestStreak={streakLoading ? 0 : longestStreak}
             weeklyWorkouts={streakLoading ? 0 : weeklyWorkouts}
             totalWorkouts={streakLoading ? 0 : totalWorkouts}
           />
-          <VolumeSummary 
+          <VolumeSummary
             totalVolume={stats.totalVolume}
             weeklyVolume={stats.totalVolume / 4}
             volumeGoal={50000}
