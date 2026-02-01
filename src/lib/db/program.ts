@@ -151,8 +151,22 @@ export async function updateProgramCycle1RM(
 ): Promise<UserProgramCycle | null> {
   const drizzleDb = createDb(db);
 
+  const existing = await drizzleDb
+    .select()
+    .from(userProgramCycles)
+    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
+    .get();
+
+  if (!existing) {
+    return null;
+  }
+
   const updateData: Partial<NewUserProgramCycle> = {
     ...data,
+    startingSquat1rm: existing.startingSquat1rm ?? existing.squat1rm,
+    startingBench1rm: existing.startingBench1rm ?? existing.bench1rm,
+    startingDeadlift1rm: existing.startingDeadlift1rm ?? existing.deadlift1rm,
+    startingOhp1rm: existing.startingOhp1rm ?? existing.ohp1rm,
     updatedAt: new Date().toISOString(),
   };
 
@@ -233,20 +247,9 @@ export async function softDeleteProgramCycle(
 export async function addWorkoutToCycle(
   db: D1Database,
   cycleId: string,
-  workosId: string,
   data: ProgramWorkoutData
 ): Promise<ProgramCycleWorkout | null> {
   const drizzleDb = createDb(db);
-
-  const cycle = await drizzleDb
-    .select({ id: userProgramCycles.id })
-    .from(userProgramCycles)
-    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
-    .get();
-
-  if (!cycle) {
-    return null;
-  }
 
   const workout = await drizzleDb
     .insert(programCycleWorkouts)

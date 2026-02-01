@@ -523,7 +523,7 @@ const wendler531 = {
 - [x] StrongLifts 5×5 full implementation
 - [x] 5/3/1 full implementation
 - [x] Madcow 5×5 full implementation
-- [ ] Dedicated 1RM test workout type
+- [x] Dedicated 1RM test workout type
 
 ### Phase 1b: Program UX Improvements (Hot Fixes)
 - [x] Add targetWeight/sets/reps columns to template_exercises schema
@@ -539,7 +539,16 @@ const wendler531 = {
 - [x] Fix multiple exercise entries (warmups now grouped, not separate rows)
 - [x] Fix 1RM + isComplete conflict in same request
 - [x] Fix end workout to advance cycle progress automatically
-- [ ] Update start-workout API to create workout with full exercise/sets data
+- [x] Update start-workout API to create workout with full exercise/sets data
+- [x] Link 1RM test workouts to program cycle via programCycleId column
+- [x] Link regular program workouts to cycle (pass programCycleId from template to workout)
+- [x] Update cycle naming to use "Month Year" format (e.g., "Madcow 5×5 - January 2025")
+- [x] Fix addWorkoutToCycle - removed redundant cycle check that caused silent failures
+- [x] Add error handling in program creation to catch workout assignment failures
+- [x] Show program info and 1RM progress in workout history
+  - Add starting 1RM columns to userProgramCycles (startingSquat1rm, etc.)
+  - Update 1RM test results to preserve starting values before update
+  - Display "Starting → Ending" 1RM comparison in history
 
 ### Phase 2: Additional Programs (Week 3-4)
 - [ ] Candito 6 Week

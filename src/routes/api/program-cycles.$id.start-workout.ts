@@ -31,7 +31,11 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
 
           const currentWorkout = await getCurrentWorkout(db, params.id, session.workosId);
           if (!currentWorkout) {
-            return Response.json({ error: 'No pending workouts found' }, { status: 404 });
+            const cycleCheck = await getProgramCycleById(db, params.id, session.workosId);
+            if (!cycleCheck) {
+              return Response.json({ error: 'Program cycle not found' }, { status: 404 });
+            }
+            return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
           }
 
           const template = await getTemplateById(db, currentWorkout.templateId, session.workosId);
@@ -44,6 +48,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           const workout = await createWorkout(db, {
             workosId: session.workosId,
             templateId: template.id,
+            programCycleId: template.programCycleId ?? undefined,
             name: template.name,
           });
 

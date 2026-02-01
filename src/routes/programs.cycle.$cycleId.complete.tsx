@@ -12,6 +12,10 @@ interface CycleData {
   bench1rm: number;
   deadlift1rm: number;
   ohp1rm: number;
+  startingSquat1rm: number | null;
+  startingBench1rm: number | null;
+  startingDeadlift1rm: number | null;
+  startingOhp1rm: number | null;
   currentWeek: number | null;
   currentSession: number | null;
   totalSessionsCompleted: number;
@@ -33,6 +37,7 @@ function CompleteProgram() {
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [workouts, setWorkouts] = useState<CycleWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStartingTest, setIsStartingTest] = useState(false);
   const [weightUnit, setWeightUnit] = useState('kg');
 
   useEffect(() => {
@@ -65,8 +70,26 @@ function CompleteProgram() {
     void loadData();
   }, [params.cycleId]);
 
-  const handleStart1RMTest = () => {
-    void navigate({ to: '/programs/cycle/$cycleId/1rm-test', params: { cycleId: params.cycleId } });
+  const handleStart1RMTest = async () => {
+    setIsStartingTest(true);
+    try {
+      await fetch(`/api/program-cycles/${params.cycleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isComplete: true }),
+      });
+
+      const response = await fetch(`/api/program-cycles/${params.cycleId}/create-1rm-test-workout`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const data = await response.json() as { workoutId: string };
+        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+      }
+    } catch (error) {
+      console.error('Error starting 1RM test:', error);
+      setIsStartingTest(false);
+    }
   };
 
   const handleSaveAndTestLater = async () => {
@@ -123,7 +146,7 @@ function CompleteProgram() {
                 <p className="font-semibold text-lg">{completedWorkouts} / {cycle.totalSessionsPlanned}</p>
               </div>
               <div className="bg-muted p-3 rounded-lg">
-                <p className="text-sm text-muted-foreground">Starting 1RMs</p>
+                <p className="text-sm text-muted-foreground">Weight Unit</p>
                 <p className="font-semibold text-lg">{weightUnit}</p>
               </div>
             </div>
@@ -131,19 +154,39 @@ function CompleteProgram() {
             <div className="space-y-2 mt-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Squat</span>
-                <span className="font-medium">{cycle.squat1rm} {weightUnit}</span>
+                <span className="font-medium">
+                  {cycle.startingSquat1rm ?? cycle.squat1rm} → {cycle.squat1rm}
+                  {(cycle.startingSquat1rm ?? cycle.squat1rm) ? (
+                    <span className="text-success ml-2">(+{(cycle.squat1rm - (cycle.startingSquat1rm ?? cycle.squat1rm)).toFixed(1)})</span>
+                  ) : null}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bench</span>
-                <span className="font-medium">{cycle.bench1rm} {weightUnit}</span>
+                <span className="font-medium">
+                  {cycle.startingBench1rm ?? cycle.bench1rm} → {cycle.bench1rm}
+                  {(cycle.startingBench1rm ?? cycle.bench1rm) ? (
+                    <span className="text-success ml-2">(+{(cycle.bench1rm - (cycle.startingBench1rm ?? cycle.bench1rm)).toFixed(1)})</span>
+                  ) : null}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Deadlift</span>
-                <span className="font-medium">{cycle.deadlift1rm} {weightUnit}</span>
+                <span className="font-medium">
+                  {cycle.startingDeadlift1rm ?? cycle.deadlift1rm} → {cycle.deadlift1rm}
+                  {(cycle.startingDeadlift1rm ?? cycle.deadlift1rm) ? (
+                    <span className="text-success ml-2">(+{(cycle.deadlift1rm - (cycle.startingDeadlift1rm ?? cycle.deadlift1rm)).toFixed(1)})</span>
+                  ) : null}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">OHP</span>
-                <span className="font-medium">{cycle.ohp1rm} {weightUnit}</span>
+                <span className="font-medium">
+                  {cycle.startingOhp1rm ?? cycle.ohp1rm} → {cycle.ohp1rm}
+                  {(cycle.startingOhp1rm ?? cycle.ohp1rm) ? (
+                    <span className="text-success ml-2">(+{(cycle.ohp1rm - (cycle.startingOhp1rm ?? cycle.ohp1rm)).toFixed(1)})</span>
+                  ) : null}
+                </span>
               </div>
             </div>
           </div>
@@ -154,8 +197,8 @@ function CompleteProgram() {
           <p className="text-sm text-muted-foreground mb-4">
             Now it's time to test your new 1 Rep Maxes to see how much you've improved!
           </p>
-          <Button onClick={handleStart1RMTest} className="w-full">
-            Test 1RM Now
+          <Button onClick={() => { void handleStart1RMTest(); }} disabled={isStartingTest} className="w-full">
+            {isStartingTest ? 'Setting up...' : 'Test 1RM Now'}
           </Button>
         </Card>
 

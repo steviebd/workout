@@ -96,9 +96,12 @@ export const Route = createFileRoute('/api/program-cycles')({
           const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
           const workouts = programConfig.generateWorkouts(oneRMs);
 
+          const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          const cycleName = `${programConfig.info.name} - ${monthYear}`;
+
           const cycle = await createProgramCycle(db, session.workosId, {
             programSlug,
-            name: `${programConfig.info.name}`,
+            name: cycleName,
             squat1rm,
             bench1rm,
             deadlift1rm,
@@ -109,7 +112,7 @@ export const Route = createFileRoute('/api/program-cycles')({
           for (const workout of workouts) {
             const template = await createTemplate(db, {
               workosId: session.workosId,
-              name: `${programConfig.info.name} - ${workout.sessionName}`,
+              name: `${cycleName} - ${workout.sessionName}`,
               description: `Week ${workout.weekNumber} - ${workout.sessionName}`,
               programCycleId: cycle.id,
             });
@@ -131,13 +134,17 @@ export const Route = createFileRoute('/api/program-cycles')({
               orderIndex++;
             }
 
-            await addWorkoutToCycle(db, cycle.id, session.workosId, {
+            const cycleWorkout = await addWorkoutToCycle(db, cycle.id, {
               templateId: template.id,
               weekNumber: workout.weekNumber,
               sessionNumber: workout.sessionNumber,
               sessionName: workout.sessionName,
               targetLifts: JSON.stringify(workout.exercises.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps }))),
             });
+            
+            if (!cycleWorkout) {
+              throw new Error(`Failed to add workout ${workout.sessionName} to cycle`);
+            }
           }
 
           return Response.json(cycle, { status: 201 });

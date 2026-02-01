@@ -8,6 +8,7 @@ import {
   type WorkoutExercise,
   type WorkoutSet,
   exercises,
+  userProgramCycles,
   workoutExercises,
   workoutSets,
   workouts,
@@ -19,6 +20,7 @@ export type { Workout, NewWorkout, WorkoutExercise, NewWorkoutExercise, WorkoutS
 export interface CreateWorkoutData {
   name: string;
   templateId?: string;
+  programCycleId?: string;
   notes?: string;
   localId?: string;
 }
@@ -27,6 +29,14 @@ export interface UpdateWorkoutData {
   name?: string;
   notes?: string;
   completedAt?: string;
+  squat1rm?: number | null;
+  bench1rm?: number | null;
+  deadlift1rm?: number | null;
+  ohp1rm?: number | null;
+  startingSquat1rm?: number | null;
+  startingBench1rm?: number | null;
+  startingDeadlift1rm?: number | null;
+  startingOhp1rm?: number | null;
 }
 
 export interface GetWorkoutsOptions {
@@ -77,6 +87,7 @@ export async function createWorkout(
       workosId: data.workosId,
       name: data.name,
       templateId: data.templateId,
+      programCycleId: data.programCycleId,
       notes: data.notes,
       startedAt: new Date().toISOString(),
       localId: data.localId,
@@ -245,6 +256,7 @@ export async function createWorkoutWithDetails(
       workosId: data.workosId,
       name: data.name,
       templateId: data.templateId,
+      programCycleId: data.programCycleId,
       notes: data.notes,
       startedAt: new Date().toISOString(),
       localId: data.localId,
@@ -415,6 +427,27 @@ export interface WorkoutWithExerciseCount {
   totalSets: number;
   totalVolume: number;
   duration: number;
+  programCycleId: string | null;
+  squat1rm: number | null;
+  bench1rm: number | null;
+  deadlift1rm: number | null;
+  ohp1rm: number | null;
+  startingSquat1rm: number | null;
+  startingBench1rm: number | null;
+  startingDeadlift1rm: number | null;
+  startingOhp1rm: number | null;
+  programCycle: {
+    name: string;
+    programSlug: string;
+    squat1rm: number;
+    bench1rm: number;
+    deadlift1rm: number;
+    ohp1rm: number;
+    startingSquat1rm: number | null;
+    startingBench1rm: number | null;
+    startingDeadlift1rm: number | null;
+    startingOhp1rm: number | null;
+  } | null;
 }
 
 export async function getWorkoutsByWorkosId(
@@ -454,12 +487,35 @@ export async function getWorkoutsByWorkosId(
       totalSets: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 THEN 1 ELSE 0 END), 0)`,
       totalVolume: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 AND ${workoutSets.weight} > 0 THEN ${workoutSets.weight} * ${workoutSets.reps} ELSE 0 END), 0)`,
       duration: sql<number>`COALESCE(ROUND((julianday(${workouts.completedAt}) - julianday(${workouts.startedAt})) * 1440), 0)`,
+      programCycleId: workouts.programCycleId,
+      squat1rm: sql<number | null>`CASE WHEN ${workouts.name} = '1RM Test' THEN COALESCE(MAX(CASE WHEN LOWER(${exercises.name}) LIKE '%squat%' AND ${workoutSets.isComplete} = 1 THEN ${workoutSets.weight} END), ${workouts.squat1rm}) ELSE ${workouts.squat1rm} END`,
+      bench1rm: sql<number | null>`CASE WHEN ${workouts.name} = '1RM Test' THEN COALESCE(MAX(CASE WHEN LOWER(${exercises.name}) LIKE '%bench%' AND ${workoutSets.isComplete} = 1 THEN ${workoutSets.weight} END), ${workouts.bench1rm}) ELSE ${workouts.bench1rm} END`,
+      deadlift1rm: sql<number | null>`CASE WHEN ${workouts.name} = '1RM Test' THEN COALESCE(MAX(CASE WHEN LOWER(${exercises.name}) LIKE '%deadlift%' AND ${workoutSets.isComplete} = 1 THEN ${workoutSets.weight} END), ${workouts.deadlift1rm}) ELSE ${workouts.deadlift1rm} END`,
+      ohp1rm: sql<number | null>`CASE WHEN ${workouts.name} = '1RM Test' THEN COALESCE(MAX(CASE WHEN (LOWER(${exercises.name}) LIKE '%overhead%' OR LOWER(${exercises.name}) LIKE '%ohp%') AND ${workoutSets.isComplete} = 1 THEN ${workoutSets.weight} END), ${workouts.ohp1rm}) ELSE ${workouts.ohp1rm} END`,
+      startingSquat1rm: sql<number | null>`COALESCE(${workouts.startingSquat1rm}, ${userProgramCycles.startingSquat1rm})`,
+      startingBench1rm: sql<number | null>`COALESCE(${workouts.startingBench1rm}, ${userProgramCycles.startingBench1rm})`,
+      startingDeadlift1rm: sql<number | null>`COALESCE(${workouts.startingDeadlift1rm}, ${userProgramCycles.startingDeadlift1rm})`,
+      startingOhp1rm: sql<number | null>`COALESCE(${workouts.startingOhp1rm}, ${userProgramCycles.startingOhp1rm})`,
+      programCycle: {
+        name: userProgramCycles.name,
+        programSlug: userProgramCycles.programSlug,
+        squat1rm: userProgramCycles.squat1rm,
+        bench1rm: userProgramCycles.bench1rm,
+        deadlift1rm: userProgramCycles.deadlift1rm,
+        ohp1rm: userProgramCycles.ohp1rm,
+        startingSquat1rm: userProgramCycles.startingSquat1rm,
+        startingBench1rm: userProgramCycles.startingBench1rm,
+        startingDeadlift1rm: userProgramCycles.startingDeadlift1rm,
+        startingOhp1rm: userProgramCycles.startingOhp1rm,
+      },
     })
     .from(workouts)
     .leftJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
     .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+    .leftJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .leftJoin(userProgramCycles, eq(workouts.programCycleId, userProgramCycles.id))
     .where(and(...conditions))
-    .groupBy(workouts.id);
+    .groupBy(workouts.id, userProgramCycles.id, userProgramCycles.name, userProgramCycles.programSlug, userProgramCycles.squat1rm, userProgramCycles.bench1rm, userProgramCycles.deadlift1rm, userProgramCycles.ohp1rm, userProgramCycles.startingSquat1rm, userProgramCycles.startingBench1rm, userProgramCycles.startingDeadlift1rm, userProgramCycles.startingOhp1rm);
 
   if (sortBy === 'startedAt') {
     query = sortOrder === 'DESC'

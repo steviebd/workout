@@ -69,6 +69,8 @@ import { Route as ApiTemplatesIdCopyRouteImport } from './routes/api/templates.$
 import { Route as ApiProgramCyclesIdWorkoutsRouteImport } from './routes/api/program-cycles.$id.workouts'
 import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api/program-cycles.$id.start-workout'
 import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
+import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
+import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
 import { Route as ApiExercisesIdLastWorkoutSetsRouteImport } from './routes/api/exercises.$id.last-workout-sets'
 import { Route as ApiExercisesIdLastWorkoutRouteImport } from './routes/api/exercises.$id.last-workout'
 import { Route as ApiExercisesExerciseIdHistoryRouteImport } from './routes/api/exercises.$exerciseId.history'
@@ -383,6 +385,18 @@ const ApiProgramCyclesIdCurrentWorkoutRoute =
     path: '/current-workout',
     getParentRoute: () => ApiProgramCyclesIdRoute,
   } as any)
+const ApiProgramCyclesIdCreate1rmTestWorkoutRoute =
+  ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport.update({
+    id: '/create-1rm-test-workout',
+    path: '/create-1rm-test-workout',
+    getParentRoute: () => ApiProgramCyclesIdRoute,
+  } as any)
+const ApiProgramCyclesCycleId1rmTestWorkoutRoute =
+  ApiProgramCyclesCycleId1rmTestWorkoutRouteImport.update({
+    id: '/$cycleId/1rm-test-workout',
+    path: '/$cycleId/1rm-test-workout',
+    getParentRoute: () => ApiProgramCyclesRoute,
+  } as any)
 const ApiExercisesIdLastWorkoutSetsRoute =
   ApiExercisesIdLastWorkoutSetsRouteImport.update({
     id: '/last-workout-sets',
@@ -473,6 +487,8 @@ export interface FileRoutesByFullPath {
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
+  '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
@@ -541,6 +557,8 @@ export interface FileRoutesByTo {
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
+  '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
@@ -610,6 +628,8 @@ export interface FileRoutesById {
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
+  '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
@@ -680,6 +700,8 @@ export interface FileRouteTypes {
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/program-cycles/$cycleId/1rm-test-workout'
+    | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
@@ -748,6 +770,8 @@ export interface FileRouteTypes {
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/program-cycles/$cycleId/1rm-test-workout'
+    | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
@@ -816,6 +840,8 @@ export interface FileRouteTypes {
     | '/api/exercises/$exerciseId/history'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/program-cycles/$cycleId/1rm-test-workout'
+    | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
@@ -1298,6 +1324,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesIdCurrentWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesIdRoute
     }
+    '/api/program-cycles/$id/create-1rm-test-workout': {
+      id: '/api/program-cycles/$id/create-1rm-test-workout'
+      path: '/create-1rm-test-workout'
+      fullPath: '/api/program-cycles/$id/create-1rm-test-workout'
+      preLoaderRoute: typeof ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport
+      parentRoute: typeof ApiProgramCyclesIdRoute
+    }
+    '/api/program-cycles/$cycleId/1rm-test-workout': {
+      id: '/api/program-cycles/$cycleId/1rm-test-workout'
+      path: '/$cycleId/1rm-test-workout'
+      fullPath: '/api/program-cycles/$cycleId/1rm-test-workout'
+      preLoaderRoute: typeof ApiProgramCyclesCycleId1rmTestWorkoutRouteImport
+      parentRoute: typeof ApiProgramCyclesRoute
+    }
     '/api/exercises/$id/last-workout-sets': {
       id: '/api/exercises/$id/last-workout-sets'
       path: '/last-workout-sets'
@@ -1374,12 +1414,15 @@ const ApiExercisesRouteWithChildren = ApiExercisesRoute._addFileChildren(
 )
 
 interface ApiProgramCyclesIdRouteChildren {
+  ApiProgramCyclesIdCreate1rmTestWorkoutRoute: typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   ApiProgramCyclesIdCurrentWorkoutRoute: typeof ApiProgramCyclesIdCurrentWorkoutRoute
   ApiProgramCyclesIdStartWorkoutRoute: typeof ApiProgramCyclesIdStartWorkoutRoute
   ApiProgramCyclesIdWorkoutsRoute: typeof ApiProgramCyclesIdWorkoutsRoute
 }
 
 const ApiProgramCyclesIdRouteChildren: ApiProgramCyclesIdRouteChildren = {
+  ApiProgramCyclesIdCreate1rmTestWorkoutRoute:
+    ApiProgramCyclesIdCreate1rmTestWorkoutRoute,
   ApiProgramCyclesIdCurrentWorkoutRoute: ApiProgramCyclesIdCurrentWorkoutRoute,
   ApiProgramCyclesIdStartWorkoutRoute: ApiProgramCyclesIdStartWorkoutRoute,
   ApiProgramCyclesIdWorkoutsRoute: ApiProgramCyclesIdWorkoutsRoute,
@@ -1390,10 +1433,13 @@ const ApiProgramCyclesIdRouteWithChildren =
 
 interface ApiProgramCyclesRouteChildren {
   ApiProgramCyclesIdRoute: typeof ApiProgramCyclesIdRouteWithChildren
+  ApiProgramCyclesCycleId1rmTestWorkoutRoute: typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
 }
 
 const ApiProgramCyclesRouteChildren: ApiProgramCyclesRouteChildren = {
   ApiProgramCyclesIdRoute: ApiProgramCyclesIdRouteWithChildren,
+  ApiProgramCyclesCycleId1rmTestWorkoutRoute:
+    ApiProgramCyclesCycleId1rmTestWorkoutRoute,
 }
 
 const ApiProgramCyclesRouteWithChildren =
