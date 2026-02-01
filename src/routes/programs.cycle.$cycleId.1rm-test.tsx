@@ -5,6 +5,7 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
+import { LoadingForm } from '~/components/ui/LoadingSkeleton';
 
 interface CycleData {
   id: string;
@@ -37,7 +38,6 @@ function OneRMTest() {
   const params = useParams({ from: '/programs/cycle/$cycleId/1rm-test' });
   const navigate = useNavigate();
   const [cycle, setCycle] = useState<CycleData | null>(null);
-  const [_workout, setWorkout] = useState<WorkoutData | null>(null);
   const [weightUnit, setWeightUnit] = useState('kg');
   const [formData, setFormData] = useState({
     squat1rm: '',
@@ -50,54 +50,49 @@ function OneRMTest() {
 
   useEffect(() => {
     async function loadData() {
-      let cycleData: CycleData | null = null;
+      setIsLoading(true);
       
       try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}`);
-        if (response.ok) {
-          cycleData = await response.json() as CycleData;
-          setCycle(cycleData);
-          
-          cycleData.startingSquat1rm ??= cycleData.squat1rm;
-          cycleData.startingBench1rm ??= cycleData.bench1rm;
-          cycleData.startingDeadlift1rm ??= cycleData.deadlift1rm;
-          cycleData.startingOhp1rm ??= cycleData.ohp1rm;
-        }
+        const [cycleRes, workoutRes, prefsRes] = await Promise.all([
+          fetch(`/api/program-cycles/${params.cycleId}`),
+          fetch(`/api/program-cycles/${params.cycleId}/1rm-test-workout`),
+          fetch('/api/user/preferences'),
+        ]);
 
-        try {
-          const workoutRes = await fetch(`/api/program-cycles/${params.cycleId}/1rm-test-workout`);
-          if (workoutRes.ok) {
-            const workoutData: WorkoutData = await workoutRes.json();
-            setWorkout(workoutData);
-              if (workoutData.squat1rm) {
-              setFormData({
-                squat1rm: workoutData.squat1rm.toString(),
-                bench1rm: workoutData.bench1rm?.toString() ?? '',
-                deadlift1rm: workoutData.deadlift1rm?.toString() ?? '',
-                ohp1rm: workoutData.ohp1rm?.toString() ?? '',
-              });
-            } else {
-              setFormData({
-                squat1rm: cycleData?.squat1rm?.toString() ?? '',
-                bench1rm: cycleData?.bench1rm?.toString() ?? '',
-                deadlift1rm: cycleData?.deadlift1rm?.toString() ?? '',
-                ohp1rm: cycleData?.ohp1rm?.toString() ?? '',
-              });
-            }
-          }
-        } catch (workoutErr) {
-          console.error('Error loading workout:', workoutErr);
-          setFormData({
-            squat1rm: cycleData?.squat1rm?.toString() ?? '',
-            bench1rm: cycleData?.bench1rm?.toString() ?? '',
-            deadlift1rm: cycleData?.deadlift1rm?.toString() ?? '',
-            ohp1rm: cycleData?.ohp1rm?.toString() ?? '',
+        let cycleData: CycleData | null = null;
+
+        if (cycleRes.ok) {
+          cycleData = await cycleRes.json() as CycleData;
+          setCycle({
+            ...cycleData,
+            startingSquat1rm: cycleData.startingSquat1rm ?? cycleData.squat1rm,
+            startingBench1rm: cycleData.startingBench1rm ?? cycleData.bench1rm,
+            startingDeadlift1rm: cycleData.startingDeadlift1rm ?? cycleData.deadlift1rm,
+            startingOhp1rm: cycleData.startingOhp1rm ?? cycleData.ohp1rm,
           });
         }
 
-        const prefsResponse = await fetch('/api/user/preferences');
-        if (prefsResponse.ok) {
-          const prefs = await prefsResponse.json() as { weightUnit?: string };
+        if (workoutRes.ok) {
+          const workoutData: WorkoutData = await workoutRes.json();
+          if (workoutData.squat1rm) {
+            setFormData({
+              squat1rm: workoutData.squat1rm.toString(),
+              bench1rm: workoutData.bench1rm?.toString() ?? '',
+              deadlift1rm: workoutData.deadlift1rm?.toString() ?? '',
+              ohp1rm: workoutData.ohp1rm?.toString() ?? '',
+            });
+          } else if (cycleData) {
+            setFormData({
+              squat1rm: cycleData.squat1rm.toString(),
+              bench1rm: cycleData.bench1rm.toString(),
+              deadlift1rm: cycleData.deadlift1rm.toString(),
+              ohp1rm: cycleData.ohp1rm.toString(),
+            });
+          }
+        }
+
+        if (prefsRes.ok) {
+          const prefs = await prefsRes.json() as { weightUnit?: string };
           setWeightUnit(prefs.weightUnit ?? 'kg');
         }
       } catch (error) {
@@ -123,6 +118,9 @@ function OneRMTest() {
 
     try {
       const cycleRes = await fetch(`/api/program-cycles/${params.cycleId}`);
+      if (!cycleRes.ok) {
+        throw new Error('Failed to fetch cycle data');
+      }
       const cycleData: CycleData = await cycleRes.json();
 
       await fetch(`/api/program-cycles/${params.cycleId}`, {
@@ -161,8 +159,10 @@ function OneRMTest() {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <p>Loading...</p>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="px-4">
+          <LoadingForm />
+        </div>
       </div>
     );
   }

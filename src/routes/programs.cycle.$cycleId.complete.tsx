@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
+import { LoadingCard } from '~/components/ui/LoadingSkeleton';
 
 interface CycleData {
   id: string;
@@ -107,8 +108,10 @@ function CompleteProgram() {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <p>Loading...</p>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="px-4">
+          <LoadingCard />
+        </div>
       </div>
     );
   }

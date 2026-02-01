@@ -5,6 +5,8 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
+import { useToast } from '@/components/ToastProvider';
+import { LoadingForm } from '~/components/ui/LoadingSkeleton';
 
 interface CycleData {
   id: string;
@@ -19,6 +21,7 @@ interface CycleData {
 function Update1RM() {
   const params = useParams({ from: '/programs/cycle/$cycleId/1rm-update' });
   const navigate = useNavigate();
+  const toast = useToast();
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [weightUnit, setWeightUnit] = useState('kg');
   const [formData, setFormData] = useState({
@@ -86,9 +89,10 @@ function Update1RM() {
       if (response.ok) {
         void navigate({ to: '/programs/cycle/$cycleId', params: { cycleId: params.cycleId } });
       } else {
-        console.error('Failed to update 1RM values');
+        toast.error('Failed to update 1RM values');
       }
     } catch (error) {
+      toast.error('Error updating 1RM values');
       console.error('Error updating 1RM values:', error);
     } finally {
       setIsSaving(false);
@@ -97,8 +101,10 @@ function Update1RM() {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <p>Loading...</p>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="px-4">
+          <LoadingForm />
+        </div>
       </div>
     );
   }

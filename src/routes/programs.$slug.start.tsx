@@ -47,52 +47,57 @@ function ProgramStart() {
   }, []);
 
   useEffect(() => {
-    async function loadPrevious1RMs() {
+    async function loadData() {
+      const [prefsRes, oneRmRes] = await Promise.all([
+        fetch('/api/user/preferences'),
+        fetch('/api/user/1rm'),
+      ]);
+
+      if (prefsRes.ok) {
+        const prefs = await prefsRes.json() as { weightUnit?: string };
+        setWeightUnit(prefs.weightUnit ?? 'kg');
+      }
+
       if (hasLoadedPrevious) return;
 
-      try {
-        const response = await fetch('/api/user/1rm');
-        if (response.ok) {
-          const data = await response.json() as { squat1rm?: number | null; bench1rm?: number | null; deadlift1rm?: number | null; ohp1rm?: number | null };
-          
-          let hasAnyValues = false;
-          const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
-          const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+      if (oneRmRes.ok) {
+        const data = await oneRmRes.json() as { squat1rm?: number | null; bench1rm?: number | null; deadlift1rm?: number | null; ohp1rm?: number | null };
+        
+        let hasAnyValues = false;
+        const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
+        const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
 
-          if (data.squat1rm) {
-            newValues.squat1rm = data.squat1rm.toString();
-            prefilledValues.squat1rm = true;
-            hasAnyValues = true;
-          }
-          if (data.bench1rm) {
-            newValues.bench1rm = data.bench1rm.toString();
-            prefilledValues.bench1rm = true;
-            hasAnyValues = true;
-          }
-          if (data.deadlift1rm) {
-            newValues.deadlift1rm = data.deadlift1rm.toString();
-            prefilledValues.deadlift1rm = true;
-            hasAnyValues = true;
-          }
-          if (data.ohp1rm) {
-            newValues.ohp1rm = data.ohp1rm.toString();
-            prefilledValues.ohp1rm = true;
-            hasAnyValues = true;
-          }
-
-          if (hasAnyValues) {
-            setFormData(newValues);
-            setPrefilled(prefilledValues);
-            setHasLoadedPrevious(true);
-            toast.info('Loaded 1RMs from your previous cycle');
-          }
+        if (data.squat1rm) {
+          newValues.squat1rm = data.squat1rm.toString();
+          prefilledValues.squat1rm = true;
+          hasAnyValues = true;
         }
-      } catch (error) {
-        console.error('Error loading previous 1RMs:', error);
+        if (data.bench1rm) {
+          newValues.bench1rm = data.bench1rm.toString();
+          prefilledValues.bench1rm = true;
+          hasAnyValues = true;
+        }
+        if (data.deadlift1rm) {
+          newValues.deadlift1rm = data.deadlift1rm.toString();
+          prefilledValues.deadlift1rm = true;
+          hasAnyValues = true;
+        }
+        if (data.ohp1rm) {
+          newValues.ohp1rm = data.ohp1rm.toString();
+          prefilledValues.ohp1rm = true;
+          hasAnyValues = true;
+        }
+
+        if (hasAnyValues) {
+          setFormData(newValues);
+          setPrefilled(prefilledValues);
+          setHasLoadedPrevious(true);
+          toast.info('Loaded 1RMs from your previous cycle');
+        }
       }
     }
 
-    void loadPrevious1RMs();
+    void loadData();
   }, [hasLoadedPrevious, toast]);
 
   if (!program) {
@@ -147,11 +152,13 @@ function ProgramStart() {
 
       if (response.ok) {
         const cycle = await response.json() as { id: string };
+        toast.success('Program started!');
         void navigate({ to: '/programs/cycle/$cycleId', params: { cycleId: cycle.id } });
       } else {
-        console.error('Failed to create program cycle');
+        toast.error('Failed to create program cycle');
       }
     } catch (error) {
+      toast.error('Error creating program cycle');
       console.error('Error creating program cycle:', error);
     } finally {
       setIsLoading(false);

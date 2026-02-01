@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Progress } from '~/components/ui/Progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
+import { useToast } from '@/components/ToastProvider';
+import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
 
 interface CycleData {
   id: string;
@@ -48,9 +50,27 @@ interface CurrentWorkoutData {
   exercises: ExerciseDetail[];
 }
 
+const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit }: { readonly exercise: ExerciseDetail; readonly weightUnit: string }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b last:border-0">
+      <div className="flex items-center gap-3">
+        <Dumbbell className="h-5 w-5 text-muted-foreground" />
+        <div>
+          <p className="font-medium">{exercise.exercise.name}</p>
+          <p className="text-sm text-muted-foreground">
+            {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
+            {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 function ProgramDashboard() {
   const params = useParams({ from: '/programs/cycle/$cycleId_' });
   const navigate = useNavigate();
+  const toast = useToast();
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [currentWorkout, setCurrentWorkout] = useState<CurrentWorkoutData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,9 +138,10 @@ function ProgramDashboard() {
         const data = await response.json() as { workoutId: string };
         void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
       } else {
-        console.error('Failed to start workout');
+        toast.error('Failed to start workout');
       }
     } catch (error) {
+      toast.error('Error starting workout');
       console.error('Error starting workout:', error);
     }
   };
@@ -140,19 +161,28 @@ function ProgramDashboard() {
       });
 
       if (response.ok) {
+        toast.success('Program deleted');
         void navigate({ to: '/programs' });
       } else {
-        console.error('Failed to delete program');
+        toast.error('Failed to delete program');
       }
     } catch (error) {
+      toast.error('Error deleting program');
       console.error('Error deleting program:', error);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <p>Loading...</p>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="px-4">
+          <LoadingStats />
+        </div>
+        <div className="px-4 space-y-4">
+          <LoadingExercise />
+          <LoadingExercise />
+          <LoadingExercise />
+        </div>
       </div>
     );
   }
@@ -169,7 +199,9 @@ function ProgramDashboard() {
   }
 
   const totalCompleted = cycle.totalSessionsCompleted ?? 0;
-  const progressPercent = Math.round((totalCompleted / cycle.totalSessionsPlanned) * 100);
+  const progressPercent = cycle.totalSessionsPlanned > 0 
+    ? Math.round((totalCompleted / cycle.totalSessionsPlanned) * 100) 
+    : 0;
 
   return (
     <div className="flex flex-col gap-6 pb-20">
@@ -214,50 +246,56 @@ function ProgramDashboard() {
             <h3 className="font-semibold mb-3">Today's Workout - {currentWorkout.sessionName}</h3>
             <div className="space-y-3">
               {currentWorkout.exercises.map((exercise) => (
-                <div key={exercise.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div className="flex items-center gap-3">
-                    <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{exercise.exercise.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
-                        {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} />
               ))}
             </div>
           </Card>
-        ) : null}
+        ) : (
+          !cycle.isComplete && (
+            <Card className="p-4 bg-muted">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">All workouts in this program have been completed!</p>
+              </div>
+            </Card>
+          )
+        )}
 
-        <div className="flex flex-col gap-2">
-          <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
-          <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
-          <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild={true}>
-              <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Program
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Program?</AlertDialogTitle>
-              </AlertDialogHeader>
-              <p className="text-muted-foreground">
-                This will permanently delete this program cycle and all its progress. This action cannot be undone.
-              </p>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { void handleDeleteProgram(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {cycle.isComplete ? (
+          <Card className="p-4 bg-muted">
+            <div className="text-center">
+              <h3 className="font-semibold mb-2">Program Complete</h3>
+              <p className="text-sm text-muted-foreground">You've completed all sessions in this program cycle.</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
+            <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
+            <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild={true}>
+                <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Program
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Program?</AlertDialogTitle>
+                </AlertDialogHeader>
+                <p className="text-muted-foreground">
+                  This will permanently delete this program cycle and all its progress. This action cannot be undone.
+                </p>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { void handleDeleteProgram(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </div>
     </div>
   );

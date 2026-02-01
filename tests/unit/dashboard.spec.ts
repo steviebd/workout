@@ -91,23 +91,32 @@ describe('Dashboard Loader Functions', () => {
     vi.useRealTimers();
   });
 
+  function createMockQueryBuilder(resolvedData: typeof mockWorkouts = mockWorkouts) {
+    const thenable: {
+      then: (resolve: (val: typeof mockWorkouts) => void) => void;
+      from: () => typeof thenable;
+      leftJoin: () => typeof thenable;
+      where: () => typeof thenable;
+      groupBy: () => typeof thenable;
+      orderBy: () => typeof thenable;
+      limit: () => typeof thenable;
+      offset: () => typeof thenable;
+    } = {
+      then: (resolve) => resolve(resolvedData),
+      from: () => thenable,
+      leftJoin: () => thenable,
+      where: () => thenable,
+      groupBy: () => thenable,
+      orderBy: () => thenable,
+      limit: () => thenable,
+      offset: () => thenable,
+    };
+    return thenable;
+  }
+
   describe('getWorkoutsByWorkosId with limit', () => {
     it('should fetch recent workouts with limit=5', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue(mockWorkouts),
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
       const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -116,21 +125,7 @@ describe('Dashboard Loader Functions', () => {
     });
 
     it('should order workouts by startedAt descending', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue(mockWorkouts),
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
        const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -140,21 +135,7 @@ describe('Dashboard Loader Functions', () => {
     });
 
     it('should return empty array when no workouts exist', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue([]),
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder([]));
 
       const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -164,21 +145,7 @@ describe('Dashboard Loader Functions', () => {
     });
 
     it('should only return completed workouts', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue(mockWorkouts),
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
       const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 

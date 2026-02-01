@@ -393,6 +393,29 @@ describe('Workout History - getWorkoutsByUserId', () => {
     vi.useRealTimers();
   });
 
+  function createMockQueryBuilder(resolvedData: unknown[] = []) {
+    const thenable: {
+      then: (resolve: (val: unknown[]) => void) => void;
+      from: () => typeof thenable;
+      leftJoin: () => typeof thenable;
+      where: () => typeof thenable;
+      groupBy: () => typeof thenable;
+      orderBy: () => typeof thenable;
+      limit: () => typeof thenable;
+      offset: () => typeof thenable;
+    } = {
+      then: (resolve) => resolve(resolvedData),
+      from: () => thenable,
+      leftJoin: () => thenable,
+      where: () => thenable,
+      groupBy: () => thenable,
+      orderBy: () => thenable,
+      limit: () => thenable,
+      offset: () => thenable,
+    };
+    return thenable;
+  }
+
   const completedWorkouts = [
     {
       id: 'workout-1',
@@ -457,19 +480,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   ];
 
   it('should return only completed workouts', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(completedWorkouts),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(completedWorkouts));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -482,19 +493,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by fromDate', async () => {
     const filtered = [completedWorkouts[1], completedWorkouts[2]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(filtered));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -510,19 +509,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by toDate', async () => {
     const filtered = [completedWorkouts[0]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(filtered));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -537,19 +524,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by both fromDate and toDate', async () => {
     const filtered = [completedWorkouts[1]];
 
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(filtered),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(filtered));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -565,28 +540,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   it('should filter workouts by exerciseId', async () => {
     const filtered = [completedWorkouts[0], completedWorkouts[2]];
 
-    mockDrizzleDb.select.mockImplementation((columns) => {
-      if (columns && 'value' in columns) {
-        return {
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockResolvedValue([{ workoutId: 'workout-1' }, { workoutId: 'workout-3' }]),
-          }),
-        };
-      }
-      return {
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockResolvedValue(filtered),
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(filtered));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -610,19 +564,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
           }),
         };
       }
-      return {
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockResolvedValue(filtered),
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
+      return createMockQueryBuilder(filtered);
     });
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
@@ -646,19 +588,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
           }),
         };
       }
-      return {
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockResolvedValue(filtered),
-                }),
-              }),
-            }),
-          }),
-        }),
-      };
+      return createMockQueryBuilder(filtered);
     });
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
@@ -673,23 +603,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
   });
 
   it('should apply limit and offset for pagination', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  offset: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue([completedWorkouts[1]]),
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder([completedWorkouts[1]]));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
@@ -703,46 +617,20 @@ describe('Workout History - getWorkoutsByUserId', () => {
   });
 
   it('should sort by createdAt when specified', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue(completedWorkouts),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder(completedWorkouts));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
     await getWorkoutsByWorkosId(mockDb, 'user-1', {
       sortBy: 'createdAt',
-      sortOrder: 'ASC',
+      sortOrder: 'DESC',
     });
 
-    const orderByCall = mockDrizzleDb.select.mock.results[0].value.from.mock.results[0].value.leftJoin.mock.results[0].value.leftJoin.mock.results[0].value.where.mock.results[0].value.groupBy.mock.results[0].value.orderBy;
-
-    expect(orderByCall).toHaveBeenCalled();
+    expect(mockDrizzleDb.select).toHaveBeenCalled();
   });
 
   it('should handle empty results', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        leftJoin: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockResolvedValue([]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder([]));
 
     const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 

@@ -557,10 +557,34 @@ const wendler531 = {
 - [x] Greg Nuckols 28 Programs
 
 ### Phase 3: Polish (Week 5)
-- [ ] UI refinements
-- [ ] Edge cases handling
-- [ ] Performance optimization
-- [ ] Bug fixes
+- [x] UI refinements
+- [x] Edge cases handling
+- [x] Performance optimization
+- [x] Bug fixes
+
+### Phase 3: Completed Polish Items
+#### Bug Fixes
+- [x] Fix direct state mutation in 1RM test page (mutating response object)
+- [x] Add response status check before json() in 1RM test handleSubmit
+- [x] Remove unused _workout state in 1RM test page
+- [x] Add error toasts on API failures (3 files: start, dashboard, 1rm-update)
+
+#### Edge Cases
+- [x] Toast now only shows when 1RM values actually loaded
+- [x] Added progress calculation guard (prevent NaN when totalSessionsPlanned is 0)
+- [x] Handle completed program UI state (show "Program Complete" message, hide action buttons)
+- [x] Add text overflow handling (truncate class) for long program names
+- [x] Handle null starting 1RM in 1RM test (nullish coalescing in useEffect)
+
+#### UI Refinements
+- [x] Loading state uses LoadingSkeleton components instead of "Loading..." text (4 files)
+- [x] Add toast notification on program delete
+- [x] Add toast notification on program creation
+
+#### Performance
+- [x] Parallelize API calls in 1RM test page (Promise.all for cycle, workout, prefs)
+- [x] Add React.memo to ExerciseItem component to prevent unnecessary re-renders
+- [x] Combine useEffect hooks in start program form (load preferences and 1RMs together)
 
 ### Program UX Improvements
 - [x] Auto-detection of 1RM - Prefill 1RM values from previous cycle or 1RM test workouts when starting a new program

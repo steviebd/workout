@@ -23,7 +23,7 @@ function ProgramsIndex() {
             <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">{program.name}</h3>
+                  <h3 className="font-semibold text-lg truncate">{program.name}</h3>
                   <Badge variant={difficultyColors[program.difficulty]}>
                     {program.difficulty}
                   </Badge>
