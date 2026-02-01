@@ -562,6 +562,16 @@ const wendler531 = {
 - [ ] Performance optimization
 - [ ] Bug fixes
 
+### Program UX Improvements
+- [x] Auto-detection of 1RM - Prefill 1RM values from previous cycle or 1RM test workouts when starting a new program
+  - Added `getLatestOneRMs()` helper function to `src/lib/db/program.ts`
+  - Created `GET /api/user/1rm` endpoint to return latest 1RM values
+  - Updated `src/routes/programs.$slug/start.tsx` to fetch and display previous 1RMs
+  - Priority: 1RM Test workout > latest cycle 1RM values
+  - Shows "Previous" badge on prefilled fields
+  - Clear (×) button to reset fields
+  - Toast notification when values load
+
 ---
 
 ## Questions & Decisions

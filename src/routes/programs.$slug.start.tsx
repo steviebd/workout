@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
+import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { PageHeader } from '~/components/PageHeader';
@@ -6,11 +7,13 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
+import { useToast } from '@/components/ToastProvider';
 
 function ProgramStart() {
   const params = useParams({ from: '/programs/$slug/start' });
   const navigate = useNavigate();
   const program = getProgramBySlug(params.slug);
+  const toast = useToast();
   const [weightUnit, setWeightUnit] = useState('kg');
   const [formData, setFormData] = useState({
     squat1rm: '',
@@ -18,7 +21,14 @@ function ProgramStart() {
     deadlift1rm: '',
     ohp1rm: '',
   });
+  const [prefilled, setPrefilled] = useState({
+    squat1rm: false,
+    bench1rm: false,
+    deadlift1rm: false,
+    ohp1rm: false,
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedPrevious, setHasLoadedPrevious] = useState(false);
 
   useEffect(() => {
     async function loadPreferences() {
@@ -36,6 +46,55 @@ function ProgramStart() {
     void loadPreferences();
   }, []);
 
+  useEffect(() => {
+    async function loadPrevious1RMs() {
+      if (hasLoadedPrevious) return;
+
+      try {
+        const response = await fetch('/api/user/1rm');
+        if (response.ok) {
+          const data = await response.json() as { squat1rm?: number | null; bench1rm?: number | null; deadlift1rm?: number | null; ohp1rm?: number | null };
+          
+          let hasAnyValues = false;
+          const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
+          const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+
+          if (data.squat1rm) {
+            newValues.squat1rm = data.squat1rm.toString();
+            prefilledValues.squat1rm = true;
+            hasAnyValues = true;
+          }
+          if (data.bench1rm) {
+            newValues.bench1rm = data.bench1rm.toString();
+            prefilledValues.bench1rm = true;
+            hasAnyValues = true;
+          }
+          if (data.deadlift1rm) {
+            newValues.deadlift1rm = data.deadlift1rm.toString();
+            prefilledValues.deadlift1rm = true;
+            hasAnyValues = true;
+          }
+          if (data.ohp1rm) {
+            newValues.ohp1rm = data.ohp1rm.toString();
+            prefilledValues.ohp1rm = true;
+            hasAnyValues = true;
+          }
+
+          if (hasAnyValues) {
+            setFormData(newValues);
+            setPrefilled(prefilledValues);
+            setHasLoadedPrevious(true);
+            toast.info('Loaded 1RMs from your previous cycle');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading previous 1RMs:', error);
+      }
+    }
+
+    void loadPrevious1RMs();
+  }, [hasLoadedPrevious, toast]);
+
   if (!program) {
     return (
       <div className="p-4">
@@ -51,6 +110,21 @@ function ProgramStart() {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }));
+    setPrefilled(prev => ({
+      ...prev,
+      [e.target.name]: false,
+    }));
+  };
+
+  const handleClear = (field: keyof typeof formData) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: '',
+    }));
+    setPrefilled(prev => ({
+      ...prev,
+      [field]: false,
     }));
   };
 
@@ -102,58 +176,126 @@ function ProgramStart() {
 
             <div className="space-y-2">
               <Label htmlFor="squat1rm">Squat 1RM ({weightUnit})</Label>
-              <Input
-                id="squat1rm"
-                name="squat1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.squat1rm}
-                onChange={handleChange}
-                required={true}
-              />
+              <div className="relative">
+                <Input
+                  id="squat1rm"
+                  name="squat1rm"
+                  type="number"
+                  step="0.5"
+                  placeholder="Enter weight"
+                  value={formData.squat1rm}
+                  onChange={handleChange}
+                  required={true}
+                  className={prefilled.squat1rm ? 'pr-20' : ''}
+                />
+                {!!prefilled.squat1rm && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Previous
+                  </span>
+                )}
+                {!!formData.squat1rm && !prefilled.squat1rm && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('squat1rm')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="bench1rm">Bench Press 1RM ({weightUnit})</Label>
-              <Input
-                id="bench1rm"
-                name="bench1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.bench1rm}
-                onChange={handleChange}
-                required={true}
-              />
+              <div className="relative">
+                <Input
+                  id="bench1rm"
+                  name="bench1rm"
+                  type="number"
+                  step="0.5"
+                  placeholder="Enter weight"
+                  value={formData.bench1rm}
+                  onChange={handleChange}
+                  required={true}
+                  className={prefilled.bench1rm ? 'pr-20' : ''}
+                />
+                {!!prefilled.bench1rm && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Previous
+                  </span>
+                )}
+                {!!formData.bench1rm && !prefilled.bench1rm && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('bench1rm')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="deadlift1rm">Deadlift 1RM ({weightUnit})</Label>
-              <Input
-                id="deadlift1rm"
-                name="deadlift1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.deadlift1rm}
-                onChange={handleChange}
-                required={true}
-              />
+              <div className="relative">
+                <Input
+                  id="deadlift1rm"
+                  name="deadlift1rm"
+                  type="number"
+                  step="0.5"
+                  placeholder="Enter weight"
+                  value={formData.deadlift1rm}
+                  onChange={handleChange}
+                  required={true}
+                  className={prefilled.deadlift1rm ? 'pr-20' : ''}
+                />
+                {!!prefilled.deadlift1rm && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Previous
+                  </span>
+                )}
+                {!!formData.deadlift1rm && !prefilled.deadlift1rm && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('deadlift1rm')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="ohp1rm">Overhead Press 1RM ({weightUnit})</Label>
-              <Input
-                id="ohp1rm"
-                name="ohp1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.ohp1rm}
-                onChange={handleChange}
-                required={true}
-              />
+              <div className="relative">
+                <Input
+                  id="ohp1rm"
+                  name="ohp1rm"
+                  type="number"
+                  step="0.5"
+                  placeholder="Enter weight"
+                  value={formData.ohp1rm}
+                  onChange={handleChange}
+                  required={true}
+                  className={prefilled.ohp1rm ? 'pr-20' : ''}
+                />
+                {!!prefilled.ohp1rm && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Previous
+                  </span>
+                )}
+                {!!formData.ohp1rm && !prefilled.ohp1rm && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('ohp1rm')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </Card>

@@ -48,6 +48,7 @@ import { Route as ApiWorkoutsSetsRouteImport } from './routes/api/workouts.sets'
 import { Route as ApiWorkoutsPrCountRouteImport } from './routes/api/workouts.pr-count'
 import { Route as ApiWorkoutsIdRouteImport } from './routes/api/workouts.$id'
 import { Route as ApiUserPreferencesRouteImport } from './routes/api/user.preferences'
+import { Route as ApiUser1rmRouteImport } from './routes/api/user.1rm'
 import { Route as ApiTemplatesIdRouteImport } from './routes/api/templates.$id'
 import { Route as ApiProgressVolumeRouteImport } from './routes/api/progress.volume'
 import { Route as ApiProgressStrengthRouteImport } from './routes/api/progress.strength'
@@ -273,6 +274,11 @@ const ApiUserPreferencesRoute = ApiUserPreferencesRouteImport.update({
   path: '/api/user/preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUser1rmRoute = ApiUser1rmRouteImport.update({
+  id: '/api/user/1rm',
+  path: '/api/user/1rm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTemplatesIdRoute = ApiTemplatesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/api/progress/strength': typeof ApiProgressStrengthRoute
   '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
+  '/api/user/1rm': typeof ApiUser1rmRoute
   '/api/user/preferences': typeof ApiUserPreferencesRoute
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -543,6 +550,7 @@ export interface FileRoutesByTo {
   '/api/progress/strength': typeof ApiProgressStrengthRoute
   '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
+  '/api/user/1rm': typeof ApiUser1rmRoute
   '/api/user/preferences': typeof ApiUserPreferencesRoute
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -614,6 +622,7 @@ export interface FileRoutesById {
   '/api/progress/strength': typeof ApiProgressStrengthRoute
   '/api/progress/volume': typeof ApiProgressVolumeRoute
   '/api/templates/$id': typeof ApiTemplatesIdRouteWithChildren
+  '/api/user/1rm': typeof ApiUser1rmRoute
   '/api/user/preferences': typeof ApiUserPreferencesRoute
   '/api/workouts/$id': typeof ApiWorkoutsIdRouteWithChildren
   '/api/workouts/pr-count': typeof ApiWorkoutsPrCountRoute
@@ -686,6 +695,7 @@ export interface FileRouteTypes {
     | '/api/progress/strength'
     | '/api/progress/volume'
     | '/api/templates/$id'
+    | '/api/user/1rm'
     | '/api/user/preferences'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -756,6 +766,7 @@ export interface FileRouteTypes {
     | '/api/progress/strength'
     | '/api/progress/volume'
     | '/api/templates/$id'
+    | '/api/user/1rm'
     | '/api/user/preferences'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -826,6 +837,7 @@ export interface FileRouteTypes {
     | '/api/progress/strength'
     | '/api/progress/volume'
     | '/api/templates/$id'
+    | '/api/user/1rm'
     | '/api/user/preferences'
     | '/api/workouts/$id'
     | '/api/workouts/pr-count'
@@ -893,6 +905,7 @@ export interface RootRouteChildren {
   ApiProgressPrsRoute: typeof ApiProgressPrsRoute
   ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
+  ApiUser1rmRoute: typeof ApiUser1rmRoute
   ApiUserPreferencesRoute: typeof ApiUserPreferencesRoute
   ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
@@ -1175,6 +1188,13 @@ declare module '@tanstack/react-router' {
       path: '/api/user/preferences'
       fullPath: '/api/user/preferences'
       preLoaderRoute: typeof ApiUserPreferencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/user/1rm': {
+      id: '/api/user/1rm'
+      path: '/api/user/1rm'
+      fullPath: '/api/user/1rm'
+      preLoaderRoute: typeof ApiUser1rmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/templates/$id': {
@@ -1617,6 +1637,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProgressPrsRoute: ApiProgressPrsRoute,
   ApiProgressStrengthRoute: ApiProgressStrengthRoute,
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,
+  ApiUser1rmRoute: ApiUser1rmRoute,
   ApiUserPreferencesRoute: ApiUserPreferencesRoute,
   ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,

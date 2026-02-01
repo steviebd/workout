@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import {
   type NewUserProgramCycle,
   type ProgramCycleWorkout,
@@ -8,6 +8,7 @@ import {
   programCycleWorkouts,
   templates,
   userProgramCycles,
+  workouts,
 } from './schema';
 import { createDb } from './index';
 
@@ -284,14 +285,14 @@ export async function getCycleWorkouts(
     return [];
   }
 
-  const workouts = await drizzleDb
+  const cycleWorkouts = await drizzleDb
     .select()
     .from(programCycleWorkouts)
     .where(eq(programCycleWorkouts.cycleId, cycleId))
     .orderBy(programCycleWorkouts.weekNumber, programCycleWorkouts.sessionNumber)
     .all();
 
-  return workouts;
+  return cycleWorkouts;
 }
 
 export async function getCurrentWorkout(
@@ -399,7 +400,7 @@ export async function getCycleWithWorkouts(
     return null;
   }
 
-  const workouts = await drizzleDb
+  const cycleWorkouts = await drizzleDb
     .select()
     .from(programCycleWorkouts)
     .where(eq(programCycleWorkouts.cycleId, cycleId))
@@ -408,7 +409,7 @@ export async function getCycleWithWorkouts(
 
   return {
     ...cycle,
-    workouts,
+    workouts: cycleWorkouts,
     templates: [],
   };
 }
@@ -427,4 +428,65 @@ export async function getCycleTemplate(
     .get();
 
   return template ?? null;
+}
+
+export async function getLatestOneRMs(
+  db: D1Database,
+  workosId: string
+): Promise<{ squat1rm: number | null; bench1rm: number | null; deadlift1rm: number | null; ohp1rm: number | null } | null> {
+  const drizzleDb = createDb(db);
+
+  const latestOneRMs = await drizzleDb
+    .select({
+      squat1rm: workouts.squat1rm,
+      bench1rm: workouts.bench1rm,
+      deadlift1rm: workouts.deadlift1rm,
+      ohp1rm: workouts.ohp1rm,
+      completedAt: workouts.completedAt,
+    })
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.workosId, workosId),
+        sql`${workouts.name} = '1RM Test'`,
+        isNotNull(workouts.completedAt)
+      )
+    )
+    .orderBy(desc(workouts.completedAt))
+    .limit(1)
+    .get();
+
+  if (latestOneRMs && (latestOneRMs.squat1rm || latestOneRMs.bench1rm || latestOneRMs.deadlift1rm || latestOneRMs.ohp1rm)) {
+    return {
+      squat1rm: latestOneRMs.squat1rm,
+      bench1rm: latestOneRMs.bench1rm,
+      deadlift1rm: latestOneRMs.deadlift1rm,
+      ohp1rm: latestOneRMs.ohp1rm,
+    };
+  }
+
+  const latestCycle = await drizzleDb
+    .select({
+      squat1rm: userProgramCycles.squat1rm,
+      bench1rm: userProgramCycles.bench1rm,
+      deadlift1rm: userProgramCycles.deadlift1rm,
+      ohp1rm: userProgramCycles.ohp1rm,
+      startedAt: userProgramCycles.startedAt,
+    })
+    .from(userProgramCycles)
+    .where(eq(userProgramCycles.workosId, workosId))
+    .orderBy(desc(userProgramCycles.startedAt))
+    .limit(1)
+    .get();
+
+  if (latestCycle) {
+    return {
+      squat1rm: latestCycle.squat1rm,
+      bench1rm: latestCycle.bench1rm,
+      deadlift1rm: latestCycle.deadlift1rm,
+      ohp1rm: latestCycle.ohp1rm,
+    };
+  }
+
+  return null;
 }
