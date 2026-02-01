@@ -34,6 +34,8 @@ export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: Exerc
   const totalSets = sets.length
   const allCompleted = completedSets === totalSets && totalSets > 0
 
+  const isAmrapSet = exercise.name.endsWith('3+')
+
   const handleSetUpdate = (index: number, updatedSet: WorkoutSet) => {
     const newSets = [...sets]
     newSets[index] = updatedSet
@@ -79,8 +81,20 @@ export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: Exerc
               {completedSets}/{totalSets}
             </div>
             <div>
-              <CardTitle className="text-base">{exercise.name}</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                {exercise.name}
+                {isAmrapSet ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                    AMRAP
+                  </span>
+                ) : null}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">{exercise.muscleGroup}</p>
+              {isAmrapSet ? (
+                <p className="text-[10px] text-amber-600 mt-0.5">
+                  As Many Reps As Possible - enter reps completed
+                </p>
+              ) : null}
             </div>
           </div>
           {isExpanded ? (

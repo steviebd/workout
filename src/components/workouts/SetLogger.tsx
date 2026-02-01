@@ -19,10 +19,17 @@ interface SetLoggerProps {
   onUpdate: (set: WorkoutSet) => void
 }
 
+function sanitizeReps(value: number): number {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
+    return 5
+  }
+  return Math.max(0, Math.round(value))
+}
+
 export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
   const { weightUnit } = useUnit()
   const [weight, setWeight] = useState(set.weight)
-  const [reps, setReps] = useState(set.reps)
+  const [reps, setReps] = useState(() => sanitizeReps(set.reps))
   const [isEditingWeight, setIsEditingWeight] = useState(false)
   const [isEditingReps, setIsEditingReps] = useState(false)
   const weightInputRef = useRef<HTMLInputElement>(null)
@@ -55,11 +62,20 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
     setReps(newReps)
   }, [reps])
 
-  const handleRepsDecrease = useCallback(() => {
+  const handleRepsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (value === '' || /^\d+$/.test(value)) {
+      setReps(value === '' ? 0 : parseInt(value, 10))
+    }
+  }, [])
+
+  const handleRepsDecrease = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
     adjustReps(-1)
   }, [adjustReps])
 
-  const handleRepsIncrease = useCallback(() => {
+  const handleRepsIncrease = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
     adjustReps(1)
   }, [adjustReps])
 
@@ -105,13 +121,6 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
     const value = e.target.value
     if (value === '' || /^\d+$/.test(value)) {
       setWeight(value === '' ? 0 : parseInt(value, 10))
-    }
-  }, [])
-
-  const handleRepsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (value === '' || /^\d+$/.test(value)) {
-      setReps(value === '' ? 0 : parseInt(value, 10))
     }
   }, [])
 

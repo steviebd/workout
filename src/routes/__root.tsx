@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import '../styles.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastProvider } from '@/components/ToastProvider'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
@@ -165,11 +166,13 @@ function AppLayout() {
                   </StreakProvider>
                   <main className={'flex-1 pb-20'}>
                     <div className="mx-auto max-w-lg px-4">
-                      <ErrorBoundary>
-                        <ToastProvider>
+                    <ErrorBoundary>
+                      <ToastProvider>
+                        <TooltipProvider>
                           <Outlet />
-                        </ToastProvider>
-                      </ErrorBoundary>
+                        </TooltipProvider>
+                      </ToastProvider>
+                    </ErrorBoundary>
                     </div>
                   </main>
                   <BottomNav />

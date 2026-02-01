@@ -43,6 +43,7 @@ export const templates = sqliteTable('templates', {
   name: text('name').notNull(),
   description: text('description'),
   notes: text('notes'),
+  programCycleId: text('program_cycle_id'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -53,6 +54,9 @@ export const templateExercises = sqliteTable('template_exercises', {
   templateId: text('template_id').notNull().references(() => templates.id, { onDelete: 'cascade' }),
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
+  targetWeight: real('target_weight'),
+  sets: integer('sets'),
+  reps: integer('reps'),
 });
 
 export const workouts = sqliteTable('workouts', {
@@ -99,6 +103,38 @@ export const userStreaks = sqliteTable('user_streaks', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const userProgramCycles = sqliteTable('user_program_cycles', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  programSlug: text('program_slug').notNull(),
+  name: text('name').notNull(),
+  squat1rm: real('squat_1rm').notNull(),
+  bench1rm: real('bench_1rm').notNull(),
+  deadlift1rm: real('deadlift_1rm').notNull(),
+  ohp1rm: real('ohp_1rm').notNull(),
+  currentWeek: integer('current_week').default(1),
+  currentSession: integer('current_session').default(1),
+  totalSessionsCompleted: integer('total_sessions_completed').default(0),
+  totalSessionsPlanned: integer('total_sessions_planned').notNull(),
+  status: text('status').default('active'),
+  isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
+  startedAt: text('started_at').default(sql`CURRENT_TIMESTAMP`),
+  completedAt: text('completed_at'),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  cycleId: text('cycle_id').notNull().references(() => userProgramCycles.id, { onDelete: 'cascade' }),
+  templateId: text('template_id').notNull().references(() => templates.id, { onDelete: 'cascade' }),
+  weekNumber: integer('week_number').notNull(),
+  sessionNumber: integer('session_number').notNull(),
+  sessionName: text('session_name').notNull(),
+  targetLifts: text('target_lifts'),
+  isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
+  workoutId: text('workout_id'),
+});
+
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
 export const _exercisesMuscleGroupIdx = index('idx_exercises_muscle_group').on(exercises.muscleGroup);
 export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
@@ -130,6 +166,13 @@ export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(work
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);
 
+export const _userProgramCyclesWorkosIdIdx = index('idx_user_program_cycles_workos_id').on(userProgramCycles.workosId);
+export const _userProgramCyclesStatusIdx = index('idx_user_program_cycles_status').on(userProgramCycles.status);
+export const _userProgramCyclesUpdatedAtIdx = index('idx_user_program_cycles_updated_at').on(userProgramCycles.updatedAt);
+
+export const _programCycleWorkoutsCycleIdIdx = index('idx_program_cycle_workouts_cycle_id').on(programCycleWorkouts.cycleId);
+export const _programCycleWorkoutsTemplateIdIdx = index('idx_program_cycle_workouts_template_id').on(programCycleWorkouts.templateId);
+
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
 export type Template = typeof templates.$inferSelect;
@@ -139,6 +182,8 @@ export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type WorkoutSet = typeof workoutSets.$inferSelect;
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type UserStreak = typeof userStreaks.$inferSelect;
+export type UserProgramCycle = typeof userProgramCycles.$inferSelect;
+export type ProgramCycleWorkout = typeof programCycleWorkouts.$inferSelect;
 
 export type NewUser = typeof users.$inferInsert;
 export type NewExercise = typeof exercises.$inferInsert;
@@ -149,6 +194,8 @@ export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
 export type NewWorkoutSet = typeof workoutSets.$inferInsert;
 export type NewUserPreference = typeof userPreferences.$inferInsert;
 export type NewUserStreak = typeof userStreaks.$inferInsert;
+export type NewUserProgramCycle = typeof userProgramCycles.$inferInsert;
+export type NewProgramCycleWorkout = typeof programCycleWorkouts.$inferInsert;
 
 export default {
   generateId,
@@ -161,4 +208,6 @@ export default {
   workoutExercises,
   workoutSets,
   userStreaks,
+  userProgramCycles,
+  programCycleWorkouts,
 };

@@ -9,7 +9,11 @@ interface LoggedSet {
   isComplete: boolean | null;
 }
 import { env } from 'cloudflare:workers';
+import { eq } from 'drizzle-orm';
 import { completeWorkout, getWorkoutWithExercises } from '../../lib/db/workout';
+import { createDb } from '../../lib/db';
+import { programCycleWorkouts } from '../../lib/db/schema';
+import { markWorkoutComplete } from '../../lib/db/program';
 import { updateStreakAfterWorkout } from '../../lib/streaks';
 import { getSession } from '../../lib/session';
 
@@ -42,6 +46,19 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
 
           if (!workout) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
+          }
+
+          if (workout.templateId) {
+            const drizzleDb = createDb(db);
+            const cycleWorkout = await drizzleDb
+              .select()
+              .from(programCycleWorkouts)
+              .where(eq(programCycleWorkouts.templateId, workout.templateId))
+              .get();
+            
+            if (cycleWorkout) {
+              await markWorkoutComplete(db, cycleWorkout.id, cycleWorkout.cycleId, session.workosId, params.id);
+            }
           }
 
           const response = {

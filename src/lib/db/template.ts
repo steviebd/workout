@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, asc, desc, eq, like } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
 import { type NewTemplate, type NewTemplateExercise, type Template, type TemplateExercise, exercises, templateExercises, templates } from './schema';
 import { createDb } from './index';
 
@@ -18,6 +18,7 @@ export interface CreateTemplateData {
   description?: string;
   notes?: string;
   localId?: string;
+  programCycleId?: string;
 }
 
 export interface UpdateTemplateData {
@@ -52,6 +53,7 @@ export async function createTemplate(
       description: data.description,
       notes: data.notes,
       localId: data.localId,
+      programCycleId: data.programCycleId,
     })
     .returning()
     .get();
@@ -90,7 +92,7 @@ export async function getTemplatesByWorkosId(
     offset,
   } = options;
 
-  const conditions = [eq(templates.workosId, workosId), eq(templates.isDeleted, false)];
+  const conditions = [eq(templates.workosId, workosId), eq(templates.isDeleted, false), isNull(templates.programCycleId)];
 
   if (search) {
     conditions.push(like(templates.name, `%${search}%`));
@@ -239,7 +241,10 @@ export async function addExerciseToTemplate(
   templateId: string,
   workosId: string,
   exerciseId: string,
-  orderIndex: number
+  orderIndex: number,
+  targetWeight?: number,
+  sets?: number,
+  reps?: number
 ): Promise<TemplateExercise | null> {
   const drizzleDb = createDb(db);
 
@@ -260,6 +265,9 @@ export async function addExerciseToTemplate(
       templateId,
       exerciseId,
       orderIndex,
+      targetWeight: targetWeight ?? null,
+      sets: sets ?? null,
+      reps: reps ?? null,
     })
     .returning()
     .get();
@@ -319,6 +327,9 @@ export async function getTemplateExercises(
       templateId: templateExercises.templateId,
       exerciseId: templateExercises.exerciseId,
       orderIndex: templateExercises.orderIndex,
+      targetWeight: templateExercises.targetWeight,
+      sets: templateExercises.sets,
+      reps: templateExercises.reps,
       exercise: {
         id: exercises.id,
         name: exercises.name,
