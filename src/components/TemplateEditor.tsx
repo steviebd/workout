@@ -39,6 +39,7 @@ interface SelectedExercise {
   muscleGroup: string | null;
   description: string | null;
   libraryId?: string | null;
+  isAmrap?: boolean;
 }
 
 interface FormData {

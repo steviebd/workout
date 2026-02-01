@@ -8,6 +8,7 @@ interface Exercise {
   name: string;
   muscleGroup: string | null;
   description: string | null;
+  isAmrap?: boolean;
 }
 
 interface InlineEditExerciseProps {
@@ -29,6 +30,7 @@ export function InlineEditExercise({
   const [name, setName] = useState(exercise.name);
   const [muscleGroup, setMuscleGroup] = useState(exercise.muscleGroup ?? '');
   const [description, setDescription] = useState(exercise.description ?? '');
+  const [isAmrap, setIsAmrap] = useState(exercise.isAmrap ?? false);
   const [errors, setErrors] = useState<{ name?: string; muscleGroup?: string }>({});
 
   const validate = useCallback(() => {
@@ -50,8 +52,9 @@ export function InlineEditExercise({
       name: name.trim(),
       muscleGroup,
       description: description.trim() || undefined,
+      isAmrap,
     });
-  }, [name, muscleGroup, description, validate, onSave]);
+  }, [name, muscleGroup, description, isAmrap, validate, onSave]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -106,6 +109,17 @@ export function InlineEditExercise({
             onKeyDown={handleKeyDown}
             placeholder="Optional description"
           />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="inline-edit-isAmrap"
+            checked={isAmrap}
+            onChange={e => setIsAmrap(e.target.checked)}
+            className="h-4 w-4 rounded border-input"
+          />
+          <label htmlFor="inline-edit-isAmrap" className="text-sm font-medium">AMRAP (As Many Reps As Possible)</label>
         </div>
 
         <div className="flex gap-2">

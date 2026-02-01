@@ -686,6 +686,7 @@ function WorkoutSession() {
 									id: exercise.exerciseId,
 									name: exercise.name,
 									muscleGroup: exercise.muscleGroup ?? '',
+									isAmrap: exercise.isAmrap,
 								}}
 								sets={exercise.sets.map((set) => ({
 									id: set.id,
