@@ -40,7 +40,7 @@ import { Route as ApiBadgesRouteImport } from './routes/api/badges'
 import { Route as WorkoutsStartTemplateIdRouteImport } from './routes/workouts.start.$templateId'
 import { Route as WorkoutsIdSummaryRouteImport } from './routes/workouts.$id_.summary'
 import { Route as TemplatesIdEditRouteImport } from './routes/templates.$id.edit'
-import { Route as ProgramsCycleCycleIdRouteImport } from './routes/programs.cycle.$cycleId'
+import { Route as ProgramsCycleCycleIdRouteImport } from './routes/programs.cycle.$cycleId_'
 import { Route as ProgramsSlugStartRouteImport } from './routes/programs.$slug.start'
 import { Route as ExercisesIdEditRouteImport } from './routes/exercises.$id.edit'
 import { Route as ApiWorkoutsStatsRouteImport } from './routes/api/workouts.stats'
@@ -232,7 +232,7 @@ const TemplatesIdEditRoute = TemplatesIdEditRouteImport.update({
   getParentRoute: () => TemplatesIdRoute,
 } as any)
 const ProgramsCycleCycleIdRoute = ProgramsCycleCycleIdRouteImport.update({
-  id: '/programs/cycle/$cycleId',
+  id: '/programs/cycle/$cycleId_',
   path: '/programs/cycle/$cycleId',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -324,21 +324,21 @@ const ApiAnalyticsTrackRoute = ApiAnalyticsTrackRouteImport.update({
 } as any)
 const ProgramsCycleCycleIdCompleteRoute =
   ProgramsCycleCycleIdCompleteRouteImport.update({
-    id: '/complete',
-    path: '/complete',
-    getParentRoute: () => ProgramsCycleCycleIdRoute,
+    id: '/programs/cycle/$cycleId/complete',
+    path: '/programs/cycle/$cycleId/complete',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ProgramsCycleCycleId1rmUpdateRoute =
   ProgramsCycleCycleId1rmUpdateRouteImport.update({
-    id: '/1rm-update',
-    path: '/1rm-update',
-    getParentRoute: () => ProgramsCycleCycleIdRoute,
+    id: '/programs/cycle/$cycleId/1rm-update',
+    path: '/programs/cycle/$cycleId/1rm-update',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ProgramsCycleCycleId1rmTestRoute =
   ProgramsCycleCycleId1rmTestRouteImport.update({
-    id: '/1rm-test',
-    path: '/1rm-test',
-    getParentRoute: () => ProgramsCycleCycleIdRoute,
+    id: '/programs/cycle/$cycleId/1rm-test',
+    path: '/programs/cycle/$cycleId/1rm-test',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiWorkoutsSetsSetIdRoute = ApiWorkoutsSetsSetIdRouteImport.update({
   id: '/$setId',
@@ -466,7 +466,7 @@ export interface FileRoutesByFullPath {
   '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
-  '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRouteWithChildren
+  '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
@@ -534,7 +534,7 @@ export interface FileRoutesByTo {
   '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
-  '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRouteWithChildren
+  '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
@@ -603,7 +603,7 @@ export interface FileRoutesById {
   '/api/workouts/stats': typeof ApiWorkoutsStatsRoute
   '/exercises/$id/edit': typeof ExercisesIdEditRoute
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
-  '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRouteWithChildren
+  '/programs/cycle/$cycleId_': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
   '/workouts/$id_/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
@@ -809,7 +809,7 @@ export interface FileRouteTypes {
     | '/api/workouts/stats'
     | '/exercises/$id/edit'
     | '/programs/$slug/start'
-    | '/programs/cycle/$cycleId'
+    | '/programs/cycle/$cycleId_'
     | '/templates/$id/edit'
     | '/workouts/$id_/summary'
     | '/workouts/start/$templateId'
@@ -868,9 +868,12 @@ export interface RootRouteChildren {
   ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
   ApiUserPreferencesRoute: typeof ApiUserPreferencesRoute
-  ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRouteWithChildren
+  ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
   WorkoutsStartTemplateIdRoute: typeof WorkoutsStartTemplateIdRoute
+  ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
+  ProgramsCycleCycleId1rmUpdateRoute: typeof ProgramsCycleCycleId1rmUpdateRoute
+  ProgramsCycleCycleIdCompleteRoute: typeof ProgramsCycleCycleIdCompleteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1092,8 +1095,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesIdEditRouteImport
       parentRoute: typeof TemplatesIdRoute
     }
-    '/programs/cycle/$cycleId': {
-      id: '/programs/cycle/$cycleId'
+    '/programs/cycle/$cycleId_': {
+      id: '/programs/cycle/$cycleId_'
       path: '/programs/cycle/$cycleId'
       fullPath: '/programs/cycle/$cycleId'
       preLoaderRoute: typeof ProgramsCycleCycleIdRouteImport
@@ -1220,24 +1223,24 @@ declare module '@tanstack/react-router' {
     }
     '/programs/cycle/$cycleId/complete': {
       id: '/programs/cycle/$cycleId/complete'
-      path: '/complete'
+      path: '/programs/cycle/$cycleId/complete'
       fullPath: '/programs/cycle/$cycleId/complete'
       preLoaderRoute: typeof ProgramsCycleCycleIdCompleteRouteImport
-      parentRoute: typeof ProgramsCycleCycleIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/programs/cycle/$cycleId/1rm-update': {
       id: '/programs/cycle/$cycleId/1rm-update'
-      path: '/1rm-update'
+      path: '/programs/cycle/$cycleId/1rm-update'
       fullPath: '/programs/cycle/$cycleId/1rm-update'
       preLoaderRoute: typeof ProgramsCycleCycleId1rmUpdateRouteImport
-      parentRoute: typeof ProgramsCycleCycleIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/programs/cycle/$cycleId/1rm-test': {
       id: '/programs/cycle/$cycleId/1rm-test'
-      path: '/1rm-test'
+      path: '/programs/cycle/$cycleId/1rm-test'
       fullPath: '/programs/cycle/$cycleId/1rm-test'
       preLoaderRoute: typeof ProgramsCycleCycleId1rmTestRouteImport
-      parentRoute: typeof ProgramsCycleCycleIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/workouts/sets/$setId': {
       id: '/api/workouts/sets/$setId'
@@ -1533,21 +1536,6 @@ const TemplatesIdRouteWithChildren = TemplatesIdRoute._addFileChildren(
   TemplatesIdRouteChildren,
 )
 
-interface ProgramsCycleCycleIdRouteChildren {
-  ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
-  ProgramsCycleCycleId1rmUpdateRoute: typeof ProgramsCycleCycleId1rmUpdateRoute
-  ProgramsCycleCycleIdCompleteRoute: typeof ProgramsCycleCycleIdCompleteRoute
-}
-
-const ProgramsCycleCycleIdRouteChildren: ProgramsCycleCycleIdRouteChildren = {
-  ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,
-  ProgramsCycleCycleId1rmUpdateRoute: ProgramsCycleCycleId1rmUpdateRoute,
-  ProgramsCycleCycleIdCompleteRoute: ProgramsCycleCycleIdCompleteRoute,
-}
-
-const ProgramsCycleCycleIdRouteWithChildren =
-  ProgramsCycleCycleIdRoute._addFileChildren(ProgramsCycleCycleIdRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
@@ -1584,9 +1572,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProgressStrengthRoute: ApiProgressStrengthRoute,
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,
   ApiUserPreferencesRoute: ApiUserPreferencesRoute,
-  ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRouteWithChildren,
+  ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,
   WorkoutsStartTemplateIdRoute: WorkoutsStartTemplateIdRoute,
+  ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,
+  ProgramsCycleCycleId1rmUpdateRoute: ProgramsCycleCycleId1rmUpdateRoute,
+  ProgramsCycleCycleIdCompleteRoute: ProgramsCycleCycleIdCompleteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

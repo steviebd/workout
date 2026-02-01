@@ -1,9 +1,48 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { eq, and, asc } from 'drizzle-orm';
+import type { LiftType } from '~/lib/programs/types';
 import { createDb } from '~/lib/db';
-import { programCycleWorkouts, templateExercises, exercises, templates } from '~/lib/db/schema';
+import { programCycleWorkouts, templateExercises, exercises, templates, userProgramCycles } from '~/lib/db/schema';
 import { getSession } from '~/lib/session';
+import { stronglifts } from '~/lib/programs/stronglifts';
+import { wendler531 } from '~/lib/programs/wendler531';
+import { madcow } from '~/lib/programs/madcow';
+
+const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow> = {
+  'stronglifts-5x5': stronglifts,
+  '531': wendler531,
+  'madcow-5x5': madcow,
+};
+
+const LIFT_MAP: Record<string, LiftType> = {
+  'Squat': 'squat',
+  'Bench Press': 'bench',
+  'Deadlift': 'deadlift',
+  'Overhead Press': 'ohp',
+  'Barbell Row': 'row',
+};
+
+function getEstimatedOneRM(lift: LiftType, oneRMs: { squat: number; bench: number; deadlift: number; ohp: number }): number {
+  switch (lift) {
+    case 'squat': return oneRMs.squat;
+    case 'bench': return oneRMs.bench;
+    case 'deadlift': return oneRMs.deadlift;
+    case 'ohp': return oneRMs.ohp;
+    case 'row': return oneRMs.bench * 0.6;
+    default: return oneRMs.squat;
+  }
+}
+
+function calculateRecalculatedWeight(
+  programConfig: typeof stronglifts | typeof wendler531 | typeof madcow,
+  lift: LiftType,
+  estimatedOneRM: number,
+  week: number,
+  session: number
+): number {
+  return programConfig.calculateTargetWeight(estimatedOneRM, week, session, lift);
+}
 
 export const Route = createFileRoute('/api/program-cycles/$id/current-workout')({
   server: {
@@ -21,6 +60,23 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
           }
 
           const drizzleDb = createDb(db);
+
+          const cycle = await drizzleDb
+            .select({
+              id: userProgramCycles.id,
+              programSlug: userProgramCycles.programSlug,
+              squat1rm: userProgramCycles.squat1rm,
+              bench1rm: userProgramCycles.bench1rm,
+              deadlift1rm: userProgramCycles.deadlift1rm,
+              ohp1rm: userProgramCycles.ohp1rm,
+            })
+            .from(userProgramCycles)
+            .where(and(eq(userProgramCycles.id, params.id), eq(userProgramCycles.workosId, session.workosId)))
+            .get();
+
+          if (!cycle) {
+            return Response.json({ error: 'Program cycle not found' }, { status: 404 });
+          }
 
           const currentWorkout = await drizzleDb
             .select({
@@ -66,9 +122,39 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
             .orderBy(templateExercises.orderIndex)
             .all();
 
+          const programConfig = PROGRAM_MAP[cycle.programSlug];
+          let exercisesWithRecalculatedWeights = templateExercisesData;
+
+          if (programConfig) {
+            const oneRMs = {
+              squat: cycle.squat1rm,
+              bench: cycle.bench1rm,
+              deadlift: cycle.deadlift1rm,
+              ohp: cycle.ohp1rm,
+            };
+
+            exercisesWithRecalculatedWeights = templateExercisesData.map((exercise) => {
+              const lift = LIFT_MAP[exercise.exercise.name] || 'squat';
+              const estimatedOneRM = getEstimatedOneRM(lift, oneRMs);
+
+              const newWeight = calculateRecalculatedWeight(
+                programConfig,
+                lift,
+                estimatedOneRM,
+                currentWorkout.weekNumber,
+                currentWorkout.sessionNumber
+              );
+
+              return {
+                ...exercise,
+                targetWeight: newWeight,
+              };
+            });
+          }
+
           return Response.json({
             ...currentWorkout,
-            exercises: templateExercisesData,
+            exercises: exercisesWithRecalculatedWeights,
           });
         } catch (err) {
           console.error('Get current workout error:', err);

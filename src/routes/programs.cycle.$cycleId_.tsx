@@ -49,7 +49,7 @@ interface CurrentWorkoutData {
 }
 
 function ProgramDashboard() {
-  const params = useParams({ from: '/programs/cycle/$cycleId' });
+  const params = useParams({ from: '/programs/cycle/$cycleId_' });
   const navigate = useNavigate();
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [currentWorkout, setCurrentWorkout] = useState<CurrentWorkoutData | null>(null);
@@ -263,7 +263,7 @@ function ProgramDashboard() {
   );
 }
 
-export const Route = createFileRoute('/programs/cycle/$cycleId')({
+export const Route = createFileRoute('/programs/cycle/$cycleId_')({
   component: ProgramDashboard,
 });
 
