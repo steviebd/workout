@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unassigned-import */
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Scripts, createRootRoute, useLocation , useNavigate } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
@@ -8,10 +8,12 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import '../styles.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastProvider } from '@/components/ToastProvider'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
 import { DateFormatProvider } from '@/lib/context/DateFormatContext'
+import { StreakProvider } from '@/lib/context/StreakContext'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 const queryClient = new QueryClient({
@@ -28,7 +30,7 @@ const queryClient = new QueryClient({
   },
 });
 
-type User = { id: string; email: string; name: string; workosId?: string } | null;
+type User = { id: string; email: string; name: string } | null;
 
 interface AuthContextType {
   user: User;
@@ -54,13 +56,10 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-function RootDocument({ children }: { readonly children: React.ReactNode }) {
+function AppLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
-  const navigate = useNavigate();
   
-  // Client-only sync state to avoid SSR issues with QueryClient
   const [syncState, setSyncState] = useState({
     isOnline: true,
     isSyncing: false,
@@ -68,15 +67,81 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
   });
 
   const signOut = useCallback(() => {
-    if (typeof navigator !== 'undefined' && navigator.onLine) {
-      void fetch('/auth/signout', { method: 'GET', credentials: 'include' }).catch(() => {});
-    }
     void clearCachedUser();
     setUser(null);
-    void navigate({ to: '/' });
-  }, [navigate]);
+    window.location.href = '/auth/signout';
+  }, []);
 
-  // Initialize sync state on client only
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkAuth() {
+      console.log('[checkAuth] Starting auth check...');
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        console.log('[checkAuth] Response status:', response.status);
+        
+        if (!isMounted) return;
+
+        if (response.ok) {
+          const userData = (await response.json()) as User;
+          console.log('[checkAuth] User data received:', userData);
+          if (userData) {
+            setUser(userData);
+            await cacheUser({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name,
+              cachedAt: new Date(),
+            });
+          } else {
+            console.log('[checkAuth] userData was falsy');
+            setUser(null);
+          }
+        } else if (response.status === 401) {
+          console.log('[checkAuth] Got 401, clearing user');
+          await clearCachedUser();
+          setUser(null);
+        } else {
+          console.log('[checkAuth] Non-200/401 response, checking cache');
+          const cachedUser = await getCachedUser();
+          if (cachedUser) {
+            setUser({
+              id: cachedUser.id,
+              email: cachedUser.email,
+              name: cachedUser.name,
+            });
+          } else {
+            setUser(null);
+          }
+        }
+      } catch (err) {
+        console.error('[checkAuth] Error:', err);
+        const cachedUser = await getCachedUser();
+        if (cachedUser && isMounted) {
+          setUser({
+            id: cachedUser.id,
+            email: cachedUser.email,
+            name: cachedUser.name,
+          });
+        } else if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          console.log('[checkAuth] Setting loading to false');
+          setLoading(false);
+        }
+      }
+    }
+
+    void checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     setSyncState({
       isOnline: navigator.onLine,
@@ -85,103 +150,53 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
     });
   }, []);
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
-        
-        if (response.ok) {
-          const userData = (await response.json()) as User;
-          if (userData) {
-            setUser(userData);
-            await cacheUser({
-              id: userData.id,
-              email: userData.email,
-              name: userData.name,
-              workosId: userData.workosId ?? '',
-              cachedAt: new Date(),
-            });
-          } else {
-            setUser(null);
-          }
-        } else if (response.status === 401) {
-          await clearCachedUser();
-          setUser(null);
-        } else {
-          const cachedUser = await getCachedUser();
-          if (cachedUser) {
-            setUser({
-              id: cachedUser.id,
-              email: cachedUser.email,
-              name: cachedUser.name,
-              workosId: cachedUser.workosId,
-            });
-          } else {
-            setUser(null);
-          }
-        }
-      } catch {
-        const cachedUser = await getCachedUser();
-        if (cachedUser) {
-          setUser({
-            id: cachedUser.id,
-            email: cachedUser.email,
-            name: cachedUser.name,
-            workosId: cachedUser.workosId,
-          });
-        } else {
-          setUser(null);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-    void checkAuth();
-  }, [location.pathname]);
-
   return (
     <QueryClientProvider client={queryClient}>
-    	<AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
-			<html lang={'en'}>
-				<head>
-					<HeadContent />
-				</head>
-				<body className={'min-h-screen bg-background font-sans antialiased'}>
-					<div className={'min-h-screen flex flex-col'}>
-						<UnitProvider>
-							<DateFormatProvider>
-								<Header />
-								<main className={'flex-1 pb-20'}>
-									<div className="mx-auto max-w-lg px-4">
-										<ErrorBoundary>
-											<ToastProvider>
-												{children}
-											</ToastProvider>
-										</ErrorBoundary>
-									</div>
-								</main>
-								<BottomNav />
-							</DateFormatProvider>
-						</UnitProvider>
-					</div>
-					<TanStackDevtools
-						config={{
-                		position: 'bottom-right',
-              		}}
-						plugins={[
-                		{
-                  		name: 'Tanstack Router',
-                  		render: <TanStackRouterDevtoolsPanel />,
-                	},
-              	]}
-					/>
-					<Scripts />
-				</body>
-			</html>
-     </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
+        <html lang={'en'}>
+          <head>
+            <HeadContent />
+          </head>
+          <body className={'min-h-screen bg-background font-sans antialiased'}>
+            <div className={'min-h-screen flex flex-col'}>
+              <UnitProvider>
+                <DateFormatProvider>
+                  <StreakProvider workosId={user?.id ?? ''}>
+                    <Header />
+                  </StreakProvider>
+                  <main className={'flex-1 pb-20'}>
+                    <div className="mx-auto max-w-lg px-4">
+                    <ErrorBoundary>
+                      <ToastProvider>
+                        <TooltipProvider>
+                          <Outlet />
+                        </TooltipProvider>
+                      </ToastProvider>
+                    </ErrorBoundary>
+                    </div>
+                  </main>
+                  <BottomNav />
+                </DateFormatProvider>
+              </UnitProvider>
+            </div>
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+              ]}
+            />
+            <Scripts />
+          </body>
+        </html>
+      </AuthContext.Provider>
     </QueryClientProvider>
-  		)
-  }
+  );
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -198,6 +213,5 @@ export const Route = createRootRoute({
       },
     ],
   }),
-
-  shellComponent: RootDocument,
+  component: AppLayout,
 })

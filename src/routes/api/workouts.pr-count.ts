@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/workouts/pr-count')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const count = await getPrCount(db, session.userId);
+           const count = await getPrCount(db, session.workosId);
 
           return Response.json({ count });
         } catch (err) {

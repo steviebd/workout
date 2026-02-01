@@ -1,0 +1,98 @@
+import { TRAINING_MAX_PERCENTAGE, roundToPlate } from './utils';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+
+const nuckolsInfo = {
+  slug: 'nuckols-28-programs',
+  name: 'Greg Nuckols 28 Programs',
+  description: 'Science-backed programming with 4-week wave periodization. Evidence-based progression for intermediate lifters.',
+  difficulty: 'intermediate' as const,
+  daysPerWeek: 4,
+  estimatedWeeks: 8,
+  totalSessions: 32,
+  mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+};
+
+const WAVE_1 = {
+  week1: { t1: [0.70, 0.80, 0.90], t2: [0.60, 0.70, 0.80] },
+  week2: { t1: [0.725, 0.825, 0.925], t2: [0.625, 0.725, 0.825] },
+  week3: { t1: [0.75, 0.85, 0.95], t2: [0.65, 0.75, 0.85] },
+  week4: { t1: [0.60, 0.70, 0.80], t2: [0.50, 0.60, 0.70] },
+};
+
+const WAVE_2 = {
+  week1: { t1: [0.725, 0.825, 0.925], t2: [0.625, 0.725, 0.825] },
+  week2: { t1: [0.75, 0.85, 0.95], t2: [0.65, 0.75, 0.85] },
+  week3: { t1: [0.775, 0.875, 0.975], t2: [0.675, 0.775, 0.875] },
+  week4: { t1: [0.625, 0.725, 0.825], t2: [0.525, 0.625, 0.725] },
+};
+
+function calculateTargetWeight(
+  estimatedOneRM: number,
+  week: number,
+  session: number,
+  _lift: string,
+  isT2: boolean = false,
+  waveNumber: number = 1
+): number {
+  const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGE;
+  const wave = waveNumber === 1 ? WAVE_1 : WAVE_2;
+  const weekData = wave[`week${week}` as keyof typeof wave] || wave.week1;
+  const percentages = isT2 ? weekData.t2 : weekData.t1;
+  const setIndex = session - 1;
+  const percentage = percentages[setIndex] || percentages[0];
+  return roundToPlate(trainingMax * percentage);
+}
+
+export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
+  const workouts: ProgramWorkout[] = [];
+
+  const dayConfigs = [
+    { t1: 'squat' as const, t2: 'bench' as const },
+    { t1: 'bench' as const, t2: 'squat' as const },
+    { t1: 'deadlift' as const, t2: 'ohp' as const },
+    { t1: 'ohp' as const, t2: 'deadlift' as const },
+  ];
+
+  for (let wave = 1; wave <= 2; wave++) {
+    for (let week = 1; week <= 4; week++) {
+      for (let day = 1; day <= 4; day++) {
+        const config = dayConfigs[day - 1];
+        const t1OneRM = oneRMs[config.t1];
+        const t2OneRM = oneRMs[config.t2];
+
+        const liftName = config.t1.charAt(0).toUpperCase() + config.t1.slice(1);
+        const t2LiftName = config.t2.charAt(0).toUpperCase() + config.t2.slice(1);
+
+        const t1Sets = [
+          { name: liftName, lift: config.t1, sets: 1, reps: 5, targetWeight: calculateTargetWeight(t1OneRM, week, 1, config.t1, false, wave), isAmrap: false },
+          { name: `${liftName} 2`, lift: config.t1, sets: 1, reps: 3, targetWeight: calculateTargetWeight(t1OneRM, week, 2, config.t1, false, wave), isAmrap: false },
+          { name: `${liftName} 3+`, lift: config.t1, sets: 1, reps: 1, targetWeight: calculateTargetWeight(t1OneRM, week, 3, config.t1, false, wave), isAmrap: true },
+        ];
+
+        const t2Sets = [
+          { name: t2LiftName, lift: config.t2, sets: 1, reps: 8, targetWeight: calculateTargetWeight(t2OneRM, week, 1, config.t2, true, wave), isAmrap: false },
+          { name: `${t2LiftName} 2`, lift: config.t2, sets: 1, reps: 6, targetWeight: calculateTargetWeight(t2OneRM, week, 2, config.t2, true, wave), isAmrap: false },
+        ];
+
+        const dayNames = ['Day 1 (Squat/Bench)', 'Day 2 (Bench/Squat)', 'Day 3 (Deadlift/OHP)', 'Day 4 (OHP/Deadlift)'];
+
+        workouts.push({
+          weekNumber: (wave - 1) * 4 + week,
+          sessionNumber: ((wave - 1) * 4 + week - 1) * 4 + day,
+          sessionName: `Wave ${wave} - Week ${week} - ${dayNames[day - 1]}`,
+          exercises: [...t1Sets, ...t2Sets],
+        });
+      }
+    }
+  }
+
+  return workouts;
+}
+
+export const nuckols: ProgramConfig = {
+  info: nuckolsInfo,
+  generateWorkouts,
+  calculateTargetWeight: (oneRM, week, session, lift) => calculateTargetWeight(oneRM, week, session, lift, false, 1),
+};
+
+export default nuckols;

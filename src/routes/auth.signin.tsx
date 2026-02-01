@@ -4,6 +4,11 @@ import { WorkOS } from '@workos-inc/node';
 const {WORKOS_API_KEY} = process.env;
 const {WORKOS_CLIENT_ID} = process.env;
 
+function isLocalhost(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+}
+
 export const Route = createFileRoute('/auth/signin')({
   server: {
     handlers: {
@@ -16,15 +21,26 @@ export const Route = createFileRoute('/auth/signin')({
           throw new Error('WORKOS_CLIENT_ID is not configured');
         }
 
+        const state = crypto.randomUUID();
+        const isDev = isLocalhost(request);
+
         const authorizationUrl = workos.userManagement.getAuthorizationUrl({
           clientId: WORKOS_CLIENT_ID,
           redirectUri,
           provider: 'authkit',
+          state,
         });
+
+        const stateCookie = isDev
+          ? `oauth_state=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`
+          : `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`;
 
         return new Response(null, {
           status: 302,
-          headers: { Location: authorizationUrl },
+          headers: {
+            Location: authorizationUrl,
+            'Set-Cookie': stateCookie,
+          },
         });
       },
     },

@@ -3,7 +3,7 @@ import { env } from 'cloudflare:workers';
 import {
   type CreateWorkoutData,
   createWorkoutWithDetails,
-  getWorkoutsByUserId,
+  getWorkoutsByWorkosId,
 } from '../../lib/db/workout';
 import { getSession } from '../../lib/session';
 import { getTemplateExercises } from '../../lib/db/template';
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/workouts')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workouts = await getWorkoutsByUserId(db, session.userId, {
+           const workouts = await getWorkoutsByWorkosId(db, session.workosId, {
             sortBy,
             sortOrder,
             limit,
@@ -46,8 +46,7 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json(workouts);
         } catch (err) {
           console.error('Get workouts error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
         POST: async ({ request }) => {
@@ -57,7 +56,7 @@ export const Route = createFileRoute('/api/workouts')({
               return Response.json({ error: 'Not authenticated' }, { status: 401 });
             }
 
-            console.log('API: Create workout - session userId:', session.userId);
+             console.log('API: Create workout - session workosId:', session.workosId);
 
             const body = await request.json();
             const { name, templateId, notes, exerciseIds, localId } = body as CreateWorkoutData & { exerciseIds?: string[]; localId?: string };
@@ -76,13 +75,13 @@ export const Route = createFileRoute('/api/workouts')({
             let exercisesToAdd = exerciseIds ?? [];
 
             if (exercisesToAdd.length === 0 && templateId) {
-              const templateExercises = await getTemplateExercises(db, templateId, session.userId);
+               const templateExercises = await getTemplateExercises(db, templateId, session.workosId);
               console.log('API: Template exercises found:', templateExercises.length);
               exercisesToAdd = templateExercises.map((te) => te.exerciseId);
             }
 
-            const workout = await createWorkoutWithDetails(db, {
-              userId: session.userId,
+             const workout = await createWorkoutWithDetails(db, {
+               workosId: session.workosId,
               name,
               templateId,
               notes,
@@ -90,19 +89,18 @@ export const Route = createFileRoute('/api/workouts')({
               localId,
             });
 
-            console.log('API: Workout created successfully:', {
-              workoutId: workout.id,
-              userId: session.userId,
-              workoutUserId: workout.userId,
-            });
+             console.log('API: Workout created successfully:', {
+               workoutId: workout.id,
+               workosId: session.workosId,
+               workoutWorkosId: workout.workosId,
+             });
 
             return Response.json(workout, { status: 201 });
-         } catch (err) {
-           console.error('Create workout error:', err);
-           const errorMessage = err instanceof Error ? err.message : String(err);
-           return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-         }
-       },
+          } catch (err) {
+            console.error('Create workout error:', err);
+            return Response.json({ error: 'Server error' }, { status: 500 });
+          }
+        },
     },
   },
 });

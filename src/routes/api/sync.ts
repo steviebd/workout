@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/sync' as const)({
             .select({
               id: exercisesTable.id,
               localId: exercisesTable.localId,
-              userId: exercisesTable.userId,
+              workosId: exercisesTable.workosId,
               name: exercisesTable.name,
               muscleGroup: exercisesTable.muscleGroup,
               description: exercisesTable.description,
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/sync' as const)({
               updatedAt: exercisesTable.updatedAt,
             })
             .from(exercisesTable)
-            .where(eq(exercisesTable.userId, session.userId))
+            .where(eq(exercisesTable.workosId, session.workosId))
             .orderBy(desc(exercisesTable.updatedAt))
             .limit(1000);
 
@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/sync' as const)({
             .select({
               id: templatesTable.id,
               localId: templatesTable.localId,
-              userId: templatesTable.userId,
+              workosId: templatesTable.workosId,
               name: templatesTable.name,
               description: templatesTable.description,
               notes: templatesTable.notes,
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/sync' as const)({
               updatedAt: templatesTable.updatedAt,
             })
             .from(templatesTable)
-            .where(eq(templatesTable.userId, session.userId))
+            .where(eq(templatesTable.workosId, session.workosId))
             .orderBy(desc(templatesTable.updatedAt))
             .limit(1000);
 
@@ -60,7 +60,7 @@ export const Route = createFileRoute('/api/sync' as const)({
             .select({
               id: workoutsTable.id,
               localId: workoutsTable.localId,
-              userId: workoutsTable.userId,
+              workosId: workoutsTable.workosId,
               templateId: workoutsTable.templateId,
               name: workoutsTable.name,
               startedAt: workoutsTable.startedAt,
@@ -69,51 +69,50 @@ export const Route = createFileRoute('/api/sync' as const)({
               createdAt: workoutsTable.createdAt,
             })
             .from(workoutsTable)
-            .where(eq(workoutsTable.userId, session.userId))
+            .where(eq(workoutsTable.workosId, session.workosId))
             .orderBy(desc(workoutsTable.startedAt))
             .limit(1000);
 
-          return Response.json({
-            exercises: exercises.map(e => ({
-              id: e.id,
-              localId: e.localId,
-              userId: e.userId,
-              name: e.name,
-              muscleGroup: e.muscleGroup,
-              description: e.description,
-              isDeleted: e.isDeleted,
-              createdAt: e.createdAt,
-              updatedAt: e.updatedAt,
-            })),
-            templates: templates.map(t => ({
-              id: t.id,
-              localId: t.localId,
-              userId: t.userId,
-              name: t.name,
-              description: t.description,
-              notes: t.notes,
-              isDeleted: t.isDeleted,
-              createdAt: t.createdAt,
-              updatedAt: t.updatedAt,
-            })),
-            workouts: workouts.map(w => ({
-              id: w.id,
-              localId: w.localId,
-              userId: w.userId,
-              templateId: w.templateId,
-              name: w.name,
-              startedAt: w.startedAt,
-              completedAt: w.completedAt,
-              notes: w.notes,
-              createdAt: w.createdAt,
-            })),
-          });
-        } catch (err) {
-          console.error('Sync error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json({
+             exercises: exercises.map(e => ({
+               id: e.id,
+               localId: e.localId,
+               workosId: e.workosId,
+               name: e.name,
+               muscleGroup: e.muscleGroup,
+               description: e.description,
+               isDeleted: e.isDeleted,
+               createdAt: e.createdAt,
+               updatedAt: e.updatedAt,
+             })),
+             templates: templates.map(t => ({
+               id: t.id,
+               localId: t.localId,
+               workosId: t.workosId,
+               name: t.name,
+               description: t.description,
+               notes: t.notes,
+               isDeleted: t.isDeleted,
+               createdAt: t.createdAt,
+               updatedAt: t.updatedAt,
+             })),
+             workouts: workouts.map(w => ({
+               id: w.id,
+               localId: w.localId,
+               workosId: w.workosId,
+               templateId: w.templateId,
+               name: w.name,
+               startedAt: w.startedAt,
+               completedAt: w.completedAt,
+               notes: w.notes,
+               createdAt: w.createdAt,
+             })),
+           });
+         } catch (err) {
+           console.error('Sync error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

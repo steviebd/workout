@@ -183,9 +183,9 @@ describe('Sync Engine', () => {
         });
 
       const opsBefore = await getPendingOperations();
-      expect(opsBefore).toHaveLength(2);
+      expect(opsBefore).toHaveLength(1);
       expect(opsBefore[0].type).toBe('create');
-      expect(opsBefore[1].type).toBe('update');
+      expect(opsBefore[0].data.name).toBe('Updated Exercise 1');
     });
 
     it('should remove successful operations from queue', async () => {
@@ -792,7 +792,7 @@ describe('Sync Engine', () => {
       await createWorkout('user-1', { name: 'Workout', status: 'in_progress' });
 
       const count = await syncEngine.getPendingCount();
-      expect(count).toBe(4);
+      expect(count).toBe(3);
     });
   });
 
@@ -882,7 +882,7 @@ describe('Sync Engine', () => {
       const result = await syncEngine.sync('user-1');
 
       expect(result.success).toBe(true);
-      expect(result.pushed).toBe(4);
+      expect(result.pushed).toBe(2);
       expect(result.errors).toBe(0);
 
       const remainingOps = await getPendingOperations();

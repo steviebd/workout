@@ -51,6 +51,4 @@ export async function capturePageView(
   // Handled automatically by PostHog's auto-capture
 }
 
-export function shutdownClient(): void {
-  posthogClientPromise = null;
-}
+

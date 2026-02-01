@@ -50,7 +50,7 @@ describe('Local Repository - Exercise Operations', () => {
       expect(exercise).toBeDefined();
       expect(exercise?.name).toBe('Bench Press');
       expect(exercise?.muscleGroup).toBe('Chest');
-      expect(exercise?.userId).toBe('user-1');
+      expect(exercise?.workosId).toBe('user-1');
       expect(exercise?.syncStatus).toBe('pending');
       expect(exercise?.needsSync).toBe(true);
     });
@@ -122,8 +122,9 @@ describe('Local Repository - Exercise Operations', () => {
       expect(exercise?.syncStatus).toBe('pending');
 
       const operations = await getPendingOperations();
-      expect(operations).toHaveLength(2);
-      expect(operations[1].type).toBe('update');
+      expect(operations).toHaveLength(1);
+      expect(operations[0].type).toBe('create');
+      expect(operations[0].data).toEqual(expect.objectContaining({ name: 'Updated Name' }));
     });
 
     it('should throw error for non-existent exercise', async () => {
@@ -178,7 +179,7 @@ describe('Local Repository - Template Operations', () => {
       const template = await getTemplate(localId);
       expect(template).toBeDefined();
       expect(template?.name).toBe('Push Day');
-      expect(template?.userId).toBe('user-1');
+      expect(template?.workosId).toBe('user-1');
       expect(template?.syncStatus).toBe('pending');
       expect(template?.needsSync).toBe(true);
       expect(template?.exercises).toHaveLength(1);
@@ -244,8 +245,9 @@ describe('Local Repository - Template Operations', () => {
       expect(template?.syncStatus).toBe('pending');
 
       const operations = await getPendingOperations();
-      expect(operations).toHaveLength(2);
-      expect(operations[1].type).toBe('update');
+      expect(operations).toHaveLength(1);
+      expect(operations[0].type).toBe('create');
+      expect(operations[0].data).toEqual(expect.objectContaining({ name: 'Updated Name' }));
     });
 
     it('should throw error for non-existent template', async () => {
@@ -299,7 +301,7 @@ describe('Local Repository - Workout Operations', () => {
       const workout = await getWorkout(localId);
       expect(workout).toBeDefined();
       expect(workout?.name).toBe('Morning Workout');
-      expect(workout?.userId).toBe('user-1');
+      expect(workout?.workosId).toBe('user-1');
       expect(workout?.status).toBe('in_progress');
       expect(workout?.syncStatus).toBe('pending');
       expect(workout?.needsSync).toBe(true);
@@ -386,8 +388,9 @@ describe('Local Repository - Workout Operations', () => {
       expect(workout?.syncStatus).toBe('pending');
 
       const operations = await getPendingOperations();
-      expect(operations).toHaveLength(2);
-      expect(operations[1].type).toBe('update');
+      expect(operations).toHaveLength(1);
+      expect(operations[0].type).toBe('create');
+      expect(operations[0].data).toEqual(expect.objectContaining({ name: 'Updated Name', notes: 'Great workout' }));
     });
 
     it('should throw error for non-existent workout', async () => {
@@ -412,8 +415,10 @@ describe('Local Repository - Workout Operations', () => {
       expect(workout?.syncStatus).toBe('pending');
 
       const operations = await getPendingOperations();
-      expect(operations).toHaveLength(2);
-      expect(operations[1].type).toBe('update');
+      expect(operations).toHaveLength(1);
+      expect(operations[0].type).toBe('create');
+      expect(operations[0].data.status).toBe('completed');
+      expect(operations[0].data.completedAt).toBeDefined();
     });
 
     it('should throw error for non-existent workout', async () => {
@@ -535,8 +540,9 @@ describe('Local Repository - Workout Set Operations', () => {
       expect(workoutSet?.syncStatus).toBe('pending');
 
       const operations = await getPendingOperations();
-      expect(operations).toHaveLength(2);
-      expect(operations[1].type).toBe('update');
+      expect(operations).toHaveLength(1);
+      expect(operations[0].type).toBe('create');
+      expect(operations[0].data).toEqual(expect.objectContaining({ weight: 110, completed: true }));
     });
 
     it('should throw error for non-existent set', async () => {
@@ -756,7 +762,9 @@ describe('Local Repository - Complete Workflow', () => {
 
     await updateExercise(exerciseId, { name: 'Front Squat' });
     operations = await getPendingOperations();
-    expect(operations.filter(op => op.type === 'update')).toHaveLength(1);
+    expect(operations).toHaveLength(1);
+    expect(operations[0].type).toBe('create');
+    expect(operations[0].data.name).toBe('Front Squat');
 
     await deleteExercise(exerciseId);
     operations = await getPendingOperations();
@@ -785,9 +793,14 @@ describe('Local Repository - Complete Workflow', () => {
     expect(workout?.completedAt).toBeDefined();
 
     const operations = await getPendingOperations();
-    const createOp = operations.find(op => op.type === 'create' && op.entity === 'workout');
-    const updateOp = operations.find(op => op.type === 'update' && op.entity === 'workout');
-    expect(createOp).toBeDefined();
-    expect(updateOp).toBeDefined();
+    expect(operations).toHaveLength(2);
+
+    const exerciseOp = operations.find(op => op.entity === 'exercise' && op.type === 'create');
+    expect(exerciseOp).toBeDefined();
+
+    const workoutOp = operations.find(op => op.entity === 'workout' && op.type === 'create');
+    expect(workoutOp).toBeDefined();
+    expect(workoutOp?.data.status).toBe('completed');
+    expect(workoutOp?.data.completedAt).toBeDefined();
   });
 });

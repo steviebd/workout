@@ -33,19 +33,19 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const workout = await getWorkoutWithExercises(db, params.id, session.userId);
+            const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
 
            if (!workout) {
-             console.log('API: Workout not found for id:', params.id, 'userId:', session.userId);
+             console.log('API: Workout not found for id:', params.id, 'workosId:', session.workosId);
              return Response.json({ error: 'Workout not found' }, { status: 404 });
            }
 
-           console.log('API: Workout found:', {
-             workoutId: workout.id,
-             workoutUserId: workout.userId,
-             requestUserId: session.userId,
-             match: workout.userId === session.userId,
-           });
+             console.log('API: Workout found:', {
+               workoutId: workout.id,
+               workoutWorkosId: workout.workosId,
+               requestWorkosId: session.workosId,
+               match: workout.workosId === session.workosId,
+             });
 
           const response = {
             ...workout,
@@ -82,8 +82,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
           });
         } catch (err) {
           console.error('Get workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
       PUT: async ({ request, params }) => {
@@ -101,7 +100,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const workout = await updateWorkout(db, params.id, session.userId, {
+           const workout = await updateWorkout(db, params.id, session.workosId, {
             name,
             notes,
             completedAt,
@@ -111,14 +110,13 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          return Response.json(workout);
-        } catch (err) {
-          console.error('Update workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
-      DELETE: async ({ request, params }) => {
+           return Response.json(workout);
+         } catch (err) {
+           console.error('Update workout error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -130,19 +128,18 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await deleteWorkout(db, params.id, session.userId);
+           const deleted = await deleteWorkout(db, params.id, session.workosId);
 
           if (!deleted) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          return new Response(null, { status: 204 });
-        } catch (err) {
-          console.error('Delete workout error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return new Response(null, { status: 204 });
+         } catch (err) {
+           console.error('Delete workout error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

@@ -1,3 +1,5 @@
+'use client';
+
 import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
 import {
   Calendar,
@@ -33,6 +35,7 @@ interface WorkoutExercise {
    orderIndex: number;
    sets: WorkoutSet[];
    notes: string | null;
+   isAmrap: boolean;
  }
 
 interface WorkoutSet {
@@ -71,6 +74,7 @@ function WorkoutSession() {
   const [workoutId, setWorkoutId] = useState<string | null>(null);
   const [workoutName, setWorkoutName] = useState('');
   const [startedAt, setStartedAt] = useState('');
+  const [programCycleId, setProgramCycleId] = useState<string | null>(null);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
@@ -221,6 +225,7 @@ function WorkoutSession() {
           orderIndex,
           sets: [],
           notes: newExerciseData.notes ?? null,
+          isAmrap: false,
         };
 
         const updatedExercises = [...exercises, workoutExercise];
@@ -315,10 +320,16 @@ function WorkoutSession() {
           completed_sets: completedSets,
           exercise_count: exercises.length,
         });
-        console.log('completeWorkout: Workout completed successfully, redirecting to:', `/workouts/${workoutId}/summary`);
         toast.success('Workout completed successfully!');
+        
+        const is1RMTest = workoutName === '1RM Test' && programCycleId;
+        const redirectUrl = is1RMTest 
+          ? `/programs/cycle/${programCycleId}/1rm-test`
+          : `/workouts/${workoutId}/summary`;
+        
+        console.log('completeWorkout: Workout completed successfully, redirecting to:', redirectUrl);
         setTimeout(() => {
-          window.location.href = `/workouts/${workoutId}/summary`;
+          window.location.href = redirectUrl;
         }, 1000);
       } catch (err) {
         console.error('completeWorkout: Error:', err);
@@ -327,7 +338,7 @@ function WorkoutSession() {
         toast.error(errorMsg);
         setCompleting(false);
       }
-    }, [workoutId, exercises, workoutName, toast]);
+    }, [workoutId, exercises, workoutName, programCycleId, toast]);
 
     const handleCompleteWorkout = useCallback(async () => {
      if (!workoutId) return;
@@ -482,6 +493,7 @@ function WorkoutSession() {
           setWorkoutName(data.name);
           setStartedAt(data.startedAt);
           setNotes(data.notes ?? '');
+          setProgramCycleId((data as unknown as { programCycleId?: string | null }).programCycleId ?? null);
 
           if (data.completedAt && !redirectingRef.current) {
             console.log('Workout: Detected completed workout, redirecting to summary');
@@ -495,18 +507,19 @@ function WorkoutSession() {
           });
 
            if (exerciseData.ok) {
-             const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
-             const flattenedExercises = exercisesData.map((e) => ({
-               id: e.id,
-               exerciseId: e.exerciseId,
-               orderIndex: e.orderIndex,
-               notes: e.notes,
-               name: e.exercise?.name ?? '',
-               muscleGroup: e.exercise?.muscleGroup ?? null,
-               sets: e.sets as WorkoutSet[],
-             }));
-             setExercises(flattenedExercises);
-           }
+              const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
+              const flattenedExercises = exercisesData.map((e) => ({
+                id: e.id,
+                exerciseId: e.exerciseId,
+                orderIndex: e.orderIndex,
+                notes: e.notes,
+                name: e.exercise?.name ?? '',
+                muscleGroup: e.exercise?.muscleGroup ?? null,
+                sets: e.sets as WorkoutSet[],
+                isAmrap: e.isAmrap,
+              }));
+              setExercises(flattenedExercises);
+            }
         } else {
           let errorData: { error?: string } = {};
           try {
@@ -673,6 +686,7 @@ function WorkoutSession() {
 									id: exercise.exerciseId,
 									name: exercise.name,
 									muscleGroup: exercise.muscleGroup ?? '',
+									isAmrap: exercise.isAmrap,
 								}}
 								sets={exercise.sets.map((set) => ({
 									id: set.id,

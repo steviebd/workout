@@ -16,14 +16,14 @@ export interface UpdatePreferencesData {
 
 export async function getUserPreferences(
   db: D1Database,
-  userId: string
+  workosId: string
 ): Promise<UserPreference | null> {
   const drizzleDb = createDb(db);
 
   const prefs = await drizzleDb
     .select()
     .from(userPreferences)
-    .where(eq(userPreferences.userId, userId))
+    .where(eq(userPreferences.workosId, workosId))
     .get();
 
   return prefs ? (prefs as UserPreference) : null;
@@ -31,7 +31,7 @@ export async function getUserPreferences(
 
 export async function upsertUserPreferences(
   db: D1Database,
-  userId: string,
+  workosId: string,
   data: UpdatePreferencesData
 ): Promise<UserPreference> {
   const drizzleDb = createDb(db);
@@ -39,7 +39,7 @@ export async function upsertUserPreferences(
   const existing = await drizzleDb
     .select()
     .from(userPreferences)
-    .where(eq(userPreferences.userId, userId))
+    .where(eq(userPreferences.workosId, workosId))
     .get();
 
   if (existing) {
@@ -49,7 +49,7 @@ export async function upsertUserPreferences(
         ...data,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(userPreferences.userId, userId))
+      .where(eq(userPreferences.workosId, workosId))
       .returning()
       .get();
 
@@ -59,7 +59,7 @@ export async function upsertUserPreferences(
   const newPrefs = await drizzleDb
     .insert(userPreferences)
     .values({
-      userId,
+      workosId,
       weightUnit: data.weightUnit ?? 'kg',
       dateFormat: data.dateFormat ?? 'dd/mm/yyyy',
       theme: data.theme ?? 'light',
@@ -72,16 +72,16 @@ export async function upsertUserPreferences(
 
 export async function updateWeightUnit(
   db: D1Database,
-  userId: string,
+  workosId: string,
   weightUnit: WeightUnit
 ): Promise<UserPreference | null> {
-  return upsertUserPreferences(db, userId, { weightUnit });
+  return upsertUserPreferences(db, workosId, { weightUnit });
 }
 
 export async function updateTheme(
   db: D1Database,
-  userId: string,
+  workosId: string,
   theme: Theme
 ): Promise<UserPreference | null> {
-  return upsertUserPreferences(db, userId, { theme });
+  return upsertUserPreferences(db, workosId, { theme });
 }

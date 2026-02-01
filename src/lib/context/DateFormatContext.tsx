@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { type DateFormat } from '../db/preferences';
+import { useAuth } from '../../routes/__root';
 
 interface DateFormatContextType {
   dateFormat: DateFormat;
@@ -30,9 +31,12 @@ interface DateFormatProviderProps {
 export function DateFormatProvider({ children }: DateFormatProviderProps) {
   const [dateFormat, setDateFormatState] = useState<DateFormat>('dd/mm/yyyy');
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     async function fetchPreferences() {
+      if (authLoading || !user) return;
+      
       try {
         const res = await fetch('/api/preferences', {
           credentials: 'include',
@@ -50,8 +54,12 @@ export function DateFormatProvider({ children }: DateFormatProviderProps) {
       }
     }
 
-    void fetchPreferences();
-  }, []);
+    if (!authLoading && user) {
+      void fetchPreferences();
+    } else if (!authLoading && !user) {
+      setLoading(false);
+    }
+  }, [user, authLoading]);
 
   const setDateFormat = useCallback(async (format: DateFormat) => {
     setLoading(true);

@@ -47,7 +47,4 @@ export function identifyUser(
   });
 }
 
-export async function shutdownClient(): Promise<void> {
-  const client = getPostHogClient();
-  await client.shutdown();
-}
+

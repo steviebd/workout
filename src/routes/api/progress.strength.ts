@@ -61,20 +61,19 @@ export const Route = createFileRoute('/api/progress/strength')({
             }
           }
 
-          const strengthHistory = await getStrengthHistory(db, session.userId, exerciseId, { fromDate, toDate });
+           const strengthHistory = await getStrengthHistory(db, session.workosId, exerciseId, { fromDate, toDate });
 
           const strengthData = strengthHistory.map(point => ({
             date: point.date,
             weight: point.weight,
           }));
 
-          return Response.json({ strengthData });
-        } catch (err) {
-          console.error('Get strength progress error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json({ strengthData });
+         } catch (err) {
+           console.error('Get strength progress error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

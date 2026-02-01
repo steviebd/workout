@@ -158,7 +158,7 @@ function Exercises() {
               </Button>
             </div>
 
-            <form onSubmit={void handleCreateExercise} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); void handleCreateExercise(e); }} className="space-y-4">
               <div>
                 <label htmlFor="exercise-name" className="block text-sm font-medium mb-1">Name *</label>
                 <Input

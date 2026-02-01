@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/exercises/copy-from-library')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercise = await copyExerciseFromLibrary(db, session.userId, {
+           const exercise = await copyExerciseFromLibrary(db, session.workosId, {
             name,
             muscleGroup,
             description,

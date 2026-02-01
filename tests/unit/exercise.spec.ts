@@ -4,7 +4,7 @@ import type { Exercise } from '../../src/lib/db/schema';
 const mockExerciseData = {
   id: 'exercise-1',
   localId: null,
-  userId: 'user-1',
+  workosId: 'user-1',
   name: 'Bench Press',
   muscleGroup: 'Chest',
   description: 'Classic chest exercise',
@@ -69,14 +69,14 @@ describe('Exercise CRUD Operations', () => {
       const { createExercise } = await import('../../src/lib/db/exercise');
 
       const result = await createExercise({} as D1Database, {
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Bench Press',
         muscleGroup: 'Chest',
         description: 'Classic chest exercise',
       });
 
       expect(result.id).toBe('exercise-1');
-      expect(result.userId).toBe('user-1');
+      expect(result.workosId).toBe('user-1');
       expect(result.name).toBe('Bench Press');
       expect(result.muscleGroup).toBe('Chest');
       expect(result.description).toBe('Classic chest exercise');
@@ -89,7 +89,7 @@ describe('Exercise CRUD Operations', () => {
       const { createExercise } = await import('../../src/lib/db/exercise');
 
       const result = await createExercise({} as D1Database, {
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Push Up',
       });
 
@@ -109,7 +109,7 @@ describe('Exercise CRUD Operations', () => {
 
       expect(result).toEqual({
         id: 'exercise-1',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Bench Press',
         muscleGroup: 'Chest',
         description: 'Classic chest exercise',
@@ -142,7 +142,7 @@ describe('Exercise CRUD Operations', () => {
     });
   });
 
-  describe('getExercisesByUserId', () => {
+  describe('getExercisesByWorkosId', () => {
     it('returns user exercises', async () => {
       const exercises = [
         { ...mockExerciseData, id: 'exercise-1', name: 'Bench Press' },
@@ -150,9 +150,9 @@ describe('Exercise CRUD Operations', () => {
       ];
       mockDrizzleDb.select = vi.fn(() => createMockSelectChain(exercises));
 
-      const { getExercisesByUserId } = await import('../../src/lib/db/exercise');
+      const { getExercisesByWorkosId } = await import('../../src/lib/db/exercise');
 
-      const result = await getExercisesByUserId({} as D1Database, 'user-1');
+      const result = await getExercisesByWorkosId({} as D1Database, 'user-1');
 
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Bench Press');
@@ -163,9 +163,9 @@ describe('Exercise CRUD Operations', () => {
       const exercises = [{ ...mockExerciseData, name: 'Bench Press' }];
       mockDrizzleDb.select = vi.fn(() => createMockSelectChain(exercises));
 
-      const { getExercisesByUserId } = await import('../../src/lib/db/exercise');
+      const { getExercisesByWorkosId } = await import('../../src/lib/db/exercise');
 
-      const result = await getExercisesByUserId({} as D1Database, 'user-1', { search: 'Bench' });
+      const result = await getExercisesByWorkosId({} as D1Database, 'user-1', { search: 'Bench' });
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Bench Press');
@@ -175,9 +175,9 @@ describe('Exercise CRUD Operations', () => {
       const exercises = [{ ...mockExerciseData, muscleGroup: 'Chest' }];
       mockDrizzleDb.select = vi.fn(() => createMockSelectChain(exercises));
 
-      const { getExercisesByUserId } = await import('../../src/lib/db/exercise');
+      const { getExercisesByWorkosId } = await import('../../src/lib/db/exercise');
 
-      const result = await getExercisesByUserId({} as D1Database, 'user-1', { muscleGroup: 'Chest' });
+      const result = await getExercisesByWorkosId({} as D1Database, 'user-1', { muscleGroup: 'Chest' });
 
       expect(result).toHaveLength(1);
       expect(result[0].muscleGroup).toBe('Chest');
@@ -186,9 +186,9 @@ describe('Exercise CRUD Operations', () => {
     it('returns empty array when no exercises found', async () => {
       mockDrizzleDb.select = vi.fn(() => createMockSelectChain([]));
 
-      const { getExercisesByUserId } = await import('../../src/lib/db/exercise');
+      const { getExercisesByWorkosId } = await import('../../src/lib/db/exercise');
 
-      const result = await getExercisesByUserId({} as D1Database, 'user-1');
+      const result = await getExercisesByWorkosId({} as D1Database, 'user-1');
 
       expect(result).toHaveLength(0);
     });
@@ -284,7 +284,7 @@ describe('Exercise CRUD Operations', () => {
       const libraryExerciseData = {
         id: 'new-exercise-1',
         localId: null,
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Library Push Up',
         muscleGroup: 'Chest',
         description: 'Standard push up from library',
@@ -304,7 +304,7 @@ describe('Exercise CRUD Operations', () => {
       });
 
       expect(result.id).toBe('new-exercise-1');
-      expect(result.userId).toBe('user-1');
+      expect(result.workosId).toBe('user-1');
       expect(result.name).toBe('Library Push Up');
       expect(result.muscleGroup).toBe('Chest');
       expect(result.description).toBe('Standard push up from library');
@@ -314,7 +314,7 @@ describe('Exercise CRUD Operations', () => {
       const libraryExerciseData = {
         id: 'new-exercise-2',
         localId: null,
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Library Squat',
         muscleGroup: 'Legs',
         description: '',

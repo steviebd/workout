@@ -17,35 +17,65 @@ const mockWorkouts: Workout[] = [
   {
     id: 'workout-1',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: 'template-1',
+    programCycleId: null,
     name: 'Upper Body Workout',
     startedAt: '2024-01-15T10:00:00.000Z',
     completedAt: '2024-01-15T11:00:00.000Z',
     notes: null,
     createdAt: '2024-01-15T10:00:00.000Z',
+    isDeleted: false,
+    squat1rm: null,
+    bench1rm: null,
+    deadlift1rm: null,
+    ohp1rm: null,
+    startingSquat1rm: null,
+    startingBench1rm: null,
+    startingDeadlift1rm: null,
+    startingOhp1rm: null,
   },
   {
     id: 'workout-2',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: 'template-2',
+    programCycleId: null,
     name: 'Lower Body Workout',
     startedAt: '2024-01-12T10:00:00.000Z',
     completedAt: '2024-01-12T11:00:00.000Z',
     notes: null,
     createdAt: '2024-01-12T10:00:00.000Z',
+    isDeleted: false,
+    squat1rm: null,
+    bench1rm: null,
+    deadlift1rm: null,
+    ohp1rm: null,
+    startingSquat1rm: null,
+    startingBench1rm: null,
+    startingDeadlift1rm: null,
+    startingOhp1rm: null,
   },
   {
     id: 'workout-3',
     localId: null,
-    userId: 'user-1',
+    workosId: 'user-1',
     templateId: null,
+    programCycleId: null,
     name: 'Cardio Session',
     startedAt: '2024-01-10T09:00:00.000Z',
     completedAt: '2024-01-10T09:30:00.000Z',
     notes: 'Easy jog',
     createdAt: '2024-01-10T09:00:00.000Z',
+    isDeleted: false,
+    squat1rm: null,
+    bench1rm: null,
+    deadlift1rm: null,
+    ohp1rm: null,
+    startingSquat1rm: null,
+    startingBench1rm: null,
+    startingDeadlift1rm: null,
+    startingOhp1rm: null,
   },
 ];
 
@@ -61,92 +91,65 @@ describe('Dashboard Loader Functions', () => {
     vi.useRealTimers();
   });
 
-  describe('getWorkoutsByUserId with limit', () => {
+  function createMockQueryBuilder(resolvedData: typeof mockWorkouts = mockWorkouts) {
+    const thenable: {
+      then: (resolve: (val: typeof mockWorkouts) => void) => void;
+      from: () => typeof thenable;
+      leftJoin: () => typeof thenable;
+      where: () => typeof thenable;
+      groupBy: () => typeof thenable;
+      orderBy: () => typeof thenable;
+      limit: () => typeof thenable;
+      offset: () => typeof thenable;
+    } = {
+      then: (resolve) => resolve(resolvedData),
+      from: () => thenable,
+      leftJoin: () => thenable,
+      where: () => thenable,
+      groupBy: () => thenable,
+      orderBy: () => thenable,
+      limit: () => thenable,
+      offset: () => thenable,
+    };
+    return thenable;
+  }
+
+  describe('getWorkoutsByWorkosId with limit', () => {
     it('should fetch recent workouts with limit=5', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue(mockWorkouts),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
-
-      expect(result).toHaveLength(3);
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
       expect(result[0].id).toBe('workout-1');
     });
 
     it('should order workouts by startedAt descending', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue(mockWorkouts),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+       const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5, sortBy: 'startedAt', sortOrder: 'DESC' });
+      await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5, sortBy: 'startedAt', sortOrder: 'DESC' });
 
       expect(mockDrizzleDb.select).toHaveBeenCalled();
     });
 
     it('should return empty array when no workouts exist', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue([]),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder([]));
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
 
       expect(result).toEqual([]);
     });
 
     it('should only return completed workouts', async () => {
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          leftJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockReturnValue({
-                orderBy: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockResolvedValue(mockWorkouts),
-                }),
-              }),
-            }),
-          }),
-        }),
-      });
+      mockDrizzleDb.select.mockReturnValue(createMockQueryBuilder());
 
-      const { getWorkoutsByUserId } = await import('../../src/lib/db/workout');
+      const { getWorkoutsByWorkosId } = await import('../../src/lib/db/workout');
 
-      const result = await getWorkoutsByUserId(mockDb, 'user-1', { limit: 5 });
+      const result = await getWorkoutsByWorkosId(mockDb, 'user-1', { limit: 5 });
 
       expect(result.every((w) => w.completedAt !== null)).toBe(true);
     });

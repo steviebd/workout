@@ -34,7 +34,7 @@ describe('Template DB Operations', () => {
     it('should create a template with required fields', async () => {
       const mockTemplate = {
         id: 'template-1',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Test Template',
         description: null,
         notes: null,
@@ -54,7 +54,7 @@ describe('Template DB Operations', () => {
       const { createTemplate } = await import('../../src/lib/db/template');
 
       const result = await createTemplate({} as D1Database, {
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Test Template',
       });
 
@@ -67,7 +67,7 @@ describe('Template DB Operations', () => {
     it('should return template when found with correct user', async () => {
       const mockTemplate = {
         id: 'template-1',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Test Template',
         description: null,
         notes: null,
@@ -128,7 +128,7 @@ describe('Template DB Operations', () => {
     it('should update template fields', async () => {
       const mockUpdatedTemplate = {
         id: 'template-1',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Updated Name',
         description: 'Updated description',
         notes: 'Updated notes',
@@ -217,7 +217,7 @@ describe('Template DB Operations', () => {
     it('should create a copy of template with exercises', async () => {
       const mockOriginalTemplate = {
         id: 'template-1',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Original Template',
         description: 'Description',
         notes: 'Notes',
@@ -228,7 +228,7 @@ describe('Template DB Operations', () => {
 
       const mockNewTemplate = {
         id: 'template-2',
-        userId: 'user-1',
+        workosId: 'user-1',
         name: 'Original Template (Copy)',
         description: 'Description',
         notes: 'Notes',

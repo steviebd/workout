@@ -70,23 +70,3 @@ export const exerciseLibrary: ExerciseLibraryItem[] = [
 
   { id: 'box-jump', name: 'Box Jump', muscleGroup: 'Other', description: 'A plyometric exercise jumping onto a box or platform, developing explosive power in the legs and improving athletic performance.' },
 ];
-
-export function getExercisesByMuscleGroup(muscleGroup: string): ExerciseLibraryItem[] {
-  return exerciseLibrary.filter(
-    (exercise) => exercise.muscleGroup.toLowerCase() === muscleGroup.toLowerCase()
-  );
-}
-
-export function searchLibraryExercises(searchTerm: string): ExerciseLibraryItem[] {
-  const term = searchTerm.toLowerCase();
-  return exerciseLibrary.filter(
-    (exercise) =>
-      exercise.name.toLowerCase().includes(term) ||
-      exercise.muscleGroup.toLowerCase().includes(term)
-  );
-}
-
-export function getAllMuscleGroups(): string[] {
-  const groups = new Set(exerciseLibrary.map((e) => e.muscleGroup));
-  return Array.from(groups).sort();
-}

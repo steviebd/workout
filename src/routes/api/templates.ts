@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { type CreateTemplateData, createTemplate, getTemplatesByUserId } from '../../lib/db/template';
+import { type CreateTemplateData, createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
 import { getSession } from '../../lib/session';
 
 export const Route = createFileRoute('/api/templates')({
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const templates = await getTemplatesByUserId(db, session.userId, {
+           const templates = await getTemplatesByWorkosId(db, session.workosId, {
             search,
             sortBy,
             sortOrder,
@@ -34,20 +34,13 @@ export const Route = createFileRoute('/api/templates')({
             offset,
           });
 
-          return Response.json(templates);
-        } catch (err) {
-          console.error('Get templates error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({
-            error: 'Server error',
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
-        }
-      },
-      POST: async ({ request }) => {
+           return Response.json(templates);
+         } catch (err) {
+           console.error('Get templates error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
+       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
           if (!session) {
@@ -66,27 +59,20 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await createTemplate(db, {
-            userId: session.userId,
+           const template = await createTemplate(db, {
+             workosId: session.workosId,
             name,
             description,
             notes,
             localId,
           });
 
-          return Response.json(template, { status: 201 });
-        } catch (err) {
-          console.error('Create template error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          const errorStack = err instanceof Error ? err.stack : undefined;
-          console.error('Error details:', { message: errorMessage, stack: errorStack });
-          return Response.json({
-            error: 'Server error',
-            details: errorMessage,
-            hint: 'Check server logs for stack trace'
-          }, { status: 500 });
-        }
-      },
+           return Response.json(template, { status: 201 });
+         } catch (err) {
+           console.error('Create template error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

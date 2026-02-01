@@ -25,12 +25,12 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const reordered = await reorderTemplateExercises(
-            db,
-            params.id,
-            exerciseOrders,
-            session.userId
-          );
+           const reordered = await reorderTemplateExercises(
+             db,
+             params.id,
+             exerciseOrders,
+             session.workosId
+           );
 
           if (!reordered) {
             return Response.json({ error: 'Template not found' }, { status: 404 });

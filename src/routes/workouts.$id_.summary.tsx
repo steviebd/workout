@@ -1,3 +1,5 @@
+'use client';
+
 import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
 import { ArrowLeft, Check, Clock, Dumbbell, Home, Scale, Target, Trophy, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -30,10 +32,32 @@ interface Workout {
   id: string;
   name: string;
   templateId?: string;
+  programCycleId?: string | null;
   startedAt: string;
   completedAt?: string;
   notes?: string;
   exercises: WorkoutExercise[];
+  squat1rm?: number | null;
+  bench1rm?: number | null;
+  deadlift1rm?: number | null;
+  ohp1rm?: number | null;
+  startingSquat1rm?: number | null;
+  startingBench1rm?: number | null;
+  startingDeadlift1rm?: number | null;
+  startingOhp1rm?: number | null;
+}
+
+interface ProgramCycle {
+  id: string;
+  name: string;
+  squat1rm: number;
+  bench1rm: number;
+  deadlift1rm: number;
+  ohp1rm: number;
+  startingSquat1rm: number | null;
+  startingBench1rm: number | null;
+  startingDeadlift1rm: number | null;
+  startingOhp1rm: number | null;
 }
 
 function WorkoutSummary() {
@@ -43,6 +67,7 @@ function WorkoutSummary() {
   const { formatDateTimeLong } = useDateFormat();
   const { formatWeight } = useUnit();
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [programCycle, setProgramCycle] = useState<ProgramCycle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,14 +81,6 @@ function WorkoutSummary() {
     const loadWorkout = async () => {
       if (auth.loading || !auth.user || !params.id) return;
 
-      const stateWorkout = (router.state.location.state as { workout?: Workout }).workout;
-
-      if (stateWorkout) {
-        setWorkout(stateWorkout);
-        setLoading(false);
-        return;
-      }
-
       try {
         const res = await fetch(`/api/workouts/${params.id}`, {
           credentials: 'include',
@@ -75,6 +92,20 @@ function WorkoutSummary() {
 
         const data: Workout = await res.json();
         setWorkout(data);
+
+        if (data.name === '1RM Test' && data.programCycleId && (data as unknown as { squat1rm?: number | null }).squat1rm === null) {
+          try {
+            const cycleRes = await fetch(`/api/program-cycles/${data.programCycleId}`, {
+              credentials: 'include',
+            });
+            if (cycleRes.ok) {
+              const cycleData: ProgramCycle = await cycleRes.json();
+              setProgramCycle(cycleData);
+            }
+          } catch (cycleErr) {
+            console.error('Failed to load program cycle:', cycleErr);
+          }
+        }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to load workout');
       } finally {
@@ -83,7 +114,7 @@ function WorkoutSummary() {
     };
 
     loadWorkout().catch(() => {});
-  }, [auth.loading, auth.user, params.id, router.state.location.state]);
+  }, [auth.loading, auth.user, params.id]);
 
   useEffect(() => {
     const redirectIfIncomplete = async () => {
@@ -154,6 +185,34 @@ function WorkoutSummary() {
     } catch {
       return 0;
     }
+  };
+
+  const getTested1RMs = () => {
+    const tested: { squat: number; bench: number; deadlift: number; ohp: number } = {
+      squat: 0,
+      bench: 0,
+      deadlift: 0,
+      ohp: 0,
+    };
+    
+    for (const exercise of workout.exercises) {
+      const name = exercise.name.toLowerCase();
+      for (const set of exercise.sets) {
+        if (set.isComplete && set.weight) {
+          if (name.includes('squat') && set.weight > tested.squat) {
+            tested.squat = set.weight;
+          } else if ((name.includes('bench') || name === 'bench press') && set.weight > tested.bench) {
+            tested.bench = set.weight;
+          } else if (name.includes('deadlift') && set.weight > tested.deadlift) {
+            tested.deadlift = set.weight;
+          } else if ((name.includes('overhead') || name.includes('ohp') || name === 'overhead press') && set.weight > tested.ohp) {
+            tested.ohp = set.weight;
+          }
+        }
+      }
+    }
+    
+    return tested;
   };
 
   const getPersonalRecords = () => {
@@ -259,6 +318,73 @@ function WorkoutSummary() {
             </p>
           </div>
         </div>
+
+{workout.name === '1RM Test' ? (() => {
+          const tested = getTested1RMs();
+          const startSquat = workout.startingSquat1rm ?? programCycle?.startingSquat1rm ?? programCycle?.squat1rm ?? 0;
+          const startBench = workout.startingBench1rm ?? programCycle?.startingBench1rm ?? programCycle?.bench1rm ?? 0;
+          const startDeadlift = workout.startingDeadlift1rm ?? programCycle?.startingDeadlift1rm ?? programCycle?.deadlift1rm ?? 0;
+          const startOhp = workout.startingOhp1rm ?? programCycle?.startingOhp1rm ?? programCycle?.ohp1rm ?? 0;
+          const testedSquat = tested.squat ?? workout.squat1rm ?? startSquat;
+          const testedBench = tested.bench ?? workout.bench1rm ?? startBench;
+          const testedDeadlift = tested.deadlift ?? workout.deadlift1rm ?? startDeadlift;
+          const testedOhp = tested.ohp ?? workout.ohp1rm ?? startOhp;
+          
+          return (
+          <div className="bg-card border border-border rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Trophy className="text-primary" size={20} />
+              1RM Progress
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Squat</span>
+                <span className="font-medium">
+                  {startSquat} → <span className={testedSquat > startSquat ? 'text-success' : testedSquat < startSquat ? 'text-destructive' : 'text-foreground'}>{testedSquat}</span>
+                  {testedSquat !== startSquat ? (
+                    <span className={cn('ml-1', testedSquat > startSquat ? 'text-success' : 'text-destructive')}>
+                      ({testedSquat > startSquat ? '+' : ''}{(testedSquat - startSquat).toFixed(1)})
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Bench</span>
+                <span className="font-medium">
+                  {startBench} → <span className={testedBench > startBench ? 'text-success' : testedBench < startBench ? 'text-destructive' : 'text-foreground'}>{testedBench}</span>
+                  {testedBench !== startBench ? (
+                    <span className={cn('ml-1', testedBench > startBench ? 'text-success' : 'text-destructive')}>
+                      ({testedBench > startBench ? '+' : ''}{(testedBench - startBench).toFixed(1)})
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Deadlift</span>
+                <span className="font-medium">
+                  {startDeadlift} → <span className={testedDeadlift > startDeadlift ? 'text-success' : testedDeadlift < startDeadlift ? 'text-destructive' : 'text-foreground'}>{testedDeadlift}</span>
+                  {testedDeadlift !== startDeadlift ? (
+                    <span className={cn('ml-1', testedDeadlift > startDeadlift ? 'text-success' : 'text-destructive')}>
+                      ({testedDeadlift > startDeadlift ? '+' : ''}{(testedDeadlift - startDeadlift).toFixed(1)})
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">OHP</span>
+                <span className="font-medium">
+                  {startOhp} → <span className={testedOhp > startOhp ? 'text-success' : testedOhp < startOhp ? 'text-destructive' : 'text-foreground'}>{testedOhp}</span>
+                  {testedOhp !== startOhp ? (
+                    <span className={cn('ml-1', testedOhp > startOhp ? 'text-success' : 'text-destructive')}>
+                      ({testedOhp > startOhp ? '+' : ''}{(testedOhp - startOhp).toFixed(1)})
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+          </div>
+          );
+        })() : null}
 
         {personalRecords.length > 0 ? <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">

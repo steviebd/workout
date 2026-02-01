@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercise = await getExerciseById(db, params.id, session.userId);
+           const exercise = await getExerciseById(db, params.id, session.workosId);
 
           if (!exercise) {
             return Response.json({ error: 'Exercise not found' }, { status: 404 });
@@ -45,7 +45,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercise = await updateExercise(db, params.id, session.userId, {
+           const exercise = await updateExercise(db, params.id, session.workosId, {
             name,
             muscleGroup,
             description,
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const deleted = await softDeleteExercise(db, params.id, session.userId);
+           const deleted = await softDeleteExercise(db, params.id, session.workosId);
 
           if (!deleted) {
             return Response.json({ error: 'Exercise not found' }, { status: 404 });

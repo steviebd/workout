@@ -258,10 +258,15 @@ function TemplateDetail() {
                       </span>
                       <Dumbbell className="text-muted-foreground" size={18} />
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">
-                          {te.exercise?.name ?? 'Unknown Exercise'}
-                        </p>
-                        {te.exercise?.muscleGroup ? <p className="text-sm text-muted-foreground">{te.exercise.muscleGroup}</p> : null}
+                          <p className="font-medium text-foreground flex items-center gap-2">
+                            {te.exercise?.name ?? 'Unknown Exercise'}
+                            {te.isAmrap ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                AMRAP
+                              </span>
+                            ) : null}
+                          </p>
+                          {te.exercise?.muscleGroup ? <p className="text-sm text-muted-foreground">{te.exercise.muscleGroup}</p> : null}
                       </div>
                     </div>
                   ))}

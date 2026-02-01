@@ -73,25 +73,24 @@ export const Route = createFileRoute('/api/progress/volume')({
             ? exerciseId
             : undefined;
 
-          const weeklyVolume = await getWeeklyVolume(db, session.userId, {
+           const weeklyVolume = await getWeeklyVolume(db, session.workosId, {
             fromDate,
             toDate,
             exerciseId: exerciseFilter,
           });
 
-          return Response.json({
-            weeklyVolume: weeklyVolume.map(v => ({
-              week: v.week,
-              weekStart: v.weekStart,
-              volume: v.volume,
-            })),
-          });
-        } catch (err) {
-          console.error('Get volume progress error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+           return Response.json({
+             weeklyVolume: weeklyVolume.map(v => ({
+               week: v.week,
+               weekStart: v.weekStart,
+               volume: v.volume,
+             })),
+           });
+         } catch (err) {
+           console.error('Get volume progress error:', err);
+           return Response.json({ error: 'Server error' }, { status: 500 });
+         }
+       },
     },
   },
 });

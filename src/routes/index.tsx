@@ -5,7 +5,9 @@ import { StreakCard } from '~/components/dashboard/StreakCard'
 import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
 import { QuickActions } from '~/components/dashboard/QuickActions'
 import { RecentPRs } from '~/components/dashboard/RecentPRs'
+import { EmptyStateBanner } from '~/components/dashboard/EmptyStateBanner'
 import { Skeleton } from '~/components/ui/Skeleton'
+import { useStreak } from '@/lib/context/StreakContext'
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -50,14 +52,24 @@ function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { currentStreak, longestStreak, weeklyWorkouts, totalWorkouts, loading: streakLoading } = useStreak()
+
+  console.log('[Dashboard] auth state:', { loading: auth.loading, user: auth.user })
+  console.log('[Dashboard] local state:', { loading, error, hasData: !!data })
 
   useEffect(() => {
+    console.log('[Dashboard useEffect] auth.loading:', auth.loading, 'auth.user:', auth.user)
+    
     if (!auth.loading && !auth.user) {
+      console.log('[Dashboard] No user, redirecting to signin')
       window.location.href = '/auth/signin'
       return
     }
 
-    if (!auth.user) return
+    if (!auth.user) {
+      console.log('[Dashboard] auth.user is null, waiting...')
+      return
+    }
 
     const fetchDashboardData = async () => {
       try {
@@ -78,10 +90,10 @@ function Dashboard() {
           throw new Error('Failed to fetch dashboard data')
         }
 
-        const stats: WorkoutHistoryStats = await statsRes.json()
-        const workouts: Workout[] = await workoutsRes.json()
-        const prCountData: { count: number } = await prCountRes.json()
-        const templates: WorkoutTemplate[] = await templatesRes.json()
+        const stats: WorkoutHistoryStats = statsRes.ok ? await statsRes.json() : { totalWorkouts: 0, thisWeek: 0, thisMonth: 0, totalVolume: 0, totalSets: 0 }
+        const workouts: Workout[] = workoutsRes.ok ? await workoutsRes.json() : []
+        const prCountData: { count: number } = prCountRes.ok ? await prCountRes.json() : { count: 0 }
+        const templates: WorkoutTemplate[] = templatesRes.ok ? await templatesRes.json() : []
 
         const personalRecords: PersonalRecord[] = [
           { id: '1', exerciseName: 'Bench Press', weight: 225, date: '2 days ago', improvement: 10 },
@@ -134,6 +146,8 @@ function Dashboard() {
   const personalRecords = data?.personalRecords ?? []
   const templates = data?.templates ?? []
 
+  const isNewUser = stats.totalWorkouts === 0 && templates.length === 0
+
   const today = new Date()
   const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening'
 
@@ -144,14 +158,16 @@ function Dashboard() {
           <p className="text-muted-foreground">Ready to crush your workout?</p>
         </div>
 
+        {isNewUser ? <EmptyStateBanner /> : null}
+
         <div className="space-y-4">
-          <StreakCard 
-            currentStreak={7}
-            longestStreak={14}
-            weeklyWorkouts={stats.thisWeek}
-            totalWorkouts={stats.totalWorkouts}
+          <StreakCard
+            currentStreak={streakLoading ? 0 : currentStreak}
+            longestStreak={streakLoading ? 0 : longestStreak}
+            weeklyWorkouts={streakLoading ? 0 : weeklyWorkouts}
+            totalWorkouts={streakLoading ? 0 : totalWorkouts}
           />
-          <VolumeSummary 
+          <VolumeSummary
             totalVolume={stats.totalVolume}
             weeklyVolume={stats.totalVolume / 4}
             volumeGoal={50000}

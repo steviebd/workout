@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronRight, Dumbbell, Plus, FileText, Search } from 'lucide-react';
+import { ChevronRight, Dumbbell, Plus, FileText, Search, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button } from '~/components/ui/Button';
@@ -20,12 +20,24 @@ interface Exercise {
   muscleGroup: string | null;
 }
 
+interface ProgramCycle {
+  id: string;
+  name: string;
+  programSlug: string;
+  currentWeek: number | null;
+  currentSession: number | null;
+  totalSessionsCompleted: number;
+  totalSessionsPlanned: number;
+  status: string | null;
+  isComplete: boolean;
+}
+
 function WorkoutsPage() {
   const auth = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [activePrograms, setActivePrograms] = useState<ProgramCycle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
 
   const fetchTemplates = useCallback(async () => {
@@ -38,12 +50,9 @@ function WorkoutsPage() {
       if (response.ok) {
         const data: Template[] = await response.json();
         setTemplates(data);
-      } else {
-        setError('Failed to load templates');
       }
     } catch (err) {
       console.error('Failed to fetch templates:', err);
-      setError('Failed to load templates');
     } finally {
       setLoading(false);
     }
@@ -53,7 +62,7 @@ function WorkoutsPage() {
     try {
       const params = new URLSearchParams();
       if (exerciseSearch) params.set('search', exerciseSearch);
-      
+
       const response = await fetch(`/api/exercises?${params.toString()}`, {
         credentials: 'include',
       });
@@ -67,6 +76,21 @@ function WorkoutsPage() {
     }
   }, [exerciseSearch]);
 
+  const fetchActivePrograms = useCallback(async () => {
+    try {
+      const response = await fetch('/api/program-cycles?active=true', {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: ProgramCycle[] = await response.json();
+        setActivePrograms(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch active programs:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       window.location.href = '/auth/signin';
@@ -76,8 +100,9 @@ function WorkoutsPage() {
     if (auth.user) {
       void fetchTemplates();
       void fetchExercises();
+      void fetchActivePrograms();
     }
-  }, [auth.loading, auth.user, fetchTemplates, fetchExercises]);
+  }, [auth.loading, auth.user, fetchTemplates, fetchExercises, fetchActivePrograms]);
 
   useEffect(() => {
     if (auth.user) {
@@ -100,17 +125,46 @@ function WorkoutsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-destructive p-4">{error}</div>
-      </div>
-    );
-  }
-
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Workouts</h1>
+
+        {activePrograms.length > 0 ? (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Active Programs</h2>
+            </div>
+            <div className="space-y-3">
+              {activePrograms.map((program) => (
+                <Link
+                  key={program.id}
+                  to="/programs/cycle/$cycleId"
+                  params={{ cycleId: program.id }}
+                  className="block"
+                >
+                  <Card className="hover:border-primary/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <Trophy className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{program.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Week {program.currentWeek ?? 1} • Session {(program.totalSessionsCompleted ?? 0) + 1} of {program.totalSessionsPlanned}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">

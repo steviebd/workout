@@ -1,62 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { StreakDisplay } from '~/components/achievements/StreakDisplay'
 import { BadgeCard } from '~/components/achievements/BadgeCard'
 import { cn } from '~/lib/cn'
-
-const mockBadges = [
-  {
-    id: '1',
-    name: '7 Day Streak',
-    description: 'Work out 7 days in a row',
-    icon: 'flame',
-    category: 'streak',
-    unlocked: true,
-    progress: 7,
-    requirement: 7,
-    unlockedAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: '30 Day Streak',
-    description: 'Work out 30 days in a row',
-    icon: 'flame',
-    category: 'streak',
-    unlocked: false,
-    progress: 14,
-    requirement: 30,
-  },
-  {
-    id: '3',
-    name: '1000 Club',
-    description: 'Lift over 1000 in a workout',
-    icon: 'dumbbell',
-    category: 'volume',
-    unlocked: true,
-    progress: 1000,
-    requirement: 1000,
-    unlockedAt: '2024-01-10',
-  },
-  {
-    id: '4',
-    name: 'First PR',
-    description: 'Set your first personal record',
-    icon: 'trophy',
-    category: 'pr',
-    unlocked: true,
-    progress: 1,
-    requirement: 1,
-    unlockedAt: '2024-01-05',
-  },
-]
-
-const mockStats = {
-  currentStreak: 7,
-  longestStreak: 14,
-  weeklyWorkouts: 4,
-}
 
 interface Badge {
   id: string
@@ -70,15 +18,57 @@ interface Badge {
   unlockedAt?: string
 }
 
+interface UserStats {
+  currentStreak: number
+  longestStreak: number
+  weeklyWorkouts: number
+}
+
 type BadgeFilter = 'all' | 'unlocked' | 'locked'
 
 function AchievementsPage() {
+  const [stats, setStats] = useState<UserStats>({ currentStreak: 0, longestStreak: 0, weeklyWorkouts: 0 })
+  const [badges, setBadges] = useState<Badge[]>([])
+  const [workoutDatesInWeek, setWorkoutDatesInWeek] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<BadgeFilter>('all')
 
-  const unlockedCount = mockBadges.filter((b) => b.unlocked).length
-  const totalCount = mockBadges.length
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, badgesRes] = await Promise.all([
+          fetch('/api/streaks', { credentials: 'include' }),
+          fetch('/api/badges', { credentials: 'include' }),
+        ])
 
-  const filteredBadges = mockBadges.filter((badge) => {
+        if (statsRes.ok) {
+          const data: UserStats = await statsRes.json()
+          setStats({
+            currentStreak: data.currentStreak ?? 0,
+            longestStreak: data.longestStreak ?? 0,
+            weeklyWorkouts: data.weeklyWorkouts ?? 0,
+          })
+        }
+
+        if (badgesRes.ok) {
+          const badgesData: { badges: Badge[]; workoutDatesInWeek: string[] } = await badgesRes.json()
+          setBadges(badgesData.badges ?? [])
+          setWorkoutDatesInWeek(badgesData.workoutDatesInWeek ?? [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch achievements data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void fetchData()
+  }, [])
+
+  const unlockedCount = badges.filter((b) => b.unlocked).length
+  const totalCount = badges.length
+
+  const filteredBadges = badges.filter((badge) => {
     if (filter === 'unlocked') return badge.unlocked
     if (filter === 'locked') return !badge.unlocked
     return true
@@ -90,6 +80,17 @@ function AchievementsPage() {
     { value: 'locked', label: `Locked (${totalCount - unlockedCount})` },
   ]
 
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-6">Achievements</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
       <div className="mb-6">
@@ -99,7 +100,7 @@ function AchievementsPage() {
         </p>
       </div>
       
-      <StreakDisplay stats={mockStats} />
+      <StreakDisplay stats={stats} workoutDatesInWeek={workoutDatesInWeek} />
 
       <section className="mt-4 mb-6">
         <div className="flex justify-center overflow-x-auto pb-2 scrollbar-hide">
@@ -123,7 +124,7 @@ function AchievementsPage() {
 
         <div className="grid gap-4">
           {filteredBadges.map((badge) => (
-            <BadgeCard key={badge.id} badge={badge as Badge} />
+            <BadgeCard key={badge.id} badge={badge} />
           ))}
         </div>
       </section>
