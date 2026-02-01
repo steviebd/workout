@@ -89,10 +89,10 @@ function Dashboard() {
           throw new Error('Failed to fetch dashboard data')
         }
 
-        const stats: WorkoutHistoryStats = await statsRes.json()
-        const workouts: Workout[] = await workoutsRes.json()
-        const prCountData: { count: number } = await prCountRes.json()
-        const templates: WorkoutTemplate[] = await templatesRes.json()
+        const stats: WorkoutHistoryStats = statsRes.ok ? await statsRes.json() : { totalWorkouts: 0, thisWeek: 0, thisMonth: 0, totalVolume: 0, totalSets: 0 }
+        const workouts: Workout[] = workoutsRes.ok ? await workoutsRes.json() : []
+        const prCountData: { count: number } = prCountRes.ok ? await prCountRes.json() : { count: 0 }
+        const templates: WorkoutTemplate[] = templatesRes.ok ? await templatesRes.json() : []
 
         const personalRecords: PersonalRecord[] = [
           { id: '1', exerciseName: 'Bench Press', weight: 225, date: '2 days ago', improvement: 10 },

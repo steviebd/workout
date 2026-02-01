@@ -38,7 +38,6 @@ function WorkoutsPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [activePrograms, setActivePrograms] = useState<ProgramCycle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
 
   const fetchTemplates = useCallback(async () => {
@@ -51,12 +50,9 @@ function WorkoutsPage() {
       if (response.ok) {
         const data: Template[] = await response.json();
         setTemplates(data);
-      } else {
-        setError('Failed to load templates');
       }
     } catch (err) {
       console.error('Failed to fetch templates:', err);
-      setError('Failed to load templates');
     } finally {
       setLoading(false);
     }
@@ -125,14 +121,6 @@ function WorkoutsPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-destructive p-4">{error}</div>
       </div>
     );
   }
