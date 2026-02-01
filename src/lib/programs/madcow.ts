@@ -1,3 +1,4 @@
+import { roundToPlate } from './utils';
 import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
 
 const madcowInfo = {
@@ -40,7 +41,7 @@ function calculateTargetWeight(
   const progression = (week - 1) * 3 + session;
   const increase = progression * 2.5;
   const weight = (baseWeight * percentage) + increase;
-  return Math.round(weight / 2.5) * 2.5;
+  return roundToPlate(weight);
 }
 
 export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {

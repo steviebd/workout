@@ -1,3 +1,4 @@
+import { roundToPlate } from './utils';
 import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
 
 const strongliftsInfo = {
@@ -19,7 +20,7 @@ function calculateTargetWeight(
 ): number {
   const progression = (week - 1) * 3 + session;
   const baseWeight = estimatedOneRM * 0.5;
-  return Math.round((baseWeight + progression * 2.5) / 2.5) * 2.5;
+  return roundToPlate(baseWeight + progression * 2.5);
 }
 
 export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {

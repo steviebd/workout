@@ -309,17 +309,17 @@ src/
 │       ├── CycleProgress.tsx         # Progress bar & stats
 │       └── program-data.ts           # Hardcoded program definitions
 └── lib/
-    ├── programs/
-│   ├── index.ts                  # Main exports & utilities
-│   ├── types.ts                  # TypeScript types
-│   ├── 1rm-test.ts               # 1RM test workout logic
-│   ├── stronglifts.ts            # StrongLifts 5×5 logic
-    │   ├── wendler531.ts             # 5/3/1 logic
-    │   ├── madcow.ts                 # Madcow 5×5 logic
-    │   ├── candito.ts                # Candito 6 Week logic
-    │   ├── nsuns.ts                  # nSuns LP logic
-    │   ├── sheiko.ts                 # Sheiko logic
-    │   └── nuckols.ts                # Greg Nuckols logic
+    └── programs/
+        ├── index.ts                  # Main exports & utilities
+        ├── types.ts                  # TypeScript types
+        ├── utils.ts                  # Shared helper functions
+        ├── stronglifts.ts            # StrongLifts 5×5 logic
+        ├── wendler531.ts             # 5/3/1 logic
+        ├── madcow.ts                 # Madcow 5×5 logic
+        ├── candito.ts                # Candito 6 Week logic
+        ├── nsuns.ts                  # nSuns LP logic
+        ├── sheiko.ts                 # Sheiko logic
+        └── nuckols.ts                # Greg Nuckols logic
     └── db/
         └── program.ts                # Program database functions
 ```
@@ -551,10 +551,10 @@ const wendler531 = {
   - Display "Starting → Ending" 1RM comparison in history
 
 ### Phase 2: Additional Programs (Week 3-4)
-- [ ] Candito 6 Week
-- [ ] nSuns LP
-- [ ] Sheiko
-- [ ] Greg Nuckols 28 Programs
+- [x] Candito 6 Week
+- [x] nSuns LP
+- [x] Sheiko
+- [x] Greg Nuckols 28 Programs
 
 ### Phase 3: Polish (Week 5)
 - [ ] UI refinements

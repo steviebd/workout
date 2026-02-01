@@ -1,3 +1,4 @@
+import { TRAINING_MAX_PERCENTAGE, roundToPlate } from './utils';
 import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
 
 const wendler531Info = {
@@ -10,9 +11,6 @@ const wendler531Info = {
   totalSessions: 48,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
 };
-
-const TRAINING_MAX_PERCENTAGES = 0.9;
-const WEEKS = [1, 2, 3, 4] as const;
 
 const WAVE_PERCENTAGES = {
   1: { sets: [0.65, 0.75, 0.85], reps: [5, 5, 5] },
@@ -27,11 +25,11 @@ function calculateTargetWeight(
   session: number,
   _lift: string
 ): number {
-  const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGES;
+  const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGE;
   const weekData = WAVE_PERCENTAGES[week as 1 | 2 | 3 | 4];
   const setIndex = session - 1;
   const percentage = weekData.sets[setIndex] || weekData.sets[0];
-  return Math.round((trainingMax * percentage) / 2.5) * 2.5;
+  return roundToPlate(trainingMax * percentage);
 }
 
 export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
@@ -44,7 +42,7 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
   ];
 
   for (let cycle = 1; cycle <= 3; cycle++) {
-    for (const week of WEEKS) {
+    for (const week of [1, 2, 3, 4] as const) {
       const weekData = WAVE_PERCENTAGES[week];
       
       for (let day = 1; day <= 4; day++) {

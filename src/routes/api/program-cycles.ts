@@ -11,13 +11,21 @@ import { getSession } from '~/lib/session';
 import { stronglifts } from '~/lib/programs/stronglifts';
 import { wendler531 } from '~/lib/programs/wendler531';
 import { madcow } from '~/lib/programs/madcow';
+import { nsuns } from '~/lib/programs/nsuns';
+import { candito } from '~/lib/programs/candito';
+import { sheiko } from '~/lib/programs/sheiko';
+import { nuckols } from '~/lib/programs/nuckols';
 import { createTemplate, addExerciseToTemplate } from '~/lib/db/template';
 import { createExercise, getExercisesByWorkosId } from '~/lib/db/exercise';
 
-const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow> = {
+const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
   'stronglifts-5x5': stronglifts,
   '531': wendler531,
   'madcow-5x5': madcow,
+  'nsuns-lp': nsuns,
+  'candito-6-week': candito,
+  'sheiko': sheiko,
+  'nuckols-28-programs': nuckols,
 };
 
 async function getOrCreateExercise(db: D1Database, workosId: string, name: string, muscleGroup: string) {
