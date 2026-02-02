@@ -248,7 +248,11 @@ export async function copyTemplate(
       orderIndex: te.orderIndex,
     }));
 
-    await drizzleDb.insert(templateExercises).values(newExercises).run();
+    const BATCH_SIZE = 7;
+    for (let i = 0; i < newExercises.length; i += BATCH_SIZE) {
+      const batch = newExercises.slice(i, i + BATCH_SIZE);
+      await drizzleDb.insert(templateExercises).values(batch).run();
+    }
   }
 
   return newTemplate;

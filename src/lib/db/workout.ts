@@ -329,7 +329,11 @@ export async function createWorkoutWithDetails(
   }
 
   if (setsToInsert.length > 0) {
-    await drizzleDb.insert(workoutSets).values(setsToInsert).run();
+    const BATCH_SIZE = 7;
+    for (let i = 0; i < setsToInsert.length; i += BATCH_SIZE) {
+      const batch = setsToInsert.slice(i, i + BATCH_SIZE);
+      await drizzleDb.insert(workoutSets).values(batch).run();
+    }
   }
 
   const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);

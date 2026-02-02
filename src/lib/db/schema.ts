@@ -147,7 +147,7 @@ export const userProgramCycles = sqliteTable('user_program_cycles', {
 export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   cycleId: text('cycle_id').notNull().references(() => userProgramCycles.id, { onDelete: 'cascade' }),
-  templateId: text('template_id').notNull().references(() => templates.id, { onDelete: 'cascade' }),
+  templateId: text('template_id').references(() => templates.id, { onDelete: 'cascade' }),
   weekNumber: integer('week_number').notNull(),
   sessionNumber: integer('session_number').notNull(),
   sessionName: text('session_name').notNull(),

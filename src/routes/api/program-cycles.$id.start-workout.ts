@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, getCurrentWorkout } from '~/lib/db/program';
+import { getProgramCycleById, getCurrentWorkout, generateTemplateFromWorkout } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
@@ -38,7 +38,10 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
           }
 
-          const template = await getTemplateById(db, currentWorkout.templateId, session.workosId);
+          let templateId = currentWorkout.templateId;
+          templateId ??= await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+
+          const template = await getTemplateById(db, templateId, session.workosId);
           if (!template) {
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }

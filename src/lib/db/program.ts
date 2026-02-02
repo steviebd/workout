@@ -5,7 +5,9 @@ import {
   type ProgramCycleWorkout,
   type Template,
   type UserProgramCycle,
+  exercises,
   programCycleWorkouts,
+  templateExercises,
   templates,
   userProgramCycles,
   workouts,
@@ -492,4 +494,141 @@ export async function getLatestOneRMs(
   }
 
   return null;
+ }
+
+export interface TargetLift {
+  name: string;
+  lift?: string;
+  targetWeight: number;
+  sets: number;
+  reps: number;
+  isAccessory?: boolean;
+  isRequired?: boolean;
+  accessoryId?: string;
+  addedWeight?: number;
+}
+
+export interface TargetLiftWorkout {
+  weekNumber: number;
+  sessionNumber: number;
+  sessionName: string;
+  targetLifts: TargetLift[];
+}
+
+export async function getOrCreateExerciseForWorkout(
+  db: D1Database,
+  workosId: string,
+  exerciseName: string,
+  lift: string | undefined
+): Promise<string> {
+  const drizzleDb = createDb(db);
+
+  const existing = await drizzleDb
+    .select()
+    .from(exercises)
+    .where(and(eq(exercises.workosId, workosId), eq(exercises.name, exerciseName)))
+    .get();
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const muscleGroup = lift === 'squat' || lift === 'deadlift' || lift === 'row'
+    ? 'Back'
+    : lift === 'bench' || lift === 'ohp'
+      ? 'Chest'
+      : 'Shoulders';
+
+  const newExercise = await drizzleDb
+    .insert(exercises)
+    .values({
+      workosId,
+      name: exerciseName,
+      muscleGroup,
+    })
+    .returning()
+    .get();
+
+  return newExercise.id;
+}
+
+function getBaseExerciseName(name: string): string {
+  return name.replace(/\s+\d+$/, '').replace(/\s+\d+\+$/, '');
+}
+
+export async function generateTemplateFromWorkout(
+  db: D1Database,
+  workosId: string,
+  cycleWorkout: ProgramCycleWorkout,
+  cycle: UserProgramCycle
+): Promise<string> {
+  const drizzleDb = createDb(db);
+
+  const targetLifts: TargetLift[] = cycleWorkout.targetLifts 
+    ? JSON.parse(cycleWorkout.targetLifts)
+    : [];
+
+  if (targetLifts.length === 0) {
+    throw new Error('No target lifts found for workout');
+  }
+
+  const templateName = `${cycle.name} - ${cycleWorkout.sessionName}`;
+
+  const template = await drizzleDb
+    .insert(templates)
+    .values({
+      workosId,
+      name: templateName,
+      description: cycleWorkout.sessionName,
+      programCycleId: cycle.id,
+    })
+    .returning()
+    .get();
+
+  const templateExercisesData: Array<typeof templateExercises.$inferInsert> = [];
+  let orderIndex = 0;
+  const exerciseSetCounts = new Map<string, number>();
+
+  for (const lift of targetLifts) {
+    const baseName = getBaseExerciseName(lift.name);
+    const exerciseId = await getOrCreateExerciseForWorkout(db, workosId, baseName, lift.lift);
+
+    const currentCount = exerciseSetCounts.get(exerciseId) ?? 0;
+    const setNumber = currentCount + 1;
+    exerciseSetCounts.set(exerciseId, setNumber);
+
+    const isAmrap = lift.name.endsWith('+');
+
+    templateExercisesData.push({
+      templateId: template.id,
+      exerciseId,
+      orderIndex,
+      targetWeight: lift.targetWeight,
+      addedWeight: lift.addedWeight ?? 0,
+      sets: lift.sets,
+      reps: lift.reps,
+      repsRaw: null,
+      isAmrap,
+      setNumber,
+      isAccessory: lift.isAccessory ?? false,
+      isRequired: lift.isRequired ?? true,
+    });
+
+    orderIndex++;
+  }
+
+  const BATCH_SIZE = 7;
+
+  for (let i = 0; i < templateExercisesData.length; i += BATCH_SIZE) {
+    const batch = templateExercisesData.slice(i, i + BATCH_SIZE);
+    await drizzleDb.insert(templateExercises).values(batch).run();
+  }
+
+  await drizzleDb
+    .update(programCycleWorkouts)
+    .set({ templateId: template.id, updatedAt: new Date().toISOString() })
+    .where(eq(programCycleWorkouts.id, cycleWorkout.id))
+    .run();
+
+  return template.id;
 }
