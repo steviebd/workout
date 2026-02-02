@@ -162,7 +162,7 @@ function ProgramDashboard() {
 
       if (response.ok) {
         toast.success('Program deleted');
-        void navigate({ to: '/programs' });
+        void navigate({ to: '/' });
       } else {
         toast.error('Failed to delete program');
       }

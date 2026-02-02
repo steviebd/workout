@@ -40,6 +40,7 @@ import { Route as ApiExercisesRouteImport } from './routes/api/exercises'
 import { Route as ApiBadgesRouteImport } from './routes/api/badges'
 import { Route as WorkoutsStartTemplateIdRouteImport } from './routes/workouts.start.$templateId'
 import { Route as WorkoutsIdSummaryRouteImport } from './routes/workouts.$id_.summary'
+import { Route as WorkoutsIdEditRouteImport } from './routes/workouts.$id_.edit'
 import { Route as TemplatesIdEditRouteImport } from './routes/templates.$id.edit'
 import { Route as ProgramsCycleCycleIdRouteImport } from './routes/programs.cycle.$cycleId_'
 import { Route as ProgramsSlugStartRouteImport } from './routes/programs.$slug.start'
@@ -233,6 +234,11 @@ const WorkoutsStartTemplateIdRoute = WorkoutsStartTemplateIdRouteImport.update({
 const WorkoutsIdSummaryRoute = WorkoutsIdSummaryRouteImport.update({
   id: '/workouts/$id_/summary',
   path: '/workouts/$id/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkoutsIdEditRoute = WorkoutsIdEditRouteImport.update({
+  id: '/workouts/$id_/edit',
+  path: '/workouts/$id/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesIdEditRoute = TemplatesIdEditRouteImport.update({
@@ -496,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -641,6 +649,7 @@ export interface FileRoutesById {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId_': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id_/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id_/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -715,6 +724,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId'
     | '/templates/$id/edit'
+    | '/workouts/$id/edit'
     | '/workouts/$id/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -787,6 +797,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId'
     | '/templates/$id/edit'
+    | '/workouts/$id/edit'
     | '/workouts/$id/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId_'
     | '/templates/$id/edit'
+    | '/workouts/$id_/edit'
     | '/workouts/$id_/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -921,6 +933,7 @@ export interface RootRouteChildren {
   ApiUser1rmRoute: typeof ApiUser1rmRoute
   ApiUserPreferencesRoute: typeof ApiUserPreferencesRoute
   ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRoute
+  WorkoutsIdEditRoute: typeof WorkoutsIdEditRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
   WorkoutsStartTemplateIdRoute: typeof WorkoutsStartTemplateIdRoute
   ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
@@ -1145,6 +1158,13 @@ declare module '@tanstack/react-router' {
       path: '/workouts/$id/summary'
       fullPath: '/workouts/$id/summary'
       preLoaderRoute: typeof WorkoutsIdSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workouts/$id_/edit': {
+      id: '/workouts/$id_/edit'
+      path: '/workouts/$id/edit'
+      fullPath: '/workouts/$id/edit'
+      preLoaderRoute: typeof WorkoutsIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/templates/$id/edit': {
@@ -1661,6 +1681,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUser1rmRoute: ApiUser1rmRoute,
   ApiUserPreferencesRoute: ApiUserPreferencesRoute,
   ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRoute,
+  WorkoutsIdEditRoute: WorkoutsIdEditRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,
   WorkoutsStartTemplateIdRoute: WorkoutsStartTemplateIdRoute,
   ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,

@@ -160,7 +160,7 @@ function AppLayout() {
           <body className={'min-h-screen bg-background font-sans antialiased'}>
             <div className={'min-h-screen flex flex-col'}>
               <UnitProvider>
-                <DateFormatProvider>
+                <DateFormatProvider userId={user?.id}>
                   <StreakProvider workosId={user?.id ?? ''}>
                     <Header />
                   </StreakProvider>

@@ -257,44 +257,34 @@ export async function copyTemplate(
 export async function addExerciseToTemplate(
   db: D1Database,
   templateId: string,
-  workosId: string,
   exerciseId: string,
   orderIndex: number,
   targetWeight?: number,
+  addedWeight?: number,
   sets?: number,
   reps?: number,
+  repsRaw?: string,
   isAmrap?: boolean,
-  setNumber?: number
-): Promise<TemplateExercise | null> {
+  setNumber?: number,
+  isAccessory?: boolean,
+  isRequired?: boolean
+): Promise<void> {
   const drizzleDb = createDb(db);
 
-  const template = await drizzleDb
-    .select({ id: templates.id })
-    .from(templates)
-    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
-    .get();
-
-  if (!template) {
-    console.log('addExerciseToTemplate: Template not found or does not belong to user');
-    return null;
-  }
-
-  const templateExercise = await drizzleDb
-    .insert(templateExercises)
-    .values({
-      templateId,
-      exerciseId,
-      orderIndex,
-      targetWeight: targetWeight ?? null,
-      sets: sets ?? null,
-      reps: reps ?? null,
-      isAmrap: isAmrap ?? false,
-      setNumber: setNumber ?? null,
-    })
-    .returning()
-    .get();
-
-  return templateExercise;
+  await drizzleDb.insert(templateExercises).values({
+    templateId,
+    exerciseId,
+    orderIndex,
+    targetWeight: targetWeight ?? null,
+    addedWeight: addedWeight ?? 0,
+    sets: sets ?? null,
+    reps: reps ?? null,
+    repsRaw: repsRaw ?? null,
+    isAmrap: isAmrap ?? false,
+    setNumber: setNumber ?? null,
+    isAccessory: isAccessory ?? false,
+    isRequired: isRequired ?? true,
+  } as any).run();
 }
 
 export async function removeExerciseFromTemplate(

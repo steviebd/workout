@@ -4,7 +4,8 @@ import {
   NSUNS_T1_PERCENTAGES,
   NSUNS_T2_PERCENTAGES,
 } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const nsunsInfo = {
   slug: 'nsuns-lp',
@@ -16,6 +17,37 @@ const nsunsInfo = {
   totalSessions: 32,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
 };
+
+export const nsunsRequiredAccessories: ProgramAccessory[] = [
+  { accessoryId: 'rows', sets: 3, reps: '8-12', isRequired: true },
+  { accessoryId: 'pullups', sets: 3, reps: 'AMRAP', isRequired: true },
+  { accessoryId: 'face-pulls', sets: 3, reps: '15-20', isRequired: true },
+];
+
+export const nsunsSuggestedAccessories: Record<number, ProgramAccessory[]> = {
+  1: [
+    { accessoryId: 'tricep-pushdowns', sets: 3, reps: '8-12', isRequired: false },
+    { accessoryId: 'lateral-raises', sets: 3, reps: '12-15', isRequired: false },
+  ],
+  2: [
+    { accessoryId: 'romanian-dl', sets: 3, reps: '5-8', isRequired: false },
+    { accessoryId: 'leg-extensions', sets: 3, reps: '12-15', isRequired: false },
+  ],
+  3: [
+    { accessoryId: 'dumbbell-row', sets: 3, reps: '8-12', isRequired: false },
+    { accessoryId: 'skullcrushers', sets: 3, reps: '8-12', isRequired: false },
+  ],
+  4: [
+    { accessoryId: 'leg-curls', sets: 3, reps: '12-15', isRequired: false },
+  ],
+};
+
+export function getNsunsAccessories(_week: number, session: number): ProgramAccessory[] {
+  const dayIndex = ((session - 1) % 4) + 1;
+  const required = nsunsRequiredAccessories;
+  const suggested = nsunsSuggestedAccessories[dayIndex] || [];
+  return [...required, ...suggested];
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -48,20 +80,42 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
       const t1OneRM = oneRMs[config.t1];
       const t2OneRM = oneRMs[config.t2];
 
-      const t1Sets = [
-        { name: config.t1.charAt(0).toUpperCase() + config.t1.slice(1), lift: config.t1, sets: 1, reps: 5, targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false), isAmrap: false },
-        { name: `${config.t1.charAt(0).toUpperCase() + config.t1.slice(1)} 1+`, lift: config.t1, sets: 1, reps: 3, targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false), isAmrap: true },
-        { name: `${config.t1.charAt(0).toUpperCase() + config.t1.slice(1)} 2`, lift: config.t1, sets: 1, reps: 5, targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false), isAmrap: false },
-        { name: `${config.t1.charAt(0).toUpperCase() + config.t1.slice(1)} 3`, lift: config.t1, sets: 1, reps: 3, targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false), isAmrap: false },
-        { name: `${config.t1.charAt(0).toUpperCase() + config.t1.slice(1)} 4`, lift: config.t1, sets: 1, reps: 5, targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false), isAmrap: false },
-      ];
+      const t1Name = config.t1.charAt(0).toUpperCase() + config.t1.slice(1);
+      const t2Name = config.t2.charAt(0).toUpperCase() + config.t2.slice(1);
 
-      const t2Sets = [
-        { name: config.t2.charAt(0).toUpperCase() + config.t2.slice(1), lift: config.t2, sets: 1, reps: 8, targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true), isAmrap: false },
-        { name: `${config.t2.charAt(0).toUpperCase() + config.t2.slice(1)} 1+`, lift: config.t2, sets: 1, reps: 4, targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true), isAmrap: true },
-        { name: `${config.t2.charAt(0).toUpperCase() + config.t2.slice(1)} 2`, lift: config.t2, sets: 1, reps: 8, targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true), isAmrap: false },
-        { name: `${config.t2.charAt(0).toUpperCase() + config.t2.slice(1)} 3`, lift: config.t2, sets: 1, reps: 4, targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true), isAmrap: false },
-        { name: `${config.t2.charAt(0).toUpperCase() + config.t2.slice(1)} 4`, lift: config.t2, sets: 1, reps: 8, targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true), isAmrap: false },
+      const exercises = [
+        {
+          name: t1Name,
+          lift: config.t1,
+          sets: 5,
+          reps: 1,
+          targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false),
+          isAmrap: false,
+        },
+        {
+          name: `${t1Name} 1+`,
+          lift: config.t1,
+          sets: 1,
+          reps: 1,
+          targetWeight: calculateTargetWeight(t1OneRM, week, day, config.t1, false),
+          isAmrap: true,
+        },
+        {
+          name: t2Name,
+          lift: config.t2,
+          sets: 5,
+          reps: 1,
+          targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true),
+          isAmrap: false,
+        },
+        {
+          name: `${t2Name} 1+`,
+          lift: config.t2,
+          sets: 1,
+          reps: 1,
+          targetWeight: calculateTargetWeight(t2OneRM, week, day, config.t2, true),
+          isAmrap: true,
+        },
       ];
 
       const dayNames = ['Day 1 (Squat/OHP)', 'Day 2 (Bench/Squat)', 'Day 3 (Deadlift/OHP)', 'Day 4 (Bench/Deadlift)'];
@@ -70,11 +124,15 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         weekNumber: week,
         sessionNumber: (week - 1) * 4 + day,
         sessionName: `Week ${week} - ${dayNames[day - 1]}`,
-        exercises: [
-          ...t1Sets,
-          ...t2Sets,
-        ],
+        exercises,
       });
+    }
+  }
+
+  for (const workout of workouts) {
+    const accessories = getNsunsAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
     }
   }
 

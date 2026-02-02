@@ -55,9 +55,13 @@ export const templateExercises = sqliteTable('template_exercises', {
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
   targetWeight: real('target_weight'),
+  addedWeight: real('added_weight').default(0),
   sets: integer('sets'),
   reps: integer('reps'),
+  repsRaw: text('reps_raw'),
   isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
+  isAccessory: integer('is_accessory', { mode: 'boolean' }).default(false),
+  isRequired: integer('is_required', { mode: 'boolean' }).default(true),
   setNumber: integer('set_number'),
 });
 

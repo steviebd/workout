@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import type { OneRMValues } from '~/lib/programs/types';
+import type { OneRMValues, WorkoutAccessory } from '~/lib/programs/types';
+import { parseReps } from '~/lib/programs/accessory-data';
 import {
   addWorkoutToCycle,
   createProgramCycle,
@@ -16,7 +17,8 @@ import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
 import { createTemplate, addExerciseToTemplate, getTemplateExerciseSetCount } from '~/lib/db/template';
-import { createExercise, getExercisesByWorkosId } from '~/lib/db/exercise';
+import { createExercise, getExercisesByWorkosId, copyExerciseFromLibrary, type Exercise } from '~/lib/db/exercise';
+import { exerciseLibrary } from '~/lib/exercise-library';
 
 const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
   'stronglifts-5x5': stronglifts,
@@ -48,6 +50,49 @@ async function getOrCreateExercise(db: D1Database, workosId: string, name: strin
     muscleGroup,
   });
   return exercise;
+}
+
+async function findOrCreateExercise(
+  db: D1Database,
+  workosId: string,
+  accessory: WorkoutAccessory
+): Promise<Exercise> {
+  const existing = await getExercisesByWorkosId(db, workosId, {
+    search: accessory.name,
+    limit: 1
+  });
+
+  const match = existing.find(e => e.name.toLowerCase() === accessory.name.toLowerCase());
+  if (match) return match;
+
+  if (accessory.libraryId) {
+    const libraryMatch = exerciseLibrary.find(e => e.id === accessory.libraryId);
+    if (libraryMatch) {
+      const libraryCopy = await getExercisesByWorkosId(db, workosId, {
+        search: libraryMatch.name,
+        limit: 1,
+      });
+      const existingCopy = libraryCopy.find(e =>
+        e.libraryId === accessory.libraryId ||
+        (e.name === libraryMatch.name && e.muscleGroup === libraryMatch.muscleGroup)
+      );
+      if (existingCopy) return existingCopy;
+
+      return await copyExerciseFromLibrary(db, workosId, {
+        name: libraryMatch.name,
+        muscleGroup: libraryMatch.muscleGroup,
+        description: libraryMatch.description,
+      });
+    }
+  }
+
+  return await createExercise(db, {
+    workosId,
+    name: accessory.name,
+    muscleGroup: accessory.muscleGroup,
+    description: '',
+    libraryId: accessory.libraryId ?? undefined,
+  });
 }
 
 export const Route = createFileRoute('/api/program-cycles')({
@@ -153,11 +198,33 @@ export const Route = createFileRoute('/api/program-cycles')({
               const { isAmrap } = getSetInfo(exercise.name, exercise.isAmrap);
 
               await addExerciseToTemplate(
-                db, template.id, session.workosId, dbExercise.id, orderIndex,
-                exercise.targetWeight, exercise.sets, exercise.reps,
-                isAmrap, nextSetNumber
+                db, template.id, dbExercise.id, orderIndex,
+                exercise.targetWeight, undefined, exercise.sets, exercise.reps,
+                undefined, isAmrap, nextSetNumber
               );
               orderIndex++;
+            }
+
+            if (workout.accessories && workout.accessories.length > 0) {
+              for (const accessory of workout.accessories) {
+                const exercise = await findOrCreateExercise(db, session.workosId, accessory);
+
+                const parsedReps = parseReps(accessory.reps);
+
+                await addExerciseToTemplate(
+                  db, template.id, exercise.id, orderIndex,
+                  accessory.targetWeight,
+                  accessory.addedWeight,
+                  accessory.sets,
+                  parsedReps.numericValue,
+                  parsedReps.rawString,
+                  false,
+                  1,
+                  true,
+                  accessory.isRequired
+                );
+                orderIndex++;
+              }
             }
 
             const cycleWorkout = await addWorkoutToCycle(db, cycle.id, {
@@ -165,7 +232,19 @@ export const Route = createFileRoute('/api/program-cycles')({
               weekNumber: workout.weekNumber,
               sessionNumber: workout.sessionNumber,
               sessionName: workout.sessionName,
-              targetLifts: JSON.stringify(workout.exercises.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps }))),
+              targetLifts: JSON.stringify([
+                ...workout.exercises.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps })),
+                ...(workout.accessories?.map(a => ({
+                  name: a.name,
+                  accessoryId: a.accessoryId,
+                  targetWeight: a.targetWeight,
+                  addedWeight: a.addedWeight,
+                  sets: a.sets,
+                  reps: a.reps,
+                  isAccessory: true,
+                  isRequired: a.isRequired,
+                })) ?? []),
+              ]),
             });
             
             if (!cycleWorkout) {

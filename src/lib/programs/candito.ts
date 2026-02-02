@@ -1,5 +1,6 @@
 import { TRAINING_MAX_PERCENTAGE, roundToPlate } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const canditoInfo = {
   slug: 'candito-6-week',
@@ -23,6 +24,19 @@ const PEAKING_BLOCK = [
   { week: 5, sets: [3, 2, 1, 0], percentages: [0.925, 0.95, 1.0], baseReps: 2, amrapPercent: 0.925, isDeload: false },
   { week: 6, sets: [2, 2, 1, 0], percentages: [0.95, 0.975, 1.025], baseReps: 2, amrapPercent: 0, isDeload: true },
 ] as const;
+
+export const canditoAccessories: ProgramAccessory[] = [
+  { accessoryId: 'dumbbell-row', sets: 3, reps: '6-12', isRequired: true },
+  { accessoryId: 'dumbbell-ohp', sets: 3, reps: '6-12', isRequired: true },
+  { accessoryId: 'weighted-pullups', sets: 3, reps: '6-12', isRequired: true },
+  { accessoryId: 'romanian-dl', sets: 3, reps: 8, isRequired: true },
+];
+
+export function getCanditoAccessories(_week: number, session: number): ProgramAccessory[] {
+  const dayIndex = (session - 1) % 4;
+  if (dayIndex > 1) return [];
+  return canditoAccessories;
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -94,6 +108,13 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         sessionName: `Week ${week} (${blockName}) - ${dayNames[day - 1]}${isDeload ? ' (Deload)' : ''}`,
         exercises: [...t1Sets, ...t2Sets],
       });
+    }
+  }
+
+  for (const workout of workouts) {
+    const accessories = getCanditoAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
     }
   }
 

@@ -1,5 +1,6 @@
 import { roundToPlate } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const sheikoInfo = {
   slug: 'sheiko',
@@ -25,6 +26,18 @@ const INTENSITY_DAY = {
   deadlift: { sets: 4, reps: 2, percentage: 0.90 },
   ohp: { sets: 3, reps: 2, percentage: 0.70 },
 };
+
+export const sheikoAccessories: ProgramAccessory[] = [
+  { accessoryId: 'pullups', sets: 4, reps: '8-12', isRequired: false },
+  { accessoryId: 'dumbbell-row', sets: 3, reps: '8-12', isRequired: false },
+  { accessoryId: 'dumbbell-curl', sets: 3, reps: '8-12', isRequired: false },
+  { accessoryId: 'planks', sets: 3, reps: '30sec', isRequired: false },
+  { accessoryId: 'face-pulls', sets: 3, reps: '15-20', isRequired: false },
+];
+
+export function getSheikoAccessories(_week: number, _session: number): ProgramAccessory[] {
+  return sheikoAccessories;
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -148,6 +161,13 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         },
       ],
     });
+  }
+
+  for (const workout of workouts) {
+    const accessories = getSheikoAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
+    }
   }
 
   return workouts;

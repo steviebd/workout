@@ -112,6 +112,8 @@ function OneRMTest() {
     }));
   };
 
+  const isFormValid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -177,8 +179,6 @@ function OneRMTest() {
       </div>
     );
   }
-
-  const isFormValid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
 
   return (
       <div className="flex flex-col gap-6 pb-20">
