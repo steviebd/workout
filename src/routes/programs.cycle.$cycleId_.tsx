@@ -50,6 +50,28 @@ interface CurrentWorkoutData {
   exercises: ExerciseDetail[];
 }
 
+const FETCH_TIMEOUT_MS = 10000;
+
+async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
+  }
+}
+
 const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit }: { readonly exercise: ExerciseDetail; readonly weightUnit: string }) {
   return (
     <div className="flex items-center justify-between py-2 border-b last:border-0">
@@ -77,30 +99,44 @@ function ProgramDashboard() {
   const [weightUnit, setWeightUnit] = useState('kg');
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadCycle() {
       try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}`);
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
         if (response.ok) {
           const data = await response.json();
-          setCycle(data as CycleData);
+          if (isMounted) {
+            setCycle(data as CycleData);
+          }
         }
       } catch (error) {
         console.error('Error loading cycle:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     void loadCycle();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.cycleId]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadCurrentWorkout() {
       try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}/current-workout`);
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
         if (response.ok) {
           const data = await response.json();
-          setCurrentWorkout(data as CurrentWorkoutData);
+          if (isMounted) {
+            setCurrentWorkout(data as CurrentWorkoutData);
+          }
         }
       } catch (error) {
         console.error('Error loading current workout:', error);
@@ -108,12 +144,16 @@ function ProgramDashboard() {
     }
 
     void loadCurrentWorkout();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.cycleId]);
 
   useEffect(() => {
     async function loadPreferences() {
       try {
-        const response = await fetch('/api/user/preferences');
+        const response = await fetchWithTimeout('/api/user/preferences');
         if (response.ok) {
           const prefs = await response.json() as { weightUnit?: string };
           setWeightUnit(prefs.weightUnit ?? 'kg');
@@ -130,7 +170,7 @@ function ProgramDashboard() {
     if (!cycle) return;
     
     try {
-      const response = await fetch(`/api/program-cycles/${params.cycleId}/start-workout`, {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/start-workout`, {
         method: 'POST',
       });
       
@@ -156,7 +196,7 @@ function ProgramDashboard() {
 
   const handleDeleteProgram = async () => {
     try {
-      const response = await fetch(`/api/program-cycles/${params.cycleId}`, {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`, {
         method: 'DELETE',
       });
 

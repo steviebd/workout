@@ -126,4 +126,36 @@ class FitWorkoutDatabase extends DexieLib {
   }
 }
 
-export const localDB = new FitWorkoutDatabase();
+let dbInstance: FitWorkoutDatabase | null = null;
+
+export function getLocalDB(): FitWorkoutDatabase {
+  if (typeof window === 'undefined') {
+    throw new Error('LocalDB is only available in the browser');
+  }
+  dbInstance ??= new FitWorkoutDatabase();
+  return dbInstance;
+}
+
+export const localDB = {
+  get exercises() {
+    return getLocalDB().exercises;
+  },
+  get templates() {
+    return getLocalDB().templates;
+  },
+  get workouts() {
+    return getLocalDB().workouts;
+  },
+  get workoutExercises() {
+    return getLocalDB().workoutExercises;
+  },
+  get workoutSets() {
+    return getLocalDB().workoutSets;
+  },
+  get offlineQueue() {
+    return getLocalDB().offlineQueue;
+  },
+  get syncMetadata() {
+    return getLocalDB().syncMetadata;
+  },
+} as unknown as FitWorkoutDatabase;

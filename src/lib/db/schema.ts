@@ -154,6 +154,8 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
   targetLifts: text('target_lifts'),
   isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
   workoutId: text('workout_id'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
 });
 
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);

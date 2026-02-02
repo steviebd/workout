@@ -261,6 +261,8 @@ export async function addWorkoutToCycle(
       sessionNumber: data.sessionNumber,
       sessionName: data.sessionName,
       targetLifts: data.targetLifts,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
     .returning()
     .get();
@@ -366,6 +368,7 @@ export async function markWorkoutComplete(
     .set({
       isComplete: true,
       workoutId: completedWorkoutId,
+      updatedAt: new Date().toISOString(),
     })
     .where(eq(programCycleWorkouts.id, workoutId))
     .returning()

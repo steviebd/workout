@@ -153,7 +153,7 @@ function ProgramStart() {
       if (response.ok) {
         const cycle = await response.json() as { id: string };
         toast.success('Program started!');
-        void navigate({ to: '/programs/cycle/$cycleId', params: { cycleId: cycle.id } });
+        await navigate({ to: '/programs/cycle/$cycleId', params: { cycleId: cycle.id } });
       } else {
         toast.error('Failed to create program cycle');
       }
