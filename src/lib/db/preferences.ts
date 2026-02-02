@@ -12,6 +12,7 @@ export interface UpdatePreferencesData {
   weightUnit?: WeightUnit;
   theme?: Theme;
   dateFormat?: DateFormat;
+  weeklyWorkoutTarget?: number;
 }
 
 export async function getUserPreferences(
@@ -63,6 +64,7 @@ export async function upsertUserPreferences(
       weightUnit: data.weightUnit ?? 'kg',
       dateFormat: data.dateFormat ?? 'dd/mm/yyyy',
       theme: data.theme ?? 'light',
+      weeklyWorkoutTarget: data.weeklyWorkoutTarget ?? 3,
     })
     .returning()
     .get();

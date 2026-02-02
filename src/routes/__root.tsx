@@ -190,21 +190,21 @@ function AppLayout() {
             <div className={'min-h-screen flex flex-col'}>
               <UnitProvider userId={user?.id}>
                 <DateFormatProvider userId={user?.id}>
-                  <StreakProvider workosId={user?.id ?? ''}>
+                  <StreakProvider>
                     <Header />
+                    <main className={'flex-1 pb-20'}>
+                      <div className="mx-auto max-w-lg px-4">
+                      <ErrorBoundary>
+                        <ToastProvider>
+                          <TooltipProvider>
+                            <Outlet />
+                          </TooltipProvider>
+                        </ToastProvider>
+                      </ErrorBoundary>
+                      </div>
+                    </main>
+                    <BottomNav />
                   </StreakProvider>
-                  <main className={'flex-1 pb-20'}>
-                    <div className="mx-auto max-w-lg px-4">
-                    <ErrorBoundary>
-                      <ToastProvider>
-                        <TooltipProvider>
-                          <Outlet />
-                        </TooltipProvider>
-                      </ToastProvider>
-                    </ErrorBoundary>
-                    </div>
-                  </main>
-                  <BottomNav />
                 </DateFormatProvider>
               </UnitProvider>
             </div>

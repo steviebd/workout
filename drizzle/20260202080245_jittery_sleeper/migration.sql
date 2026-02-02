@@ -15,13 +15,15 @@ CREATE TABLE `exercises` (
 CREATE TABLE `program_cycle_workouts` (
 	`id` text PRIMARY KEY,
 	`cycle_id` text NOT NULL,
-	`template_id` text NOT NULL,
+	`template_id` text,
 	`week_number` integer NOT NULL,
 	`session_number` integer NOT NULL,
 	`session_name` text NOT NULL,
 	`target_lifts` text,
 	`is_complete` integer DEFAULT false,
 	`workout_id` text,
+	`created_at` text,
+	`updated_at` text,
 	CONSTRAINT `fk_program_cycle_workouts_cycle_id_user_program_cycles_id_fk` FOREIGN KEY (`cycle_id`) REFERENCES `user_program_cycles`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_program_cycle_workouts_template_id_templates_id_fk` FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON DELETE CASCADE
 );
@@ -32,9 +34,13 @@ CREATE TABLE `template_exercises` (
 	`exercise_id` text NOT NULL,
 	`order_index` integer NOT NULL,
 	`target_weight` real,
+	`added_weight` real DEFAULT 0,
 	`sets` integer,
 	`reps` integer,
+	`reps_raw` text,
 	`is_amrap` integer DEFAULT false,
+	`is_accessory` integer DEFAULT false,
+	`is_required` integer DEFAULT true,
 	`set_number` integer,
 	CONSTRAINT `fk_template_exercises_template_id_templates_id_fk` FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_template_exercises_exercise_id_exercises_id_fk` FOREIGN KEY (`exercise_id`) REFERENCES `exercises`(`id`) ON DELETE CASCADE
@@ -60,6 +66,7 @@ CREATE TABLE `user_preferences` (
 	`weight_unit` text DEFAULT 'kg',
 	`date_format` text DEFAULT 'dd/mm/yyyy',
 	`theme` text DEFAULT 'light',
+	`weekly_workout_target` integer DEFAULT 3,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `fk_user_preferences_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE
@@ -93,8 +100,6 @@ CREATE TABLE `user_program_cycles` (
 CREATE TABLE `user_streaks` (
 	`id` text PRIMARY KEY,
 	`workos_id` text NOT NULL UNIQUE,
-	`current_streak` integer DEFAULT 0,
-	`longest_streak` integer DEFAULT 0,
 	`last_workout_date` text,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `fk_user_streaks_workos_id_users_workos_id_fk` FOREIGN KEY (`workos_id`) REFERENCES `users`(`workos_id`) ON DELETE CASCADE

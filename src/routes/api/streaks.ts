@@ -1,9 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { eq } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
-import { createDb } from '~/lib/db';
-import { userStreaks } from '~/lib/db/schema';
-import { getWeeklyWorkouts, getTotalWorkouts } from '~/lib/streaks';
+import {
+  getWeeklyWorkoutCount,
+  getTotalWorkouts,
+  calculateThirtyDayStreak,
+  getRolling30DayWorkoutCount,
+} from '~/lib/streaks';
+import { getUserPreferences } from '~/lib/db/preferences';
 import { getSession } from '~/lib/session';
 
 export const Route = createFileRoute('/api/streaks' as const)({
@@ -21,21 +24,21 @@ export const Route = createFileRoute('/api/streaks' as const)({
           return new Response('Database not available', { status: 500 });
         }
 
-        const drizzleDb = createDb(db);
+        const prefs = await getUserPreferences(db, workosId);
+        const weeklyTarget = prefs?.weeklyWorkoutTarget ?? 3;
 
-        const [streakRecord] = await drizzleDb
-          .select()
-          .from(userStreaks)
-          .where(eq(userStreaks.workosId, workosId));
-
-        const weeklyWorkouts = await getWeeklyWorkouts(db, workosId);
+        const weeklyCount = await getWeeklyWorkoutCount(db, workosId);
         const totalWorkouts = await getTotalWorkouts(db, workosId);
+        const rolling30Days = await getRolling30DayWorkoutCount(db, workosId);
+        
+        const thirtyDayStreak = await calculateThirtyDayStreak(db, workosId, weeklyTarget);
 
         return Response.json({
-          currentStreak: streakRecord?.currentStreak ?? 0,
-          longestStreak: streakRecord?.longestStreak ?? 0,
-          weeklyWorkouts,
+          weeklyCount,
+          weeklyTarget,
+          thirtyDayStreak,
           totalWorkouts,
+          rolling30Days,
         });
       },
     },

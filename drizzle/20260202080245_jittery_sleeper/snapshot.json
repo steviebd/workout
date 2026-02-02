@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "7215136c-c86d-4707-9851-1c5b10227d17",
+  "id": "c27a677f-57d6-40dd-b730-3dde5d25d8eb",
   "prevIds": [
-    "22f518cb-4f5c-41ad-a2be-7b2c881fe628"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -172,7 +172,7 @@
     },
     {
       "type": "text",
-      "notNull": true,
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -541,6 +541,16 @@
       "table": "user_preferences"
     },
     {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "3",
+      "generated": null,
+      "name": "weekly_workout_target",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
       "type": "text",
       "notNull": false,
       "autoincrement": false,
@@ -787,26 +797,6 @@
       "default": null,
       "generated": null,
       "name": "workos_id",
-      "entityType": "columns",
-      "table": "user_streaks"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": "0",
-      "generated": null,
-      "name": "current_streak",
-      "entityType": "columns",
-      "table": "user_streaks"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": "0",
-      "generated": null,
-      "name": "longest_streak",
       "entityType": "columns",
       "table": "user_streaks"
     },

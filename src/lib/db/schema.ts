@@ -19,6 +19,7 @@ export const userPreferences = sqliteTable('user_preferences', {
   weightUnit: text('weight_unit').default('kg'),
   dateFormat: text('date_format').default('dd/mm/yyyy'),
   theme: text('theme').default('light'),
+  weeklyWorkoutTarget: integer('weekly_workout_target').default(3),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -114,8 +115,6 @@ export const workoutSets = sqliteTable('workout_sets', {
 export const userStreaks = sqliteTable('user_streaks', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').notNull().unique().references(() => users.workosId, { onDelete: 'cascade' }),
-  currentStreak: integer('current_streak').default(0),
-  longestStreak: integer('longest_streak').default(0),
   lastWorkoutDate: text('last_workout_date'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -194,7 +193,10 @@ export const _userProgramCyclesStatusIdx = index('idx_user_program_cycles_status
 export const _userProgramCyclesUpdatedAtIdx = index('idx_user_program_cycles_updated_at').on(userProgramCycles.updatedAt);
 
 export const _programCycleWorkoutsCycleIdIdx = index('idx_program_cycle_workouts_cycle_id').on(programCycleWorkouts.cycleId);
+export const _programCycleWorkoutsCycleIdIsCompleteIdx = index('idx_program_cycle_workouts_cycle_id_is_complete').on(programCycleWorkouts.cycleId, programCycleWorkouts.isComplete);
 export const _programCycleWorkoutsTemplateIdIdx = index('idx_program_cycle_workouts_template_id').on(programCycleWorkouts.templateId);
+
+export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_template_id').on(templateExercises.templateId);
 
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;

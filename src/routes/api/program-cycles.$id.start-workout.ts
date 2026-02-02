@@ -2,8 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { getProgramCycleById, getCurrentWorkout, generateTemplateFromWorkout } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
-import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
+import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
+import { createDb } from '~/lib/db';
+import { workoutExercises, workoutSets } from '~/lib/db/schema';
+
+const BATCH_SIZE = 7;
 
 export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
   server: {
@@ -20,7 +24,13 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const cycle = await getProgramCycleById(db, params.id, session.workosId);
+          const drizzleDb = createDb(db);
+
+          const [cycle, currentWorkout] = await Promise.all([
+            getProgramCycleById(db, params.id, session.workosId),
+            getCurrentWorkout(db, params.id, session.workosId),
+          ]);
+
           if (!cycle) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
@@ -29,24 +39,25 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             return Response.json({ error: 'Program cycle is already completed' }, { status: 400 });
           }
 
-          const currentWorkout = await getCurrentWorkout(db, params.id, session.workosId);
           if (!currentWorkout) {
-            const cycleCheck = await getProgramCycleById(db, params.id, session.workosId);
-            if (!cycleCheck) {
-              return Response.json({ error: 'Program cycle not found' }, { status: 404 });
-            }
             return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
           }
 
-          let templateId = currentWorkout.templateId;
-          templateId ??= await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+          let templateId: string = currentWorkout.templateId ?? '';
+          if (!templateId) {
+            templateId = await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+          }
 
-          const template = await getTemplateById(db, templateId, session.workosId);
-          if (!template) {
+          const [templateResult, templateExercises] = await Promise.all([
+            getTemplateById(db, templateId, session.workosId),
+            getTemplateExercises(db, templateId, session.workosId),
+          ]);
+
+          if (!templateResult) {
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          const templateExercises = await getTemplateExercises(db, template.id, session.workosId);
+          const template = templateResult;
 
           const workout = await createWorkout(db, {
             workosId: session.workosId,
@@ -55,36 +66,49 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             name: template.name,
           });
 
-          for (const templateExercise of templateExercises) {
-            const workoutExercise = await createWorkoutExercise(
-              db,
-              workout.id,
-              session.workosId,
-              templateExercise.exerciseId,
-              templateExercise.orderIndex,
-              undefined,
-              undefined,
-              templateExercise.isAmrap ?? false,
-              templateExercise.setNumber ?? undefined
-            );
+          const workoutExerciseInserts = templateExercises.map((te) => ({
+            workoutId: workout.id,
+            exerciseId: te.exerciseId,
+            orderIndex: te.orderIndex,
+            notes: undefined,
+            localId: undefined,
+            isAmrap: te.isAmrap ?? false,
+            setNumber: te.setNumber ?? null,
+          }));
 
-            if (workoutExercise) {
-              const numSets = templateExercise.sets ?? 1;
-              const targetWeight = templateExercise.targetWeight ?? 0;
-              const reps = templateExercise.reps ?? 0;
+          const insertedExercises: Array<{ id: string }> = [];
+          for (let i = 0; i < workoutExerciseInserts.length; i += BATCH_SIZE) {
+            const batch = workoutExerciseInserts.slice(i, i + BATCH_SIZE);
+            const result = await drizzleDb.insert(workoutExercises).values(batch).returning({ id: workoutExercises.id }).all();
+            insertedExercises.push(...result);
+          }
 
-              for (let setNum = 1; setNum <= numSets; setNum++) {
-                await createWorkoutSet(
-                  db,
-                  workoutExercise.id,
-                  session.workosId,
-                  setNum,
-                  targetWeight,
-                  reps,
-                  undefined
-                );
-              }
+          const workoutSetInserts: Array<typeof workoutSets.$inferInsert> = [];
+          for (let i = 0; i < templateExercises.length; i++) {
+            const te = templateExercises[i];
+            const insertedExercise = insertedExercises[i];
+            if (!insertedExercise) continue;
+
+            const numSets = te.sets ?? 1;
+            const targetWeight = te.targetWeight ?? 0;
+            const reps = te.reps ?? 0;
+
+            for (let setNum = 1; setNum <= numSets; setNum++) {
+              workoutSetInserts.push({
+                workoutExerciseId: insertedExercise.id,
+                setNumber: setNum,
+                weight: targetWeight,
+                reps: reps,
+                rpe: undefined,
+                isComplete: false,
+                localId: undefined,
+              });
             }
+          }
+
+          for (let i = 0; i < workoutSetInserts.length; i += BATCH_SIZE) {
+            const batch = workoutSetInserts.slice(i, i + BATCH_SIZE);
+            await drizzleDb.insert(workoutSets).values(batch).run();
           }
 
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });

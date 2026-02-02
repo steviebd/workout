@@ -2,8 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { eq, isNotNull, sql, and } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
 import { createDb } from '~/lib/db';
-import { userStreaks, workouts } from '~/lib/db/schema';
+import { workouts } from '~/lib/db/schema';
 import { calculateAllBadges } from '~/lib/badges';
+import { countWorkoutsInRange } from '~/lib/streaks';
 import { getSession } from '~/lib/session';
 
 export const Route = createFileRoute('/api/badges' as const)({
@@ -23,16 +24,14 @@ export const Route = createFileRoute('/api/badges' as const)({
 
         const drizzleDb = createDb(db);
 
-        const [streakRecord] = await drizzleDb
-          .select()
-          .from(userStreaks)
-          .where(eq(userStreaks.workosId, workosId));
-
         const today = new Date();
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDay() === 0 ? today.getDate() - 6 : today.getDate() - today.getDay() + 1);
         startOfWeek.setHours(0, 0, 0, 0);
         const startDateStr = startOfWeek.toISOString().split('T')[0];
+        const endDateStr = today.toISOString().split('T')[0];
+
+        const weeklyWorkoutCount = await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
 
         const workoutResults = await drizzleDb
           .select({ completedAt: workouts.completedAt })
@@ -54,9 +53,7 @@ export const Route = createFileRoute('/api/badges' as const)({
         const badges = await calculateAllBadges(db, workosId);
 
         return Response.json({
-          currentStreak: streakRecord?.currentStreak ?? 0,
-          longestStreak: streakRecord?.longestStreak ?? 0,
-          weeklyWorkouts: workoutDatesInWeek.size,
+          weeklyWorkouts: weeklyWorkoutCount,
           totalWorkouts: 0,
           badges,
           workoutDatesInWeek: Array.from(workoutDatesInWeek),

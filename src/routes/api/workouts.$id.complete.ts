@@ -15,7 +15,7 @@ import { completeWorkout, getWorkoutWithExercises, updateWorkout } from '../../l
 import { createDb } from '../../lib/db';
 import { programCycleWorkouts } from '../../lib/db/schema';
 import { markWorkoutComplete, getProgramCycleById } from '../../lib/db/program';
-import { updateStreakAfterWorkout } from '../../lib/streaks';
+import { updateUserLastWorkout } from '../../lib/streaks';
 import { getSession } from '../../lib/session';
 
 function extractTested1RMs(exercises: LoggedExercise[]): { squat: number; bench: number; deadlift: number; ohp: number } {
@@ -62,9 +62,10 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          if (completed.completedAt) {
-            await updateStreakAfterWorkout(db, session.workosId, completed.completedAt);
-          }
+           if (completed.completedAt) {
+             const workoutDate = completed.completedAt.split('T')[0];
+             await updateUserLastWorkout(db, session.workosId, workoutDate);
+           }
 
            const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
 

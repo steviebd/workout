@@ -1,70 +1,89 @@
-'use client'
+'use client';
 
-import { Flame, Calendar, Target } from 'lucide-react'
-import { Card, CardContent } from '~/components/ui/Card'
+import { Check, Target, Trophy, TrendingUp } from 'lucide-react';
+import type { ThirtyDayStreakResult } from '~/lib/context/StreakContext';
+import { Card, CardContent } from '~/components/ui/Card';
 
 interface StreakCardProps {
-  currentStreak: number
-  longestStreak: number
-  weeklyWorkouts: number
-  totalWorkouts: number
+  weeklyCount: number;
+  weeklyTarget: number;
+  thirtyDayStreak: ThirtyDayStreakResult;
+  totalWorkouts: number;
 }
 
-export function StreakCard({ currentStreak, longestStreak, weeklyWorkouts, totalWorkouts }: StreakCardProps) {
-  const streakPercentage = Math.min((currentStreak / 30) * 100, 100)
+export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWorkouts }: StreakCardProps) {
+  const weeklyComplete = weeklyCount >= weeklyTarget;
 
   return (
     <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5">
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20">
-                <Flame className="h-8 w-8 text-primary" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {currentStreak}
-              </div>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${weeklyComplete ? 'bg-success/20' : 'bg-primary/20'}`}>
+              <Target className={`h-6 w-6 ${weeklyComplete ? 'text-success' : 'text-primary'}`} />
             </div>
             <div>
-              <p className="text-2xl font-bold">{currentStreak} Day Streak</p>
-              <p className="text-sm text-muted-foreground">
-                Best: {longestStreak} days
-              </p>
+              <p className="text-sm text-muted-foreground">Times this week</p>
+              <div className="flex items-baseline gap-2">
+                <p className={`text-2xl font-bold ${weeklyComplete ? 'text-success' : 'text-foreground'}`}>
+                  {weeklyCount}
+                </p>
+                <p className="text-sm text-muted-foreground">/ {weeklyTarget}</p>
+                {weeklyComplete ? <Check className="h-4 w-4 text-success" /> : null}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4">
-          <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Progress to 30-day badge</span>
-            <span className="font-medium text-primary">{currentStreak}/30</span>
+        <div className="border-t border-primary/10 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <p className="text-lg font-semibold">30 Day Streak</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {thirtyDayStreak.current} / {thirtyDayStreak.target} weeks
+            </p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-secondary">
+
+          <div className="h-3 overflow-hidden rounded-full bg-secondary mb-3">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${streakPercentage}%` }}
+              style={{ width: `${thirtyDayStreak.progress}%` }}
             />
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            {thirtyDayStreak.weeklyDetails.slice(-4).reverse().map((week, index) => (
+              <div
+                key={week.weekStart}
+                className={`text-center p-2 rounded-lg text-xs ${
+                  week.meetsTarget
+                    ? 'bg-success/20 text-success'
+                    : week.count > 0
+                    ? 'bg-primary/10 text-muted-foreground'
+                    : 'bg-secondary/50 text-muted-foreground/50'
+                }`}
+              >
+                <div className="font-medium">{week.count}</div>
+                <div className="text-[10px] mt-0.5">
+                  {index === 0 ? 'This week' : `Week ${4 - index}`}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-2.5">
-            <Calendar className="h-4 w-4 text-accent" />
-            <div>
-              <p className="text-xs text-muted-foreground">This Week</p>
-              <p className="font-semibold">{weeklyWorkouts} workouts</p>
+        <div className="border-t border-primary/10 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-chart-5" />
+              <p className="text-sm text-muted-foreground">Total Workouts</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-2.5">
-            <Target className="h-4 w-4 text-success" />
-            <div>
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="font-semibold">{totalWorkouts} workouts</p>
-            </div>
+            <p className="text-xl font-bold text-foreground">{totalWorkouts}</p>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
