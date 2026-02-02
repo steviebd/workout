@@ -19,7 +19,22 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts')({
           }
 
           const workouts = await getCycleWorkouts(db, params.id, session.workosId);
-          return Response.json(workouts);
+          const responseData = workouts.map(w => ({
+            id: w.id,
+            cycleId: w.cycleId,
+            templateId: w.templateId,
+            weekNumber: w.weekNumber,
+            sessionNumber: w.sessionNumber,
+            sessionName: w.sessionName,
+            targetLifts: w.targetLifts,
+            isComplete: w.isComplete,
+            workoutId: w.workoutId,
+            scheduledDate: w.scheduledDate,
+            scheduledTime: w.scheduledTime,
+            createdAt: w.createdAt,
+            updatedAt: w.updatedAt,
+          }));
+          return Response.json(responseData);
         } catch (err) {
           console.error('Get cycle workouts error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });

@@ -3,7 +3,6 @@ import { env } from 'cloudflare:workers';
 import type { OneRMValues } from '~/lib/programs/types';
 import {
   createProgramCycle,
-  createProgramCycleWorkouts,
   getActiveProgramCycles,
   getProgramCyclesByWorkosId,
 } from '~/lib/db/program';
@@ -15,6 +14,7 @@ import { nsuns } from '~/lib/programs/nsuns';
 import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
+import { generateWorkoutSchedule, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 
 const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
   'stronglifts-5x5': stronglifts,
@@ -25,6 +25,18 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
 };
+
+interface CreateProgramCycleRequest {
+  programSlug: string;
+  squat1rm: number;
+  bench1rm: number;
+  deadlift1rm: number;
+  ohp1rm: number;
+  preferredGymDays: string[];
+  preferredTimeOfDay?: 'morning' | 'afternoon' | 'evening';
+  programStartDate: string;
+  firstSessionDate: string;
+}
 
 export const Route = createFileRoute('/api/program-cycles')({
   server: {
@@ -65,16 +77,20 @@ export const Route = createFileRoute('/api/program-cycles')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
-          const body = await request.json();
-          const { programSlug, squat1rm, bench1rm, deadlift1rm, ohp1rm } = body as {
-            programSlug: string;
-            squat1rm: number;
-            bench1rm: number;
-            deadlift1rm: number;
-            ohp1rm: number;
-          };
+          const body = await request.json() as CreateProgramCycleRequest;
+          const {
+            programSlug,
+            squat1rm,
+            bench1rm,
+            deadlift1rm,
+            ohp1rm,
+            preferredGymDays,
+            preferredTimeOfDay,
+            programStartDate,
+            firstSessionDate,
+          } = body;
 
-          if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm) {
+          if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm || !preferredGymDays || !programStartDate || !firstSessionDate) {
             return Response.json({ error: 'Missing required fields' }, { status: 400 });
           }
 
@@ -89,10 +105,34 @@ export const Route = createFileRoute('/api/program-cycles')({
           }
 
           const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
-          const workouts = programConfig.generateWorkouts(oneRMs);
+          const generatedWorkouts = programConfig.generateWorkouts(oneRMs);
 
           const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
           const cycleName = `${programConfig.info.name} - ${monthYear}`;
+
+          const schedule = generateWorkoutSchedule(
+            generatedWorkouts,
+            new Date(firstSessionDate),
+            {
+              preferredDays: preferredGymDays.map(d => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
+              preferredTimeOfDay: preferredTimeOfDay,
+            }
+          );
+
+          const workouts = schedule.map((w, index) => {
+            const generatedWorkout = generatedWorkouts[index];
+            return {
+              weekNumber: w.weekNumber,
+              sessionNumber: w.sessionNumber,
+              sessionName: w.sessionName,
+              scheduledDate: w.scheduledDate.toISOString().split('T')[0],
+              scheduledTime: w.scheduledTime,
+              targetLifts: JSON.stringify({
+                exercises: generatedWorkout?.exercises ?? [],
+                accessories: generatedWorkout?.accessories ?? [],
+              }),
+            };
+          });
 
           const cycle = await createProgramCycle(db, session.workosId, {
             programSlug,
@@ -102,9 +142,12 @@ export const Route = createFileRoute('/api/program-cycles')({
             deadlift1rm,
             ohp1rm,
             totalSessionsPlanned: workouts.length,
+            preferredGymDays: preferredGymDays.join(','),
+            preferredTimeOfDay,
+            programStartDate,
+            firstSessionDate,
+            workouts,
           });
-
-          await createProgramCycleWorkouts(db, cycle.id, workouts);
 
           return Response.json(cycle, { status: 201 });
         } catch (err) {

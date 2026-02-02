@@ -141,6 +141,10 @@ export const userProgramCycles = sqliteTable('user_program_cycles', {
   startedAt: text('started_at').default(sql`CURRENT_TIMESTAMP`),
   completedAt: text('completed_at'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  preferredGymDays: text('preferred_gym_days'),
+  preferredTimeOfDay: text('preferred_time_of_day'),
+  programStartDate: text('program_start_date'),
+  firstSessionDate: text('first_session_date'),
 });
 
 export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
@@ -155,6 +159,8 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
   workoutId: text('workout_id'),
   createdAt: text('created_at'),
   updatedAt: text('updated_at'),
+  scheduledDate: text('scheduled_date'),
+  scheduledTime: text('scheduled_time'),
 });
 
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
@@ -195,6 +201,8 @@ export const _userProgramCyclesUpdatedAtIdx = index('idx_user_program_cycles_upd
 export const _programCycleWorkoutsCycleIdIdx = index('idx_program_cycle_workouts_cycle_id').on(programCycleWorkouts.cycleId);
 export const _programCycleWorkoutsCycleIdIsCompleteIdx = index('idx_program_cycle_workouts_cycle_id_is_complete').on(programCycleWorkouts.cycleId, programCycleWorkouts.isComplete);
 export const _programCycleWorkoutsTemplateIdIdx = index('idx_program_cycle_workouts_template_id').on(programCycleWorkouts.templateId);
+export const _programCycleWorkoutsScheduledDateIdx = index('idx_program_cycle_workouts_scheduled_date').on(programCycleWorkouts.scheduledDate);
+export const _programCycleWorkoutsCycleIdScheduledDateIdx = index('idx_program_cycle_workouts_cycle_id_scheduled_date').on(programCycleWorkouts.cycleId, programCycleWorkouts.scheduledDate);
 
 export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_template_id').on(templateExercises.templateId);
 

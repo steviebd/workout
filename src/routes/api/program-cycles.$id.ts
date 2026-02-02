@@ -23,7 +23,12 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
-          return Response.json(cycle);
+          const responseData = {
+            ...cycle,
+            preferredGymDays: cycle.preferredGymDays ? cycle.preferredGymDays.split(',') : [],
+          };
+
+          return Response.json(responseData);
         } catch (err) {
           console.error('Get program cycle error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });

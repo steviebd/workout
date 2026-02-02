@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, getCurrentWorkout, generateTemplateFromWorkout } from '~/lib/db/program';
+import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
@@ -26,26 +26,50 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
 
           const drizzleDb = createDb(db);
 
+          // Check if a specific programCycleWorkoutId was provided
+          let requestBody: { programCycleWorkoutId?: string } = {};
+          try {
+            const text = await request.text();
+            if (text) {
+              requestBody = JSON.parse(text) as { programCycleWorkoutId?: string };
+            }
+          } catch {
+            // No body or invalid JSON, use default behavior
+          }
+
+          console.log('Start workout - params.id:', params.id, 'session.workosId:', session.workosId, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
           const [cycle, currentWorkout] = await Promise.all([
             getProgramCycleById(db, params.id, session.workosId),
-            getCurrentWorkout(db, params.id, session.workosId),
+            requestBody.programCycleWorkoutId 
+              ? getProgramCycleWorkoutById(db, requestBody.programCycleWorkoutId, session.workosId)
+              : getCurrentWorkout(db, params.id, session.workosId),
           ]);
 
+          console.log('Start workout - cycle:', cycle?.id, 'currentWorkout:', currentWorkout?.id);
+
           if (!cycle) {
+            console.log('Start workout - Cycle not found');
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
           if (cycle.status === 'completed') {
+            console.log('Start workout - Cycle is completed');
             return Response.json({ error: 'Program cycle is already completed' }, { status: 400 });
           }
 
           if (!currentWorkout) {
+            console.log('Start workout - No current workout found');
             return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
           }
 
           let templateId: string = currentWorkout.templateId ?? '';
+          console.log('Start workout - currentWorkout id:', currentWorkout.id, 'templateId:', currentWorkout.templateId);
           if (!templateId) {
+            console.log('Start workout - calling generateTemplateFromWorkout');
             templateId = await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+            console.log('Start workout - generateTemplateFromWorkout returned:', templateId);
+          } else {
+            console.log('Start workout - using existing templateId:', templateId);
           }
 
           const [templateResult, templateExercises] = await Promise.all([
@@ -53,7 +77,10 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             getTemplateExercises(db, templateId, session.workosId),
           ]);
 
+          console.log('Start workout - templateResult:', templateResult?.id, 'templateExercises count:', templateExercises.length);
+
           if (!templateResult) {
+            console.log('Start workout - Template not found');
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
@@ -65,6 +92,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             programCycleId: template.programCycleId ?? undefined,
             name: template.name,
           });
+          console.log('Start workout - created workout:', workout.id);
 
           const workoutExerciseInserts = templateExercises.map((te) => ({
             workoutId: workout.id,
