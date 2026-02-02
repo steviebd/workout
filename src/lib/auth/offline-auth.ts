@@ -1,39 +1,48 @@
-import { localDB } from '../db/local-db';
-
 interface CachedUser {
   id: string;
   email: string;
   name: string;
-  cachedAt: Date;
+  cachedAt?: number;
 }
 
 const CACHE_KEY = 'auth_user';
 const CACHE_EXPIRY_DAYS = 7;
 
 function isClient(): boolean {
-  return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 }
 
 export async function cacheUser(user: CachedUser): Promise<void> {
   if (!isClient()) return;
   try {
-    await localDB.syncMetadata.put({
-      key: CACHE_KEY,
-      value: JSON.stringify(user),
-      updatedAt: new Date(),
-    });
+    const userWithTimestamp = { ...user, cachedAt: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(userWithTimestamp));
   } catch {
-    // Ignore IndexedDB errors
+    // Ignore localStorage errors
   }
 }
 
 export async function getCachedUser(): Promise<CachedUser | null> {
   if (!isClient()) return null;
   try {
-    const cached = await localDB.syncMetadata.get({ key: CACHE_KEY });
+    const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
 
-    const user = JSON.parse(cached.value) as CachedUser;
+    const user = JSON.parse(cached) as CachedUser;
+    if (!user.cachedAt) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    const cachedAt = new Date(user.cachedAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - cachedAt.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= CACHE_EXPIRY_DAYS) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+
     return user;
   } catch {
     return null;
@@ -43,25 +52,8 @@ export async function getCachedUser(): Promise<CachedUser | null> {
 export async function clearCachedUser(): Promise<void> {
   if (!isClient()) return;
   try {
-    await localDB.syncMetadata.where('key').equals(CACHE_KEY).delete();
+    localStorage.removeItem(CACHE_KEY);
   } catch {
-    // Ignore IndexedDB errors
-  }
-}
-
-export async function isAuthCacheValid(): Promise<boolean> {
-  if (!isClient()) return false;
-  try {
-    const cached = await localDB.syncMetadata.get({ key: CACHE_KEY });
-    if (!cached) return false;
-
-    const cachedAt = new Date(cached.updatedAt);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - cachedAt.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays < CACHE_EXPIRY_DAYS;
-  } catch {
-    return false;
+    // Ignore localStorage errors
   }
 }
