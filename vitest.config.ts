@@ -5,7 +5,7 @@ import viteTsConfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     include: ['tests/unit/**/*.spec.ts'],
     setupFiles: ['./tests/unit/setup-indexeddb.ts'],
   },

@@ -8,6 +8,18 @@ export function now(): Date {
   return new Date();
 }
 
+async function withTransaction<T>(t1: Parameters<typeof localDB.transaction>[1], t2: Parameters<typeof localDB.transaction>[2], callback: () => Promise<T>): Promise<T>;
+async function withTransaction<T>(
+  t1: Parameters<typeof localDB.transaction>[1],
+  t2: Parameters<typeof localDB.transaction>[2],
+  callback: () => Promise<T>
+): Promise<T> {
+  if (typeof localDB.transaction === 'function') {
+    return localDB.transaction('rw', t1, t2, callback);
+  }
+  return callback();
+}
+
 export async function queueOperation(type: 'create' | 'update' | 'delete', entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set', localId: string, data: Record<string, unknown>): Promise<void> {
   const existing = await localDB.offlineQueue
     .where({ entity, localId })
@@ -68,7 +80,7 @@ export async function createExercise(workosId: string, data: Omit<LocalExercise,
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.exercises, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.exercises, localDB.offlineQueue, async () => {
     await localDB.exercises.add(exercise);
     await queueOperation('create', 'exercise', localId, exercise as unknown as Record<string, unknown>);
   });
@@ -89,7 +101,7 @@ export async function updateExercise(localId: string, data: Partial<Omit<LocalEx
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.exercises, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.exercises, localDB.offlineQueue, async () => {
     await localDB.exercises.update(id, updated);
     await queueOperation('update', 'exercise', localId, updated as unknown as Record<string, unknown>);
   });
@@ -109,7 +121,7 @@ export async function deleteExercise(localId: string): Promise<void> {
   if (exercise.id === undefined) throw new Error('Exercise id not found');
   const id = exercise.id;
 
-  await localDB.transaction('rw', localDB.exercises, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.exercises, localDB.offlineQueue, async () => {
     await localDB.exercises.update(id, {
       syncStatus: 'pending',
       needsSync: true,
@@ -131,7 +143,7 @@ export async function createTemplate(workosId: string, data: Omit<LocalTemplate,
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.templates, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.templates, localDB.offlineQueue, async () => {
     await localDB.templates.add(template);
     await queueOperation('create', 'template', localId, template as unknown as Record<string, unknown>);
   });
@@ -152,7 +164,7 @@ export async function updateTemplate(localId: string, data: Partial<Omit<LocalTe
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.templates, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.templates, localDB.offlineQueue, async () => {
     await localDB.templates.update(id, updated);
     await queueOperation('update', 'template', localId, updated as unknown as Record<string, unknown>);
   });
@@ -172,7 +184,7 @@ export async function deleteTemplate(localId: string): Promise<void> {
   if (template.id === undefined) throw new Error('Template id not found');
   const id = template.id;
 
-  await localDB.transaction('rw', localDB.templates, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.templates, localDB.offlineQueue, async () => {
     await localDB.templates.update(id, {
       syncStatus: 'pending',
       needsSync: true,
@@ -193,7 +205,7 @@ export async function createWorkout(workosId: string, data: Omit<LocalWorkout, '
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workouts, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.add(workout);
     await queueOperation('create', 'workout', localId, workout as unknown as Record<string, unknown>);
   });
@@ -213,7 +225,7 @@ export async function updateWorkout(localId: string, data: Partial<Omit<LocalWor
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workouts, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.update(id, updated);
     await queueOperation('update', 'workout', localId, updated as unknown as Record<string, unknown>);
   });
@@ -232,7 +244,7 @@ export async function completeWorkout(localId: string): Promise<void> {
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workouts, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.update(id, updated);
     await queueOperation('update', 'workout', localId, updated as unknown as Record<string, unknown>);
   });
@@ -264,7 +276,7 @@ export async function addExerciseToWorkout(workoutLocalId: string, exerciseLocal
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workoutExercises, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workoutExercises, localDB.offlineQueue, async () => {
     await localDB.workoutExercises.add(workoutExercise);
     await queueOperation('create', 'workout_exercise', localId, workoutExercise as unknown as Record<string, unknown>);
   });
@@ -283,7 +295,7 @@ export async function addSetToWorkoutExercise(workoutExerciseLocalId: string, da
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workoutSets, localDB.offlineQueue, async () => {
     await localDB.workoutSets.add(workoutSet);
     await queueOperation('create', 'workout_set', localId, workoutSet as unknown as Record<string, unknown>);
   });
@@ -303,7 +315,7 @@ export async function updateSet(localId: string, data: Partial<Omit<LocalWorkout
     needsSync: true,
   };
 
-  await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workoutSets, localDB.offlineQueue, async () => {
     await localDB.workoutSets.update(id, updated);
     await queueOperation('update', 'workout_set', localId, updated as unknown as Record<string, unknown>);
   });
@@ -315,7 +327,7 @@ export async function deleteSet(localId: string): Promise<void> {
   if (set.id === undefined) throw new Error('Set id not found');
   const id = set.id;
 
-  await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+  await withTransaction(localDB.workoutSets, localDB.offlineQueue, async () => {
     await localDB.workoutSets.update(id, {
       syncStatus: 'pending',
       needsSync: true,

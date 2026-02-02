@@ -129,8 +129,11 @@ class FitWorkoutDatabase extends DexieLib {
 let dbInstance: FitWorkoutDatabase | null = null;
 
 export function getLocalDB(): FitWorkoutDatabase {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' && !process.env.VITEST) {
     throw new Error('LocalDB is only available in the browser');
+  }
+  if (typeof window !== 'undefined' && !window.indexedDB && !process.env.VITEST) {
+    throw new Error('IndexedDB is not available in this browser');
   }
   dbInstance ??= new FitWorkoutDatabase();
   return dbInstance;

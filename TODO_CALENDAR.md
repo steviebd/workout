@@ -28,10 +28,10 @@ This feature adds scheduling capabilities to the programs feature, allowing user
 ## Proposed Solution
 
 ### Core Philosophy
-- **Hybrid approach:** Weeks advance based on completion OR date progression
+- **Calendar-based weeks:** Weeks advance based on date progression, not workout completion
 - **Weekly schedule UI:** Week-by-week view showing upcoming workouts
 - **Schedule all at once:** Generate all workout dates upfront based on preferences
-- **Manual rescheduling:** Users can move workouts to different days
+- **Manual rescheduling:** Users can move workouts to different dates when needed
 
 ---
 
@@ -90,6 +90,18 @@ Run migrations to add new columns. For existing users, defaults will apply:
 - `programStartDate`: `null` (backfill from `startedAt` if needed)
 - `firstSessionDate`: `null`
 - `scheduledDate`: Must be populated for new cycles
+
+---
+
+## Phase 1.5: ID Generation Utility
+
+### File: `src/lib/id.ts` (NEW FILE)
+
+```typescript
+export function generateId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
+}
+```
 
 ---
 
@@ -214,24 +226,46 @@ function getWeekDateRange(weekNumber: number, schedule: WorkoutScheduleEntry[]):
 #### 2.4 Date utilities
 
 ```typescript
-function isSameDate(a: Date, b: Date): boolean {
+export function isSameDate(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() &&
          a.getMonth() === b.getMonth() &&
          a.getDate() === b.getDate();
 }
 
-function addDays(date: Date, days: number): Date {
+export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 }
 
-function getMonday(date: Date): Date {
+export function getMonday(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   return d;
+}
+
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+export function formatTime(time: string): string {
+  const [hours] = time.split(':');
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:00 ${ampm}`;
+}
+
+export function formatDateShort(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export function formatDateLong(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 ```
 
@@ -265,50 +299,69 @@ interface StartFormState {
 
 **Step 2: Schedule Configuration** (NEW)
 
-```tsx
-function ScheduleStep({ formData, updateFormData }: ScheduleStepProps) {
-  const DAYS: { value: DayOfWeek; label: string; icon: React.ReactNode }[] = [
-    { value: 'monday', label: 'Mon', icon: <Moon /> },
-    { value: 'tuesday', label: 'Tue', icon: <Sun /> },
-    { value: 'wednesday', label: 'Wed', icon: <Sun /> },
-    { value: 'thursday', label: 'Thu', icon: <Sun /> },
-    { value: 'friday', label: 'Fri', icon: <Sun /> },
-    { value: 'saturday', label: 'Sat', icon: <Sun /> },
-    { value: 'sunday', label: 'Sun', icon: <Moon /> },
-  ];
+  ```tsx
+  function ScheduleStep({ formData, updateFormData }: ScheduleStepProps) {
+    const program = getProgramBySlug(params.slug);
 
-  const TIME_OPTIONS = [
-    { value: 'morning', label: 'Morning', description: '6AM - 11AM' },
-    { value: 'afternoon', label: 'Afternoon', description: '12PM - 5PM' },
-    { value: 'evening', label: 'Evening', description: '6PM - 10PM' },
-  ];
+    const DAYS: { value: DayOfWeek; label: string; icon: React.ReactNode }[] = [
+      { value: 'monday', label: 'Mon', icon: <Moon /> },
+      { value: 'tuesday', label: 'Tue', icon: <Sun /> },
+      { value: 'wednesday', label: 'Wed', icon: <Sun /> },
+      { value: 'thursday', label: 'Thu', icon: <Sun /> },
+      { value: 'friday', label: 'Fri', icon: <Sun /> },
+      { value: 'saturday', label: 'Sat', icon: <Sun /> },
+      { value: 'sunday', label: 'Sun', icon: <Moon /> },
+    ];
 
-  return (
-    <div className="space-y-6">
-      {/* Day Selection */}
-      <div className="space-y-3">
-        <Label>What days do you plan to workout?</Label>
-        <p className="text-sm text-muted-foreground">
-          This program has {program.info.daysPerWeek} sessions per week.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map((day) => (
-            <button
-              key={day.value}
-              type="button"
-              onClick={() => toggleDay(day.value)}
-              className={cn(
-                "px-4 py-2 rounded-lg border transition-colors",
-                formData.preferredGymDays.includes(day.value)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:bg-muted"
-              )}
-            >
-              {day.label}
-            </button>
-          ))}
+    const TIME_OPTIONS = [
+      { value: 'morning', label: 'Morning', description: '6AM - 11AM' },
+      { value: 'afternoon', label: 'Afternoon', description: '12PM - 5PM' },
+      { value: 'evening', label: 'Evening', description: '6PM - 10PM' },
+    ];
+
+    const isStepValid = formData.preferredGymDays.length === program.info.daysPerWeek && formData.programStartDate !== null;
+
+    const toggleDay = (day: DayOfWeek) => {
+      if (formData.preferredGymDays.includes(day)) {
+        updateFormData({ preferredGymDays: formData.preferredGymDays.filter(d => d !== day) });
+      } else {
+        if (formData.preferredGymDays.length < program.info.daysPerWeek) {
+          updateFormData({ preferredGymDays: [...formData.preferredGymDays, day] });
+        }
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Day Selection */}
+        <div className="space-y-3">
+          <Label>What days do you plan to workout?</Label>
+          <p className="text-sm text-muted-foreground">
+            Select exactly {program.info.daysPerWeek} day{program.info.daysPerWeek > 1 ? 's' : ''} for this program.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {DAYS.map((day) => (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => toggleDay(day.value)}
+                className={cn(
+                  "px-4 py-2 rounded-lg border transition-colors",
+                  formData.preferredGymDays.includes(day.value)
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted"
+                )}
+              >
+                {day.label}
+              </button>
+            ))}
+          </div>
+          {formData.preferredGymDays.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {formData.preferredGymDays.length}/{program.info.daysPerWeek} days selected
+            </p>
+          )}
         </div>
-      </div>
 
       {/* Time Selection */}
       <div className="space-y-3">
@@ -426,6 +479,8 @@ function ReviewStep({ formData }: ReviewStepProps) {
 #### 3.4 Updated submit handler
 
 ```typescript
+import { formatDate } from '~/lib/programs/scheduler';
+
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsLoading(true);
@@ -440,7 +495,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         bench1rm: parseFloat(formData.bench1rm),
         deadlift1rm: parseFloat(formData.deadlift1rm),
         ohp1rm: parseFloat(formData.ohp1rm),
-        // NEW FIELDS:
         preferredGymDays: formData.preferredGymDays,
         preferredTimeOfDay: formData.preferredTimeOfDay,
         programStartDate: formData.programStartDate?.toISOString().split('T')[0],
@@ -466,31 +520,51 @@ const handleSubmit = async (e: React.FormEvent) => {
 #### 3.5 Navigation buttons
 
 ```tsx
-<div className="flex gap-3">
-  {step > 1 && (
-    <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
-      Back
-    </Button>
-  )}
-  {step < 3 ? (
-    <Button
-      type="button"
-      onClick={() => setStep(step + 1)}
-      disabled={!isStepValid(step)}
-      className="flex-1"
-    >
-      Continue
-    </Button>
-  ) : (
-    <Button
-      type="submit"
-      disabled={!isFormValid || isLoading}
-      className="flex-1"
-    >
-      {isLoading ? 'Creating...' : 'Start Program'}
-    </Button>
-  )}
-</div>
+const isStepValid = (step: number): boolean => {
+  switch (step) {
+    case 1:
+      return formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm ? true : false;
+    case 2:
+      return formData.preferredGymDays.length === program.info.daysPerWeek && formData.programStartDate !== null;
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+};
+
+const isFormValid = formData.preferredGymDays.length === program.info.daysPerWeek;
+
+return (
+  <form onSubmit={handleSubmit} className="space-y-6">
+    {/* Step content */}
+    <div className="flex gap-3">
+      {step > 1 && (
+        <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
+          Back
+        </Button>
+      )}
+      {step < 3 ? (
+        <Button
+          type="button"
+          onClick={() => setStep(step + 1)}
+          disabled={!isStepValid(step)}
+          className="flex-1"
+        >
+          Continue
+        </Button>
+      ) : (
+        <Button
+          type="submit"
+          disabled={!isFormValid || isLoading}
+          className="flex-1"
+        >
+          {isLoading ? 'Creating...' : 'Start Program'}
+        </Button>
+      )}
+    </div>
+  </form>
+);
 ```
 
 ---
@@ -498,6 +572,11 @@ const handleSubmit = async (e: React.FormEvent) => {
 ## Phase 4: API Updates
 
 ### File: `src/routes/api/program-cycles.ts`
+
+```typescript
+import { generateWorkoutSchedule } from '~/lib/programs/scheduler';
+import { createProgramCycle } from '~/lib/db/program';
+import { getProgramBySlug } from '~/lib/programs';
 
 #### 4.1 Updated POST handler
 
@@ -659,7 +738,7 @@ async function putHandler({ params, request }: { params: { id: string }; request
 **File: `src/routes/api/program-cycles.$id.workouts.$workoutId.reschedule.ts`**
 
 ```typescript
-import { updateProgramCycleWorkout } from '~/lib/db/program';
+import { updateProgramCycleWorkout, getProgramCycleWorkoutById } from '~/lib/db/program';
 
 async function putHandler({ params, request }: { params: { id: string; workoutId: string }; request: Request }) {
   const data = await request.json() as { scheduledDate: string; scheduledTime?: string };
@@ -703,6 +782,8 @@ export const Route = {
 **File: `src/routes/api/program-cycles.$id.workouts.ts`**
 
 ```typescript
+import { getCycleWorkouts } from '~/lib/db/program';
+
 async function getHandler({ params }: { params: { id: string } }) {
   const workouts = await getCycleWorkouts(params.id);
 
@@ -731,10 +812,11 @@ async function getHandler({ params }: { params: { id: string } }) {
 
 ```typescript
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { cn } from '~/lib/utils';
+import { formatDate, formatTime, isSameDate, addDays, getMonday } from '~/lib/programs/scheduler';
 
 interface Workout {
   id: string;
@@ -774,6 +856,8 @@ export function WeeklySchedule({
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [schedule, setSchedule] = useState<{ start: Date; end: Date; days: Date[] } | null>(null);
+
+  const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
   useEffect(() => {
     async function loadWorkouts() {
@@ -1009,6 +1093,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/Dialog';
+import { cn } from '~/lib/utils';
+import { formatDateLong, formatTime } from '~/lib/programs/scheduler';
 
 interface Workout {
   id: string;
@@ -1139,6 +1225,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/components/ToastProvider';
 import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
 import { cn } from '~/lib/utils';
+import { formatDate, formatTime, isSameDate, addDays, getMonday } from '~/lib/programs/scheduler';
 ```
 
 #### 6.2 Updated types
@@ -1441,6 +1528,11 @@ return (
 #### 7.1 Updated `createProgramCycle` function
 
 ```typescript
+import { generateId } from '~/lib/id';
+import { db } from '~/lib/db';
+import { userProgramCycles, programCycleWorkouts } from '~/lib/db/schema';
+import { eq } from 'drizzle-orm';
+
 interface CreateProgramCycleInput {
   workosId: string;
   programSlug: string;
@@ -1522,6 +1614,28 @@ export async function updateProgramCycleWorkout(
 }
 ```
 
+#### 7.3 New `getProgramCycleWorkoutById` function
+
+```typescript
+import { ProgramCycleWorkout } from '~/lib/db/schema';
+
+export async function getProgramCycleWorkoutById(workoutId: string): Promise<ProgramCycleWorkout | null> {
+  const result = await db.select().from(programCycleWorkouts).where(eq(programCycleWorkouts.id, workoutId)).limit(1);
+  return result[0] || null;
+}
+```
+
+#### 7.4 New `getCycleWorkouts` function
+
+```typescript
+export async function getCycleWorkouts(cycleId: string): Promise<ProgramCycleWorkout[]> {
+  return await db.select()
+    .from(programCycleWorkouts)
+    .where(eq(programCycleWorkouts.cycleId, cycleId))
+    .orderBy(programCycleWorkouts.scheduledDate);
+}
+```
+
 ---
 
 ## File Summary
@@ -1529,8 +1643,9 @@ export async function updateProgramCycleWorkout(
 | File | Action | Description |
 |------|--------|-------------|
 | `src/lib/db/schema.ts` | Modify | Add `preferredGymDays`, `preferredTimeOfDay`, `programStartDate`, `firstSessionDate` to `userProgramCycles`. Add `scheduledDate`, `scheduledTime` to `programCycleWorkouts`. Add indexes. |
-| `src/lib/db/program.ts` | Modify | Update `createProgramCycle` to accept scheduling data. Add `updateProgramCycleWorkout`. |
-| `src/lib/programs/scheduler.ts` | **NEW** | Scheduling algorithms and date utilities |
+| `src/lib/db/program.ts` | Modify | Update `createProgramCycle` to accept scheduling data. Add `updateProgramCycleWorkout`, `getProgramCycleWorkoutById`, `getCycleWorkouts`. |
+| `src/lib/programs/scheduler.ts` | **NEW** | Scheduling algorithms and date utilities (isSameDate, addDays, getMonday, formatDate, formatTime, formatDateShort, formatDateLong, generateWorkoutSchedule, getCurrentWeekNumber, getWorkoutsForWeek, getWeekDateRange) |
+| `src/lib/id.ts` | **NEW** | ID generation utility (generateId) |
 | `src/components/WeeklySchedule.tsx` | **NEW** | Weekly calendar UI component |
 | `src/components/RescheduleDialog.tsx` | **NEW** | Modal for rescheduling workouts |
 | `src/routes/programs.$slug.start.tsx` | Modify | Convert to multi-step wizard with scheduling questionnaire |
@@ -1568,7 +1683,8 @@ export async function updateProgramCycleWorkout(
 
 2. **User misses a scheduled workout**
    - Default: Workout stays on original date, marked incomplete
-   - User can manually reschedule if needed
+   - User can manually reschedule the workout to a different date using the reschedule dialog
+   - Week calculation is calendar-based, so weeks advance regardless of completion status
 
 3. **Start date is on a non-preferred day**
    - Find first preferred day on/after start date
@@ -1586,7 +1702,8 @@ export async function updateProgramCycleWorkout(
 
 ## Testing Checklist
 
-- [ ] Day selector allows selecting correct number of days for program
+- [ ] Day selector validates exact number of days required by program
+- [ ] Continue button disabled until correct number of days selected
 - [ ] Schedule generation produces valid dates
 - [ ] Weekly schedule shows correct workouts for each week
 - [ ] Today button navigates to correct week
