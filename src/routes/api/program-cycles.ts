@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import type { OneRMValues } from '~/lib/programs/types';
 import {
   createProgramCycle,
+  createProgramCycleWorkouts,
   getActiveProgramCycles,
   getProgramCyclesByWorkosId,
 } from '~/lib/db/program';
@@ -24,10 +25,6 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
 };
-
-function generateUUID(): string {
-  return crypto.randomUUID();
-}
 
 export const Route = createFileRoute('/api/program-cycles')({
   server: {
@@ -107,35 +104,7 @@ export const Route = createFileRoute('/api/program-cycles')({
             totalSessionsPlanned: workouts.length,
           });
 
-          const cycleWorkoutStatements = workouts.map((workout) => {
-            const targetLifts = JSON.stringify([
-              ...workout.exercises.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps })),
-              ...(workout.accessories?.map(a => ({
-                name: a.name,
-                accessoryId: a.accessoryId,
-                targetWeight: a.targetWeight,
-                addedWeight: a.addedWeight,
-                sets: a.sets,
-                reps: a.reps,
-                isAccessory: true,
-                isRequired: a.isRequired,
-              })) ?? []),
-            ]);
-
-            return db.prepare(
-              `INSERT INTO program_cycle_workouts (id, cycle_id, template_id, week_number, session_number, session_name, target_lifts, is_complete, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))`
-            ).bind(
-              generateUUID(),
-              cycle.id,
-              null,
-              workout.weekNumber,
-              workout.sessionNumber,
-              workout.sessionName,
-              targetLifts
-            );
-          });
-          await db.batch(cycleWorkoutStatements);
+          await createProgramCycleWorkouts(db, cycle.id, workouts);
 
           return Response.json(cycle, { status: 201 });
         } catch (err) {

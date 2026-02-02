@@ -388,7 +388,51 @@ export interface TargetLiftWorkout {
   weekNumber: number;
   sessionNumber: number;
   sessionName: string;
-  targetLifts: TargetLift[];
+  targetLifts?: TargetLift[];
+  exercises?: Array<{ name: string; lift?: string; targetWeight: number; sets: number; reps: number }>;
+  accessories?: Array<{ name: string; accessoryId?: string; targetWeight?: number; addedWeight?: number; sets?: number; reps?: number | string; isAccessory?: boolean; isRequired?: boolean }>;
+}
+
+export async function createProgramCycleWorkouts(
+  db: D1Database,
+  cycleId: string,
+  cycleWorkouts: TargetLiftWorkout[]
+): Promise<void> {
+  const drizzleDb = createDb(db);
+
+  const workoutData = cycleWorkouts.map((workout) => {
+    const targetLifts = JSON.stringify([
+      ...(workout.exercises?.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps })) ?? []),
+      ...(workout.accessories?.map(a => ({
+        name: a.name,
+        accessoryId: a.accessoryId,
+        targetWeight: a.targetWeight,
+        addedWeight: a.addedWeight,
+        sets: a.sets,
+        reps: a.reps,
+        isAccessory: true,
+        isRequired: a.isRequired,
+      })) ?? []),
+    ]);
+
+    return {
+      id: generateId(),
+      cycleId,
+      templateId: null,
+      weekNumber: workout.weekNumber,
+      sessionNumber: workout.sessionNumber,
+      sessionName: workout.sessionName,
+      targetLifts,
+      isComplete: false,
+    };
+  });
+
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
+    const batch = workoutData.slice(i, i + BATCH_SIZE);
+    await drizzleDb.insert(programCycleWorkouts).values(batch).run();
+  }
 }
 
 export async function getOrCreateExerciseForWorkout(
