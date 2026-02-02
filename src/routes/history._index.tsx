@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
@@ -101,6 +101,7 @@ const getThisMonthRange = () => {
 
 function History() {
   const auth = useAuth();
+  const router = useRouter();
   const { formatVolume } = useUnit();
   const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
@@ -535,15 +536,16 @@ function History() {
                           Completed
                         </span>
                       </div>
-                      <Link
-                        to="/workouts/$id/edit"
-                        params={{ id: workout.id }}
-                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void router.navigate({ to: '/workouts/$id/edit', params: { id: workout.id } });
+                        }}
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors cursor-pointer"
                         title="Edit workout"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Pencil size={16} />
-                      </Link>
+                      </button>
                     </div>
                     {Boolean(is1RMTest && programCycle) && (
                       <div className="mb-2 text-sm">

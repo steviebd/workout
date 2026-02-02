@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
 
 import { cn } from '~/lib/cn'
 
@@ -46,6 +47,9 @@ function DrawerContent({ className, children, ...props }: React.ComponentProps<t
         )}
         {...props}
       >
+        <DialogPrimitive.Description className="sr-only">
+          Drawer content for managing workout exercises
+        </DialogPrimitive.Description>
         <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
         {children}
       </DrawerPrimitive.Content>

@@ -433,16 +433,16 @@ export function TemplateEditor({
   }, [selectedExercises, exercises, pushUndo, formData, toast, autoSave, fetchExercises]);
 
   const handleRemoveExercise = useCallback((id: string) => {
-    const exercise = selectedExercises.find(se => se.id === id);
+    const exercise = selectedExercises.find(se => se.id === id || se.exerciseId === id);
     if (!exercise) return;
 
     pushUndo({
       description: `Remove ${exercise.name}`,
       before: { exercises: [...selectedExercises] },
-      after: { exercises: selectedExercises.filter(se => se.id !== id) },
+      after: { exercises: selectedExercises.filter(se => se.id !== id && se.exerciseId !== id) },
     }, { ...formData, exercises: [...selectedExercises] });
 
-    setSelectedExercises(prev => prev.filter(se => se.id !== id));
+    setSelectedExercises(prev => prev.filter(se => se.id !== id && se.exerciseId !== id));
     autoSave.scheduleSave();
   }, [selectedExercises, pushUndo, formData, autoSave]);
 
@@ -731,10 +731,11 @@ export function TemplateEditor({
             <DrawerHeader>
               <DrawerTitle>Add Exercise</DrawerTitle>
             </DrawerHeader>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 max-h-[60vh]">
               <ExerciseSearch
                 selectedIds={selectedExercises.map(se => se.exerciseId)}
                 onSelect={(exercise) => void handleAddExercise(exercise)}
+                onDeselect={(exerciseId) => handleRemoveExercise(exerciseId)}
                 onCreateInline={(name: string, muscleGroup: string | null, description: string | null) => {
                   return void fetch('/api/exercises', {
                     method: 'POST',
