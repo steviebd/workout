@@ -48,134 +48,73 @@ function ProgressPage() {
   const [isLoadingVolume, setIsLoadingVolume] = useState(false);
   const [isLoadingPRs, setIsLoadingPRs] = useState(false);
 
-  const fetchExercises = useCallback(async () => {
+  const fetchAllData = useCallback(async (exerciseId?: string) => {
     if (!auth.user) return;
+
+    const id = exerciseId ?? selectedExerciseId;
 
     try {
       setIsLoadingExercises(true);
-      const response = await fetch('/api/exercises', {
-        credentials: 'include',
-      });
+      setIsLoadingStrength(true);
+      setIsLoadingVolume(true);
+      setIsLoadingPRs(true);
 
-      if (response.ok) {
-        const data: Exercise[] = await response.json();
+      const [exercisesRes, strengthRes, volumeRes, prsRes] = await Promise.all([
+        fetch('/api/exercises', { credentials: 'include' }),
+        id ? fetch(`/api/progress/strength?dateRange=${dateRange}&exerciseId=${id}`, { credentials: 'include' }) : Promise.resolve(null),
+        fetch(`/api/progress/volume?dateRange=${dateRange}&volumeScope=${volumeScope}${selectedExerciseId ? `&exerciseId=${selectedExerciseId}` : ''}`, { credentials: 'include' }),
+        fetch(`/api/progress/prs?dateRange=${dateRange}`, { credentials: 'include' }),
+      ]);
+
+      if (exercisesRes.ok) {
+        const data: Exercise[] = await exercisesRes.json();
         setExercises(data);
-        if (data.length > 0 && !selectedExerciseId) {
+        if (data.length > 0 && !selectedExerciseId && !id) {
           setSelectedExerciseId(data[0].id);
         }
       }
-    } catch (err) {
-      console.error('Failed to fetch exercises:', err);
-    } finally {
-      setIsLoadingExercises(false);
-    }
-  }, [auth.user, selectedExerciseId]);
 
-  const fetchStrengthData = useCallback(async (exerciseId: string) => {
-    if (!auth.user || !exerciseId) return;
-
-    setStrengthData([]);
-    setIsLoadingStrength(true);
-
-    try {
-      const params = new URLSearchParams();
-      params.set('dateRange', dateRange);
-      params.set('exerciseId', exerciseId);
-
-      const response = await fetch(`/api/progress/strength?${params.toString()}`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data: { strengthData: ProgressDataPoint[] } = await response.json();
+      if (strengthRes?.ok) {
+        const data: { strengthData: ProgressDataPoint[] } = await strengthRes.json();
         setStrengthData(data.strengthData);
       }
-    } catch (err) {
-      console.error('Failed to fetch strength data:', err);
-    } finally {
-      setIsLoadingStrength(false);
-    }
-  }, [auth.user, dateRange]);
 
-  const fetchVolumeData = useCallback(async () => {
-    if (!auth.user) return;
-
-    setIsLoadingVolume(true);
-
-    try {
-      const params = new URLSearchParams();
-      params.set('dateRange', dateRange);
-      params.set('volumeScope', volumeScope);
-      if (selectedExerciseId) {
-        params.set('exerciseId', selectedExerciseId);
-      }
-
-      const response = await fetch(`/api/progress/volume?${params.toString()}`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data: { weeklyVolume: WeeklyVolume[] } = await response.json();
+      if (volumeRes.ok) {
+        const data: { weeklyVolume: WeeklyVolume[] } = await volumeRes.json();
         setWeeklyVolume(data.weeklyVolume);
       }
-    } catch (err) {
-      console.error('Failed to fetch volume data:', err);
-    } finally {
-      setIsLoadingVolume(false);
-    }
-  }, [auth.user, dateRange, volumeScope, selectedExerciseId]);
 
-  const fetchPRs = useCallback(async () => {
-    if (!auth.user) return;
-
-    setIsLoadingPRs(true);
-
-    try {
-      const params = new URLSearchParams();
-      params.set('dateRange', dateRange);
-
-      const response = await fetch(`/api/progress/prs?${params.toString()}`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data: { recentPRs: PersonalRecord[] } = await response.json();
+      if (prsRes.ok) {
+        const data: { recentPRs: PersonalRecord[] } = await prsRes.json();
         setRecentPRs(data.recentPRs);
       }
     } catch (err) {
-      console.error('Failed to fetch PRs:', err);
+      console.error('Failed to fetch progress data:', err);
     } finally {
+      setIsLoadingExercises(false);
+      setIsLoadingStrength(false);
+      setIsLoadingVolume(false);
       setIsLoadingPRs(false);
     }
-  }, [auth.user, dateRange]);
+  }, [auth.user, dateRange, volumeScope, selectedExerciseId]);
 
   useEffect(() => {
     if (auth.user) {
-      void fetchExercises();
-      void fetchVolumeData();
-      void fetchPRs();
+      void fetchAllData();
     }
-  }, [auth.user, fetchExercises, fetchVolumeData, fetchPRs]);
-
-  useEffect(() => {
-    if (selectedExerciseId) {
-      void fetchStrengthData(selectedExerciseId);
-    }
-  }, [selectedExerciseId, fetchStrengthData]);
+  }, [auth.user, fetchAllData]);
 
   useEffect(() => {
     if (auth.user && exercises.length > 0 && !selectedExerciseId) {
       setSelectedExerciseId(exercises[0].id);
     }
-  }, [exercises, selectedExerciseId, auth.user, fetchExercises, fetchPRs, fetchVolumeData]);
+  }, [exercises, selectedExerciseId, auth.user]);
 
   useEffect(() => {
     if (auth.user) {
-      void fetchVolumeData();
-      void fetchStrengthData(selectedExerciseId);
-      void fetchPRs();
+      void fetchAllData();
     }
-  }, [dateRange, volumeScope, auth.user, fetchVolumeData, fetchStrengthData, fetchPRs, selectedExerciseId]);
+  }, [dateRange, volumeScope, auth.user, fetchAllData]);
 
   const handleExerciseSelect = useCallback((id: string) => {
     setSelectedExerciseId(id);

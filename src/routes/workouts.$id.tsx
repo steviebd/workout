@@ -9,7 +9,6 @@ import {
   Loader2,
   Plus,
   Search,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
@@ -27,6 +26,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 
 interface WorkoutExercise {
@@ -368,7 +368,7 @@ function WorkoutSession() {
        });
 
        if (res.ok) {
-         window.location.href = '/workouts/new';
+         window.location.href = '/workouts';
        }
      } catch (err) {
        console.error('Failed to discard workout:', err);
@@ -589,29 +589,12 @@ function WorkoutSession() {
             </a>
             <h1 className="text-xl font-bold">Workout</h1>
           </div>
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center">
-              <X className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">Workout Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              {error}
-            </p>
-            <div className="space-y-3">
-              <Button asChild={true} className="w-full">
-                <a href="/workouts/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start New Workout
-                </a>
-              </Button>
-              <Button asChild={true} variant="outline" className="w-full">
-                <a href="/workouts">
-                  <Dumbbell className="h-4 w-4 mr-2" />
-                  Browse Workouts
-                </a>
-              </Button>
-            </div>
-          </div>
+          <ErrorState
+            title="Workout Not Found"
+            description={error}
+            onGoHome={() => { window.location.href = '/'; }}
+            onGoBack={() => { window.history.back(); }}
+          />
       </main>
     );
   }

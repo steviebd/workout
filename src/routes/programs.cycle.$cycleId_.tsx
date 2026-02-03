@@ -263,13 +263,13 @@ function ProgramDashboard() {
 
         const currentWorkoutResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
         if (currentWorkoutResponse.ok) {
-          const data = await currentWorkoutResponse.json();
+          const data = await response.json();
           setCurrentWorkout(data as CurrentWorkoutData);
         }
 
         const workoutsResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
         if (workoutsResponse.ok) {
-          const workouts = await workoutsResponse.json() as WorkoutForWeekCalculation[];
+          const workouts = await response.json() as WorkoutForWeekCalculation[];
           const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
           setCalculatedCurrentWeek(calculatedWeek);
         }
@@ -310,8 +310,25 @@ function ProgramDashboard() {
     void navigate({ to: '/programs/cycle/$cycleId/1rm-update', params: { cycleId: params.cycleId } });
   };
 
-  const handleEndProgram = () => {
-    void navigate({ to: '/programs/cycle/$cycleId/complete', params: { cycleId: params.cycleId } });
+  const handleEndProgram = async () => {
+    try {
+      await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isComplete: true }),
+      });
+
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/create-1rm-test-workout`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const data = await response.json() as { workoutId: string };
+        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+      }
+    } catch (error) {
+      console.error('Error starting 1RM test:', error);
+      toast.error('Failed to start 1RM test');
+    }
   };
 
   const handleDeleteProgram = async () => {
@@ -379,27 +396,11 @@ function ProgramDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Starting 1RMs</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Squat</span>
-              <span className="font-medium">{cycle.squat1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Bench</span>
-              <span className="font-medium">{cycle.bench1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Deadlift</span>
-              <span className="font-medium">{cycle.deadlift1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">OHP</span>
-              <span className="font-medium">{cycle.ohp1rm} {weightUnit}</span>
-            </div>
-          </div>
-        </Card>
+        <div className="flex flex-col gap-2">
+          <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
+          <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
+          <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
+        </div>
 
         {!!(currentWorkout && currentWorkout.exercises.length > 0) && (
           <Card className="p-4">
@@ -466,21 +467,29 @@ function ProgramDashboard() {
                 open={!!selectedTutorial}
                 onOpenChange={(open) => { if (!open) setSelectedTutorial(null); }}
             /> : null}
-          </>
-        )}
 
-        {cycle.isComplete ? (
-          <Card className="p-4 bg-muted">
-            <div className="text-center">
-              <h3 className="font-semibold mb-2">Program Complete</h3>
-              <p className="text-sm text-muted-foreground">You've completed all sessions in this program cycle.</p>
-            </div>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
-            <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
-            <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3">Starting 1RMs</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Squat</span>
+                  <span className="font-medium">{cycle.squat1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bench</span>
+                  <span className="font-medium">{cycle.bench1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Deadlift</span>
+                  <span className="font-medium">{cycle.deadlift1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">OHP</span>
+                  <span className="font-medium">{cycle.ohp1rm} {weightUnit}</span>
+                </div>
+              </div>
+            </Card>
+
             <AlertDialog>
               <AlertDialogTrigger asChild={true}>
                 <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
@@ -503,8 +512,17 @@ function ProgramDashboard() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
+          </>
         )}
+
+        {cycle.isComplete ? (
+          <Card className="p-4 bg-muted">
+            <div className="text-center">
+              <h3 className="font-semibold mb-2">Program Complete</h3>
+              <p className="text-sm text-muted-foreground">You've completed all sessions in this program cycle.</p>
+            </div>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

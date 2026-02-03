@@ -68,7 +68,7 @@ test.describe('Workout Flow', () => {
   test('create exercises, template, and workout - full flow', async ({ page }) => {
     await loginUser(page);
 
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
 
     const startBlankButton = page.locator('text=Start with blank workout').first();
     await expect(startBlankButton).toBeVisible();
@@ -149,7 +149,7 @@ test.describe('Workout Flow', () => {
 
     await loginUser(page);
 
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
 
     const startBlankButton = page.locator('text=Start with blank workout').first();
     await expect(startBlankButton).toBeVisible();
@@ -245,7 +245,7 @@ test.describe('Workout Flow', () => {
 
     console.log('First workout completed!');
 
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
 
     const startBlankButton2 = page.locator('text=Start with blank workout').first();
     await expect(startBlankButton2).toBeVisible();
@@ -364,7 +364,7 @@ test.describe('Workout Flow', () => {
 
     console.log('Second workout completed with 4 sets!');
 
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
 
     const startBlankButton3 = page.locator('text=Start with blank workout').first();
     await expect(startBlankButton3).toBeVisible();

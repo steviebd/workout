@@ -91,13 +91,13 @@ export function QuickActions({ templates }: QuickActionsProps) {
             <div className="flex flex-col gap-2">
               <Button asChild={true} className="w-full">
                 <Link to="/programs">
-                  <Calendar className="mr-2 h-4 w-4" />
+                  <Calendar className="mr-2 h-5 w-5" />
                   Browse Programs
                 </Link>
               </Button>
               <Button asChild={true} variant="outline" className="w-full bg-transparent">
                 <Link to="/1rm-test">
-                  <Dumbbell className="mr-2 h-4 w-4" />
+                  <Dumbbell className="mr-2 h-5 w-5" />
                   Test Your 1RM
                 </Link>
               </Button>
@@ -106,14 +106,14 @@ export function QuickActions({ templates }: QuickActionsProps) {
 
           <div className="flex gap-2 pt-2">
             <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-              <Link to="/workouts/new">
-                <Plus className="mr-2 h-4 w-4" />
+              <Link to="/workouts">
+<Plus className="mr-2 h-5 w-5" />
                 New Workout
               </Link>
             </Button>
             <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
               <Link to="/history">
-                <History className="mr-2 h-4 w-4" />
+<History className="mr-2 h-5 w-5" />
                 History
               </Link>
             </Button>
@@ -149,16 +149,16 @@ export function QuickActions({ templates }: QuickActionsProps) {
               </p>
             </div>
             {loadingTemplateId === template.id ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             ) : (
-              <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <Play className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
             )}
           </button>
         ))}
 
         <div className="flex gap-2 pt-2">
           <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-            <Link to="/workouts/new">
+            <Link to="/workouts">
               <Plus className="mr-2 h-4 w-4" />
               New Workout
             </Link>

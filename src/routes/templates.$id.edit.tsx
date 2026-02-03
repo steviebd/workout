@@ -319,30 +319,36 @@ function EditTemplate() {
        void handleSubmit(e);
      }, [handleSubmit]);
 
-   if (auth.loading || redirecting || loading) {
-    return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
-	</div>
-    );
-  }
-
-  if (!template) {
-    return (
-      <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="rounded-lg border border-border p-8 text-center">
-          <p className="text-muted-foreground">{'Template not found'}</p>
-          <Link
-            className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
-            to={'/templates'}
-          >
-            <ArrowLeft size={16} />
-            {'Back to templates'}
-          </Link>
+    if (auth.loading || redirecting || loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+              <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+            </div>
+            <p className="text-muted-foreground">Loading template...</p>
+          </div>
         </div>
-      </main>
-    );
-  }
+      );
+    }
+
+   if (!template) {
+     return (
+       <main className="mx-auto max-w-lg px-4 py-6">
+         <div className="rounded-lg border border-border p-8 text-center">
+           <p className="text-muted-foreground">{'Template not found'}</p>
+           <Link
+             className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
+             to={'/templates'}
+           >
+             <ArrowLeft size={16} />
+             {'Back to templates'}
+           </Link>
+         </div>
+       </main>
+     );
+   }
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6">

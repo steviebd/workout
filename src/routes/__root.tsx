@@ -14,7 +14,8 @@ import { BottomNav } from '@/components/BottomNav'
 import { UnitProvider } from '@/lib/context/UnitContext'
 import { DateFormatProvider } from '@/lib/context/DateFormatContext'
 import { StreakProvider } from '@/lib/context/StreakContext'
-import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
+import { ThemeProvider } from '@/lib/context/ThemeContext'
+import { cacheUser, getCachedUser } from '@/lib/auth/offline-auth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,7 +68,6 @@ function AppLayout() {
   });
 
   const signOut = useCallback(() => {
-    void clearCachedUser();
     setUser(null);
     window.location.href = '/auth/signout';
   }, []);
@@ -100,16 +100,6 @@ function AppLayout() {
 
         if (!isMounted) return;
 
-        if (cachedUser && !apiResponse) {
-          setUser({
-            id: cachedUser.id,
-            email: cachedUser.email,
-            name: cachedUser.name,
-          });
-          setLoading(false);
-          return;
-        }
-
         if (apiResponse?.ok) {
           const userData = (await apiResponse.json()) as User;
           if (userData) {
@@ -122,19 +112,8 @@ function AppLayout() {
           } else {
             setUser(null);
           }
-        } else if (apiResponse?.status === 401) {
-          await clearCachedUser();
+        } else if (apiResponse?.status === 401 || !apiResponse) {
           setUser(null);
-        } else if (apiResponse) {
-          if (cachedUser) {
-            setUser({
-              id: cachedUser.id,
-              email: cachedUser.email,
-              name: cachedUser.name,
-            });
-          } else {
-            setUser(null);
-          }
         } else if (cachedUser) {
           setUser({
             id: cachedUser.id,
@@ -182,28 +161,51 @@ function AppLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthContext.Provider value={{ user, loading, setUser, signOut, isOnline: syncState.isOnline, isSyncing: syncState.isSyncing, pendingCount: syncState.pendingCount }}>
-        <html lang={'en'}>
+        <html lang="en" suppressHydrationWarning={true}>
           <head>
             <HeadContent />
+            <script
+              // eslint-disable-next-line react/no-danger
+              dangerouslySetInnerHTML={{
+                __html: `
+                  (function() {
+                    try {
+                      var theme = localStorage.getItem('theme');
+                      var resolved = 'light';
+                      if (theme === 'dark') {
+                        resolved = 'dark';
+                      } else if (theme === 'light') {
+                        resolved = 'light';
+                      } else {
+                        resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                      }
+                      document.documentElement.classList.add(resolved);
+                    } catch (e) {}
+                  })();
+                `,
+              }}
+            />
           </head>
           <body className={'min-h-screen bg-background font-sans antialiased'}>
             <div className={'min-h-screen flex flex-col'}>
               <UnitProvider userId={user?.id}>
                 <DateFormatProvider userId={user?.id}>
                   <StreakProvider>
-                    <Header />
-                    <main className={'flex-1 pb-20'}>
-                      <div className="mx-auto max-w-lg px-4">
-                      <ErrorBoundary>
-                        <ToastProvider>
-                          <TooltipProvider>
-                            <Outlet />
-                          </TooltipProvider>
-                        </ToastProvider>
-                      </ErrorBoundary>
-                      </div>
-                    </main>
-                    <BottomNav />
+                    <ThemeProvider>
+                      <Header />
+                      <main className={'flex-1 pb-20'}>
+                        <div className="mx-auto max-w-lg px-4">
+                        <ErrorBoundary>
+                          <ToastProvider>
+                            <TooltipProvider>
+                              <Outlet />
+                            </TooltipProvider>
+                          </ToastProvider>
+                        </ErrorBoundary>
+                        </div>
+                      </main>
+                      <BottomNav />
+                    </ThemeProvider>
                   </StreakProvider>
                 </DateFormatProvider>
               </UnitProvider>

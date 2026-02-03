@@ -15,7 +15,7 @@ export function VideoTutorialModal({
   open,
   onOpenChange,
 }: VideoTutorialModalProps) {
-  const youtubeUrl = videoTutorial.youtubeId.startsWith('http')
+  const videoUrl = videoTutorial.youtubeId.startsWith('http')
     ? videoTutorial.youtubeId
     : `https://www.youtube.com/shorts/${videoTutorial.youtubeId}`;
 
@@ -31,15 +31,15 @@ export function VideoTutorialModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          <a
-            href={youtubeUrl}
+<a
+            href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            <Play className="h-5 w-5" />
+            className="flex items-center justify-center gap-2 w-full py-6 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+>
+            <Play className="h-6 w-6" />
             Watch on YouTube
-          </a>
+</a>
 
           <div className="space-y-2">
             <h4 className="font-semibold text-sm">Key Cues for {exerciseName}</h4>

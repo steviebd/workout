@@ -511,7 +511,7 @@ export async function createProgramCycleWorkouts(
     };
   });
 
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 50;
 
   for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
     const batch = workoutData.slice(i, i + BATCH_SIZE);

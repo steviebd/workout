@@ -115,11 +115,11 @@ export function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
+        className={`flex h-11 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
           value ? '' : 'text-muted-foreground'
         }`}
       >
-        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
         <span className="flex-1 text-left">
           {value ? formatDisplayDate(value) : placeholder}
         </span>
@@ -140,35 +140,37 @@ export function DatePicker({
             className="text-muted-foreground hover:text-foreground cursor-pointer"
             aria-label="Clear date"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </span>
         ) : null}
       </button>
 
-      {isOpen ? <div className="absolute top-full z-50 mt-1 w-72 rounded-lg border bg-popover p-3 shadow-lg">
-          <div className="flex items-center justify-between mb-3">
+      {isOpen ? <div className="absolute top-full z-50 mt-1 w-[320px] sm:w-80 rounded-xl border bg-popover p-3 sm:p-4 shadow-lg">
+          <div className="flex items-center justify-between mb-4">
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1 hover:bg-accent rounded"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 active:scale-95 transition-colors touch-manipulation min-w-[48px] min-h-[48px]"
+              aria-label="Previous month"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-6 w-6" />
             </button>
-            <span className="font-medium text-sm">
+            <span className="font-semibold text-base sm:text-lg px-2">
               {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
             </span>
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1 hover:bg-accent rounded"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 active:scale-95 transition-colors touch-manipulation min-w-[48px] min-h-[48px]"
+              aria-label="Next month"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-6 w-6" />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
             {dayNames.map((day) => (
-              <div key={day} className="text-center text-xs text-muted-foreground py-1">
+              <div key={day} className="text-center text-xs sm:text-sm text-muted-foreground py-2 font-medium">
                 {day}
               </div>
             ))}
@@ -176,7 +178,7 @@ export function DatePicker({
 
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} className="p-1" />
+              <div key={`empty-${i}`} className="p-2" />
             ))}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
@@ -193,13 +195,15 @@ export function DatePicker({
                   type="button"
                   onClick={() => handleDateSelect(day)}
                   disabled={isDisabled}
-                  className={`p-1 text-sm rounded transition-colors ${
+                  className={`flex h-12 w-full items-center justify-center rounded-lg text-base transition-all active:scale-95 touch-manipulation ${
                     isSelected
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
                       : isToday
-                      ? 'bg-accent font-medium'
+                      ? 'bg-accent font-medium ring-2 ring-primary/30'
                       : 'hover:bg-accent'
-                  } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+                  } ${isDisabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                  aria-label={`Select ${monthNames[viewDate.getMonth()]} ${day}, ${viewDate.getFullYear()}`}
+                  aria-pressed={isSelected}
                 >
                   {day}
                 </button>
@@ -207,18 +211,18 @@ export function DatePicker({
             })}
           </div>
 
-          <div className="flex justify-between mt-3 pt-2 border-t">
+          <div className="flex justify-between mt-4 pt-3 border-t">
             <button
               type="button"
               onClick={handleClear}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-manipulation min-h-[44px]"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={handleToday}
-              className="text-xs text-primary hover:underline"
+              className="px-4 py-2.5 text-sm text-primary font-medium hover:bg-primary/10 rounded-lg transition-colors touch-manipulation min-h-[44px]"
             >
               Today
             </button>

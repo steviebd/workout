@@ -26,7 +26,7 @@ export const userPreferences = sqliteTable('user_preferences', {
 
 export const exercises = sqliteTable('exercises', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  localId: text('local_id'),
+  localId: text('local_id').unique(),
   workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   muscleGroup: text('muscle_group'),
@@ -39,7 +39,7 @@ export const exercises = sqliteTable('exercises', {
 
 export const templates = sqliteTable('templates', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  localId: text('local_id'),
+  localId: text('local_id').unique(),
   workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
@@ -68,7 +68,7 @@ export const templateExercises = sqliteTable('template_exercises', {
 
 export const workouts = sqliteTable('workouts', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  localId: text('local_id'),
+  localId: text('local_id').unique(),
   workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
   templateId: text('template_id').references(() => templates.id, { onDelete: 'set null' }),
   programCycleId: text('program_cycle_id'),
@@ -90,7 +90,7 @@ export const workouts = sqliteTable('workouts', {
 
 export const workoutExercises = sqliteTable('workout_exercises', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  localId: text('local_id'),
+  localId: text('local_id').unique(),
   workoutId: text('workout_id').notNull().references(() => workouts.id, { onDelete: 'cascade' }),
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
@@ -101,7 +101,7 @@ export const workoutExercises = sqliteTable('workout_exercises', {
 
 export const workoutSets = sqliteTable('workout_sets', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  localId: text('local_id'),
+  localId: text('local_id').unique(),
   workoutExerciseId: text('workout_exercise_id').notNull().references(() => workoutExercises.id, { onDelete: 'cascade' }),
   setNumber: integer('set_number').notNull(),
   weight: real('weight'),
@@ -166,6 +166,8 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
 });
 
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
+export const _exercisesNameMuscleGroupIdx = index('idx_exercises_name_muscle_group').on(exercises.name, exercises.muscleGroup);
+export const _exercisesWorkosIdUpdatedAtIdx = index('idx_exercises_workos_id_updated_at').on(exercises.workosId, exercises.updatedAt);
 export const _exercisesMuscleGroupIdx = index('idx_exercises_muscle_group').on(exercises.muscleGroup);
 export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
 export const _exercisesIsDeletedIdx = index('idx_exercises_is_deleted').on(exercises.isDeleted);
@@ -174,11 +176,13 @@ export const _exercisesUpdatedAtIdx = index('idx_exercises_updated_at').on(exerc
 export const _exercisesLibraryIdIdx = index('idx_exercises_library_id').on(exercises.libraryId);
 
 export const _templatesWorkosIdIdx = index('idx_templates_workos_id').on(templates.workosId);
+export const _templatesWorkosIdUpdatedAtIdx = index('idx_templates_workos_id_updated_at').on(templates.workosId, templates.updatedAt);
 export const _templatesIsDeletedIdx = index('idx_templates_is_deleted').on(templates.isDeleted);
 export const _templatesLocalIdIdx = index('idx_templates_local_id').on(templates.localId);
 export const _templatesUpdatedAtIdx = index('idx_templates_updated_at').on(templates.updatedAt);
 
 export const _workoutsWorkosIdIdx = index('idx_workouts_workos_id').on(workouts.workosId);
+export const _workoutsWorkosIdStartedAtIdx = index('idx_workouts_workos_id_started_at').on(workouts.workosId, workouts.startedAt);
 export const _workoutsTemplateIdIdx = index('idx_workouts_template_id').on(workouts.templateId);
 export const _workoutsStartedAtIdx = index('idx_workouts_started_at').on(workouts.startedAt);
 export const _workoutsCompletedAtIdx = index('idx_workouts_completed_at').on(workouts.completedAt);
@@ -186,6 +190,7 @@ export const _workoutsLocalIdIdx = index('idx_workouts_local_id').on(workouts.lo
 export const _workoutsIsDeletedIdx = index('idx_workouts_is_deleted').on(workouts.isDeleted);
 
 export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
+export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
 export const _workoutExercisesExerciseIdIdx = index('idx_workout_exercises_exercise_id').on(workoutExercises.exerciseId);
 export const _workoutExercisesLocalIdIdx = index('idx_workout_exercises_local_id').on(workoutExercises.localId);
 
@@ -207,6 +212,7 @@ export const _programCycleWorkoutsScheduledDateIdx = index('idx_program_cycle_wo
 export const _programCycleWorkoutsCycleIdScheduledDateIdx = index('idx_program_cycle_workouts_cycle_id_scheduled_date').on(programCycleWorkouts.cycleId, programCycleWorkouts.scheduledDate);
 
 export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_template_id').on(templateExercises.templateId);
+export const _templateExercisesOrderIdx = index('idx_template_exercises_order').on(templateExercises.templateId, templateExercises.orderIndex);
 
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;

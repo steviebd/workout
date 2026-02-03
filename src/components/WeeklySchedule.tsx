@@ -192,15 +192,15 @@ export function WeeklySchedule({
                   <p className="text-xs text-muted-foreground font-medium uppercase">
                     {DAYS_OF_WEEK[index]}
                   </p>
-                  <div
-                    className={`w-10 h-10 mx-auto flex items-center justify-center rounded-full text-base font-semibold mt-1 ${
+<div
+                    className={`w-12 h-12 mx-auto flex items-center justify-center rounded-full text-lg font-semibold mt-1 ${
                       isToday
                         ? 'bg-primary text-primary-foreground'
                         : ''
                     }`}
-                  >
+>
                     {date.getDate()}
-                  </div>
+</div>
                 </div>
 
                 {/* Workout content */}

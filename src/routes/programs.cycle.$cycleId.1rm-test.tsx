@@ -151,7 +151,7 @@ function OneRMTest() {
         }),
       });
 
-      void navigate({ to: '/programs/cycle/$cycleId', params: { cycleId: params.cycleId } });
+      void navigate({ to: '/programs/cycle/$cycleId/complete', params: { cycleId: params.cycleId } });
     } catch (error) {
       console.error('Error saving 1RM test results:', error);
     } finally {

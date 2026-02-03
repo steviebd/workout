@@ -327,7 +327,7 @@ function History() {
   }, [handleQuickFilter]);
 
   const handleStartWorkout = useCallback(() => {
-    window.location.href = '/workouts/new';
+    window.location.href = '/workouts';
   }, []);
 
   if (auth.loading || redirecting) {

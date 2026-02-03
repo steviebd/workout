@@ -13,7 +13,6 @@ import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as R1rmTestRouteImport } from './routes/1rm-test'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
 import { Route as WorkoutsIndexRouteImport } from './routes/workouts._index'
 import { Route as WorkoutsIdRouteImport } from './routes/workouts.$id'
 import { Route as TemplatesNewRouteImport } from './routes/templates.new'
@@ -57,6 +56,7 @@ import { Route as ApiProgressPrsRouteImport } from './routes/api/progress.prs'
 import { Route as ApiProgramCyclesIdRouteImport } from './routes/api/program-cycles.$id'
 import { Route as ApiExercisesCopyFromLibraryRouteImport } from './routes/api/exercises.copy-from-library'
 import { Route as ApiExercisesIdRouteImport } from './routes/api/exercises.$id'
+import { Route as ApiAuthSignoutRouteImport } from './routes/api/auth/signout'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAnalyticsTrackRouteImport } from './routes/api/analytics/track'
@@ -99,11 +99,6 @@ const R1rmTestRoute = R1rmTestRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkoutsNewRoute = WorkoutsNewRouteImport.update({
-  id: '/workouts/new',
-  path: '/workouts/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkoutsIndexRoute = WorkoutsIndexRouteImport.update({
@@ -322,6 +317,11 @@ const ApiExercisesIdRoute = ApiExercisesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiExercisesRoute,
 } as any)
+const ApiAuthSignoutRoute = ApiAuthSignoutRouteImport.update({
+  id: '/api/auth/signout',
+  path: '/api/auth/signout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   id: '/api/auth/me',
   path: '/api/auth/me',
@@ -481,10 +481,10 @@ export interface FileRoutesByFullPath {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
-  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
@@ -554,10 +554,10 @@ export interface FileRoutesByTo {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
-  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
@@ -628,10 +628,10 @@ export interface FileRoutesById {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/_index': typeof WorkoutsIndexRoute
-  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
@@ -703,10 +703,10 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts'
-    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
+    | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/program-cycles/$id'
@@ -776,10 +776,10 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts'
-    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
+    | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/program-cycles/$id'
@@ -849,10 +849,10 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts/_index'
-    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
+    | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/program-cycles/$id'
@@ -923,10 +923,10 @@ export interface RootRouteChildren {
   TemplatesNewRoute: typeof TemplatesNewRoute
   WorkoutsIdRoute: typeof WorkoutsIdRoute
   WorkoutsIndexRoute: typeof WorkoutsIndexRoute
-  WorkoutsNewRoute: typeof WorkoutsNewRoute
   ApiAnalyticsTrackRoute: typeof ApiAnalyticsTrackRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiAuthSignoutRoute: typeof ApiAuthSignoutRoute
   ApiProgressPrsRoute: typeof ApiProgressPrsRoute
   ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
@@ -970,13 +970,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workouts/new': {
-      id: '/workouts/new'
-      path: '/workouts/new'
-      fullPath: '/workouts/new'
-      preLoaderRoute: typeof WorkoutsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workouts/_index': {
@@ -1279,6 +1272,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/exercises/$id'
       preLoaderRoute: typeof ApiExercisesIdRouteImport
       parentRoute: typeof ApiExercisesRoute
+    }
+    '/api/auth/signout': {
+      id: '/api/auth/signout'
+      path: '/api/auth/signout'
+      fullPath: '/api/auth/signout'
+      preLoaderRoute: typeof ApiAuthSignoutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/me': {
       id: '/api/auth/me'
@@ -1674,10 +1674,10 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesNewRoute: TemplatesNewRoute,
   WorkoutsIdRoute: WorkoutsIdRoute,
   WorkoutsIndexRoute: WorkoutsIndexRoute,
-  WorkoutsNewRoute: WorkoutsNewRoute,
   ApiAnalyticsTrackRoute: ApiAnalyticsTrackRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiAuthSignoutRoute: ApiAuthSignoutRoute,
   ApiProgressPrsRoute: ApiProgressPrsRoute,
   ApiProgressStrengthRoute: ApiProgressStrengthRoute,
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,

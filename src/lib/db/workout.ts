@@ -335,7 +335,7 @@ export async function createWorkoutWithDetails(
   }
 
   if (setsToInsert.length > 0) {
-    const BATCH_SIZE = 7;
+    const BATCH_SIZE = 50;
     for (let i = 0; i < setsToInsert.length; i += BATCH_SIZE) {
       const batch = setsToInsert.slice(i, i + BATCH_SIZE);
       await drizzleDb.insert(workoutSets).values(batch).run();
@@ -510,7 +510,7 @@ export async function getWorkoutsByWorkosId(
   }
 
   if (exerciseId) {
-    conditions.push(inArray(workouts.id, drizzleDb.select({ value: workoutExercises.workoutId }).from(workoutExercises).where(eq(workoutExercises.exerciseId, exerciseId))));
+    conditions.push(sql`EXISTS (SELECT 1 FROM workout_exercises we WHERE we.workout_id = ${workouts.id} AND we.exercise_id = ${exerciseId})`);
   }
 
   let query = drizzleDb
@@ -1385,7 +1385,7 @@ export async function getStrengthHistory(
     .innerJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
     .where(and(...conditions))
     .orderBy(asc(workouts.startedAt))
-    .limit(limit * 10)
+    .limit(limit)
     .all();
 
   const workoutMaxMap = new Map<string, { maxWeight: number; repsAtMax: number; date: string }>();
@@ -1454,7 +1454,7 @@ export async function getRecentPRs(
     ))
     .groupBy(workoutExercises.exerciseId, workouts.id, workouts.startedAt, exercises.name)
     .orderBy(desc(workouts.startedAt))
-    .limit(limit * 3)
+    .limit(limit)
     .all();
 
   if (workoutMaxes.length === 0) {

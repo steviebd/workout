@@ -66,6 +66,7 @@ export function destroySessionResponse(request: Request, redirectTo = '/'): Resp
     status: 302,
     headers: {
       'Set-Cookie': createClearCookie(isDev),
+      'Clear-Site-Data': '"*"',
       'Location': redirectTo,
     },
   });

@@ -201,7 +201,7 @@ function isAuthKitUrl(url: URL): boolean {
 		await page.goto(`${BASE_URL}/templates`, { waitUntil: 'networkidle' });
 		await expect(page).not.toHaveURL(isAuthKitUrl);
 
-		await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+		await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
 		await expect(page).not.toHaveURL(isAuthKitUrl);
 
 		await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });

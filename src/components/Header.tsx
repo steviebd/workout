@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target } from 'lucide-react'
 import { Button } from './ui/Button'
+import { ThemeToggleCompact } from './ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
 import { useUnit } from '@/lib/context/UnitContext'
 import { useDateFormat } from '@/lib/context/DateFormatContext'
@@ -110,12 +111,14 @@ export function Header() {
             </div>
           ) : null}
 
-          {isOnline && pendingCount > 0 ? (
+            {isOnline && pendingCount > 0 ? (
             <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
               <CloudUpload className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">{pendingCount} pending</span>
             </div>
           ) : null}
+
+          <ThemeToggleCompact />
 
           <div className="relative" ref={settingsRef}>
               <button

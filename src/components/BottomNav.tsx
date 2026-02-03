@@ -33,7 +33,7 @@ export function BottomNav() {
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className={cn('h-6 w-6', isActive && 'fill-primary/20')} />
+              <item.icon className={cn('h-7 w-7', isActive && 'fill-primary/20')} />
               <span className="font-medium">{item.label}</span>
             </Link>
           )

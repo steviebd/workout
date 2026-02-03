@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
@@ -34,11 +34,9 @@ interface CycleWorkout {
 
 function CompleteProgram() {
   const params = useParams({ from: '/programs/cycle/$cycleId/complete' });
-  const navigate = useNavigate();
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [workouts, setWorkouts] = useState<CycleWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isStartingTest, setIsStartingTest] = useState(false);
   const [weightUnit, setWeightUnit] = useState('kg');
 
   useEffect(() => {
@@ -70,41 +68,6 @@ function CompleteProgram() {
 
     void loadData();
   }, [params.cycleId]);
-
-  const handleStart1RMTest = async () => {
-    setIsStartingTest(true);
-    try {
-      await fetch(`/api/program-cycles/${params.cycleId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isComplete: true }),
-      });
-
-      const response = await fetch(`/api/program-cycles/${params.cycleId}/create-1rm-test-workout`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        const data = await response.json() as { workoutId: string };
-        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
-      }
-    } catch (error) {
-      console.error('Error starting 1RM test:', error);
-      setIsStartingTest(false);
-    }
-  };
-
-  const handleSaveAndTestLater = async () => {
-    try {
-      await fetch(`/api/program-cycles/${params.cycleId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isComplete: true }),
-      });
-      void navigate({ to: '/programs' });
-    } catch (error) {
-      console.error('Error completing program:', error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -194,20 +157,6 @@ function CompleteProgram() {
             </div>
           </div>
         </Card>
-
-        <Card className="p-6">
-          <h3 className="font-semibold mb-3">Test Your New 1RMs</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Now it's time to test your new 1 Rep Maxes to see how much you've improved!
-          </p>
-          <Button onClick={() => { void handleStart1RMTest(); }} disabled={isStartingTest} className="w-full">
-            {isStartingTest ? 'Setting up...' : 'Test 1RM Now'}
-          </Button>
-        </Card>
-
-        <Button variant="outline" onClick={() => { void handleSaveAndTestLater(); }} className="w-full">
-          Save Progress & Test Later
-        </Button>
 
         <Link to="/programs/cycle/$cycleId" params={{ cycleId: params.cycleId }}>
           <Button variant="ghost" className="w-full">
