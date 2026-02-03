@@ -616,46 +616,46 @@ function WorkoutSession() {
     );
   }
 
-	return (
-		<>
+		return (
+			<>
 			<div className={'bg-card border-b border-border sticky top-0 z-10'}>
-				<div className={'max-w-lg mx-auto px-4 py-4'}>
-					<div className={'flex items-center justify-between'}>
-						<div>
-							<h1 className={'text-xl font-bold text-foreground'}>{workoutName}</h1>
-							<div className={'flex items-center gap-4 text-sm text-muted-foreground mt-1'}>
+				<div className={'max-w-lg mx-auto px-3 py-3 sm:px-4 sm:py-4'}>
+					<div className={'flex items-center justify-between gap-2'}>
+						<div className="min-w-0">
+							<h1 className={'text-lg sm:text-xl font-bold text-foreground truncate'}>{workoutName}</h1>
+							<div className={'flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1'}>
 								<span className={'flex items-center gap-1'}>
-									<Calendar size={14} />
-									{formatDate(startedAt)}
+									<Calendar size={12} className="sm:size-14" />
+									<span className="truncate">{formatDate(startedAt)}</span>
 								</span>
 								<span className={'flex items-center gap-1'}>
-									<Dumbbell size={14} />
+									<Dumbbell size={12} className="sm:size-14" />
 									{formatDuration(startedAt)}
 								</span>
 							</div>
 						</div>
-						<div className={'flex items-center gap-2'}>
+						<div className={'flex items-center gap-1.5 sm:gap-2 shrink-0'}>
 							<button
-								className={'px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-sm font-medium'}
+								className={'px-2 py-1.5 sm:px-3 sm:py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-xs sm:text-sm font-medium'}
 								onClick={handleDiscardClick}
 							>
 								{'Discard'}
 							</button>
 							<button
 								className={cn(
-									'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed'
+									'inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm'
 								)}
 								disabled={completing || totalSetsCount === 0}
 								onClick={handleCompleteWorkoutClickWrapped}
 							>
 								{completing ? (
 									<>
-										<Loader2 className={'animate-spin'} size={18} />
+										<Loader2 className={'animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4'} />
 										{'Saving...'}
 									</>
                   ) : (
 	<>
-		<Check size={18} />
+		<Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
 		{'Complete'}
 	</>
                   )}
@@ -665,7 +665,7 @@ function WorkoutSession() {
 				</div>
 			</div>
 
-			<main className="mx-auto max-w-lg px-4 py-6 pb-24">
+			<main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-24 sm:px-4 sm:py-6">
 			{error ? <div className={'mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'}>
 				<p className={'text-sm text-destructive'}>{error}</p>
             </div> : null}
@@ -868,17 +868,17 @@ function WorkoutSession() {
    </AlertDialogContent>
   </AlertDialog>
 
- 		{selectedTutorial ? (
- 			<VideoTutorialModal
- 				videoTutorial={selectedTutorial.tutorial}
- 				exerciseName={selectedTutorial.exerciseName}
- 				open={!!selectedTutorial}
- 				onOpenChange={() => setSelectedTutorial(null)}
- 			/>
- 		) : null}
-  </>
- 	);
- }
+  {selectedTutorial ? (
+    <VideoTutorialModal
+      videoTutorial={selectedTutorial.tutorial}
+      exerciseName={selectedTutorial.exerciseName}
+      open={!!selectedTutorial}
+      onOpenChange={() => setSelectedTutorial(null)}
+    />
+  ) : null}
+</>
+  );
+}
 
 export const Route = createFileRoute('/workouts/$id')({
   component: WorkoutSession,

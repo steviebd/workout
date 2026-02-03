@@ -137,127 +137,138 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border p-3 transition-all',
+        'rounded-lg border p-2 sm:p-3 transition-all',
         set.completed
           ? 'border-success/50 bg-success/10'
           : 'border-border bg-secondary/30'
       )}
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
-        {setNumber}
-      </div>
-
-      <div className="flex flex-1 items-center gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleWeightDecrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <div
-            className={cn(
-              'w-20 text-center cursor-pointer rounded px-2 py-1 transition-colors',
-              isEditingWeight ? 'bg-background' : 'hover:bg-secondary/50'
-            )}
-            onClick={startEditingWeight}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                startEditingWeight();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            {isEditingWeight ? (
-              <input
-                ref={weightInputRef}
-                className="w-full text-lg font-bold text-center outline-none"
-                onBlur={handleWeightBlur}
-                onChange={handleWeightChange}
-                onKeyDown={handleWeightKeyDown}
-                type="text"
-                value={weight}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            ) : (
-              <>
-                <span className="text-lg font-bold">{weight}</span>
-                <span className="text-xs text-muted-foreground ml-0.5">{weightUnit}</span>
-              </>
-            )}
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide">Set</span>
+          <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-secondary text-xs sm:text-sm font-semibold shrink-0">
+            {setNumber}
           </div>
-          <button
-            onClick={handleWeightIncrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRepsDecrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <div
-            className={cn(
-              'w-16 text-center cursor-pointer rounded px-2 py-1 transition-colors',
-              isEditingReps ? 'bg-background' : 'hover:bg-secondary/50'
-            )}
-            onClick={startEditingReps}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                startEditingReps();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            {isEditingReps ? (
-              <input
-                ref={repsInputRef}
-                className="w-full text-lg font-bold text-center outline-none"
-                onBlur={handleRepsBlur}
-                onChange={handleRepsChange}
-                onKeyDown={handleRepsKeyDown}
-                type="text"
-                value={reps}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            ) : (
-              <>
-                <span className="text-lg font-bold">{reps}</span>
-                <span className="text-xs text-muted-foreground ml-0.5">reps</span>
-              </>
-            )}
+        <div className="flex flex-1 items-end justify-center gap-3 sm:gap-6">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide">Weight</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleWeightDecrease}
+                className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+              >
+                <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+              <div
+                className={cn(
+                  'w-14 sm:w-20 text-center cursor-pointer rounded px-1 py-1 transition-colors',
+                  isEditingWeight ? 'bg-background' : 'hover:bg-secondary/50'
+                )}
+                onClick={startEditingWeight}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    startEditingWeight();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                {isEditingWeight ? (
+                  <input
+                    ref={weightInputRef}
+                    className="w-full text-sm sm:text-lg font-bold text-center outline-none bg-transparent"
+                    onBlur={handleWeightBlur}
+                    onChange={handleWeightChange}
+                    onKeyDown={handleWeightKeyDown}
+                    type="text"
+                    value={weight}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                  />
+                ) : (
+                  <>
+                    <span className="text-sm sm:text-lg font-bold">{weight}</span>
+                    <span className="text-[9px] sm:text-xs text-muted-foreground ml-0.5">{weightUnit}</span>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={handleWeightIncrease}
+                className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+              >
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handleRepsIncrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide">Reps</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleRepsDecrease}
+                className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+              >
+                <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+              <div
+                className={cn(
+                  'w-12 sm:w-16 text-center cursor-pointer rounded px-1 py-1 transition-colors',
+                  isEditingReps ? 'bg-background' : 'hover:bg-secondary/50'
+                )}
+                onClick={startEditingReps}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    startEditingReps();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                {isEditingReps ? (
+                  <input
+                    ref={repsInputRef}
+                    className="w-full text-sm sm:text-lg font-bold text-center outline-none bg-transparent"
+                    onBlur={handleRepsBlur}
+                    onChange={handleRepsChange}
+                    onKeyDown={handleRepsKeyDown}
+                    type="text"
+                    value={reps}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                  />
+                ) : (
+                  <span className="text-sm sm:text-lg font-bold">{reps}</span>
+                )}
+              </div>
+              <button
+                onClick={handleRepsIncrease}
+                className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+              >
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide invisible">Done</span>
+          <Button
+            size="icon"
+            variant={set.completed ? 'default' : 'outline'}
+            onClick={handleComplete}
+            className={cn(
+              'h-6 w-6 sm:h-8 sm:w-8 rounded-full shrink-0',
+              set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
+            )}
           >
-            <Plus className="h-4 w-4" />
-          </button>
+            <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+          </Button>
         </div>
       </div>
-
-      <Button
-        size="icon"
-        variant={set.completed ? 'default' : 'outline'}
-        onClick={handleComplete}
-        className={cn(
-          'h-10 w-10 rounded-full',
-          set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
-        )}
-      >
-        <Check className="h-5 w-5" />
-      </Button>
     </div>
   )
 }
