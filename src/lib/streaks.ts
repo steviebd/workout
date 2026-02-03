@@ -86,8 +86,8 @@ export async function getWorkoutsPerWeek(
     weekEnd.setDate(weekStart.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
     
-    const startDateStr = weekStart.toISOString().split('T')[0];
-    const endDateStr = weekEnd.toISOString().split('T')[0];
+    const startDateStr = new Date(weekStart.getTime() - weekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const endDateStr = new Date(weekEnd.getTime() - weekEnd.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     
     const workoutCount = await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
     
@@ -150,8 +150,8 @@ export async function getWeeklyWorkoutCount(
   const weekEnd = new Date(today);
   weekEnd.setHours(23, 59, 59, 999);
   
-  const startDateStr = weekStart.toISOString().split('T')[0];
-  const endDateStr = weekEnd.toISOString().split('T')[0];
+    const startDateStr = new Date(weekStart.getTime() - weekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const endDateStr = new Date(weekEnd.getTime() - weekEnd.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
   return await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
 }
@@ -165,8 +165,8 @@ export async function getRolling30DayWorkoutCount(
   thirtyDaysAgo.setDate(today.getDate() - 30);
   thirtyDaysAgo.setHours(0, 0, 0, 0);
   
-  const startDateStr = thirtyDaysAgo.toISOString().split('T')[0];
-  const endDateStr = today.toISOString().split('T')[0];
+    const startDateStr = new Date(thirtyDaysAgo.getTime() - thirtyDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
   return await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
 }
@@ -264,9 +264,10 @@ export async function getCurrentMonthStreak(
 ): Promise<number> {
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const startDateStr = startOfMonth.toISOString().split('T')[0];
+  const startDateStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
-  const workoutsThisMonth = await getWorkoutsInDateRange(db, workosId, startDateStr, today.toISOString().split('T')[0]);
+  const workoutsThisMonth = await getWorkoutsInDateRange(db, workosId, startDateStr, endDateStr);
   
   return workoutsThisMonth.length > 0 ? 1 : 0;
 }
@@ -287,8 +288,8 @@ export async function calculateMonthlyStreak(
     const nextMonth = new Date(monthDate);
     nextMonth.setMonth(monthDate.getMonth() + 1);
     
-    const startStr = monthDate.toISOString().split('T')[0];
-    const endStr = nextMonth.toISOString().split('T')[0];
+    const startStr = new Date(monthDate.getTime() - monthDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const endStr = new Date(nextMonth.getTime() - nextMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     
     const workoutDates = await getWorkoutsInDateRange(db, workosId, startStr, endStr);
     

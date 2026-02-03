@@ -7,3 +7,5 @@ export { nsuns } from './nsuns';
 export { candito } from './candito';
 export { sheiko } from './sheiko';
 export { nuckols } from './nuckols';
+export { megsquats } from './megsquats';
+export { jenSinkler } from './jen-sinkler';

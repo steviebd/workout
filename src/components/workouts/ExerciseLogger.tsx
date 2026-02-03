@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import { SetLogger } from './SetLogger'
+import type { VideoTutorial } from '~/lib/exercise-library'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
+import { VideoTutorialModal } from '~/components/VideoTutorialModal'
 
 interface WorkoutSet {
   id: string
@@ -15,10 +17,10 @@ interface WorkoutSet {
 }
 
 interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string;
-  isAmrap?: boolean;
+  id: string
+  name: string
+  muscleGroup: string
+  isAmrap?: boolean
 }
 
 interface ExerciseLoggerProps {
@@ -26,10 +28,18 @@ interface ExerciseLoggerProps {
   sets: WorkoutSet[]
   onSetsUpdate: (sets: WorkoutSet[]) => void
   onAddSet?: (exerciseId: string, currentSets: WorkoutSet[]) => Promise<void>
+  videoTutorial?: VideoTutorial | null
 }
 
-export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: ExerciseLoggerProps) {
+export function ExerciseLogger({
+  exercise,
+  sets,
+  onSetsUpdate,
+  onAddSet,
+  videoTutorial,
+}: ExerciseLoggerProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const completedSets = sets.filter((s) => s.completed).length
   const totalSets = sets.length
@@ -51,7 +61,7 @@ export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: Exerc
       weight: lastSet.weight,
       completed: false,
     }
-    
+
     if (onAddSet) {
       await onAddSet(exercise.id, [...sets, newSet])
     } else {
@@ -64,67 +74,93 @@ export function ExerciseLogger({ exercise, sets, onSetsUpdate, onAddSet }: Exerc
   }
 
   return (
-    <Card className={cn(allCompleted && 'border-success/50')}>
-      <CardHeader
-        className="cursor-pointer p-4"
-        onClick={handleToggleExpand}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold',
-                allCompleted
-                  ? 'bg-success/20 text-success'
-                  : 'bg-primary/20 text-primary'
-              )}
-            >
-              {completedSets}/{totalSets}
-            </div>
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                {exercise.name}
+    <>
+      <Card className={cn(allCompleted && 'border-success/50')}>
+        <CardHeader className="cursor-pointer p-4" onClick={handleToggleExpand}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold',
+                  allCompleted
+                    ? 'bg-success/20 text-success'
+                    : 'bg-primary/20 text-primary'
+                )}
+              >
+                {completedSets}/{totalSets}
+              </div>
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  {exercise.name}
+                  {isAmrapSet ? (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                      AMRAP
+                    </span>
+                  ) : null}
+                  {videoTutorial ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowTutorial(true)
+                      }}
+                      aria-label={`Watch tutorial for ${exercise.name}`}
+                      title={`Watch tutorial: ${videoTutorial.title}`}
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">{exercise.muscleGroup}</p>
                 {isAmrapSet ? (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
-                    AMRAP
-                  </span>
+                  <p className="text-[10px] text-amber-600 mt-0.5">
+                    As Many Reps As Possible - enter reps completed
+                  </p>
                 ) : null}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">{exercise.muscleGroup}</p>
-              {isAmrapSet ? (
-                <p className="text-[10px] text-amber-600 mt-0.5">
-                  As Many Reps As Possible - enter reps completed
-                </p>
-              ) : null}
+              </div>
             </div>
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
           </div>
-          {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-          )}
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      {isExpanded ? <CardContent className="space-y-3 px-4 pb-4 pt-0">
-          {sets.map((set, index) => (
-            <SetLogger
-              key={set.id}
-              setNumber={index + 1}
-              set={set}
-              onUpdate={(updatedSet) => handleSetUpdate(index, updatedSet)}
-            />
-          ))}
+        {isExpanded ? (
+          <CardContent className="space-y-3 px-4 pb-4 pt-0">
+            {sets.map((set, index) => (
+              <SetLogger
+                key={set.id}
+                setNumber={index + 1}
+                set={set}
+                onUpdate={(updatedSet) => handleSetUpdate(index, updatedSet)}
+              />
+            ))}
 
-          <Button
-            variant="outline"
-            className="w-full bg-transparent"
-            onClick={() => { void addSet(); }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Set
-          </Button>
-                    </CardContent> : null}
-    </Card>
+            <Button
+              variant="outline"
+              className="w-full bg-transparent"
+              onClick={() => {
+                void addSet()
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Set
+            </Button>
+          </CardContent>
+        ) : null}
+      </Card>
+
+      {videoTutorial ? (
+        <VideoTutorialModal
+          videoTutorial={videoTutorial}
+          exerciseName={exercise.name}
+          open={showTutorial}
+          onOpenChange={setShowTutorial}
+        />
+      ) : null}
+    </>
   )
 }

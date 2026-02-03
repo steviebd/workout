@@ -77,7 +77,7 @@ export function DatePicker({
     
     if (isDateDisabled(newDate)) return;
     
-    const dateStr = newDate.toISOString().split('T')[0];
+    const dateStr = new Date(newDate.getTime() - newDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     onChange(dateStr);
     setIsOpen(false);
   };
@@ -93,7 +93,7 @@ export function DatePicker({
   const handleToday = () => {
     const today = new Date();
     if (!isDateDisabled(today)) {
-      const dateStr = today.toISOString().split('T')[0];
+      const dateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
       onChange(dateStr);
       setViewDate(today);
       setIsOpen(false);
@@ -182,8 +182,10 @@ export function DatePicker({
               const day = i + 1;
               const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
               const isDisabled = isDateDisabled(date);
-              const isSelected = value === date.toISOString().split('T')[0];
-              const isToday = new Date().toISOString().split('T')[0] === date.toISOString().split('T')[0];
+              const dateStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+              const isSelected = value === dateStr;
+              const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+              const isToday = todayStr === dateStr;
 
               return (
                 <button

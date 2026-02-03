@@ -20,6 +20,7 @@ interface CycleWorkout {
 interface WeeklyScheduleProps {
   cycleId: string;
   currentWeek?: number;
+  firstSessionDate?: string;
   onNavigateWeek?: (week: number) => void;
   onStartWorkout?: (workoutId: string, actualDate: string) => void;
   onRescheduleWorkout?: (workout: CycleWorkout) => void;
@@ -30,6 +31,7 @@ const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export function WeeklySchedule({
   cycleId,
   currentWeek: propCurrentWeek,
+  firstSessionDate,
   onNavigateWeek,
   onStartWorkout,
   onRescheduleWorkout,
@@ -37,7 +39,12 @@ export function WeeklySchedule({
   const [workouts, setWorkouts] = useState<CycleWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(propCurrentWeek ?? 1);
-  const [weekStartDate, setWeekStartDate] = useState(() => getMonday(new Date()));
+  const [weekStartDate, setWeekStartDate] = useState(() => {
+    if (firstSessionDate) {
+      return getMonday(new Date(`${firstSessionDate}T00:00:00Z`));
+    }
+    return getMonday(new Date());
+  });
   const { formatDateShort } = useDateFormat();
 
   useEffect(() => {
@@ -49,10 +56,17 @@ export function WeeklySchedule({
           setWorkouts(data);
 
           if (propCurrentWeek === undefined && data.length > 0) {
-            const today = new Date();
-            const todayWorkout = data.find(w => isSameDate(new Date(w.scheduledDate), today));
-            if (todayWorkout) {
-              setCurrentWeek(todayWorkout.weekNumber);
+            if (firstSessionDate) {
+              const firstSession = data[0];
+              if (firstSession) {
+                setCurrentWeek(firstSession.weekNumber);
+              }
+            } else {
+              const today = new Date();
+              const todayWorkout = data.find(w => isSameDate(new Date(w.scheduledDate), today));
+              if (todayWorkout) {
+                setCurrentWeek(todayWorkout.weekNumber);
+              }
             }
           }
         }
@@ -64,13 +78,18 @@ export function WeeklySchedule({
     }
 
     void fetchWorkouts();
-  }, [cycleId, propCurrentWeek]);
+  }, [cycleId, propCurrentWeek, firstSessionDate]);
 
   useEffect(() => {
-    const startDate = getMonday(new Date());
+    let startDate: Date;
+    if (firstSessionDate) {
+      startDate = getMonday(new Date(`${firstSessionDate}T00:00:00Z`));
+    } else {
+      startDate = getMonday(new Date());
+    }
     startDate.setDate(startDate.getDate() + (currentWeek - 1) * 7);
     setWeekStartDate(startDate);
-  }, [currentWeek]);
+  }, [currentWeek, firstSessionDate]);
 
   const handlePreviousWeek = () => {
     const newWeek = currentWeek - 1;
@@ -86,14 +105,24 @@ export function WeeklySchedule({
 
   const handleToday = () => {
     const today = new Date();
-    const todayWorkout = workouts.find(w => isSameDate(new Date(w.scheduledDate), today));
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayWorkout = workouts.find(w => {
+      const workoutDate = new Date(`${w.scheduledDate}T00:00:00Z`);
+      const workoutUTC = Date.UTC(workoutDate.getFullYear(), workoutDate.getMonth(), workoutDate.getDate());
+      return workoutUTC === todayUTC;
+    });
     const targetWeek = todayWorkout?.weekNumber ?? 1;
     setCurrentWeek(targetWeek);
     onNavigateWeek?.(targetWeek);
   };
 
   const getWorkoutForDate = (date: Date): CycleWorkout | undefined => {
-    return workouts.find(w => isSameDate(new Date(w.scheduledDate), date));
+    const dateUTC = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    return workouts.find(w => {
+      const workoutDate = new Date(`${w.scheduledDate}T00:00:00Z`);
+      const workoutUTC = Date.UTC(workoutDate.getFullYear(), workoutDate.getMonth(), workoutDate.getDate());
+      return workoutUTC === dateUTC;
+    });
   };
 
   if (isLoading) {
@@ -113,7 +142,9 @@ export function WeeklySchedule({
 
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
   const today = new Date();
-  const isCurrentWeek = isSameDate(weekStartDate, getMonday(today));
+  const weekStartUTC = Date.UTC(weekStartDate.getFullYear(), weekStartDate.getMonth(), weekStartDate.getDate());
+  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const isCurrentWeek = weekStartUTC === todayUTC;
 
   return (
     <Card className="overflow-hidden">
@@ -139,7 +170,7 @@ export function WeeklySchedule({
           </Button>
         </div>
         <p className="text-sm text-muted-foreground text-center mt-1">
-          {formatDateShort(weekDates[0].toISOString().split('T')[0])} - {formatDateShort(weekDates[6].toISOString().split('T')[0])}
+          {formatDateShort(new Date(weekDates[0].getTime() - weekDates[0].getTimezoneOffset() * 60000).toISOString().split('T')[0])} - {formatDateShort(new Date(weekDates[6].getTime() - weekDates[6].getTimezoneOffset() * 60000).toISOString().split('T')[0])}
         </p>
       </div>
       

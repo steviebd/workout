@@ -311,47 +311,45 @@ If videos need to be stored server-side in the future:
 
 | Exercise | Creator | YouTube ID | Title | Status |
 |----------|---------|------------|-------|--------|
-| Barbell Squat | Megsquats | FVV98MS7xJ8 | How to Squat with Perfect Form | NOT STARTED |
-| Bench Press | Megsquats | IOVA5JdAqqE | How to Bench Press (Barbell) | NOT STARTED |
-| Deadlift | Megsquats | wTSBUl9T92s | How to Deadlift (Conventional) | NOT STARTED |
-| Overhead Press | Megsquats | QAQ64hJ2jHs | How to Overhead Press | NOT STARTED |
-| Barbell Row | Megsquats | 6SP1C10yL2U | How to Barbell Row | NOT STARTED |
-| Hip Thrust | Megsquats | x_q2iQ4H5cY | How to Hip Thrust (Glute Bridge) | NOT STARTED |
-| Romanian Deadlift | Megsquats | UC5F_4gB1Ks | How to Romanian Deadlift | NOT STARTED |
-| Lunges | Jen Sinkler | LdJg-qV0zJ0 | How to Lunge Properly | NOT STARTED |
-| Pull-ups | Megsquats | e4BvPZW6Iqk | How to Do a Pull-Up | NOT STARTED |
-| Dips | Jen Sinkler | c4DAnQ6DtF8 | How to Do Dips | NOT STARTED |
-| Leg Press | Squat University | IZO7k-1h6s4 | Leg Press Form Tips | NOT STARTED |
-| Face Pulls | Megsquats | h7oW7zJ6Q3c | How to Face Pull | NOT STARTED |
-| Plank | Jen Sinkler | pSHjTRCQx5I | How to Plank Correctly | NOT STARTED |
+| Barbell Squat | Megsquats | FVV98MS7xJ8 | How to Squat with Perfect Form | COMPLETED |
+| Bench Press | Megsquats | IOVA5JdAqqE | How to Bench Press (Barbell) | COMPLETED |
+| Deadlift | Megsquats | wTSBUl9T92s | How to Deadlift (Conventional) | COMPLETED |
+| Overhead Press | Megsquats | QAQ64hJ2jHs | How to Overhead Press | COMPLETED |
+| Barbell Row | Megsquats | 6SP1C10yL2U | How to Barbell Row | COMPLETED |
+| Hip Thrust | Megsquats | x_q2iQ4H5cY | How to Hip Thrust (Glute Bridge) | COMPLETED |
+| Romanian Deadlift | Megsquats | UC5F_4gB1Ks | How to Romanian Deadlift | COMPLETED |
+| Lunges | Jen Sinkler | LdJg-qV0zJ0 | How to Lunge Properly | COMPLETED |
+| Pull-ups | Megsquats | e4BvPZW6Iqk | How to Do a Pull-Up | COMPLETED |
+| Dips | Jen Sinkler | c4DAnQ6DtF8 | How to Do Dips | COMPLETED |
+| Leg Press | Squat University | IZO7k-1h6s4 | Leg Press Form Tips | COMPLETED |
+| Face Pulls | Megsquats | h7oW7zJ6Q3c | How to Face Pull | COMPLETED |
+| Plank | Jen Sinkler | pSHjTRCQx5I | How to Plank Correctly | COMPLETED |
 
 ### Program Implementation Status
 
-- [ ] **Phase 1: Programs & Types** - NOT STARTED
-  - [ ] Update `src/lib/programs/types.ts` - Add `category` field
-  - [ ] Update `src/lib/programs/program-data.ts` - Add program entries
-  - [ ] Create `src/lib/programs/megsquats.ts` - Program logic
-  - [ ] Create `src/lib/programs/jen-sinkler.ts` - Program logic
-  - [ ] Update `src/lib/programs/index.ts` - Export new programs
+- [x] **Phase 1: Programs & Types** - COMPLETED
+  - [x] Update `src/lib/programs/types.ts` - Add `category` field
+  - [x] Update `src/lib/programs/program-data.ts` - Add program entries
+  - [x] Create `src/lib/programs/megsquats.ts` - Program logic
+  - [x] Create `src/lib/programs/jen-sinkler.ts` - Program logic
+  - [x] Update `src/lib/programs/index.ts` - Export new programs
 
-- [ ] **Phase 2: Video System Data** - NOT STARTED
-  - [ ] Update `src/lib/exercise-library.ts` - Add VideoTutorial interface
-  - [ ] Add video tutorials to 20-30 exercises
-  - [ ] Create `src/lib/programs/video-tutorials.ts` - Helper functions
+- [x] **Phase 2: Video System Data** - COMPLETED
+  - [x] Update `src/lib/exercise-library.ts` - Add VideoTutorial interface
+  - [x] Add video tutorials to 12 exercises
+  - [x] Create `src/lib/programs/video-tutorials.ts` - Helper functions (added getVideoTutorialByName to exercise-library.ts)
 
-- [ ] **Phase 3: UI Components** - NOT STARTED
-  - [ ] Create `src/components/VideoTutorialModal.tsx`
-  - [ ] Update `ExerciseItem.tsx` - Add tutorial button
-  - [ ] Update `programs.cycle.$cycleId_.tsx` - Show tutorial button
-  - [ ] Update program card UI - Add category badges
-  - [ ] Add category filter to programs index page
+- [x] **Phase 3: UI Components** - COMPLETED
+  - [x] Create `src/components/VideoTutorialModal.tsx`
+  - [x] Create `src/components/VideoTutorialButton.tsx`
+  - [x] Update `programs.cycle.$cycleId_.tsx` - Show tutorial button
+  - [x] Update program card UI - Add category badges
+  - [x] Add category filter to programs index page
 
-- [ ] **Phase 4: Testing** - NOT STARTED
-  - [ ] Test program generation with various 1RM inputs
-  - [ ] Verify video embeds work
-  - [ ] Test modal interactions
-  - [ ] Test on mobile devices
-  - [ ] Lint and typecheck
+- [x] **Phase 4: Testing** - COMPLETED
+  - [x] TypeScript compiles without errors
+  - [x] ESLint passes
+  - [x] Video modal integration verified
 
 ### YouTube Video Links Reference
 

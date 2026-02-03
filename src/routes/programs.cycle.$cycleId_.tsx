@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, memo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
+import { getVideoTutorialByName, type VideoTutorial } from '~/lib/exercise-library';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
@@ -12,6 +13,8 @@ import { WeeklySchedule } from '~/components/WeeklySchedule';
 import { RescheduleDialog } from '~/components/RescheduleDialog';
 import { formatTime } from '~/lib/programs/scheduler';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { VideoTutorialButton } from '~/components/VideoTutorialButton';
+import { VideoTutorialModal } from '~/components/VideoTutorialModal';
 
 interface CycleData {
   id: string;
@@ -112,18 +115,25 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
   }
 }
 
-const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit }: { readonly exercise: ExerciseDetail; readonly weightUnit: string }) {
+const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit, onOpenTutorial }: { readonly exercise: ExerciseDetail; readonly weightUnit: string; readonly onOpenTutorial: (tutorial: VideoTutorial, name: string) => void }) {
+  const videoTutorial = getVideoTutorialByName(exercise.exercise.name);
+
   return (
     <div className="flex items-center justify-between py-2 border-b last:border-0">
       <div className="flex items-center gap-3">
         <Dumbbell className="h-5 w-5 text-muted-foreground" />
-        <div>
+        <div className="flex items-center gap-2">
           <p className="font-medium">{exercise.exercise.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
-            {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
-          </p>
+          {videoTutorial ? <VideoTutorialButton
+              videoTutorial={videoTutorial}
+              exerciseName={exercise.exercise.name}
+              onClick={() => onOpenTutorial(videoTutorial, exercise.exercise.name)}
+          /> : null}
         </div>
+        <p className="text-sm text-muted-foreground">
+          {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
+          {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
+        </p>
       </div>
     </div>
   );
@@ -139,7 +149,12 @@ function ProgramDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [weightUnit, setWeightUnit] = useState('kg');
   const [rescheduleWorkout, setRescheduleWorkout] = useState<{ id: string; weekNumber: number; sessionNumber: number; sessionName: string; scheduledDate: string; scheduledTime?: string; isComplete: boolean; } | null>(null);
+  const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
   const { formatDate } = useDateFormat();
+
+  const handleOpenTutorial = (tutorial: VideoTutorial, exerciseName: string) => {
+    setSelectedTutorial({ tutorial, exerciseName });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -184,7 +199,7 @@ function ProgramDashboard() {
             const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
             if (data.scheduledDate) {
-              const workoutDate = new Date(`${data.scheduledDate}T00:00:00`);
+              const workoutDate = new Date(`${data.scheduledDate}T00:00:00Z`);
               if (workoutDate.getTime() === todayDate.getTime()) {
                 setCalculatedCurrentWeek(data.weekNumber);
               }
@@ -400,7 +415,7 @@ function ProgramDashboard() {
             </div>
             <div className="space-y-3">
               {currentWorkout.exercises.map((exercise) => (
-                <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} />
+                <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} onOpenTutorial={handleOpenTutorial} />
               ))}
             </div>
           </Card>
@@ -411,6 +426,7 @@ function ProgramDashboard() {
             <WeeklySchedule
               cycleId={params.cycleId}
               currentWeek={calculatedCurrentWeek}
+              firstSessionDate={cycle.firstSessionDate ?? undefined}
               onStartWorkout={(programCycleWorkoutId, actualDate) => {
                 void (async () => {
                   try {
@@ -443,6 +459,13 @@ function ProgramDashboard() {
               onClose={() => setRescheduleWorkout(null)}
               onReschedule={(id, date) => { void handleRescheduleWorkout(id, date); }}
             />
+
+            {selectedTutorial ? <VideoTutorialModal
+                videoTutorial={selectedTutorial.tutorial}
+                exerciseName={selectedTutorial.exerciseName}
+                open={!!selectedTutorial}
+                onOpenChange={(open) => { if (!open) setSelectedTutorial(null); }}
+            /> : null}
           </>
         )}
 

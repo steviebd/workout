@@ -2,6 +2,8 @@ export type LiftType = 'squat' | 'bench' | 'deadlift' | 'ohp' | 'row';
 
 export type ProgramDifficulty = 'beginner' | 'intermediate' | 'advanced';
 
+export type ProgramCategory = 'powerlifting' | 'general-strength' | "women's";
+
 export interface ProgramInfo {
   slug: string;
   name: string;
@@ -11,6 +13,7 @@ export interface ProgramInfo {
   estimatedWeeks: number;
   totalSessions: number;
   mainLifts: LiftType[];
+  category: ProgramCategory;
 }
 
 export interface ProgramExercise {
@@ -64,6 +67,7 @@ export interface ProgramListItem {
   difficulty: ProgramDifficulty;
   daysPerWeek: number;
   estimatedWeeks: number;
+  category: ProgramCategory;
 }
 
 export const PROGRAM_SLUGS = {
@@ -74,6 +78,8 @@ export const PROGRAM_SLUGS = {
   nsunsLp: 'nsuns-lp',
   sheiko: 'sheiko',
   nuckols28: 'nuckols-28-programs',
+  megsquatsStrongerByTheDay: 'stronger-by-the-day',
+  jenSinklerLiftWeightsFaster: 'lift-weights-faster',
 } as const;
 
 export type ProgramSlug = typeof PROGRAM_SLUGS[keyof typeof PROGRAM_SLUGS];

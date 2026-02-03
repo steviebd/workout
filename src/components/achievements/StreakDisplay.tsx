@@ -24,7 +24,7 @@ export function StreakDisplay({ stats, workoutDatesInWeek = [] as string[] }: St
   const workoutDays = days.map((_, index) => {
     const date = new Date(today)
     date.setDate(today.getDay() === 0 ? today.getDate() - 6 : today.getDate() - today.getDay() + index)
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0]
     return workoutDatesInWeek.includes(dateStr)
   })
 

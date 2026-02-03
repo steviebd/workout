@@ -11,6 +11,7 @@ const sheikoInfo = {
   estimatedWeeks: 8,
   totalSessions: 32,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'powerlifting' as const,
 };
 
 const VOLUME_DAY = {

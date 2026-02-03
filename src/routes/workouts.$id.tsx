@@ -16,8 +16,10 @@ import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
 import { trackEvent } from '@/lib/posthog';
+import { getVideoTutorialByName, type VideoTutorial } from '@/lib/exercise-library';
 import { useToast } from '@/components/ToastProvider';
 import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
+import { VideoTutorialModal } from '@/components/VideoTutorialModal';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
@@ -85,6 +87,7 @@ function WorkoutSession() {
   const [notes, setNotes] = useState('');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showIncompleteSetsConfirm, setShowIncompleteSetsConfirm] = useState(false);
+  const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
   const fetchedRef = useRef(false);
   const redirectingRef = useRef(false);
 
@@ -678,43 +681,47 @@ function WorkoutSession() {
 							{'Add Exercise'}
 						</Button>
 					</Card>
-          ) : (
-            exercises.map((exercise) => (
-							<ExerciseLogger
-								key={exercise.id}
-								exercise={{
-									id: exercise.exerciseId,
-									name: exercise.name,
-									muscleGroup: exercise.muscleGroup ?? '',
-									isAmrap: exercise.isAmrap,
-								}}
-								sets={exercise.sets.map((set) => ({
-									id: set.id,
-									reps: set.reps ?? 0,
-									weight: set.weight ?? 0,
-									completed: set.isComplete,
-								}))}
-								onSetsUpdate={(newSets) => {
-									for (let i = 0; i < newSets.length && i < exercise.sets.length; i++) {
-										const newSet = newSets[i];
-										const oldSet = exercise.sets[i];
-										const hasChanges =
-											newSet.weight !== (oldSet.weight ?? 0) ||
-											newSet.reps !== (oldSet.reps ?? 0) ||
-											newSet.completed !== oldSet.isComplete;
-										if (hasChanges) {
-											void handleUpdateSet(exercise.exerciseId, newSet.id, {
-												weight: newSet.weight,
-												reps: newSet.reps,
-												isComplete: newSet.completed,
-											});
-										}
-									}
-								}}
-								onAddSet={(exerciseId, currentSets) => handleAddSet(exerciseId, currentSets)}
-							/>
-            ))
-          )}
+           ) : (
+             exercises.map((exercise) => {
+               const videoTutorial = getVideoTutorialByName(exercise.name);
+               return (
+                 <ExerciseLogger
+                   key={exercise.id}
+                   exercise={{
+                     id: exercise.exerciseId,
+                     name: exercise.name,
+                     muscleGroup: exercise.muscleGroup ?? '',
+                     isAmrap: exercise.isAmrap,
+                   }}
+                   sets={exercise.sets.map((set) => ({
+                     id: set.id,
+                     reps: set.reps ?? 0,
+                     weight: set.weight ?? 0,
+                     completed: set.isComplete,
+                   }))}
+                   onSetsUpdate={(newSets) => {
+                     for (let i = 0; i < newSets.length && i < exercise.sets.length; i++) {
+                       const newSet = newSets[i];
+                       const oldSet = exercise.sets[i];
+                       const hasChanges =
+                         newSet.weight !== (oldSet.weight ?? 0) ||
+                         newSet.reps !== (oldSet.reps ?? 0) ||
+                         newSet.completed !== oldSet.isComplete;
+                       if (hasChanges) {
+                         void handleUpdateSet(exercise.exerciseId, newSet.id, {
+                           weight: newSet.weight,
+                           reps: newSet.reps,
+                           isComplete: newSet.completed,
+                         });
+                       }
+                     }
+                   }}
+                   onAddSet={(exerciseId, currentSets) => handleAddSet(exerciseId, currentSets)}
+                   videoTutorial={videoTutorial ?? null}
+                 />
+               );
+             })
+           )}
 
 				{exercises.length > 0 ? (
 					<Button
@@ -852,18 +859,26 @@ function WorkoutSession() {
 					<AlertDialogCancel onClick={_handleIncompleteSetsBackClickWrapped}>
 						{'Go Back'}
 					</AlertDialogCancel>
-					<AlertDialogAction
-						className={'bg-green-600 text-white hover:bg-green-700'}
-						onClick={handleIncompleteSetsContinueClickWrapped}
-					>
-						{'Continue'}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
-		</>
-   );
-}
+ 					<AlertDialogAction
+ 						className={'bg-green-600 text-white hover:bg-green-700'}
+ 						onClick={handleIncompleteSetsContinueClickWrapped}
+ 					>
+ 					</AlertDialogAction>
+    </AlertDialogFooter>
+   </AlertDialogContent>
+  </AlertDialog>
+
+ 		{selectedTutorial ? (
+ 			<VideoTutorialModal
+ 				videoTutorial={selectedTutorial.tutorial}
+ 				exerciseName={selectedTutorial.exerciseName}
+ 				open={!!selectedTutorial}
+ 				onOpenChange={() => setSelectedTutorial(null)}
+ 			/>
+ 		) : null}
+  </>
+ 	);
+ }
 
 export const Route = createFileRoute('/workouts/$id')({
   component: WorkoutSession,

@@ -14,9 +14,11 @@ import { nsuns } from '~/lib/programs/nsuns';
 import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
+import { megsquats } from '~/lib/programs/megsquats';
+import { jenSinkler } from '~/lib/programs/jen-sinkler';
 import { generateWorkoutSchedule, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 
-const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
+const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols | typeof megsquats | typeof jenSinkler> = {
   'stronglifts-5x5': stronglifts,
   '531': wendler531,
   'madcow-5x5': madcow,
@@ -24,6 +26,8 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'candito-6-week': candito,
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
+  'stronger-by-the-day': megsquats,
+  'lift-weights-faster': jenSinkler,
 };
 
 interface CreateProgramCycleRequest {
@@ -112,10 +116,11 @@ export const Route = createFileRoute('/api/program-cycles')({
 
           const schedule = generateWorkoutSchedule(
             generatedWorkouts,
-            new Date(firstSessionDate),
+            new Date(`${programStartDate}T00:00:00Z`),
             {
               preferredDays: preferredGymDays.map(d => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
               preferredTimeOfDay: preferredTimeOfDay,
+              forceFirstSessionDate: new Date(`${firstSessionDate}T00:00:00Z`),
             }
           );
 

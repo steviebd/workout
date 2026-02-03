@@ -11,6 +11,7 @@ const wendler531Info = {
   estimatedWeeks: 12,
   totalSessions: 48,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'powerlifting' as const,
 };
 
 const WAVE_PERCENTAGES = {

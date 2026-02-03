@@ -28,8 +28,8 @@ export const Route = createFileRoute('/api/badges' as const)({
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDay() === 0 ? today.getDate() - 6 : today.getDate() - today.getDay() + 1);
         startOfWeek.setHours(0, 0, 0, 0);
-        const startDateStr = startOfWeek.toISOString().split('T')[0];
-        const endDateStr = today.toISOString().split('T')[0];
+        const startDateStr = new Date(startOfWeek.getTime() - startOfWeek.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
         const weeklyWorkoutCount = await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
 

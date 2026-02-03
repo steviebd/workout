@@ -11,6 +11,7 @@ const nuckolsInfo = {
   estimatedWeeks: 8,
   totalSessions: 32,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'general-strength' as const,
 };
 
 const WAVE_1 = {

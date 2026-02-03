@@ -295,11 +295,15 @@ export async function createWorkoutWithDetails(
     }));
   }
 
-  const newWorkoutExercises = await drizzleDb
-    .insert(workoutExercises)
-    .values(workoutExercisesData)
-    .returning()
-    .all();
+  let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
+
+  if (workoutExercisesData.length > 0) {
+    newWorkoutExercises = await drizzleDb
+      .insert(workoutExercises)
+      .values(workoutExercisesData)
+      .returning()
+      .all();
+  }
 
   const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.workosId, data.exerciseIds);
 

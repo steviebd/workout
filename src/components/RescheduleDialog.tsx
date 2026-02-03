@@ -44,14 +44,14 @@ export function RescheduleDialog({
 
   useEffect(() => {
     if (workout && open) {
-      setSelectedDate(new Date(`${workout.scheduledDate}T00:00:00`));
+      setSelectedDate(new Date(`${workout.scheduledDate}T00:00:00Z`));
       setCustomDateInput(workout.scheduledDate);
     }
   }, [workout, open]);
 
   if (!workout) return null;
 
-  const originalDate = new Date(`${workout.scheduledDate}T00:00:00`);
+  const originalDate = new Date(`${workout.scheduledDate}T00:00:00Z`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -152,7 +152,7 @@ export function RescheduleDialog({
               type="date"
               value={customDateInput}
               onChange={handleCustomDateChange}
-              min={new Date().toISOString().split('T')[0]}
+               min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
               className="w-full px-3 py-2 rounded-md border bg-background text-sm"
             />
           </div>

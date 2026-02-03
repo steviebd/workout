@@ -11,6 +11,7 @@ const canditoInfo = {
   estimatedWeeks: 6,
   totalSessions: 24,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'powerlifting' as const,
 };
 
 const STRENGTH_BLOCK = [

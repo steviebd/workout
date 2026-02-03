@@ -20,7 +20,6 @@ import { Route as TemplatesNewRouteImport } from './routes/templates.new'
 import { Route as TemplatesIndexRouteImport } from './routes/templates._index'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
 import { Route as ProgramsIndexRouteImport } from './routes/programs._index'
-import { Route as ProgramsSlugRouteImport } from './routes/programs.$slug'
 import { Route as HistoryIndexRouteImport } from './routes/history._index'
 import { Route as HistoryExerciseIdRouteImport } from './routes/history.$exerciseId'
 import { Route as ExercisesNewRouteImport } from './routes/exercises.new'
@@ -137,11 +136,6 @@ const ProgramsIndexRoute = ProgramsIndexRouteImport.update({
   path: '/programs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProgramsSlugRoute = ProgramsSlugRouteImport.update({
-  id: '/programs/$slug',
-  path: '/programs/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HistoryIndexRoute = HistoryIndexRouteImport.update({
   id: '/history/_index',
   path: '/history',
@@ -253,9 +247,9 @@ const ProgramsCycleCycleIdRoute = ProgramsCycleCycleIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgramsSlugStartRoute = ProgramsSlugStartRouteImport.update({
-  id: '/start',
-  path: '/start',
-  getParentRoute: () => ProgramsSlugRoute,
+  id: '/programs/$slug/start',
+  path: '/programs/$slug/start',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ExercisesIdEditRoute = ExercisesIdEditRouteImport.update({
   id: '/edit',
@@ -481,7 +475,6 @@ export interface FileRoutesByFullPath {
   '/exercises/new': typeof ExercisesNewRoute
   '/history/$exerciseId': typeof HistoryExerciseIdRoute
   '/history': typeof HistoryIndexRoute
-  '/programs/$slug': typeof ProgramsSlugRouteWithChildren
   '/programs': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
@@ -555,7 +548,6 @@ export interface FileRoutesByTo {
   '/exercises/new': typeof ExercisesNewRoute
   '/history/$exerciseId': typeof HistoryExerciseIdRoute
   '/history': typeof HistoryIndexRoute
-  '/programs/$slug': typeof ProgramsSlugRouteWithChildren
   '/programs': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
@@ -630,7 +622,6 @@ export interface FileRoutesById {
   '/exercises/new': typeof ExercisesNewRoute
   '/history/$exerciseId': typeof HistoryExerciseIdRoute
   '/history/_index': typeof HistoryIndexRoute
-  '/programs/$slug': typeof ProgramsSlugRouteWithChildren
   '/programs/_index': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates/_index': typeof TemplatesIndexRoute
@@ -706,7 +697,6 @@ export interface FileRouteTypes {
     | '/exercises/new'
     | '/history/$exerciseId'
     | '/history'
-    | '/programs/$slug'
     | '/programs'
     | '/templates/$id'
     | '/templates'
@@ -780,7 +770,6 @@ export interface FileRouteTypes {
     | '/exercises/new'
     | '/history/$exerciseId'
     | '/history'
-    | '/programs/$slug'
     | '/programs'
     | '/templates/$id'
     | '/templates'
@@ -854,7 +843,6 @@ export interface FileRouteTypes {
     | '/exercises/new'
     | '/history/$exerciseId'
     | '/history/_index'
-    | '/programs/$slug'
     | '/programs/_index'
     | '/templates/$id'
     | '/templates/_index'
@@ -929,7 +917,6 @@ export interface RootRouteChildren {
   ExercisesNewRoute: typeof ExercisesNewRoute
   HistoryExerciseIdRoute: typeof HistoryExerciseIdRoute
   HistoryIndexRoute: typeof HistoryIndexRoute
-  ProgramsSlugRoute: typeof ProgramsSlugRouteWithChildren
   ProgramsIndexRoute: typeof ProgramsIndexRoute
   TemplatesIdRoute: typeof TemplatesIdRouteWithChildren
   TemplatesIndexRoute: typeof TemplatesIndexRoute
@@ -945,6 +932,7 @@ export interface RootRouteChildren {
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
   ApiUser1rmRoute: typeof ApiUser1rmRoute
   ApiUserPreferencesRoute: typeof ApiUserPreferencesRoute
+  ProgramsSlugStartRoute: typeof ProgramsSlugStartRoute
   ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRoute
   WorkoutsIdEditRoute: typeof WorkoutsIdEditRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
@@ -1031,13 +1019,6 @@ declare module '@tanstack/react-router' {
       path: '/programs'
       fullPath: '/programs'
       preLoaderRoute: typeof ProgramsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/programs/$slug': {
-      id: '/programs/$slug'
-      path: '/programs/$slug'
-      fullPath: '/programs/$slug'
-      preLoaderRoute: typeof ProgramsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history/_index': {
@@ -1196,10 +1177,10 @@ declare module '@tanstack/react-router' {
     }
     '/programs/$slug/start': {
       id: '/programs/$slug/start'
-      path: '/start'
+      path: '/programs/$slug/start'
       fullPath: '/programs/$slug/start'
       preLoaderRoute: typeof ProgramsSlugStartRouteImport
-      parentRoute: typeof ProgramsSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/exercises/$id/edit': {
       id: '/exercises/$id/edit'
@@ -1653,18 +1634,6 @@ const ExercisesIdRouteWithChildren = ExercisesIdRoute._addFileChildren(
   ExercisesIdRouteChildren,
 )
 
-interface ProgramsSlugRouteChildren {
-  ProgramsSlugStartRoute: typeof ProgramsSlugStartRoute
-}
-
-const ProgramsSlugRouteChildren: ProgramsSlugRouteChildren = {
-  ProgramsSlugStartRoute: ProgramsSlugStartRoute,
-}
-
-const ProgramsSlugRouteWithChildren = ProgramsSlugRoute._addFileChildren(
-  ProgramsSlugRouteChildren,
-)
-
 interface TemplatesIdRouteChildren {
   TemplatesIdEditRoute: typeof TemplatesIdEditRoute
 }
@@ -1699,7 +1668,6 @@ const rootRouteChildren: RootRouteChildren = {
   ExercisesNewRoute: ExercisesNewRoute,
   HistoryExerciseIdRoute: HistoryExerciseIdRoute,
   HistoryIndexRoute: HistoryIndexRoute,
-  ProgramsSlugRoute: ProgramsSlugRouteWithChildren,
   ProgramsIndexRoute: ProgramsIndexRoute,
   TemplatesIdRoute: TemplatesIdRouteWithChildren,
   TemplatesIndexRoute: TemplatesIndexRoute,
@@ -1715,6 +1683,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,
   ApiUser1rmRoute: ApiUser1rmRoute,
   ApiUserPreferencesRoute: ApiUserPreferencesRoute,
+  ProgramsSlugStartRoute: ProgramsSlugStartRoute,
   ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRoute,
   WorkoutsIdEditRoute: WorkoutsIdEditRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,

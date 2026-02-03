@@ -202,6 +202,15 @@ export const ACCESSORIES: Record<string, AccessoryDefinition> = {
     muscleGroup: 'Quads',
     libraryId: 'leg-extension',
   },
+  'leg-press': {
+    id: 'leg-press',
+    name: 'Leg Press',
+    category: 'leg',
+    baseLift: 'squat',
+    defaultPercentage: 0.80,
+    muscleGroup: 'Quads',
+    libraryId: 'leg-press',
+  },
   'leg-curls': {
     id: 'leg-curls',
     name: 'Leg Curl',
@@ -274,6 +283,15 @@ export const ACCESSORIES: Record<string, AccessoryDefinition> = {
     defaultPercentage: null,
     muscleGroup: 'Core',
     libraryId: 'cable-crunch',
+  },
+  'hip-thrust': {
+    id: 'hip-thrust',
+    name: 'Hip Thrust',
+    category: 'leg',
+    baseLift: 'deadlift',
+    defaultPercentage: 0.60,
+    muscleGroup: 'Glutes',
+    libraryId: 'hip-thrust',
   },
 };
 

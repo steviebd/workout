@@ -72,7 +72,7 @@ export const Route = createFileRoute('/api/workouts')({
               return Response.json({ error: 'Database not available' }, { status: 500 });
             }
 
-            let exercisesToAdd = exerciseIds ?? [];
+            let exercisesToAdd: string[] = exerciseIds ?? [];
 
             if (exercisesToAdd.length === 0 && templateId) {
                const templateExercises = await getTemplateExercises(db, templateId, session.workosId);
@@ -81,7 +81,7 @@ export const Route = createFileRoute('/api/workouts')({
             }
 
              const workout = await createWorkoutWithDetails(db, {
-               workosId: session.workosId,
+              workosId: session.workosId,
               name,
               templateId,
               notes,

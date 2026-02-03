@@ -104,11 +104,9 @@ function OneRMTest() {
         const weight = parseFloat(lift.weight)
         if (isNaN(weight)) continue
 
-        const exerciseRes = await fetch('/api/exercises/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const exerciseRes = await fetch(`/api/exercises?search=${encodeURIComponent(lift.name)}`, {
+          method: 'GET',
           credentials: 'include',
-          body: JSON.stringify({ name: lift.name }),
         })
 
         if (!exerciseRes.ok) continue
@@ -135,7 +133,12 @@ function OneRMTest() {
       }
 
       toast.success('1RM test saved!')
-      void navigate({ to: '/workouts/$id', params: { id: workout.id } })
+      const returnTo = new URLSearchParams(window.location.search).get('returnTo')
+      if (returnTo) {
+        void navigate({ to: returnTo })
+      } else {
+        void navigate({ to: '/workouts/$id', params: { id: workout.id } })
+      }
     } catch (error) {
       toast.error('Failed to save 1RM test')
       console.error('Error saving 1RM test:', error)
