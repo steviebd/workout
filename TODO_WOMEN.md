@@ -12,7 +12,7 @@ This document outlines the implementation of two new strength programs designed 
 - No video tutorial system for exercise guidance
 
 **Target State:**
-- Add 2 general strength programs with broad appeal to women
+- Add 2 strength programs specifically designed for women
 - Integrate YouTube video tutorials linked to default exercise library
 - Users can access tutorials via click-to-open modal
 
@@ -426,21 +426,19 @@ export interface VideoTutorial {
 - Add `https://www.youtube.com` to Content-Security-Policy `frame-src`
 - Use `youtube-nocookie.com` embed domain for privacy
 
-### 5. Category Framing
+### 5. Women's Category
 
-**Issue:** "Women's programs" as a category can be exclusionary or create wrong expectations.
+**Decision:** Use "women's" as an explicit category for programs targeting women.
 
-**Recommendation:** Use neutral category names with optional tags:
+**Rationale:**
+- Clear signal to users about program intent
+- Programs are designed specifically for women (form cues, accessibility)
+- Users can filter and find programs that match their goals
 
-```typescript
-category: 'general-strength' | 'powerlifting' | 'hypertrophy' | 'conditioning'
-tags?: string[]  // e.g., ["popular-with-women", "beginner-friendly"]
-```
-
-**UI approach:**
-- Filter by category (General Strength, Powerlifting, etc.)
-- Show tags as badges but don't use "women's" as primary filter
-- Program descriptions can mention target audience naturally
+**Category Types:**
+- `powerlifting` - Competition-focused powerlifting programs
+- `general-strength` - General strength programs
+- `women's` - Programs specifically designed for women
 
 ---
 
@@ -460,8 +458,6 @@ Original estimate of 6.5-7.5 days is optimistic. Accounting for:
 | Phase 4: UI | 2-3 days | 3-4 days |
 | Phase 5: Testing | 1 day | 1.5 days |
 | **Total** | **6.5-7.5 days** | **9-10 days** |
-
-**Scope reduction option:** Ship programs first (Phase 1 only), videos in follow-up release.
 
 ---
 
