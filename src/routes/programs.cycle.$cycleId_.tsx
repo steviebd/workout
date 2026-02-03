@@ -270,9 +270,13 @@ function ProgramDashboard() {
   const handleStartWorkout = async () => {
     if (!cycle) return;
     
+    const today = new Date().toISOString();
+    
     try {
       const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/start-workout`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actualDate: today }),
       });
       
       if (response.ok) {
@@ -407,13 +411,13 @@ function ProgramDashboard() {
             <WeeklySchedule
               cycleId={params.cycleId}
               currentWeek={calculatedCurrentWeek}
-              onStartWorkout={(programCycleWorkoutId) => {
+              onStartWorkout={(programCycleWorkoutId, actualDate) => {
                 void (async () => {
                   try {
                     const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/start-workout`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ programCycleWorkoutId }),
+                      body: JSON.stringify({ programCycleWorkoutId, actualDate }),
                     });
                     
                     if (response.ok) {

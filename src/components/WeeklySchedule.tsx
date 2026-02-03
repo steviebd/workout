@@ -21,7 +21,7 @@ interface WeeklyScheduleProps {
   cycleId: string;
   currentWeek?: number;
   onNavigateWeek?: (week: number) => void;
-  onStartWorkout?: (workoutId: string) => void;
+  onStartWorkout?: (workoutId: string, actualDate: string) => void;
   onRescheduleWorkout?: (workout: CycleWorkout) => void;
 }
 
@@ -215,7 +215,7 @@ export function WeeklySchedule({
                               size="sm"
                               variant="outline"
                               className="text-xs h-8 px-3"
-                              onClick={() => onStartWorkout?.(workout.id)}
+                              onClick={() => onStartWorkout?.(workout.id, workout.scheduledDate)}
                             >
                               {isPast ? 'View' : 'Start'}
                             </Button>

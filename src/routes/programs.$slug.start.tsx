@@ -12,7 +12,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { DatePicker } from '@/components/ui/DatePicker';
 
-const DAYS_DISPLAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS_DISPLAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TIME_OPTIONS = [
   { value: 'morning' as const, label: 'Morning', icon: '🌅' },
   { value: 'afternoon' as const, label: 'Afternoon', icon: '☀️' },
@@ -54,25 +54,9 @@ function shouldShowStartModeToggle(
   if (!startDate || preferredGymDays.length === 0) return false;
 
   const date = new Date(`${startDate}T00:00:00`);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const dayName = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
 
-  const firstGymDayInWeek = getFirstGymDayInWeek(date, preferredGymDays);
-
-  const dateIsToday = date.getTime() === today.getTime();
-  const dateIsPast = date < today;
-
-  if (dateIsPast && !dateIsToday) {
-    const firstGymDayTodayWeek = getFirstGymDayInWeek(today, preferredGymDays);
-    return firstGymDayTodayWeek.getTime() !== today.getTime();
-  }
-
-  if (dateIsToday) {
-    const dayName = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
-    return !preferredGymDays.includes(dayName);
-  }
-
-  return firstGymDayInWeek <= date;
+  return !preferredGymDays.includes(dayName);
 }
 
 function ProgramStart() {

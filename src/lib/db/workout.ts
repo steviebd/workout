@@ -79,7 +79,8 @@ export interface LastWorkoutData {
 
 export async function createWorkout(
   db: D1Database,
-  data: CreateWorkoutData & { workosId: string }
+  data: CreateWorkoutData & { workosId: string },
+  startedAt?: string
 ): Promise<Workout> {
   const drizzleDb = createDb(db);
 
@@ -91,7 +92,7 @@ export async function createWorkout(
       templateId: data.templateId,
       programCycleId: data.programCycleId,
       notes: data.notes,
-      startedAt: new Date().toISOString(),
+      startedAt: startedAt ?? new Date().toISOString(),
       localId: data.localId,
     })
     .returning()
@@ -252,7 +253,8 @@ export async function getWorkoutExercises(
 
 export async function createWorkoutWithDetails(
   db: D1Database,
-  data: CreateWorkoutData & { workosId: string; exerciseIds: string[] }
+  data: CreateWorkoutData & { workosId: string; exerciseIds: string[] },
+  startedAt?: string
 ): Promise<WorkoutWithExercises> {
   const drizzleDb = createDb(db);
 
@@ -264,7 +266,7 @@ export async function createWorkoutWithDetails(
       templateId: data.templateId,
       programCycleId: data.programCycleId,
       notes: data.notes,
-      startedAt: new Date().toISOString(),
+      startedAt: startedAt ?? new Date().toISOString(),
       localId: data.localId,
     })
     .returning()

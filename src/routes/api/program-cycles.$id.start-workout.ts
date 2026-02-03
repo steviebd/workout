@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
+import { eq } from 'drizzle-orm';
 import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout, updateProgramCycleProgress } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
 import { createDb } from '~/lib/db';
-import { workoutExercises, workoutSets } from '~/lib/db/schema';
+import { workoutExercises, workoutSets, programCycleWorkouts } from '~/lib/db/schema';
 
 const BATCH_SIZE = 7;
 
@@ -27,15 +28,18 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           const drizzleDb = createDb(db);
 
           // Check if a specific programCycleWorkoutId was provided
-          let requestBody: { programCycleWorkoutId?: string } = {};
+          let requestBody: { programCycleWorkoutId?: string; actualDate?: string } = {};
           try {
             const text = await request.text();
             if (text) {
-              requestBody = JSON.parse(text) as { programCycleWorkoutId?: string };
+              requestBody = JSON.parse(text) as { programCycleWorkoutId?: string; actualDate?: string };
             }
           } catch {
             // No body or invalid JSON, use default behavior
           }
+
+          const actualDate = requestBody.actualDate ? new Date(requestBody.actualDate).toISOString() : new Date().toISOString();
+          const actualDateOnly = actualDate.split('T')[0];
 
           console.log('Start workout - params.id:', params.id, 'session.workosId:', session.workosId, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
           const [cycle, currentWorkout] = await Promise.all([
@@ -91,7 +95,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             templateId: template.id,
             programCycleId: template.programCycleId ?? undefined,
             name: template.name,
-          });
+          }, actualDate);
           console.log('Start workout - created workout:', workout.id);
 
           const workoutExerciseInserts = templateExercises.map((te) => ({
@@ -143,6 +147,17 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             currentWeek: currentWorkout.weekNumber,
             currentSession: currentWorkout.sessionNumber,
           });
+
+          if (currentWorkout.scheduledDate !== actualDateOnly) {
+            await drizzleDb
+              .update(programCycleWorkouts)
+              .set({
+                scheduledDate: actualDateOnly,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(programCycleWorkouts.id, currentWorkout.id))
+              .run();
+          }
 
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
         } catch (err) {
