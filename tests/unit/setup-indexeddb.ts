@@ -2,6 +2,8 @@ import 'fake-indexeddb/auto';
 import { beforeEach } from 'vitest';
 import { localDB } from '../../src/lib/db/local-db';
 
+(global as { indexedDB?: typeof indexedDB }).indexedDB ??= (await import('fake-indexeddb')).default;
+
 beforeEach(async () => {
   await localDB.exercises.clear();
   await localDB.templates.clear();

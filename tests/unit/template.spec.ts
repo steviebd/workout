@@ -299,45 +299,20 @@ describe('Template DB Operations', () => {
 
   describe('addExerciseToTemplate', () => {
     it('should add exercise to template', async () => {
-      const mockTemplateExercise = {
-        id: 'te-1',
-        templateId: 'template-1',
-        exerciseId: 'ex-1',
-        orderIndex: 0,
-      };
-
-      mockDrizzleDb.select.mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            get: vi.fn().mockReturnValue({ id: 'template-1' }),
-          }),
-        }),
-      });
-
       mockDrizzleDb.insert.mockReturnValue({
         values: vi.fn().mockReturnValue({
-          returning: vi.fn().mockReturnValue({
-            get: vi.fn().mockReturnValue(mockTemplateExercise),
-          }),
+          run: vi.fn().mockReturnValue({ success: true }),
         }),
       });
 
       const { addExerciseToTemplate } = await import('../../src/lib/db/template');
 
-      const result = await addExerciseToTemplate(
+      await expect(addExerciseToTemplate(
         {} as D1Database,
         'template-1',
-        'user-1',
         'ex-1',
         0
-      );
-
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.templateId).toBe('template-1');
-        expect(result.exerciseId).toBe('ex-1');
-        expect(result.orderIndex).toBe(0);
-      }
+      )).resolves.toBeUndefined();
     });
   });
 

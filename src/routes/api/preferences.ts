@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/preferences')({
 
            const preferences = await getUserPreferences(db, session.workosId);
 
-           return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy' });
+           return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy', weeklyWorkoutTarget: 3 });
          } catch (err) {
            console.error('Get preferences error:', err);
            return Response.json({ error: 'Server error' }, { status: 500 });
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/preferences')({
           }
 
         const body = await request.json();
-        const { weightUnit, theme, dateFormat } = body as UpdatePreferencesData;
+        const { weightUnit, theme, dateFormat, weeklyWorkoutTarget } = body as UpdatePreferencesData;
 
         const db = (env as { DB?: D1Database }).DB;
         if (!db) {
@@ -45,6 +45,7 @@ export const Route = createFileRoute('/api/preferences')({
           weightUnit,
           theme,
           dateFormat,
+          weeklyWorkoutTarget,
         });
 
            return Response.json(preferences);

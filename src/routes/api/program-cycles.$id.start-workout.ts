@@ -1,9 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, getCurrentWorkout } from '~/lib/db/program';
+import { eq } from 'drizzle-orm';
+import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout, updateProgramCycleProgress } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
-import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
+import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
+import { createDb } from '~/lib/db';
+import { workoutExercises, workoutSets, programCycleWorkouts } from '~/lib/db/schema';
+
+const BATCH_SIZE = 7;
 
 export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
   server: {
@@ -20,68 +25,138 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const cycle = await getProgramCycleById(db, params.id, session.workosId);
+          const drizzleDb = createDb(db);
+
+          // Check if a specific programCycleWorkoutId was provided
+          let requestBody: { programCycleWorkoutId?: string; actualDate?: string } = {};
+          try {
+            const text = await request.text();
+            if (text) {
+              requestBody = JSON.parse(text) as { programCycleWorkoutId?: string; actualDate?: string };
+            }
+          } catch {
+            // No body or invalid JSON, use default behavior
+          }
+
+          const actualDate = requestBody.actualDate ? new Date(requestBody.actualDate).toISOString() : new Date().toISOString();
+          const actualDateOnly = actualDate.split('T')[0];
+
+          console.log('Start workout - params.id:', params.id, 'session.workosId:', session.workosId, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
+          const [cycle, currentWorkout] = await Promise.all([
+            getProgramCycleById(db, params.id, session.workosId),
+            requestBody.programCycleWorkoutId 
+              ? getProgramCycleWorkoutById(db, requestBody.programCycleWorkoutId, session.workosId)
+              : getCurrentWorkout(db, params.id, session.workosId),
+          ]);
+
+          console.log('Start workout - cycle:', cycle?.id, 'currentWorkout:', currentWorkout?.id);
+
           if (!cycle) {
+            console.log('Start workout - Cycle not found');
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
           if (cycle.status === 'completed') {
+            console.log('Start workout - Cycle is completed');
             return Response.json({ error: 'Program cycle is already completed' }, { status: 400 });
           }
 
-          const currentWorkout = await getCurrentWorkout(db, params.id, session.workosId);
           if (!currentWorkout) {
-            const cycleCheck = await getProgramCycleById(db, params.id, session.workosId);
-            if (!cycleCheck) {
-              return Response.json({ error: 'Program cycle not found' }, { status: 404 });
-            }
+            console.log('Start workout - No current workout found');
             return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
           }
 
-          const template = await getTemplateById(db, currentWorkout.templateId, session.workosId);
-          if (!template) {
+          let templateId: string = currentWorkout.templateId ?? '';
+          console.log('Start workout - currentWorkout id:', currentWorkout.id, 'templateId:', currentWorkout.templateId);
+          if (!templateId) {
+            console.log('Start workout - calling generateTemplateFromWorkout');
+            templateId = await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+            console.log('Start workout - generateTemplateFromWorkout returned:', templateId);
+          } else {
+            console.log('Start workout - using existing templateId:', templateId);
+          }
+
+          const [templateResult, templateExercises] = await Promise.all([
+            getTemplateById(db, templateId, session.workosId),
+            getTemplateExercises(db, templateId, session.workosId),
+          ]);
+
+          console.log('Start workout - templateResult:', templateResult?.id, 'templateExercises count:', templateExercises.length);
+
+          if (!templateResult) {
+            console.log('Start workout - Template not found');
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          const templateExercises = await getTemplateExercises(db, template.id, session.workosId);
+          const template = templateResult;
 
           const workout = await createWorkout(db, {
             workosId: session.workosId,
             templateId: template.id,
             programCycleId: template.programCycleId ?? undefined,
             name: template.name,
+          }, actualDate);
+          console.log('Start workout - created workout:', workout.id);
+
+          const workoutExerciseInserts = templateExercises.map((te) => ({
+            workoutId: workout.id,
+            exerciseId: te.exerciseId,
+            orderIndex: te.orderIndex,
+            notes: undefined,
+            localId: undefined,
+            isAmrap: te.isAmrap ?? false,
+            setNumber: te.setNumber ?? null,
+          }));
+
+          const insertedExercises: Array<{ id: string }> = [];
+          for (let i = 0; i < workoutExerciseInserts.length; i += BATCH_SIZE) {
+            const batch = workoutExerciseInserts.slice(i, i + BATCH_SIZE);
+            const result = await drizzleDb.insert(workoutExercises).values(batch).returning({ id: workoutExercises.id }).all();
+            insertedExercises.push(...result);
+          }
+
+          const workoutSetInserts: Array<typeof workoutSets.$inferInsert> = [];
+          for (let i = 0; i < templateExercises.length; i++) {
+            const te = templateExercises[i];
+            const insertedExercise = insertedExercises[i];
+            if (!insertedExercise) continue;
+
+            const numSets = te.sets ?? 1;
+            const targetWeight = te.targetWeight ?? 0;
+            const reps = te.reps ?? 0;
+
+            for (let setNum = 1; setNum <= numSets; setNum++) {
+              workoutSetInserts.push({
+                workoutExerciseId: insertedExercise.id,
+                setNumber: setNum,
+                weight: targetWeight,
+                reps: reps,
+                rpe: undefined,
+                isComplete: false,
+                localId: undefined,
+              });
+            }
+          }
+
+          for (let i = 0; i < workoutSetInserts.length; i += BATCH_SIZE) {
+            const batch = workoutSetInserts.slice(i, i + BATCH_SIZE);
+            await drizzleDb.insert(workoutSets).values(batch).run();
+          }
+
+          await updateProgramCycleProgress(db, params.id, session.workosId, {
+            currentWeek: currentWorkout.weekNumber,
+            currentSession: currentWorkout.sessionNumber,
           });
 
-          for (const templateExercise of templateExercises) {
-            const workoutExercise = await createWorkoutExercise(
-              db,
-              workout.id,
-              session.workosId,
-              templateExercise.exerciseId,
-              templateExercise.orderIndex,
-              undefined,
-              undefined,
-              templateExercise.isAmrap ?? false,
-              templateExercise.setNumber ?? undefined
-            );
-
-            if (workoutExercise) {
-              const numSets = templateExercise.sets ?? 1;
-              const targetWeight = templateExercise.targetWeight ?? 0;
-              const reps = templateExercise.reps ?? 0;
-
-              for (let setNum = 1; setNum <= numSets; setNum++) {
-                await createWorkoutSet(
-                  db,
-                  workoutExercise.id,
-                  session.workosId,
-                  setNum,
-                  targetWeight,
-                  reps,
-                  undefined
-                );
-              }
-            }
+          if (currentWorkout.scheduledDate !== actualDateOnly) {
+            await drizzleDb
+              .update(programCycleWorkouts)
+              .set({
+                scheduledDate: actualDateOnly,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(programCycleWorkouts.id, currentWorkout.id))
+              .run();
           }
 
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });

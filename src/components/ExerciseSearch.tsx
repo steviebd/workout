@@ -18,6 +18,7 @@ interface Exercise {
 interface ExerciseSearchProps {
   selectedIds: string[];
   onSelect: (exercise: Exercise | LibraryItem) => void;
+  onDeselect?: (exerciseId: string) => void;
   onCreateInline: (name: string, muscleGroup: string, description: string) => void;
   userExercises?: Exercise[];
 }
@@ -38,6 +39,7 @@ const EMPTY_EXERCISES: Exercise[] = [];
 export function ExerciseSearch({
   selectedIds,
   onSelect,
+  onDeselect,
   onCreateInline,
   userExercises = EMPTY_EXERCISES,
 }: ExerciseSearchProps) {
@@ -55,17 +57,17 @@ export function ExerciseSearch({
   const filteredResults = useMemo(() => {
     if (!search.trim()) {
       return {
-        user: userExercises.slice(0, 5).map(e => ({
+        user: userExercises.slice(0, 50).map(e => ({
           type: 'user' as const,
           item: e,
           isSelected: selectedIds.includes(e.id),
         })),
-        library: exerciseLibrary.slice(0, 5).map(e => ({
+        library: exerciseLibrary.slice(0, 50).map(e => ({
           type: 'library' as const,
           item: { ...e, isLibrary: true } as LibraryItem,
           isSelected: selectedIds.some(id => {
             const found = userExercises.find(ex => ex.id === id);
-            return found?.name === e.name && found?.muscleGroup === e.muscleGroup;
+            return found?.libraryId === e.id || (found?.name === e.name && found?.muscleGroup === e.muscleGroup);
           }),
         })),
         fuzzyMatch: null,
@@ -94,7 +96,7 @@ export function ExerciseSearch({
         item: { ...e, isLibrary: true } as LibraryItem,
         isSelected: selectedIds.some(id => {
           const found = userExercises.find(ex => ex.id === id);
-          return found?.name === e.name && found?.muscleGroup === e.muscleGroup;
+          return found?.libraryId === e.id || (found?.name === e.name && found?.muscleGroup === e.muscleGroup);
         }),
       }));
 
@@ -118,12 +120,19 @@ export function ExerciseSearch({
 
   const handleSelect = useCallback((result: SearchResult) => {
     if (result.isSelected) {
-      setDuplicateWarning({ show: true, existingName: result.item.name, item: result.item });
+      if (onDeselect && result.type === 'library') {
+        const userExercise = userExercises.find(ex => ex.libraryId === result.item.id);
+        if (userExercise) {
+          onDeselect(userExercise.id);
+        }
+      } else if (onDeselect) {
+        onDeselect(result.item.id);
+      }
       return;
     }
     onSelect(result.item);
     setSearch('');
-  }, [onSelect]);
+  }, [onSelect, onDeselect, userExercises]);
 
   const handleUseExisting = useCallback(() => {
     if (duplicateWarning?.item) {
@@ -208,11 +217,10 @@ export function ExerciseSearch({
       <button
         className={`w-full text-left p-3 rounded-lg border transition-colors ${
           result.isSelected
-            ? 'bg-muted border-muted-foreground/20 cursor-not-allowed'
+            ? 'bg-muted border-muted-foreground/20 hover:bg-muted/80'
             : 'border-border hover:border-primary hover:bg-primary/5'
         }`}
         onClick={onClick}
-        disabled={result.isSelected}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
@@ -230,7 +238,7 @@ export function ExerciseSearch({
             {result.item.muscleGroup ? <p className="text-sm text-muted-foreground mt-0.5">{result.item.muscleGroup}</p> : null}
           </div>
           {result.isSelected ? (
-            <span className="text-sm text-muted-foreground font-medium">Added</span>
+            <span className="text-sm text-muted-foreground font-medium">Remove</span>
           ) : (
             <Plus size={18} className="text-muted-foreground" />
           )}
@@ -313,35 +321,39 @@ export function ExerciseSearch({
         </form>
       ) : (
         <div className="space-y-3">
-          {filteredResults.user.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Your Exercises</p>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Your Exercises</p>
+            {filteredResults.user.length > 0 ? (
               <div className="space-y-2">
                 {filteredResults.user.map(result => (
                   <ResultRow
-                    key={result.item.id}
+                    key={`user-${result.item.id}`}
                     result={result}
                     onClick={() => handleSelect(result)}
                   />
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No exercises found</p>
+            )}
+          </div>
 
-          {filteredResults.library.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Exercise Library</p>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Exercise Library</p>
+            {filteredResults.library.length > 0 ? (
               <div className="space-y-2">
                 {filteredResults.library.map(result => (
                   <ResultRow
-                    key={result.item.id}
+                    key={`library-${result.item.id}`}
                     result={result}
                     onClick={() => handleSelect(result)}
                   />
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No exercises found</p>
+            )}
+          </div>
 
           {filteredResults.fuzzyMatch !== null && filteredResults.fuzzyMatch.isMatch && filteredResults.fuzzyMatch.matchedItem !== null ? (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">

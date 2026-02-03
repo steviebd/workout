@@ -47,12 +47,14 @@ export interface ProgramWorkout {
     targetWeight: number;
     isAmrap?: boolean;
   }>;
+  accessories?: WorkoutAccessory[];
 }
 
 export interface ProgramConfig {
   info: ProgramInfo;
   generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[];
   calculateTargetWeight(estimatedOneRM: number, week: number, session: number, lift: LiftType): number;
+  getAccessories?(week: number, session: number): ProgramAccessory[];
 }
 
 export interface ProgramListItem {
@@ -75,3 +77,36 @@ export const PROGRAM_SLUGS = {
 } as const;
 
 export type ProgramSlug = typeof PROGRAM_SLUGS[keyof typeof PROGRAM_SLUGS];
+
+export type AccessoryCategory = 'push' | 'pull' | 'leg' | 'core';
+
+export interface AccessoryDefinition {
+  id: string;
+  name: string;
+  category: AccessoryCategory;
+  baseLift: LiftType | null;
+  defaultPercentage: number | null;
+  muscleGroup: string;
+  libraryId: string;
+}
+
+export interface ProgramAccessory {
+  accessoryId: string;
+  sets: number;
+  reps: number | string;
+  targetPercentage?: number;
+  isRequired: boolean;
+  notes?: string;
+}
+
+export interface WorkoutAccessory {
+  accessoryId: string;
+  name: string;
+  libraryId?: string;
+  muscleGroup: string;
+  sets: number;
+  reps: number | string;
+  targetWeight: number;
+  addedWeight: number;
+  isRequired: boolean;
+}

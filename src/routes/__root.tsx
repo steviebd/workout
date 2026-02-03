@@ -59,7 +59,7 @@ export function useAuth() {
 function AppLayout() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [syncState, setSyncState] = useState({
     isOnline: true,
     isSyncing: false,
@@ -76,34 +76,76 @@ function AppLayout() {
     let isMounted = true;
 
     async function checkAuth() {
-      console.log('[checkAuth] Starting auth check...');
+      async function fetchWithTimeout(url: string, timeoutMs = 3000): Promise<Response | null> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch(url, {
+            credentials: 'include',
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          return response;
+        } catch {
+          clearTimeout(timeoutId);
+          return null;
+        }
+      }
+
       try {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
-        console.log('[checkAuth] Response status:', response.status);
-        
+        const [cachedUser, apiResponse] = await Promise.all([
+          getCachedUser(),
+          fetchWithTimeout('/api/auth/me', 3000),
+        ]);
+
         if (!isMounted) return;
 
-        if (response.ok) {
-          const userData = (await response.json()) as User;
-          console.log('[checkAuth] User data received:', userData);
+        if (cachedUser && !apiResponse) {
+          setUser({
+            id: cachedUser.id,
+            email: cachedUser.email,
+            name: cachedUser.name,
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (apiResponse?.ok) {
+          const userData = (await apiResponse.json()) as User;
           if (userData) {
             setUser(userData);
             await cacheUser({
               id: userData.id,
               email: userData.email,
               name: userData.name,
-              cachedAt: new Date(),
             });
           } else {
-            console.log('[checkAuth] userData was falsy');
             setUser(null);
           }
-        } else if (response.status === 401) {
-          console.log('[checkAuth] Got 401, clearing user');
+        } else if (apiResponse?.status === 401) {
           await clearCachedUser();
           setUser(null);
+        } else if (apiResponse) {
+          if (cachedUser) {
+            setUser({
+              id: cachedUser.id,
+              email: cachedUser.email,
+              name: cachedUser.name,
+            });
+          } else {
+            setUser(null);
+          }
+        } else if (cachedUser) {
+          setUser({
+            id: cachedUser.id,
+            email: cachedUser.email,
+            name: cachedUser.name,
+          });
         } else {
-          console.log('[checkAuth] Non-200/401 response, checking cache');
+          setUser(null);
+        }
+      } catch {
+        if (isMounted) {
           const cachedUser = await getCachedUser();
           if (cachedUser) {
             setUser({
@@ -115,21 +157,8 @@ function AppLayout() {
             setUser(null);
           }
         }
-      } catch (err) {
-        console.error('[checkAuth] Error:', err);
-        const cachedUser = await getCachedUser();
-        if (cachedUser && isMounted) {
-          setUser({
-            id: cachedUser.id,
-            email: cachedUser.email,
-            name: cachedUser.name,
-          });
-        } else if (isMounted) {
-          setUser(null);
-        }
       } finally {
         if (isMounted) {
-          console.log('[checkAuth] Setting loading to false');
           setLoading(false);
         }
       }
@@ -159,23 +188,23 @@ function AppLayout() {
           </head>
           <body className={'min-h-screen bg-background font-sans antialiased'}>
             <div className={'min-h-screen flex flex-col'}>
-              <UnitProvider>
-                <DateFormatProvider>
-                  <StreakProvider workosId={user?.id ?? ''}>
+              <UnitProvider userId={user?.id}>
+                <DateFormatProvider userId={user?.id}>
+                  <StreakProvider>
                     <Header />
+                    <main className={'flex-1 pb-20'}>
+                      <div className="mx-auto max-w-lg px-4">
+                      <ErrorBoundary>
+                        <ToastProvider>
+                          <TooltipProvider>
+                            <Outlet />
+                          </TooltipProvider>
+                        </ToastProvider>
+                      </ErrorBoundary>
+                      </div>
+                    </main>
+                    <BottomNav />
                   </StreakProvider>
-                  <main className={'flex-1 pb-20'}>
-                    <div className="mx-auto max-w-lg px-4">
-                    <ErrorBoundary>
-                      <ToastProvider>
-                        <TooltipProvider>
-                          <Outlet />
-                        </TooltipProvider>
-                      </ToastProvider>
-                    </ErrorBoundary>
-                    </div>
-                  </main>
-                  <BottomNav />
                 </DateFormatProvider>
               </UnitProvider>
             </div>

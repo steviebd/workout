@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "26fd01b7-5b72-4472-ae24-ebee2243bb80",
+  "id": "c9c9903e-2ebb-4ae7-ab33-0c1c220e34b6",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -172,7 +172,7 @@
     },
     {
       "type": "text",
-      "notNull": true,
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -246,6 +246,46 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scheduled_date",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scheduled_time",
+      "entityType": "columns",
+      "table": "program_cycle_workouts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
       "name": "id",
       "entityType": "columns",
       "table": "template_exercises"
@@ -291,6 +331,16 @@
       "table": "template_exercises"
     },
     {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "added_weight",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
       "type": "integer",
       "notNull": false,
       "autoincrement": false,
@@ -311,12 +361,42 @@
       "table": "template_exercises"
     },
     {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reps_raw",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
       "type": "integer",
       "notNull": false,
       "autoincrement": false,
       "default": "false",
       "generated": null,
       "name": "is_amrap",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_accessory",
+      "entityType": "columns",
+      "table": "template_exercises"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "true",
+      "generated": null,
+      "name": "is_required",
       "entityType": "columns",
       "table": "template_exercises"
     },
@@ -477,6 +557,16 @@
       "default": "'light'",
       "generated": null,
       "name": "theme",
+      "entityType": "columns",
+      "table": "user_preferences"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "3",
+      "generated": null,
+      "name": "weekly_workout_target",
       "entityType": "columns",
       "table": "user_preferences"
     },
@@ -707,6 +797,46 @@
       "default": "CURRENT_TIMESTAMP",
       "generated": null,
       "name": "updated_at",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "preferred_gym_days",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "preferred_time_of_day",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "program_start_date",
+      "entityType": "columns",
+      "table": "user_program_cycles"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "first_session_date",
       "entityType": "columns",
       "table": "user_program_cycles"
     },

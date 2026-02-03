@@ -8,6 +8,10 @@ import { Progress } from '~/components/ui/Progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
 import { useToast } from '@/components/ToastProvider';
 import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
+import { WeeklySchedule } from '~/components/WeeklySchedule';
+import { RescheduleDialog } from '~/components/RescheduleDialog';
+import { formatTime } from '~/lib/programs/scheduler';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 interface CycleData {
   id: string;
@@ -26,6 +30,10 @@ interface CycleData {
   startedAt: string | null;
   completedAt: string | null;
   updatedAt: string | null;
+  preferredGymDays: string[] | null;
+  preferredTimeOfDay: string | null;
+  programStartDate: string | null;
+  firstSessionDate: string | null;
 }
 
 interface ExerciseDetail {
@@ -47,7 +55,61 @@ interface CurrentWorkoutData {
   sessionNumber: number;
   sessionName: string;
   isComplete: boolean;
+  scheduledDate: string;
+  scheduledTime?: string;
   exercises: ExerciseDetail[];
+}
+
+interface WorkoutForWeekCalculation {
+  weekNumber: number;
+  scheduledDate: string;
+  isComplete: boolean;
+}
+
+const FETCH_TIMEOUT_MS = 10000;
+
+function calculateCurrentWeekFromWorkouts(
+  workouts: WorkoutForWeekCalculation[],
+  fallbackWeek: number
+): number {
+  if (workouts.length === 0) return fallbackWeek;
+
+  const workoutsByWeek = workouts.reduce<Record<number, WorkoutForWeekCalculation[]>>((acc, w) => {
+    const week = w.weekNumber;
+    if (!acc[week]) acc[week] = [];
+    acc[week].push(w);
+    return acc;
+  }, {});
+
+  const weeks = Object.keys(workoutsByWeek)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const firstIncompleteWeek = weeks.find((week) => {
+    return !workoutsByWeek[week].every((w) => w.isComplete);
+  });
+
+  return firstIncompleteWeek ?? weeks[weeks.length - 1] ?? fallbackWeek;
+}
+
+async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
+  }
 }
 
 const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit }: { readonly exercise: ExerciseDetail; readonly weightUnit: string }) {
@@ -73,47 +135,94 @@ function ProgramDashboard() {
   const toast = useToast();
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [currentWorkout, setCurrentWorkout] = useState<CurrentWorkoutData | null>(null);
+  const [calculatedCurrentWeek, setCalculatedCurrentWeek] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [weightUnit, setWeightUnit] = useState('kg');
+  const [rescheduleWorkout, setRescheduleWorkout] = useState<{ id: string; weekNumber: number; sessionNumber: number; sessionName: string; scheduledDate: string; scheduledTime?: string; isComplete: boolean; } | null>(null);
+  const { formatDate } = useDateFormat();
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadCycle() {
       try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}`);
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
         if (response.ok) {
           const data = await response.json();
-          setCycle(data as CycleData);
+          if (isMounted) {
+            setCycle(data as CycleData);
+          }
         }
       } catch (error) {
         console.error('Error loading cycle:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     void loadCycle();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.cycleId]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadCurrentWorkout() {
       try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}/current-workout`);
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
         if (response.ok) {
-          const data = await response.json();
-          setCurrentWorkout(data as CurrentWorkoutData);
+          const data = await response.json() as CurrentWorkoutData;
+          if (isMounted) {
+            setCurrentWorkout(data);
+
+            const today = new Date();
+            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+            if (data.scheduledDate) {
+              const workoutDate = new Date(`${data.scheduledDate}T00:00:00`);
+              if (workoutDate.getTime() === todayDate.getTime()) {
+                setCalculatedCurrentWeek(data.weekNumber);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading current workout:', error);
       }
     }
 
+    async function loadAllWorkoutsForWeekCalculation() {
+      try {
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+        if (response.ok) {
+          const workouts = await response.json() as WorkoutForWeekCalculation[];
+          if (isMounted && workouts.length > 0) {
+            const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
+            setCalculatedCurrentWeek(calculatedWeek);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading workouts for week calculation:', error);
+      }
+    }
+
     void loadCurrentWorkout();
+    void loadAllWorkoutsForWeekCalculation();
+
+    return () => {
+      isMounted = false;
+    };
   }, [params.cycleId]);
 
   useEffect(() => {
     async function loadPreferences() {
       try {
-        const response = await fetch('/api/user/preferences');
+        const response = await fetchWithTimeout('/api/user/preferences');
         if (response.ok) {
           const prefs = await response.json() as { weightUnit?: string };
           setWeightUnit(prefs.weightUnit ?? 'kg');
@@ -126,12 +235,48 @@ function ProgramDashboard() {
     void loadPreferences();
   }, []);
 
+  const handleRescheduleWorkout = async (workoutId: string, newDate: string) => {
+    try {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts/${workoutId}/reschedule`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduledDate: newDate }),
+      });
+
+      if (response.ok) {
+        toast.success('Workout rescheduled');
+
+        const currentWorkoutResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
+        if (currentWorkoutResponse.ok) {
+          const data = await currentWorkoutResponse.json();
+          setCurrentWorkout(data as CurrentWorkoutData);
+        }
+
+        const workoutsResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+        if (workoutsResponse.ok) {
+          const workouts = await workoutsResponse.json() as WorkoutForWeekCalculation[];
+          const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
+          setCalculatedCurrentWeek(calculatedWeek);
+        }
+      } else {
+        toast.error('Failed to reschedule workout');
+      }
+    } catch (error) {
+      toast.error('Error rescheduling workout');
+      console.error('Error rescheduling workout:', error);
+    }
+  };
+
   const handleStartWorkout = async () => {
     if (!cycle) return;
     
+    const today = new Date().toISOString();
+    
     try {
-      const response = await fetch(`/api/program-cycles/${params.cycleId}/start-workout`, {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/start-workout`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actualDate: today }),
       });
       
       if (response.ok) {
@@ -156,13 +301,13 @@ function ProgramDashboard() {
 
   const handleDeleteProgram = async () => {
     try {
-      const response = await fetch(`/api/program-cycles/${params.cycleId}`, {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         toast.success('Program deleted');
-        void navigate({ to: '/programs' });
+        void navigate({ to: '/' });
       } else {
         toast.error('Failed to delete program');
       }
@@ -211,7 +356,7 @@ function ProgramDashboard() {
         <Card className="p-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Week {cycle.currentWeek ?? 1}</span>
+              <span>Week {calculatedCurrentWeek}</span>
               <span>Session {totalCompleted + 1} of {cycle.totalSessionsPlanned}</span>
             </div>
             <Progress value={progressPercent} />
@@ -241,23 +386,64 @@ function ProgramDashboard() {
           </div>
         </Card>
 
-        {currentWorkout && currentWorkout.exercises.length > 0 ? (
+        {!!(currentWorkout && currentWorkout.exercises.length > 0) && (
           <Card className="p-4">
             <h3 className="font-semibold mb-3">Today's Workout - {currentWorkout.sessionName}</h3>
+            <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+              <span>{formatDate(currentWorkout.scheduledDate)}</span>
+              {currentWorkout.scheduledTime ? (
+                <>
+                  <span>•</span>
+                  <span>{formatTime(currentWorkout.scheduledTime)}</span>
+                </>
+              ) : null}
+            </div>
             <div className="space-y-3">
               {currentWorkout.exercises.map((exercise) => (
                 <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} />
               ))}
             </div>
           </Card>
-        ) : (
-          !cycle.isComplete && (
-            <Card className="p-4 bg-muted">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">All workouts in this program have been completed!</p>
-              </div>
-            </Card>
-          )
+        )}
+
+        {!cycle.isComplete && (
+          <>
+            <WeeklySchedule
+              cycleId={params.cycleId}
+              currentWeek={calculatedCurrentWeek}
+              onStartWorkout={(programCycleWorkoutId, actualDate) => {
+                void (async () => {
+                  try {
+                    const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/start-workout`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ programCycleWorkoutId, actualDate }),
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json() as { workoutId: string };
+                      void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+                    } else {
+                      toast.error('Failed to start workout');
+                    }
+                  } catch (error) {
+                    toast.error('Error starting workout');
+                    console.error('Error starting workout:', error);
+                  }
+                })();
+              }}
+              onRescheduleWorkout={(workout) => {
+                setRescheduleWorkout(workout);
+              }}
+            />
+
+            <RescheduleDialog
+              workout={rescheduleWorkout}
+              open={!!rescheduleWorkout}
+              onClose={() => setRescheduleWorkout(null)}
+              onReschedule={(id, date) => { void handleRescheduleWorkout(id, date); }}
+            />
+          </>
         )}
 
         {cycle.isComplete ? (

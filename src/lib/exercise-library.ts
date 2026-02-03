@@ -69,4 +69,20 @@ export const exerciseLibrary: ExerciseLibraryItem[] = [
   { id: 'stationary-bike', name: 'Stationary Bike', muscleGroup: 'Cardio', description: 'A low-impact cycling exercise providing excellent cardiovascular benefits without stressing the joints.' },
 
   { id: 'box-jump', name: 'Box Jump', muscleGroup: 'Other', description: 'A plyometric exercise jumping onto a box or platform, developing explosive power in the legs and improving athletic performance.' },
+
+  { id: 'back-raises', name: 'Back Raises', muscleGroup: 'Back', description: 'A back extension exercise performed on a roman chair, targeting the erector spinae and glutes.' },
+  { id: 'hyperextensions', name: 'Hyperextensions', muscleGroup: 'Back', description: 'Lying face down on a hyperextension bench, raise your upper body to target the lower back muscles.' },
+  { id: 'weighted-pullups', name: 'Weighted Pull-ups', muscleGroup: 'Back', description: 'Pull-ups with added weight (belt or dumbbell) for increased resistance.' },
+  { id: 'weighted-dips', name: 'Weighted Dips', muscleGroup: 'Chest', description: 'Dips with added weight belt or dumbbell between feet for increased difficulty.' },
+  { id: 'inverted-rows', name: 'Inverted Rows', muscleGroup: 'Back', description: 'Horizontal pulling exercise using a bar at waist height, similar to a pull-up but easier.' },
+  { id: 'pause-squat', name: 'Pause Squat', muscleGroup: 'Quads', description: 'Squat with a 2-3 second pause at the bottom to build strength at the sticking point.' },
+  { id: 'paused-bench', name: 'Paused Bench Press', muscleGroup: 'Chest', description: 'Bench press with a 2-3 second pause on the chest to build strength and control.' },
+  { id: 'paused-deadlift', name: 'Paused Deadlift', muscleGroup: 'Back', description: 'Deadlift with a pause just above the knee to build lockout strength.' },
+  { id: 'deficit-deadlift', name: 'Deficit Deadlift', muscleGroup: 'Back', description: 'Deadlift performed standing on a platform to increase range of motion and build strength.' },
+  { id: 'rack-pull', name: 'Rack Pull', muscleGroup: 'Back', description: 'Deadlift from pins in the rack, emphasizing lockout strength above the knee.' },
+  { id: 'good-mornings', name: 'Good Mornings', muscleGroup: 'Hamstrings', description: 'Hip-hinge exercise with barbell on back, bending at the waist to target hamstrings and lower back.' },
+  { id: 'face-pulls', name: 'Face Pulls', muscleGroup: 'Shoulders', description: 'Cable exercise pulling rope to face level, targeting rear delts and rotator cuff.' },
+  { id: 'hanging-leg-raise', name: 'Hanging Leg Raise', muscleGroup: 'Core', description: 'Hanging from bar, raise legs to horizontal to target hip flexors and lower abs.' },
+  { id: 'cable-crunch', name: 'Cable Crunch', muscleGroup: 'Core', description: 'Kneeling cable exercise crunching down to flex spine against resistance.' },
+  { id: 'ab-wheel', name: 'Ab Wheel', muscleGroup: 'Core', description: 'Rolling wheel exercise extending and contracting the core for intense abdominal work.' },
 ];

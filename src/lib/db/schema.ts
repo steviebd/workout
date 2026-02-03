@@ -19,6 +19,7 @@ export const userPreferences = sqliteTable('user_preferences', {
   weightUnit: text('weight_unit').default('kg'),
   dateFormat: text('date_format').default('dd/mm/yyyy'),
   theme: text('theme').default('light'),
+  weeklyWorkoutTarget: integer('weekly_workout_target').default(3),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -55,9 +56,13 @@ export const templateExercises = sqliteTable('template_exercises', {
   exerciseId: text('exercise_id').notNull().references(() => exercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
   targetWeight: real('target_weight'),
+  addedWeight: real('added_weight').default(0),
   sets: integer('sets'),
   reps: integer('reps'),
+  repsRaw: text('reps_raw'),
   isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
+  isAccessory: integer('is_accessory', { mode: 'boolean' }).default(false),
+  isRequired: integer('is_required', { mode: 'boolean' }).default(true),
   setNumber: integer('set_number'),
 });
 
@@ -138,18 +143,26 @@ export const userProgramCycles = sqliteTable('user_program_cycles', {
   startedAt: text('started_at').default(sql`CURRENT_TIMESTAMP`),
   completedAt: text('completed_at'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  preferredGymDays: text('preferred_gym_days'),
+  preferredTimeOfDay: text('preferred_time_of_day'),
+  programStartDate: text('program_start_date'),
+  firstSessionDate: text('first_session_date'),
 });
 
 export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   cycleId: text('cycle_id').notNull().references(() => userProgramCycles.id, { onDelete: 'cascade' }),
-  templateId: text('template_id').notNull().references(() => templates.id, { onDelete: 'cascade' }),
+  templateId: text('template_id').references(() => templates.id, { onDelete: 'cascade' }),
   weekNumber: integer('week_number').notNull(),
   sessionNumber: integer('session_number').notNull(),
   sessionName: text('session_name').notNull(),
   targetLifts: text('target_lifts'),
   isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
   workoutId: text('workout_id'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
+  scheduledDate: text('scheduled_date'),
+  scheduledTime: text('scheduled_time'),
 });
 
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
@@ -188,7 +201,12 @@ export const _userProgramCyclesStatusIdx = index('idx_user_program_cycles_status
 export const _userProgramCyclesUpdatedAtIdx = index('idx_user_program_cycles_updated_at').on(userProgramCycles.updatedAt);
 
 export const _programCycleWorkoutsCycleIdIdx = index('idx_program_cycle_workouts_cycle_id').on(programCycleWorkouts.cycleId);
+export const _programCycleWorkoutsCycleIdIsCompleteIdx = index('idx_program_cycle_workouts_cycle_id_is_complete').on(programCycleWorkouts.cycleId, programCycleWorkouts.isComplete);
 export const _programCycleWorkoutsTemplateIdIdx = index('idx_program_cycle_workouts_template_id').on(programCycleWorkouts.templateId);
+export const _programCycleWorkoutsScheduledDateIdx = index('idx_program_cycle_workouts_scheduled_date').on(programCycleWorkouts.scheduledDate);
+export const _programCycleWorkoutsCycleIdScheduledDateIdx = index('idx_program_cycle_workouts_cycle_id_scheduled_date').on(programCycleWorkouts.cycleId, programCycleWorkouts.scheduledDate);
+
+export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_template_id').on(templateExercises.templateId);
 
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;

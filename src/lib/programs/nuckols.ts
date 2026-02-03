@@ -1,5 +1,6 @@
 import { TRAINING_MAX_PERCENTAGE, roundToPlate } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const nuckolsInfo = {
   slug: 'nuckols-28-programs',
@@ -25,6 +26,24 @@ const WAVE_2 = {
   week3: { t1: [0.775, 0.875, 0.975], t2: [0.675, 0.775, 0.875] },
   week4: { t1: [0.625, 0.725, 0.825], t2: [0.525, 0.625, 0.725] },
 };
+
+export const nuckolsSuggestedAccessories: ProgramAccessory[] = [
+  { accessoryId: 'dips', sets: 3, reps: '8-12', isRequired: false },
+  { accessoryId: 'pushups', sets: 3, reps: '15-20', isRequired: false },
+  { accessoryId: 'tricep-pushdowns', sets: 3, reps: '10-15', isRequired: false },
+  { accessoryId: 'pullups', sets: 3, reps: 'AMRAP', isRequired: false },
+  { accessoryId: 'rows', sets: 3, reps: '8-12', isRequired: false },
+  { accessoryId: 'face-pulls', sets: 3, reps: '15-20', isRequired: false },
+  { accessoryId: 'romanian-dl', sets: 3, reps: '8-12', isRequired: false },
+  { accessoryId: 'leg-curls', sets: 3, reps: '10-15', isRequired: false },
+  { accessoryId: 'leg-extensions', sets: 3, reps: '10-15', isRequired: false },
+  { accessoryId: 'planks', sets: 3, reps: '30-60sec', isRequired: false },
+  { accessoryId: 'hanging-leg-raises', sets: 3, reps: '10-15', isRequired: false },
+];
+
+export function getNuckolsAccessories(_week: number, _session: number): ProgramAccessory[] {
+  return [];
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -64,14 +83,14 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         const t2LiftName = config.t2.charAt(0).toUpperCase() + config.t2.slice(1);
 
         const t1Sets = [
-          { name: liftName, lift: config.t1, sets: 1, reps: 5, targetWeight: calculateTargetWeight(t1OneRM, week, 1, config.t1, false, wave), isAmrap: false },
-          { name: `${liftName} 2`, lift: config.t1, sets: 1, reps: 3, targetWeight: calculateTargetWeight(t1OneRM, week, 2, config.t1, false, wave), isAmrap: false },
-          { name: `${liftName} 3+`, lift: config.t1, sets: 1, reps: 1, targetWeight: calculateTargetWeight(t1OneRM, week, 3, config.t1, false, wave), isAmrap: true },
+          { name: liftName, lift: config.t1, sets: 3, reps: 8, targetWeight: calculateTargetWeight(t1OneRM, week, 1, config.t1, false, wave), isAmrap: false },
+          { name: `${liftName} 2`, lift: config.t1, sets: 3, reps: 8, targetWeight: calculateTargetWeight(t1OneRM, week, 2, config.t1, false, wave), isAmrap: false },
+          { name: `${liftName} 3`, lift: config.t1, sets: 3, reps: 8, targetWeight: calculateTargetWeight(t1OneRM, week, 3, config.t1, false, wave), isAmrap: false },
         ];
 
         const t2Sets = [
-          { name: t2LiftName, lift: config.t2, sets: 1, reps: 8, targetWeight: calculateTargetWeight(t2OneRM, week, 1, config.t2, true, wave), isAmrap: false },
-          { name: `${t2LiftName} 2`, lift: config.t2, sets: 1, reps: 6, targetWeight: calculateTargetWeight(t2OneRM, week, 2, config.t2, true, wave), isAmrap: false },
+          { name: t2LiftName, lift: config.t2, sets: 3, reps: 10, targetWeight: calculateTargetWeight(t2OneRM, week, 1, config.t2, true, wave), isAmrap: false },
+          { name: `${t2LiftName} 2`, lift: config.t2, sets: 3, reps: 10, targetWeight: calculateTargetWeight(t2OneRM, week, 2, config.t2, true, wave), isAmrap: false },
         ];
 
         const dayNames = ['Day 1 (Squat/Bench)', 'Day 2 (Bench/Squat)', 'Day 3 (Deadlift/OHP)', 'Day 4 (OHP/Deadlift)'];
@@ -83,6 +102,13 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
           exercises: [...t1Sets, ...t2Sets],
         });
       }
+    }
+  }
+
+  for (const workout of workouts) {
+    const accessories = getNuckolsAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
     }
   }
 

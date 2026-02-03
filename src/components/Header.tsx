@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload } from 'lucide-react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target } from 'lucide-react'
 import { Button } from './ui/Button'
 import { useAuth } from '@/routes/__root'
 import { useUnit } from '@/lib/context/UnitContext'
@@ -16,7 +16,8 @@ export function Header() {
   const settingsRef = useRef<HTMLDivElement>(null)
   const { weightUnit, setWeightUnit } = useUnit()
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
-  const { currentStreak, loading: streakLoading } = useStreak()
+  const { weeklyCount, weeklyTarget, loading: streakLoading, refetch: refetchStreak } = useStreak()
+  const [savingTarget, setSavingTarget] = useState(false)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -46,6 +47,23 @@ export function Header() {
     void setDateFormat(format)
   }
 
+  const handleWeeklyTargetChange = async (target: number) => {
+    if (target < 1 || target > 7) return
+    setSavingTarget(true)
+    try {
+      await fetch('/api/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weeklyWorkoutTarget: target }),
+      })
+      await refetchStreak()
+    } catch (error) {
+      console.error('Failed to save weekly target:', error)
+    } finally {
+      setSavingTarget(false)
+    }
+  }
+
   const getUserInitials = (name: string) => {
     return name
       .split(' ')
@@ -68,13 +86,13 @@ export function Header() {
           <div className="flex items-center gap-3">
             {streakLoading ? (
               <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
-                <Flame className="h-4 w-4 text-primary animate-pulse" />
+                <Target className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-sm font-semibold">...</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
-                <Flame className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">{currentStreak}</span>
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
               </div>
             )}
 
@@ -167,6 +185,39 @@ export function Header() {
                       </button>
                     </div>
                   )}
+                </div>
+                <div className="px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-2">Weekly Workout Target</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => void handleWeeklyTargetChange(weeklyTarget - 1)}
+                      disabled={weeklyTarget <= 1 || savingTarget}
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-colors"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max="7"
+                      value={weeklyTarget}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        if (val >= 1 && val <= 7) {
+                          void handleWeeklyTargetChange(val)
+                        }
+                      }}
+                      className="w-16 h-9 text-center rounded-lg border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <button
+                      onClick={() => void handleWeeklyTargetChange(weeklyTarget + 1)}
+                      disabled={weeklyTarget >= 7 || savingTarget}
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-colors"
+                    >
+                      +
+                    </button>
+                    <span className="text-sm text-muted-foreground">per week</span>
+                  </div>
                 </div>
               </div>
             ) : null}

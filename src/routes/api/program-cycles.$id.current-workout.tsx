@@ -89,11 +89,13 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
               targetLifts: programCycleWorkouts.targetLifts,
             })
             .from(programCycleWorkouts)
-            .innerJoin(templates, eq(programCycleWorkouts.templateId, templates.id))
+            .leftJoin(templates, and(
+              eq(programCycleWorkouts.templateId, templates.id),
+              eq(templates.workosId, session.workosId)
+            ))
             .where(and(
               eq(programCycleWorkouts.cycleId, params.id),
-              eq(programCycleWorkouts.isComplete, false),
-              eq(templates.workosId, session.workosId)
+              eq(programCycleWorkouts.isComplete, false)
             ))
             .orderBy(asc(programCycleWorkouts.weekNumber), asc(programCycleWorkouts.sessionNumber))
             .get();
@@ -102,54 +104,67 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-          const templateExercisesData = await drizzleDb
-            .select({
-              id: templateExercises.id,
-              exerciseId: templateExercises.exerciseId,
-              orderIndex: templateExercises.orderIndex,
-              targetWeight: templateExercises.targetWeight,
-              sets: templateExercises.sets,
-              reps: templateExercises.reps,
-              exercise: {
-                id: exercises.id,
-                name: exercises.name,
-                muscleGroup: exercises.muscleGroup,
-              },
-            })
-            .from(templateExercises)
-            .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
-            .where(eq(templateExercises.templateId, currentWorkout.templateId))
-            .orderBy(templateExercises.orderIndex)
-            .all();
+          let exercisesWithRecalculatedWeights: Array<{
+            id: string;
+            exerciseId: string;
+            orderIndex: number;
+            targetWeight: number | null;
+            sets: number | null;
+            reps: number | null;
+            exercise: { id: string; name: string; muscleGroup: string | null };
+          }> = [];
 
-          const programConfig = PROGRAM_MAP[cycle.programSlug];
-          let exercisesWithRecalculatedWeights = templateExercisesData;
+          if (currentWorkout.templateId) {
+            const templateExercisesData = await drizzleDb
+              .select({
+                id: templateExercises.id,
+                exerciseId: templateExercises.exerciseId,
+                orderIndex: templateExercises.orderIndex,
+                targetWeight: templateExercises.targetWeight,
+                sets: templateExercises.sets,
+                reps: templateExercises.reps,
+                exercise: {
+                  id: exercises.id,
+                  name: exercises.name,
+                  muscleGroup: exercises.muscleGroup,
+                },
+              })
+              .from(templateExercises)
+              .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
+              .where(eq(templateExercises.templateId, currentWorkout.templateId))
+              .orderBy(templateExercises.orderIndex)
+              .all();
 
-          if (programConfig) {
-            const oneRMs = {
-              squat: cycle.squat1rm,
-              bench: cycle.bench1rm,
-              deadlift: cycle.deadlift1rm,
-              ohp: cycle.ohp1rm,
-            };
+            const programConfig = PROGRAM_MAP[cycle.programSlug];
 
-            exercisesWithRecalculatedWeights = templateExercisesData.map((exercise) => {
-              const lift = LIFT_MAP[exercise.exercise.name] || 'squat';
-              const estimatedOneRM = getEstimatedOneRM(lift, oneRMs);
-
-              const newWeight = calculateRecalculatedWeight(
-                programConfig,
-                lift,
-                estimatedOneRM,
-                currentWorkout.weekNumber,
-                currentWorkout.sessionNumber
-              );
-
-              return {
-                ...exercise,
-                targetWeight: newWeight,
+            if (programConfig) {
+              const oneRMs = {
+                squat: cycle.squat1rm,
+                bench: cycle.bench1rm,
+                deadlift: cycle.deadlift1rm,
+                ohp: cycle.ohp1rm,
               };
-            });
+
+              exercisesWithRecalculatedWeights = templateExercisesData.map((exercise) => {
+                const lift = LIFT_MAP[exercise.exercise.name] || 'squat';
+                const estimatedOneRM = getEstimatedOneRM(lift, oneRMs);
+
+                const newWeight = calculateRecalculatedWeight(
+                  programConfig,
+                  lift,
+                  estimatedOneRM,
+                  currentWorkout.weekNumber,
+                  currentWorkout.sessionNumber
+                );
+
+                return {
+                  ...exercise,
+                  targetWeight: newWeight,
+                };
+              });
+            } else {
+              exercisesWithRecalculatedWeights = templateExercisesData;
+            }
           }
 
           return Response.json({

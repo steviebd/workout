@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Calendar, ChevronRight, Clock, Dumbbell, Loader2, Scale, Search, Trophy } from 'lucide-react';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { EmptyWorkouts } from '@/components/EmptyState';
@@ -101,6 +101,7 @@ const getThisMonthRange = () => {
 
 function History() {
   const auth = useAuth();
+  const router = useRouter();
   const { formatVolume } = useUnit();
   const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
@@ -519,77 +520,83 @@ function History() {
             {workouts.map((workout) => {
               const hasProgramCycle = Boolean(workout.programCycle);
               const is1RMTest = workout.name === '1RM Test' && hasProgramCycle;
-              const programCycleId = workout.programCycleId ?? undefined;
               const programCycle = workout.programCycle ?? undefined;
               return (
                 <Link
                   key={workout.id}
-                  to={is1RMTest && programCycleId ? '/workouts/$id' : '/workouts/$id'}
-                  params={is1RMTest && programCycleId ? { id: workout.id } : { id: workout.id }}
+                  to="/workouts/$id"
+                  params={{ id: workout.id }}
                   className="block"
                 >
                   <Card className="p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-foreground">{workout.name}</h3>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/20 text-success">
-                            Completed
-                          </span>
-                        </div>
-                        {Boolean(is1RMTest && programCycle) && (
-                          <div className="mb-2 text-sm">
-                            <span className="text-muted-foreground">{programCycle?.name ?? ''}</span>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar size={14} />
-                            {formatDate(workout.startedAt)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={14} />
-                            {formatDuration(workout.duration)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Dumbbell size={14} />
-                            {workout.exerciseCount} exercises
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Scale size={14} />
-                            {workout.totalSets} sets
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Trophy size={14} />
-                            {formatVolume(workout.totalVolume)}
-                          </span>
-                        </div>
-                        {Boolean(is1RMTest) && (() => {
-                          const startSquat = workout.startingSquat1rm ?? workout.programCycle?.startingSquat1rm ?? workout.programCycle?.squat1rm ?? 0;
-                          const startBench = workout.startingBench1rm ?? workout.programCycle?.startingBench1rm ?? workout.programCycle?.bench1rm ?? 0;
-                          const startDeadlift = workout.startingDeadlift1rm ?? workout.programCycle?.startingDeadlift1rm ?? workout.programCycle?.deadlift1rm ?? 0;
-                          const startOhp = workout.startingOhp1rm ?? workout.programCycle?.startingOhp1rm ?? workout.programCycle?.ohp1rm ?? 0;
-                          const testedSquat = workout.squat1rm ?? startSquat;
-                          const testedBench = workout.bench1rm ?? startBench;
-                          const testedDeadlift = workout.deadlift1rm ?? startDeadlift;
-                          const testedOhp = workout.ohp1rm ?? startOhp;
-                          
-                          return (
-                          <div className="mt-2 text-sm text-muted-foreground">
-                            <span className="font-medium">1RM Progress: </span>
-                            <span className={testedSquat > startSquat ? 'text-success' : 'text-muted-foreground'}>{startSquat} → {testedSquat}</span>
-                            <span className="mx-2">•</span>
-                            <span className={testedBench > startBench ? 'text-success' : 'text-primary'}>{startBench} → {testedBench}</span>
-                            <span className="mx-2">•</span>
-                            <span className={testedDeadlift > startDeadlift ? 'text-success' : 'text-chart-3'}>{startDeadlift} → {testedDeadlift}</span>
-                            <span className="mx-2">•</span>
-                            <span className={testedOhp > startOhp ? 'text-success' : 'text-chart-5'}>{startOhp} → {testedOhp}</span>
-                          </div>
-                          );
-                        })()}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground">{workout.name}</h3>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/20 text-success">
+                          Completed
+                        </span>
                       </div>
-                      <ChevronRight className="text-muted-foreground ml-4" size={20} />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void router.navigate({ to: '/workouts/$id/edit', params: { id: workout.id } });
+                        }}
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors cursor-pointer"
+                        title="Edit workout"
+                      >
+                        <Pencil size={16} />
+                      </button>
                     </div>
+                    {Boolean(is1RMTest && programCycle) && (
+                      <div className="mb-2 text-sm">
+                        <span className="text-muted-foreground">{programCycle?.name ?? ''}</span>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        {formatDate(workout.startedAt)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={14} />
+                        {formatDuration(workout.duration)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Dumbbell size={14} />
+                        {workout.exerciseCount} exercises
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Scale size={14} />
+                        {workout.totalSets} sets
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Trophy size={14} />
+                        {formatVolume(workout.totalVolume)}
+                      </span>
+                    </div>
+                    {Boolean(is1RMTest) && (() => {
+                      const startSquat = workout.startingSquat1rm ?? workout.programCycle?.startingSquat1rm ?? workout.programCycle?.squat1rm ?? 0;
+                      const startBench = workout.startingBench1rm ?? workout.programCycle?.startingBench1rm ?? workout.programCycle?.bench1rm ?? 0;
+                      const startDeadlift = workout.startingDeadlift1rm ?? workout.programCycle?.startingDeadlift1rm ?? workout.programCycle?.deadlift1rm ?? 0;
+                      const startOhp = workout.startingOhp1rm ?? workout.programCycle?.startingOhp1rm ?? workout.programCycle?.ohp1rm ?? 0;
+                      const testedSquat = workout.squat1rm ?? startSquat;
+                      const testedBench = workout.bench1rm ?? startBench;
+                      const testedDeadlift = workout.deadlift1rm ?? startDeadlift;
+                      const testedOhp = workout.ohp1rm ?? startOhp;
+                      
+                      return (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          <span className="font-medium">1RM Progress: </span>
+                          <span className={testedSquat > startSquat ? 'text-success' : 'text-muted-foreground'}>{startSquat} → {testedSquat}</span>
+                          <span className="mx-2">•</span>
+                          <span className={testedBench > startBench ? 'text-success' : 'text-primary'}>{startBench} → {testedBench}</span>
+                          <span className="mx-2">•</span>
+                          <span className={testedDeadlift > startDeadlift ? 'text-success' : 'text-chart-3'}>{startDeadlift} → {testedDeadlift}</span>
+                          <span className="mx-2">•</span>
+                          <span className={testedOhp > startOhp ? 'text-success' : 'text-chart-5'}>{startOhp} → {testedOhp}</span>
+                        </div>
+                      );
+                    })()}
                   </Card>
                 </Link>
               );

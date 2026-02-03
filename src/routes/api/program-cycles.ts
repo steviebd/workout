@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import type { OneRMValues } from '~/lib/programs/types';
 import {
-  addWorkoutToCycle,
   createProgramCycle,
   getActiveProgramCycles,
   getProgramCyclesByWorkosId,
@@ -15,8 +14,7 @@ import { nsuns } from '~/lib/programs/nsuns';
 import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
-import { createTemplate, addExerciseToTemplate, getTemplateExerciseSetCount } from '~/lib/db/template';
-import { createExercise, getExercisesByWorkosId } from '~/lib/db/exercise';
+import { generateWorkoutSchedule, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 
 const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
   'stronglifts-5x5': stronglifts,
@@ -28,26 +26,16 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'nuckols-28-programs': nuckols,
 };
 
-function normalizeExerciseName(name: string): string {
-  return name.replace(/\s*\d+(\+)?$/, '').trim();
-}
-
-function getSetInfo(name: string, isAmrap?: boolean): { isAmrap: boolean; setNumber: number } {
-  return {
-    isAmrap: isAmrap ?? name.includes('+'),
-    setNumber: 0,
-  };
-}
-
-async function getOrCreateExercise(db: D1Database, workosId: string, name: string, muscleGroup: string) {
-  const exercises = await getExercisesByWorkosId(db, workosId, { search: name, limit: 1 });
-  let exercise = exercises.find(e => e.name.toLowerCase() === name.toLowerCase());
-  exercise ??= await createExercise(db, {
-    workosId,
-    name,
-    muscleGroup,
-  });
-  return exercise;
+interface CreateProgramCycleRequest {
+  programSlug: string;
+  squat1rm: number;
+  bench1rm: number;
+  deadlift1rm: number;
+  ohp1rm: number;
+  preferredGymDays: string[];
+  preferredTimeOfDay?: 'morning' | 'afternoon' | 'evening';
+  programStartDate: string;
+  firstSessionDate: string;
 }
 
 export const Route = createFileRoute('/api/program-cycles')({
@@ -89,16 +77,20 @@ export const Route = createFileRoute('/api/program-cycles')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
-          const body = await request.json();
-          const { programSlug, squat1rm, bench1rm, deadlift1rm, ohp1rm } = body as {
-            programSlug: string;
-            squat1rm: number;
-            bench1rm: number;
-            deadlift1rm: number;
-            ohp1rm: number;
-          };
+          const body = await request.json() as CreateProgramCycleRequest;
+          const {
+            programSlug,
+            squat1rm,
+            bench1rm,
+            deadlift1rm,
+            ohp1rm,
+            preferredGymDays,
+            preferredTimeOfDay,
+            programStartDate,
+            firstSessionDate,
+          } = body;
 
-          if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm) {
+          if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm || !preferredGymDays || !programStartDate || !firstSessionDate) {
             return Response.json({ error: 'Missing required fields' }, { status: 400 });
           }
 
@@ -113,10 +105,34 @@ export const Route = createFileRoute('/api/program-cycles')({
           }
 
           const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
-          const workouts = programConfig.generateWorkouts(oneRMs);
+          const generatedWorkouts = programConfig.generateWorkouts(oneRMs);
 
           const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
           const cycleName = `${programConfig.info.name} - ${monthYear}`;
+
+          const schedule = generateWorkoutSchedule(
+            generatedWorkouts,
+            new Date(firstSessionDate),
+            {
+              preferredDays: preferredGymDays.map(d => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
+              preferredTimeOfDay: preferredTimeOfDay,
+            }
+          );
+
+          const workouts = schedule.map((w, index) => {
+            const generatedWorkout = generatedWorkouts[index];
+            return {
+              weekNumber: w.weekNumber,
+              sessionNumber: w.sessionNumber,
+              sessionName: w.sessionName,
+              scheduledDate: w.scheduledDate.toISOString().split('T')[0],
+              scheduledTime: w.scheduledTime,
+              targetLifts: JSON.stringify({
+                exercises: generatedWorkout?.exercises ?? [],
+                accessories: generatedWorkout?.accessories ?? [],
+              }),
+            };
+          });
 
           const cycle = await createProgramCycle(db, session.workosId, {
             programSlug,
@@ -126,52 +142,12 @@ export const Route = createFileRoute('/api/program-cycles')({
             deadlift1rm,
             ohp1rm,
             totalSessionsPlanned: workouts.length,
+            preferredGymDays: preferredGymDays.join(','),
+            preferredTimeOfDay,
+            programStartDate,
+            firstSessionDate,
+            workouts,
           });
-
-          for (const workout of workouts) {
-            const template = await createTemplate(db, {
-              workosId: session.workosId,
-              name: `${cycleName} - ${workout.sessionName}`,
-              description: `Week ${workout.weekNumber} - ${workout.sessionName}`,
-              programCycleId: cycle.id,
-            });
-
-            let orderIndex = 0;
-            for (const exercise of workout.exercises) {
-              const muscleGroup = exercise.lift === 'squat' || exercise.lift === 'deadlift' || exercise.lift === 'row'
-                ? 'Back'
-                : exercise.lift === 'bench' || exercise.lift === 'ohp'
-                  ? 'Chest'
-                  : 'Shoulders';
-
-              const normalizedName = normalizeExerciseName(exercise.name);
-              const dbExercise = await getOrCreateExercise(db, session.workosId, normalizedName, muscleGroup);
-
-              const existingSets = await getTemplateExerciseSetCount(db, template.id, dbExercise.id);
-              const nextSetNumber = existingSets + 1;
-
-              const { isAmrap } = getSetInfo(exercise.name, exercise.isAmrap);
-
-              await addExerciseToTemplate(
-                db, template.id, session.workosId, dbExercise.id, orderIndex,
-                exercise.targetWeight, exercise.sets, exercise.reps,
-                isAmrap, nextSetNumber
-              );
-              orderIndex++;
-            }
-
-            const cycleWorkout = await addWorkoutToCycle(db, cycle.id, {
-              templateId: template.id,
-              weekNumber: workout.weekNumber,
-              sessionNumber: workout.sessionNumber,
-              sessionName: workout.sessionName,
-              targetLifts: JSON.stringify(workout.exercises.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps }))),
-            });
-            
-            if (!cycleWorkout) {
-              throw new Error(`Failed to add workout ${workout.sessionName} to cycle`);
-            }
-          }
 
           return Response.json(cycle, { status: 201 });
         } catch (err) {

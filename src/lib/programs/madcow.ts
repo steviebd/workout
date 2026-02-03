@@ -1,5 +1,6 @@
 import { roundToPlate } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const madcowInfo = {
   slug: 'madcow-5x5',
@@ -22,6 +23,26 @@ const WEEK_PERCENTAGES = [
   { squat: 1.075, bench: 1.075, deadlift: 1.075, ohp: 1.075 },
   { squat: 1.05, bench: 1.05, deadlift: 1.05, ohp: 1.05, isDeload: true },
 ];
+
+export const madcowAccessories: ProgramAccessory[] = [
+  { accessoryId: 'dips', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'hyperextensions', sets: 2, reps: '10-12', isRequired: false },
+  { accessoryId: 'pullups', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'planks', sets: 3, reps: '30sec', isRequired: false },
+  { accessoryId: 'barbell-curl', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'skullcrushers', sets: 3, reps: 8, isRequired: false },
+];
+
+export function getMadcowAccessories(_week: number, session: number): ProgramAccessory[] {
+  const dayIndex = (session - 1) % 3;
+  if (dayIndex === 0) {
+    return madcowAccessories.filter(a => ['dips', 'hyperextensions'].includes(a.accessoryId));
+  }
+  if (dayIndex === 1) {
+    return madcowAccessories.filter(a => ['pullups', 'planks'].includes(a.accessoryId));
+  }
+  return madcowAccessories.filter(a => ['barbell-curl', 'skullcrushers'].includes(a.accessoryId));
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -103,6 +124,13 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         sessionName: `Week ${week} - ${isDayA ? 'Day A' : 'Day B'}${isDeload ? ' (Deload)' : ''}`,
         exercises,
       });
+    }
+  }
+
+  for (const workout of workouts) {
+    const accessories = getMadcowAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
     }
   }
 

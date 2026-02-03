@@ -681,7 +681,7 @@ function WorkoutSession() {
           ) : (
             exercises.map((exercise) => (
 							<ExerciseLogger
-								key={exercise.exerciseId}
+								key={exercise.id}
 								exercise={{
 									id: exercise.exerciseId,
 									name: exercise.name,

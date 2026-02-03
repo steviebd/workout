@@ -40,6 +40,7 @@ import { Route as ApiExercisesRouteImport } from './routes/api/exercises'
 import { Route as ApiBadgesRouteImport } from './routes/api/badges'
 import { Route as WorkoutsStartTemplateIdRouteImport } from './routes/workouts.start.$templateId'
 import { Route as WorkoutsIdSummaryRouteImport } from './routes/workouts.$id_.summary'
+import { Route as WorkoutsIdEditRouteImport } from './routes/workouts.$id_.edit'
 import { Route as TemplatesIdEditRouteImport } from './routes/templates.$id.edit'
 import { Route as ProgramsCycleCycleIdRouteImport } from './routes/programs.cycle.$cycleId_'
 import { Route as ProgramsSlugStartRouteImport } from './routes/programs.$slug.start'
@@ -79,6 +80,7 @@ import { Route as ApiExercisesExerciseIdHistoryRouteImport } from './routes/api/
 import { Route as ApiWorkoutsIdExercisesReorderRouteImport } from './routes/api/workouts.$id.exercises.reorder'
 import { Route as ApiTemplatesIdExercisesReorderRouteImport } from './routes/api/templates.$id.exercises.reorder'
 import { Route as ApiTemplatesIdExercisesExerciseIdRouteImport } from './routes/api/templates.$id.exercises.$exerciseId'
+import { Route as ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRouteImport } from './routes/api/program-cycles.$id.workouts.$workoutId.reschedule'
 
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
@@ -233,6 +235,11 @@ const WorkoutsStartTemplateIdRoute = WorkoutsStartTemplateIdRouteImport.update({
 const WorkoutsIdSummaryRoute = WorkoutsIdSummaryRouteImport.update({
   id: '/workouts/$id_/summary',
   path: '/workouts/$id/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkoutsIdEditRoute = WorkoutsIdEditRouteImport.update({
+  id: '/workouts/$id_/edit',
+  path: '/workouts/$id/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesIdEditRoute = TemplatesIdEditRouteImport.update({
@@ -445,6 +452,12 @@ const ApiTemplatesIdExercisesExerciseIdRoute =
     path: '/$exerciseId',
     getParentRoute: () => ApiTemplatesIdExercisesRoute,
   } as any)
+const ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute =
+  ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRouteImport.update({
+    id: '/$workoutId/reschedule',
+    path: '/$workoutId/reschedule',
+    getParentRoute: () => ApiProgramCyclesIdWorkoutsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -496,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -505,7 +519,7 @@ export interface FileRoutesByFullPath {
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
-  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
+  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRouteWithChildren
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -517,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
+  '/api/program-cycles/$id/workouts/$workoutId/reschedule': typeof ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -568,6 +583,7 @@ export interface FileRoutesByTo {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -577,7 +593,7 @@ export interface FileRoutesByTo {
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
-  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
+  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRouteWithChildren
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -589,6 +605,7 @@ export interface FileRoutesByTo {
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
+  '/api/program-cycles/$id/workouts/$workoutId/reschedule': typeof ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -641,6 +658,7 @@ export interface FileRoutesById {
   '/programs/$slug/start': typeof ProgramsSlugStartRoute
   '/programs/cycle/$cycleId_': typeof ProgramsCycleCycleIdRoute
   '/templates/$id/edit': typeof TemplatesIdEditRoute
+  '/workouts/$id_/edit': typeof WorkoutsIdEditRoute
   '/workouts/$id_/summary': typeof WorkoutsIdSummaryRoute
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$exerciseId/history': typeof ApiExercisesExerciseIdHistoryRoute
@@ -650,7 +668,7 @@ export interface FileRoutesById {
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
-  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
+  '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRouteWithChildren
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
   '/api/templates/$id/exercises': typeof ApiTemplatesIdExercisesRouteWithChildren
   '/api/workouts/$id/complete': typeof ApiWorkoutsIdCompleteRoute
@@ -662,6 +680,7 @@ export interface FileRoutesById {
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
+  '/api/program-cycles/$id/workouts/$workoutId/reschedule': typeof ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -715,6 +734,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId'
     | '/templates/$id/edit'
+    | '/workouts/$id/edit'
     | '/workouts/$id/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -736,6 +756,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
+    | '/api/program-cycles/$id/workouts/$workoutId/reschedule'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -787,6 +808,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId'
     | '/templates/$id/edit'
+    | '/workouts/$id/edit'
     | '/workouts/$id/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -808,6 +830,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
+    | '/api/program-cycles/$id/workouts/$workoutId/reschedule'
   id:
     | '__root__'
     | '/'
@@ -859,6 +882,7 @@ export interface FileRouteTypes {
     | '/programs/$slug/start'
     | '/programs/cycle/$cycleId_'
     | '/templates/$id/edit'
+    | '/workouts/$id_/edit'
     | '/workouts/$id_/summary'
     | '/workouts/start/$templateId'
     | '/api/exercises/$exerciseId/history'
@@ -880,6 +904,7 @@ export interface FileRouteTypes {
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
+    | '/api/program-cycles/$id/workouts/$workoutId/reschedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -921,6 +946,7 @@ export interface RootRouteChildren {
   ApiUser1rmRoute: typeof ApiUser1rmRoute
   ApiUserPreferencesRoute: typeof ApiUserPreferencesRoute
   ProgramsCycleCycleIdRoute: typeof ProgramsCycleCycleIdRoute
+  WorkoutsIdEditRoute: typeof WorkoutsIdEditRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
   WorkoutsStartTemplateIdRoute: typeof WorkoutsStartTemplateIdRoute
   ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
@@ -1145,6 +1171,13 @@ declare module '@tanstack/react-router' {
       path: '/workouts/$id/summary'
       fullPath: '/workouts/$id/summary'
       preLoaderRoute: typeof WorkoutsIdSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workouts/$id_/edit': {
+      id: '/workouts/$id_/edit'
+      path: '/workouts/$id/edit'
+      fullPath: '/workouts/$id/edit'
+      preLoaderRoute: typeof WorkoutsIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/templates/$id/edit': {
@@ -1420,6 +1453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTemplatesIdExercisesExerciseIdRouteImport
       parentRoute: typeof ApiTemplatesIdExercisesRoute
     }
+    '/api/program-cycles/$id/workouts/$workoutId/reschedule': {
+      id: '/api/program-cycles/$id/workouts/$workoutId/reschedule'
+      path: '/$workoutId/reschedule'
+      fullPath: '/api/program-cycles/$id/workouts/$workoutId/reschedule'
+      preLoaderRoute: typeof ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRouteImport
+      parentRoute: typeof ApiProgramCyclesIdWorkoutsRoute
+    }
   }
 }
 
@@ -1453,11 +1493,26 @@ const ApiExercisesRouteWithChildren = ApiExercisesRoute._addFileChildren(
   ApiExercisesRouteChildren,
 )
 
+interface ApiProgramCyclesIdWorkoutsRouteChildren {
+  ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute: typeof ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute
+}
+
+const ApiProgramCyclesIdWorkoutsRouteChildren: ApiProgramCyclesIdWorkoutsRouteChildren =
+  {
+    ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute:
+      ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRoute,
+  }
+
+const ApiProgramCyclesIdWorkoutsRouteWithChildren =
+  ApiProgramCyclesIdWorkoutsRoute._addFileChildren(
+    ApiProgramCyclesIdWorkoutsRouteChildren,
+  )
+
 interface ApiProgramCyclesIdRouteChildren {
   ApiProgramCyclesIdCreate1rmTestWorkoutRoute: typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   ApiProgramCyclesIdCurrentWorkoutRoute: typeof ApiProgramCyclesIdCurrentWorkoutRoute
   ApiProgramCyclesIdStartWorkoutRoute: typeof ApiProgramCyclesIdStartWorkoutRoute
-  ApiProgramCyclesIdWorkoutsRoute: typeof ApiProgramCyclesIdWorkoutsRoute
+  ApiProgramCyclesIdWorkoutsRoute: typeof ApiProgramCyclesIdWorkoutsRouteWithChildren
 }
 
 const ApiProgramCyclesIdRouteChildren: ApiProgramCyclesIdRouteChildren = {
@@ -1465,7 +1520,7 @@ const ApiProgramCyclesIdRouteChildren: ApiProgramCyclesIdRouteChildren = {
     ApiProgramCyclesIdCreate1rmTestWorkoutRoute,
   ApiProgramCyclesIdCurrentWorkoutRoute: ApiProgramCyclesIdCurrentWorkoutRoute,
   ApiProgramCyclesIdStartWorkoutRoute: ApiProgramCyclesIdStartWorkoutRoute,
-  ApiProgramCyclesIdWorkoutsRoute: ApiProgramCyclesIdWorkoutsRoute,
+  ApiProgramCyclesIdWorkoutsRoute: ApiProgramCyclesIdWorkoutsRouteWithChildren,
 }
 
 const ApiProgramCyclesIdRouteWithChildren =
@@ -1661,6 +1716,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUser1rmRoute: ApiUser1rmRoute,
   ApiUserPreferencesRoute: ApiUserPreferencesRoute,
   ProgramsCycleCycleIdRoute: ProgramsCycleCycleIdRoute,
+  WorkoutsIdEditRoute: WorkoutsIdEditRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,
   WorkoutsStartTemplateIdRoute: WorkoutsStartTemplateIdRoute,
   ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,

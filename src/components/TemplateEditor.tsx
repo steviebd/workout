@@ -9,9 +9,10 @@ import { CollapsibleSection } from '@/components/ui/Collapsible';
 import { ExerciseSearch } from '@/components/ExerciseSearch';
 import { ExerciseList } from '@/components/ExerciseList';
 import { InlineEditExercise } from '@/components/InlineEditExercise';
+import { AccessorySection } from '@/components/AccessorySection';
 import { useUndo } from '@/hooks/useUndo';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { type Template, type Exercise } from '@/lib/db/schema';
+import { type Template, type Exercise, type TemplateExercise } from '@/lib/db/schema';
 import { Drawer, DrawerContent, DrawerClose, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
 
 interface TemplateEditorProps {
@@ -40,6 +41,13 @@ interface SelectedExercise {
   description: string | null;
   libraryId?: string | null;
   isAmrap?: boolean;
+  isAccessory?: boolean;
+  isRequired?: boolean;
+  sets?: number;
+  reps?: number;
+  repsRaw?: string;
+  targetWeight?: number;
+  addedWeight?: number;
 }
 
 interface FormData {
@@ -65,6 +73,7 @@ export function TemplateEditor({
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [createdTemplate, setCreatedTemplate] = useState<Template | null>(null);
+  const [accessoryAddedWeights, setAccessoryAddedWeights] = useState<Record<string, number>>({});
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -121,6 +130,27 @@ export function TemplateEditor({
       console.error('Failed to fetch exercises:', err);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchTemplateExercises = useCallback(async (currentTemplateId: string) => {
+    try {
+      const response = await fetch(`/api/templates/${currentTemplateId}/exercises`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data: TemplateExercise[] = await response.json();
+        const accessoryWeights: Record<string, number> = {};
+        data.forEach((te) => {
+          if (te.isAccessory && te.exerciseId && te.addedWeight) {
+            accessoryWeights[te.exerciseId] = te.addedWeight;
+          }
+        });
+        setAccessoryAddedWeights(accessoryWeights);
+      }
+    } catch (err) {
+      console.error('Failed to fetch template exercises:', err);
     }
   }, []);
 
@@ -195,11 +225,20 @@ export function TemplateEditor({
           body: JSON.stringify({
             exerciseId: se.exerciseId,
             orderIndex: i,
+            isAccessory: se.isAccessory ?? false,
+            isRequired: se.isRequired ?? true,
+            sets: se.sets,
+            reps: se.reps,
+            repsRaw: se.repsRaw,
+            targetWeight: se.targetWeight,
+            addedWeight: se.isAccessory 
+              ? (accessoryAddedWeights[se.exerciseId] ?? se.addedWeight ?? 0)
+              : 0,
           }),
         });
       }
     }
-  }, [selectedExercises]);
+  }, [selectedExercises, accessoryAddedWeights]);
 
   const autoSave = useAutoSave({
     data: {
@@ -243,17 +282,27 @@ export function TemplateEditor({
           notes: initialData.notes || '',
         });
         setSelectedExercises(
-          initialData.exercises.map(ex => ({
+          initialData.exercises.map((ex) => ({
             id: ex.id,
             exerciseId: ex.exerciseId,
             name: ex.name,
             muscleGroup: ex.muscleGroup,
             description: ex.description,
+            isAccessory: (ex as unknown as TemplateExercise).isAccessory ?? false,
+            isRequired: (ex as unknown as TemplateExercise).isRequired ?? true,
+            sets: (ex as unknown as TemplateExercise).sets ?? undefined,
+            reps: (ex as unknown as TemplateExercise).reps ?? undefined,
+            repsRaw: (ex as unknown as TemplateExercise).repsRaw ?? undefined,
+            targetWeight: (ex as unknown as TemplateExercise).targetWeight ?? undefined,
+            addedWeight: (ex as unknown as TemplateExercise).addedWeight ?? undefined,
           }))
         );
+        if (mode === 'edit' && templateId) {
+          void fetchTemplateExercises(templateId);
+        }
       }
     }
-  }, [auth.loading, auth.user, initialData, fetchExercises]);
+  }, [auth.loading, auth.user, initialData, fetchExercises, fetchTemplateExercises, mode, templateId]);
 
   const validateForm = useCallback(() => {
     const newErrors: { name?: string; exercises?: string } = {};
@@ -293,6 +342,15 @@ export function TemplateEditor({
               body: JSON.stringify({
                 exerciseId: exercise.exerciseId,
                 orderIndex: index,
+                isAccessory: exercise.isAccessory ?? false,
+                isRequired: exercise.isRequired ?? true,
+                sets: exercise.sets,
+                reps: exercise.reps,
+                repsRaw: exercise.repsRaw,
+                targetWeight: exercise.targetWeight,
+                addedWeight: exercise.isAccessory 
+                  ? (accessoryAddedWeights[exercise.exerciseId] ?? exercise.addedWeight ?? 0)
+                  : 0,
               }),
             })
           )
@@ -312,7 +370,7 @@ export function TemplateEditor({
     } finally {
       setSaving(false);
     }
-  }, [selectedExercises, validateForm, mode, toast, onSaved, saveTemplate, syncExercises]);
+  }, [selectedExercises, validateForm, mode, toast, onSaved, saveTemplate, syncExercises, accessoryAddedWeights]);
 
   const handleAddExercise = useCallback(async (exercise: Exercise | { id: string; name: string; muscleGroup: string | null; description: string | null; isLibrary?: boolean }) => {
     if (selectedExercises.some(se => se.name === exercise.name)) {
@@ -375,16 +433,16 @@ export function TemplateEditor({
   }, [selectedExercises, exercises, pushUndo, formData, toast, autoSave, fetchExercises]);
 
   const handleRemoveExercise = useCallback((id: string) => {
-    const exercise = selectedExercises.find(se => se.id === id);
+    const exercise = selectedExercises.find(se => se.id === id || se.exerciseId === id);
     if (!exercise) return;
 
     pushUndo({
       description: `Remove ${exercise.name}`,
       before: { exercises: [...selectedExercises] },
-      after: { exercises: selectedExercises.filter(se => se.id !== id) },
+      after: { exercises: selectedExercises.filter(se => se.id !== id && se.exerciseId !== id) },
     }, { ...formData, exercises: [...selectedExercises] });
 
-    setSelectedExercises(prev => prev.filter(se => se.id !== id));
+    setSelectedExercises(prev => prev.filter(se => se.id !== id && se.exerciseId !== id));
     autoSave.scheduleSave();
   }, [selectedExercises, pushUndo, formData, autoSave]);
 
@@ -589,6 +647,30 @@ export function TemplateEditor({
                   onCancel={handleCancelEdit}
                 />
                                  </div> : null}
+
+            {selectedExercises.some(se => se.isAccessory) && (
+              <div className="border-t pt-6 mt-6">
+                <AccessorySection
+                  accessories={selectedExercises
+                    .filter(se => se.isAccessory)
+                    .map(se => ({
+                      accessoryId: se.exerciseId,
+                      name: se.name,
+                      libraryId: se.libraryId ?? undefined,
+                      muscleGroup: se.muscleGroup ?? '',
+                      sets: se.sets ?? 0,
+                      reps: se.repsRaw ?? (se.reps ?? 0).toString(),
+                      targetWeight: se.targetWeight ?? 0,
+                      addedWeight: accessoryAddedWeights[se.exerciseId] ?? se.addedWeight ?? 0,
+                      isRequired: se.isRequired ?? true,
+                    }))}
+                  unit="kg"
+                  onUpdateAddedWeight={(accessoryId, weight) => {
+                    setAccessoryAddedWeights(prev => ({ ...prev, [accessoryId]: weight }));
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <CollapsibleSection label="Notes (optional)" defaultOpen={false}>
@@ -649,10 +731,11 @@ export function TemplateEditor({
             <DrawerHeader>
               <DrawerTitle>Add Exercise</DrawerTitle>
             </DrawerHeader>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 max-h-[60vh]">
               <ExerciseSearch
                 selectedIds={selectedExercises.map(se => se.exerciseId)}
                 onSelect={(exercise) => void handleAddExercise(exercise)}
+                onDeselect={(exerciseId) => handleRemoveExercise(exerciseId)}
                 onCreateInline={(name: string, muscleGroup: string | null, description: string | null) => {
                   return void fetch('/api/exercises', {
                     method: 'POST',

@@ -19,15 +19,18 @@ interface Badge {
 }
 
 interface UserStats {
-  currentStreak: number
-  longestStreak: number
-  weeklyWorkouts: number
+  weeklyCount: number
+  thirtyDayStreak: {
+    current: number
+    target: number
+    progress: number
+  }
 }
 
 type BadgeFilter = 'all' | 'unlocked' | 'locked'
 
 function AchievementsPage() {
-  const [stats, setStats] = useState<UserStats>({ currentStreak: 0, longestStreak: 0, weeklyWorkouts: 0 })
+  const [stats, setStats] = useState<UserStats>({ weeklyCount: 0, thirtyDayStreak: { current: 0, target: 4, progress: 0 } })
   const [badges, setBadges] = useState<Badge[]>([])
   const [workoutDatesInWeek, setWorkoutDatesInWeek] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,9 +47,8 @@ function AchievementsPage() {
         if (statsRes.ok) {
           const data: UserStats = await statsRes.json()
           setStats({
-            currentStreak: data.currentStreak ?? 0,
-            longestStreak: data.longestStreak ?? 0,
-            weeklyWorkouts: data.weeklyWorkouts ?? 0,
+            weeklyCount: data.weeklyCount ?? 0,
+            thirtyDayStreak: data.thirtyDayStreak ?? { current: 0, target: 4, progress: 0 },
           })
         }
 

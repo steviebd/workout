@@ -94,6 +94,12 @@ bun run db:init:dev
 # Push database schema changes/updates to local D1
 bun run db:push:dev
 
+# Generate migration file from schema changes
+bun run db:generate
+
+# Apply migrations to remote dev D1
+bun run db:deploy:wrangler
+
 # Type checking
 bun run typecheck
 
@@ -177,11 +183,12 @@ Secrets are managed via Infisical. The `.infisical.json` file configures the wor
 ## Adding New Features
 
 1. **Create schema changes** → Update `src/lib/db/schema.ts`
-2. **Create migrations** → Run `bun run db:migrate`
-3. **Create routes** → Add file in `src/routes/`
-4. **Add components** → Add to `src/components/`
-5. **Add tests** → Add to `tests/` directory
-6. **Verify** → Run lint, typecheck, and tests
+2. **Generate migration** → Run `bun run db:generate`
+3. **Apply migrations** → Run `bun run db:deploy:wrangler`
+4. **Create routes** → Add file in `src/routes/`
+5. **Add components** → Add to `src/components/`
+6. **Add tests** → Add to `tests/` directory
+7. **Verify** → Run lint, typecheck, and tests
 
 ## Common Patterns
 

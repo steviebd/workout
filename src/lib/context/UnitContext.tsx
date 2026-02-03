@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { type WeightUnit } from '../units';
-import { useAuth } from '../../routes/__root';
 
 interface UnitContextType {
   weightUnit: WeightUnit;
@@ -25,15 +24,15 @@ export function useUnit() {
 interface UnitProviderProps {
   children: ReactNode;
   initialUnit?: WeightUnit;
+  userId?: string;
 }
 
-export function UnitProvider({ children, initialUnit = 'kg' }: UnitProviderProps) {
+export function UnitProvider({ children, initialUnit = 'kg', userId }: UnitProviderProps) {
   const [weightUnit, setWeightUnitState] = useState<WeightUnit>(initialUnit);
-  const { user, loading } = useAuth();
 
   useEffect(() => {
     async function fetchPreferences() {
-      if (loading || !user) return;
+      if (!userId) return;
       
       try {
         const res = await fetch('/api/preferences', {
@@ -50,10 +49,8 @@ export function UnitProvider({ children, initialUnit = 'kg' }: UnitProviderProps
       }
     }
 
-    if (!loading && user) {
-      void fetchPreferences();
-    }
-  }, [user, loading]);
+    void fetchPreferences();
+  }, [userId]);
 
   const setWeightUnit = useCallback(async (unit: WeightUnit) => {
     try {

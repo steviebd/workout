@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import {
-  type NewUserProgramCycle,
   type ProgramCycleWorkout,
   type Template,
   type UserProgramCycle,
+  exercises,
   programCycleWorkouts,
+  templateExercises,
   templates,
   userProgramCycles,
   workouts,
+  generateId,
 } from './schema';
 import { createDb } from './index';
 
@@ -27,6 +29,18 @@ export interface CreateProgramCycleData {
   deadlift1rm: number;
   ohp1rm: number;
   totalSessionsPlanned: number;
+  preferredGymDays: string;
+  preferredTimeOfDay?: string;
+  programStartDate: string;
+  firstSessionDate: string;
+  workouts: Array<{
+    weekNumber: number;
+    sessionNumber: number;
+    sessionName: string;
+    scheduledDate: string;
+    scheduledTime?: string;
+    targetLifts?: string;
+  }>;
 }
 
 export interface ProgramWorkoutData {
@@ -47,6 +61,7 @@ export async function createProgramCycle(
   const cycle = await drizzleDb
     .insert(userProgramCycles)
     .values({
+      id: generateId(),
       workosId,
       programSlug: data.programSlug,
       name: data.name,
@@ -55,9 +70,36 @@ export async function createProgramCycle(
       deadlift1rm: data.deadlift1rm,
       ohp1rm: data.ohp1rm,
       totalSessionsPlanned: data.totalSessionsPlanned,
+      preferredGymDays: data.preferredGymDays,
+      preferredTimeOfDay: data.preferredTimeOfDay,
+      programStartDate: data.programStartDate,
+      firstSessionDate: data.firstSessionDate,
     })
     .returning()
     .get();
+
+  if (data.workouts && data.workouts.length > 0) {
+    for (const workout of data.workouts) {
+      await db
+        .prepare(
+          `INSERT INTO program_cycle_workouts (id, cycle_id, template_id, week_number, session_number, session_name, target_lifts, is_complete, scheduled_date, scheduled_time)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          generateId(),
+          cycle.id,
+          null,
+          workout.weekNumber,
+          workout.sessionNumber,
+          workout.sessionName,
+          workout.targetLifts ?? null,
+          0,
+          workout.scheduledDate,
+          workout.scheduledTime ?? null
+        )
+        .run();
+    }
+  }
 
   return cycle;
 }
@@ -75,34 +117,7 @@ export async function getProgramCycleById(
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
     .get();
 
-  return cycle ?? null;
-}
-
-export async function getProgramCyclesByWorkosId(
-  db: D1Database,
-  workosId: string,
-  options: { status?: string; limit?: number } = {}
-): Promise<UserProgramCycle[]> {
-  const drizzleDb = createDb(db);
-
-  const { status, limit } = options;
-
-  let query = drizzleDb
-    .select()
-    .from(userProgramCycles)
-    .where(eq(userProgramCycles.workosId, workosId))
-    .orderBy(desc(userProgramCycles.startedAt));
-
-  if (status) {
-    query = (query as any).where(and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, status)));
-  }
-
-  if (limit !== undefined) {
-    query = (query as any).limit(limit);
-  }
-
-  const cycles = await query.all();
-  return cycles;
+  return cycle as UserProgramCycle | null;
 }
 
 export async function getActiveProgramCycles(
@@ -116,32 +131,31 @@ export async function getActiveProgramCycles(
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, 'active')))
     .orderBy(desc(userProgramCycles.startedAt))
+    .limit(3)
     .all();
 
-  return cycles;
+  return cycles as UserProgramCycle[];
 }
 
-export async function updateProgramCycle(
+export async function getProgramCyclesByWorkosId(
   db: D1Database,
-  cycleId: string,
   workosId: string,
-  data: Partial<CreateProgramCycleData>
-): Promise<UserProgramCycle | null> {
+  options?: { status?: string }
+): Promise<UserProgramCycle[]> {
   const drizzleDb = createDb(db);
 
-  const updateData: Partial<NewUserProgramCycle> = {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
+  const conditions = options?.status
+    ? and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, options.status))
+    : eq(userProgramCycles.workosId, workosId);
 
-  const updated = await drizzleDb
-    .update(userProgramCycles)
-    .set(updateData)
-    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
-    .returning()
-    .get();
+  const cycles = await drizzleDb
+    .select()
+    .from(userProgramCycles)
+    .where(conditions as any)
+    .orderBy(desc(userProgramCycles.startedAt))
+    .all();
 
-  return updated ?? null;
+  return cycles as UserProgramCycle[];
 }
 
 export async function updateProgramCycle1RM(
@@ -162,7 +176,7 @@ export async function updateProgramCycle1RM(
     return null;
   }
 
-  const updateData: Partial<NewUserProgramCycle> = {
+  const updateData: Partial<UserProgramCycle> = {
     ...data,
     startingSquat1rm: existing.startingSquat1rm ?? existing.squat1rm,
     startingBench1rm: existing.startingBench1rm ?? existing.bench1rm,
@@ -178,30 +192,32 @@ export async function updateProgramCycle1RM(
     .returning()
     .get();
 
-  return updated ?? null;
+  return updated as UserProgramCycle | null;
 }
 
 export async function updateProgramCycleProgress(
   db: D1Database,
   cycleId: string,
   workosId: string,
-  data: { currentWeek?: number; currentSession?: number; totalSessionsCompleted?: number }
+  data: { currentWeek?: number; currentSession?: number }
 ): Promise<UserProgramCycle | null> {
   const drizzleDb = createDb(db);
 
-  const updateData: Partial<NewUserProgramCycle> = {
-    ...data,
+  const updates: Partial<UserProgramCycle> = {
     updatedAt: new Date().toISOString(),
   };
 
+  if (data.currentWeek !== undefined) updates.currentWeek = data.currentWeek;
+  if (data.currentSession !== undefined) updates.currentSession = data.currentSession;
+
   const updated = await drizzleDb
     .update(userProgramCycles)
-    .set(updateData)
+    .set(updates)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
     .returning()
     .get();
 
-  return updated ?? null;
+  return updated as UserProgramCycle | null;
 }
 
 export async function completeProgramCycle(
@@ -223,7 +239,7 @@ export async function completeProgramCycle(
     .returning()
     .get();
 
-  return updated ?? null;
+  return updated as UserProgramCycle | null;
 }
 
 export async function softDeleteProgramCycle(
@@ -233,39 +249,16 @@ export async function softDeleteProgramCycle(
 ): Promise<boolean> {
   const drizzleDb = createDb(db);
 
-  const result = await drizzleDb
+  const deleted = await drizzleDb
     .update(userProgramCycles)
     .set({
-      status: 'archived',
+      status: 'deleted',
       updatedAt: new Date().toISOString(),
     })
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
     .run();
 
-  return result.success;
-}
-
-export async function addWorkoutToCycle(
-  db: D1Database,
-  cycleId: string,
-  data: ProgramWorkoutData
-): Promise<ProgramCycleWorkout | null> {
-  const drizzleDb = createDb(db);
-
-  const workout = await drizzleDb
-    .insert(programCycleWorkouts)
-    .values({
-      cycleId,
-      templateId: data.templateId,
-      weekNumber: data.weekNumber,
-      sessionNumber: data.sessionNumber,
-      sessionName: data.sessionName,
-      targetLifts: data.targetLifts,
-    })
-    .returning()
-    .get();
-
-  return workout;
+  return deleted.success;
 }
 
 export async function getCycleWorkouts(
@@ -324,7 +317,7 @@ export async function getCurrentWorkout(
     .orderBy(programCycleWorkouts.weekNumber, programCycleWorkouts.sessionNumber)
     .get();
 
-  return workout ?? null;
+  return workout as ProgramCycleWorkout | null;
 }
 
 export async function markWorkoutComplete(
@@ -332,102 +325,71 @@ export async function markWorkoutComplete(
   workoutId: string,
   cycleId: string,
   workosId: string,
-  completedWorkoutId: string
-): Promise<ProgramCycleWorkout | null> {
+  actualWorkoutId: string
+): Promise<void> {
   const drizzleDb = createDb(db);
 
   const workout = await drizzleDb
     .select()
     .from(programCycleWorkouts)
-    .where(
-      and(
-        eq(programCycleWorkouts.id, workoutId),
-        eq(programCycleWorkouts.cycleId, cycleId)
-      )
-    )
-    .get();
-
-  if (!workout) {
-    return null;
-  }
-
-  const cycle = await drizzleDb
-    .select()
-    .from(userProgramCycles)
-    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
-    .get();
-
-  if (!cycle) {
-    return null;
-  }
-
-  const updated = await drizzleDb
-    .update(programCycleWorkouts)
-    .set({
-      isComplete: true,
-      workoutId: completedWorkoutId,
-    })
     .where(eq(programCycleWorkouts.id, workoutId))
-    .returning()
     .get();
+
+  if (!workout || workout.isComplete) {
+    return;
+  }
 
   await drizzleDb
-    .update(userProgramCycles)
+    .update(programCycleWorkouts)
     .set({
-      totalSessionsCompleted: (cycle.totalSessionsCompleted ?? 0) + 1,
+      workoutId: actualWorkoutId,
+      isComplete: true,
       updatedAt: new Date().toISOString(),
     })
-    .where(eq(userProgramCycles.id, cycleId))
+    .where(eq(programCycleWorkouts.id, workoutId))
     .run();
 
-  return updated;
-}
+  const cycle = await getProgramCycleById(db, cycleId, workosId);
+  if (cycle) {
+    const allWorkouts = await getCycleWorkouts(db, cycleId, workosId);
+    const completedCount = allWorkouts.filter((w) => w.isComplete).length;
 
-export async function getCycleWithWorkouts(
-  db: D1Database,
-  cycleId: string,
-  workosId: string
-): Promise<ProgramCycleWithWorkouts | null> {
-  const drizzleDb = createDb(db);
+    await drizzleDb
+      .update(userProgramCycles)
+      .set({
+        totalSessionsCompleted: completedCount,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(userProgramCycles.id, cycleId))
+      .run();
 
-  const cycle = await drizzleDb
-    .select()
-    .from(userProgramCycles)
-    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
-    .get();
+    if (completedCount >= cycle.totalSessionsPlanned && !cycle.isComplete) {
+      await completeProgramCycle(db, cycleId, workosId);
+    }
 
-  if (!cycle) {
-    return null;
+    const workoutsByWeek = allWorkouts.reduce<Record<number, typeof allWorkouts>>((acc, w) => {
+      const week = w.weekNumber;
+      if (!acc[week]) acc[week] = [];
+      acc[week].push(w);
+      return acc;
+    }, {});
+
+    const currentWeekWorkouts = workoutsByWeek[workout.weekNumber] || [];
+    const currentWeekComplete = currentWeekWorkouts.length > 0 && currentWeekWorkouts.every((w) => w.isComplete);
+
+    if (currentWeekComplete) {
+      const weeks = Object.keys(workoutsByWeek).map(Number).sort((a, b) => a - b);
+      const nextIncompleteWeek = weeks.find((week) => {
+        return !workoutsByWeek[week].every((w) => w.isComplete);
+      });
+
+      if (nextIncompleteWeek !== undefined) {
+        await updateProgramCycleProgress(db, cycleId, workosId, {
+          currentWeek: nextIncompleteWeek,
+        });
+      }
+    }
   }
-
-  const cycleWorkouts = await drizzleDb
-    .select()
-    .from(programCycleWorkouts)
-    .where(eq(programCycleWorkouts.cycleId, cycleId))
-    .orderBy(programCycleWorkouts.weekNumber, programCycleWorkouts.sessionNumber)
-    .all();
-
-  return {
-    ...cycle,
-    workouts: cycleWorkouts,
-    templates: [],
-  };
-}
-
-export async function getCycleTemplate(
-  db: D1Database,
-  templateId: string,
-  workosId: string
-): Promise<Template | null> {
-  const drizzleDb = createDb(db);
-
-  const template = await drizzleDb
-    .select()
-    .from(templates)
-    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
-    .get();
-
-  return template ?? null;
 }
 
 export async function getLatestOneRMs(
@@ -489,4 +451,262 @@ export async function getLatestOneRMs(
   }
 
   return null;
+}
+
+export interface TargetLift {
+  name: string;
+  lift?: string;
+  targetWeight: number;
+  sets: number;
+  reps: number;
+  isAccessory?: boolean;
+  isRequired?: boolean;
+  accessoryId?: string;
+  addedWeight?: number;
+}
+
+export interface TargetLiftWorkout {
+  weekNumber: number;
+  sessionNumber: number;
+  sessionName: string;
+  targetLifts?: TargetLift[];
+  exercises?: Array<{ name: string; lift?: string; targetWeight: number; sets: number; reps: number }>;
+  accessories?: Array<{ name: string; accessoryId?: string; targetWeight?: number; addedWeight?: number; sets?: number; reps?: number | string; isAccessory?: boolean; isRequired?: boolean }>;
+}
+
+export async function createProgramCycleWorkouts(
+  db: D1Database,
+  cycleId: string,
+  cycleWorkouts: TargetLiftWorkout[],
+  defaultScheduledDate?: string
+): Promise<void> {
+  const drizzleDb = createDb(db);
+
+  const workoutData = cycleWorkouts.map((workout) => {
+    const targetLifts = JSON.stringify([
+      ...(workout.exercises?.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps })) ?? []),
+      ...(workout.accessories?.map(a => ({
+        name: a.name,
+        accessoryId: a.accessoryId,
+        targetWeight: a.targetWeight,
+        addedWeight: a.addedWeight,
+        sets: a.sets,
+        reps: a.reps,
+        isAccessory: true,
+        isRequired: a.isRequired,
+      })) ?? []),
+    ]);
+
+    return {
+      id: generateId(),
+      cycleId,
+      templateId: null,
+      weekNumber: workout.weekNumber,
+      sessionNumber: workout.sessionNumber,
+      sessionName: workout.sessionName,
+      targetLifts,
+      isComplete: false,
+      scheduledDate: defaultScheduledDate ?? new Date().toISOString().split('T')[0],
+      scheduledTime: null,
+    };
+  });
+
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
+    const batch = workoutData.slice(i, i + BATCH_SIZE);
+    await drizzleDb.insert(programCycleWorkouts).values(batch as any).run();
+  }
+}
+
+export async function getOrCreateExerciseForWorkout(
+  db: D1Database,
+  workosId: string,
+  exerciseName: string,
+  lift: string | undefined
+): Promise<string> {
+  const drizzleDb = createDb(db);
+
+  const existing = await drizzleDb
+    .select()
+    .from(exercises)
+    .where(and(eq(exercises.workosId, workosId), eq(exercises.name, exerciseName)))
+    .get();
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const muscleGroup = lift === 'squat' || lift === 'deadlift' || lift === 'row'
+    ? 'Back'
+    : lift === 'bench' || lift === 'ohp'
+      ? 'Chest'
+      : 'Shoulders';
+
+  const newExercise = await drizzleDb
+    .insert(exercises)
+    .values({
+      workosId,
+      name: exerciseName,
+      muscleGroup,
+    })
+    .returning()
+    .get();
+
+  return newExercise.id;
+}
+
+function getBaseExerciseName(name: string): string {
+  return name.replace(/\s+\d+$/, '').replace(/\s+\d+\+$/, '');
+}
+
+export async function generateTemplateFromWorkout(
+  db: D1Database,
+  workosId: string,
+  cycleWorkout: ProgramCycleWorkout,
+  cycle: UserProgramCycle
+): Promise<string> {
+  const drizzleDb = createDb(db);
+
+  console.log('generateTemplateFromWorkout - cycleWorkout.targetLifts:', cycleWorkout.targetLifts, 'type:', typeof cycleWorkout.targetLifts);
+  
+  let targetLifts: TargetLift[] = [];
+  if (cycleWorkout.targetLifts) {
+    let parsed: unknown;
+    if (typeof cycleWorkout.targetLifts === 'string') {
+      parsed = JSON.parse(cycleWorkout.targetLifts);
+    } else {
+      parsed = cycleWorkout.targetLifts;
+    }
+    
+    // Handle both formats: direct array or object with exercises/accessories
+    if (Array.isArray(parsed)) {
+      targetLifts = parsed as TargetLift[];
+    } else if (parsed && typeof parsed === 'object') {
+      const obj = parsed as { exercises?: TargetLift[]; accessories?: TargetLift[] };
+      // Combine exercises and accessories
+      const targetExercises = obj.exercises ?? [];
+      const accessories = (obj.accessories ?? []).map(a => ({ ...a, isAccessory: true, isRequired: false }));
+      targetLifts = [...targetExercises, ...accessories];
+    }
+  }
+
+  if (targetLifts.length === 0) {
+    throw new Error('No target lifts found for workout');
+  }
+
+  const templateName = `${cycle.name} - ${cycleWorkout.sessionName}`;
+
+  const template = await drizzleDb
+    .insert(templates)
+    .values({
+      workosId,
+      name: templateName,
+      description: cycleWorkout.sessionName,
+      programCycleId: cycle.id,
+    })
+    .returning()
+    .get();
+
+  const templateExercisesData: Array<typeof templateExercises.$inferInsert> = [];
+  let orderIndex = 0;
+  const exerciseSetCounts = new Map<string, number>();
+
+  for (const lift of targetLifts) {
+    const baseName = getBaseExerciseName(lift.name);
+    const exerciseId = await getOrCreateExerciseForWorkout(db, workosId, baseName, lift.lift);
+
+    const currentCount = exerciseSetCounts.get(exerciseId) ?? 0;
+    const setNumber = currentCount + 1;
+    exerciseSetCounts.set(exerciseId, setNumber);
+
+    const isAmrap = lift.name.endsWith('+');
+
+    templateExercisesData.push({
+      templateId: template.id,
+      exerciseId,
+      orderIndex,
+      targetWeight: lift.targetWeight,
+      addedWeight: lift.addedWeight ?? 0,
+      sets: lift.sets,
+      reps: lift.reps,
+      repsRaw: null,
+      isAmrap,
+      setNumber,
+      isAccessory: lift.isAccessory ?? false,
+      isRequired: lift.isRequired ?? true,
+    });
+
+    orderIndex++;
+  }
+
+  const BATCH_SIZE = 7;
+
+  for (let i = 0; i < templateExercisesData.length; i += BATCH_SIZE) {
+    const batch = templateExercisesData.slice(i, i + BATCH_SIZE);
+    await drizzleDb.insert(templateExercises).values(batch).run();
+  }
+
+  await drizzleDb
+    .update(programCycleWorkouts)
+    .set({ templateId: template.id, updatedAt: new Date().toISOString() })
+    .where(eq(programCycleWorkouts.id, cycleWorkout.id))
+    .run();
+
+  return template.id;
+}
+
+export async function updateProgramCycleWorkout(
+  db: D1Database,
+  workoutId: string,
+  data: { scheduledDate?: string; scheduledTime?: string }
+): Promise<ProgramCycleWorkout | null> {
+  const drizzleDb = createDb(db);
+
+  const updates: Partial<ProgramCycleWorkout> = {
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (data.scheduledDate !== undefined) updates.scheduledDate = data.scheduledDate;
+  if (data.scheduledTime !== undefined) updates.scheduledTime = data.scheduledTime;
+
+  const updated = await drizzleDb
+    .update(programCycleWorkouts)
+    .set(updates)
+    .where(eq(programCycleWorkouts.id, workoutId))
+    .returning()
+    .get();
+
+  return updated as ProgramCycleWorkout | null;
+}
+
+export async function getProgramCycleWorkoutById(
+  db: D1Database,
+  workoutId: string,
+  workosId?: string
+): Promise<ProgramCycleWorkout | null> {
+  const drizzleDb = createDb(db);
+
+  if (workosId) {
+    const result = await drizzleDb
+      .select({ workout: programCycleWorkouts })
+      .from(programCycleWorkouts)
+      .innerJoin(userProgramCycles, eq(programCycleWorkouts.cycleId, userProgramCycles.id))
+      .where(
+        and(
+          eq(programCycleWorkouts.id, workoutId),
+          eq(userProgramCycles.workosId, workosId)
+        )
+      )
+      .get();
+    return result?.workout as ProgramCycleWorkout | null;
+  }
+
+  const workout = await drizzleDb
+    .select()
+    .from(programCycleWorkouts)
+    .where(eq(programCycleWorkouts.id, workoutId))
+    .get();
+
+  return workout as ProgramCycleWorkout | null;
 }

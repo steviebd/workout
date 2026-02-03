@@ -8,6 +8,7 @@ import { RecentPRs } from '~/components/dashboard/RecentPRs'
 import { EmptyStateBanner } from '~/components/dashboard/EmptyStateBanner'
 import { Skeleton } from '~/components/ui/Skeleton'
 import { useStreak } from '@/lib/context/StreakContext'
+import { formatRelativeDate } from '~/lib/date'
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -52,7 +53,7 @@ function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { currentStreak, longestStreak, weeklyWorkouts, totalWorkouts, loading: streakLoading } = useStreak()
+  const { weeklyCount, weeklyTarget, thirtyDayStreak, totalWorkouts, loading: streakLoading } = useStreak()
 
   console.log('[Dashboard] auth state:', { loading: auth.loading, user: auth.user })
   console.log('[Dashboard] local state:', { loading, error, hasData: !!data })
@@ -95,11 +96,22 @@ function Dashboard() {
         const prCountData: { count: number } = prCountRes.ok ? await prCountRes.json() : { count: 0 }
         const templates: WorkoutTemplate[] = templatesRes.ok ? await templatesRes.json() : []
 
-        const personalRecords: PersonalRecord[] = [
-          { id: '1', exerciseName: 'Bench Press', weight: 225, date: '2 days ago', improvement: 10 },
-          { id: '2', exerciseName: 'Squat', weight: 315, date: '1 week ago', improvement: 15 },
-          { id: '3', exerciseName: 'Deadlift', weight: 405, date: '2 weeks ago', improvement: 20 },
-        ]
+        let personalRecords: PersonalRecord[] = []
+        try {
+          const prsRes = await fetch('/api/progress/prs?limit=3', { credentials: 'include' })
+          if (prsRes.ok) {
+            const prsData: { recentPRs: Array<{ id: string; exerciseName: string; date: string; weight: number; previousRecord?: number }> } = await prsRes.json()
+            personalRecords = prsData.recentPRs.map((pr) => ({
+              id: pr.id,
+              exerciseName: pr.exerciseName,
+              date: formatRelativeDate(pr.date),
+              weight: pr.weight,
+              improvement: pr.previousRecord ? pr.weight - pr.previousRecord : 0,
+            }))
+          }
+        } catch (err) {
+          console.error('Failed to fetch recent PRs:', err)
+        }
 
         setData({
           stats,
@@ -162,9 +174,9 @@ function Dashboard() {
 
         <div className="space-y-4">
           <StreakCard
-            currentStreak={streakLoading ? 0 : currentStreak}
-            longestStreak={streakLoading ? 0 : longestStreak}
-            weeklyWorkouts={streakLoading ? 0 : weeklyWorkouts}
+            weeklyCount={streakLoading ? 0 : weeklyCount}
+            weeklyTarget={streakLoading ? 3 : weeklyTarget}
+            thirtyDayStreak={streakLoading ? { current: 0, target: 4, progress: 0, maxConsecutive: 0, weeklyDetails: [] } : thirtyDayStreak}
             totalWorkouts={streakLoading ? 0 : totalWorkouts}
           />
           <VolumeSummary

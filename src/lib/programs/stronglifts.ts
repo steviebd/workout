@@ -1,5 +1,6 @@
 import { roundToPlate } from './utils';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout } from './types';
+import { generateWorkoutAccessories } from './accessory-data';
+import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const strongliftsInfo = {
   slug: 'stronglifts-5x5',
@@ -11,6 +12,23 @@ const strongliftsInfo = {
   totalSessions: 24,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp', 'row'] as LiftType[],
 };
+
+export const strongliftsAccessories: ProgramAccessory[] = [
+  { accessoryId: 'pullups', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'dips', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'skullcrushers', sets: 3, reps: 8, isRequired: false },
+  { accessoryId: 'barbell-curl', sets: 3, reps: 8, isRequired: false },
+];
+
+export function getStrongliftsAccessories(_week: number, session: number): ProgramAccessory[] {
+  const isDayA = session % 2 === 1;
+  return strongliftsAccessories.filter(acc => {
+    if (isDayA) {
+      return ['pullups', 'dips', 'skullcrushers'].includes(acc.accessoryId);
+    }
+    return ['barbell-curl'].includes(acc.accessoryId);
+  });
+}
 
 function calculateTargetWeight(
   estimatedOneRM: number,
@@ -81,6 +99,13 @@ export function generateWorkouts(oneRMs: OneRMValues): ProgramWorkout[] {
         sessionName: `Week ${week} - ${isDayA ? 'Day A' : 'Day B'}`,
         exercises,
       });
+    }
+  }
+
+  for (const workout of workouts) {
+    const accessories = getStrongliftsAccessories(workout.weekNumber, workout.sessionNumber);
+    if (accessories.length > 0) {
+      workout.accessories = generateWorkoutAccessories(accessories, oneRMs);
     }
   }
 

@@ -45,19 +45,14 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const templateExercise = await addExerciseToTemplate(
+          await addExerciseToTemplate(
             db,
             params.id,
-            session.workosId,
             exerciseId,
             orderIndex ?? 0
           );
 
-          if (!templateExercise) {
-            return Response.json({ error: 'Template not found or does not belong to you' }, { status: 404 });
-          }
-
-          return Response.json(templateExercise, { status: 201 });
+          return Response.json({ success: true }, { status: 201 });
         } catch (err) {
           console.error('Add exercise to template error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });
