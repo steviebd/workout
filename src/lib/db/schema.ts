@@ -115,6 +115,8 @@ export const workoutSets = sqliteTable('workout_sets', {
 export const userStreaks = sqliteTable('user_streaks', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').notNull().unique().references(() => users.workosId, { onDelete: 'cascade' }),
+  currentStreak: integer('current_streak').default(0),
+  longestStreak: integer('longest_streak').default(0),
   lastWorkoutDate: text('last_workout_date'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });

@@ -131,7 +131,7 @@ export async function getActiveProgramCycles(
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, 'active')))
     .orderBy(desc(userProgramCycles.startedAt))
-    .limit(1)
+    .limit(3)
     .all();
 
   return cycles as UserProgramCycle[];
@@ -329,6 +329,16 @@ export async function markWorkoutComplete(
 ): Promise<void> {
   const drizzleDb = createDb(db);
 
+  const workout = await drizzleDb
+    .select()
+    .from(programCycleWorkouts)
+    .where(eq(programCycleWorkouts.id, workoutId))
+    .get();
+
+  if (!workout || workout.isComplete) {
+    return;
+  }
+
   await drizzleDb
     .update(programCycleWorkouts)
     .set({
@@ -344,8 +354,40 @@ export async function markWorkoutComplete(
     const allWorkouts = await getCycleWorkouts(db, cycleId, workosId);
     const completedCount = allWorkouts.filter((w) => w.isComplete).length;
 
+    await drizzleDb
+      .update(userProgramCycles)
+      .set({
+        totalSessionsCompleted: completedCount,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(userProgramCycles.id, cycleId))
+      .run();
+
     if (completedCount >= cycle.totalSessionsPlanned && !cycle.isComplete) {
       await completeProgramCycle(db, cycleId, workosId);
+    }
+
+    const workoutsByWeek = allWorkouts.reduce<Record<number, typeof allWorkouts>>((acc, w) => {
+      const week = w.weekNumber;
+      if (!acc[week]) acc[week] = [];
+      acc[week].push(w);
+      return acc;
+    }, {});
+
+    const currentWeekWorkouts = workoutsByWeek[workout.weekNumber] || [];
+    const currentWeekComplete = currentWeekWorkouts.length > 0 && currentWeekWorkouts.every((w) => w.isComplete);
+
+    if (currentWeekComplete) {
+      const weeks = Object.keys(workoutsByWeek).map(Number).sort((a, b) => a - b);
+      const nextIncompleteWeek = weeks.find((week) => {
+        return !workoutsByWeek[week].every((w) => w.isComplete);
+      });
+
+      if (nextIncompleteWeek !== undefined) {
+        await updateProgramCycleProgress(db, cycleId, workosId, {
+          currentWeek: nextIncompleteWeek,
+        });
+      }
     }
   }
 }
@@ -543,9 +585,9 @@ export async function generateTemplateFromWorkout(
     } else if (parsed && typeof parsed === 'object') {
       const obj = parsed as { exercises?: TargetLift[]; accessories?: TargetLift[] };
       // Combine exercises and accessories
-      const exercises = obj.exercises ?? [];
+      const targetExercises = obj.exercises ?? [];
       const accessories = (obj.accessories ?? []).map(a => ({ ...a, isAccessory: true, isRequired: false }));
-      targetLifts = [...exercises, ...accessories];
+      targetLifts = [...targetExercises, ...accessories];
     }
   }
 

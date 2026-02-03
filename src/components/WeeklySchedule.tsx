@@ -192,7 +192,8 @@ export function WeeklySchedule({
                               : isPast
                               ? 'text-muted-foreground'
                               : 'text-primary'
-                          }`}>
+                            }`}
+                          >
                             {workout.sessionName}
                           </p>
                           {workout.scheduledTime ? (

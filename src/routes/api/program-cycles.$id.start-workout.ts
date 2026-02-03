@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout } from '~/lib/db/program';
+import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout, updateProgramCycleProgress } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
@@ -138,6 +138,11 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             const batch = workoutSetInserts.slice(i, i + BATCH_SIZE);
             await drizzleDb.insert(workoutSets).values(batch).run();
           }
+
+          await updateProgramCycleProgress(db, params.id, session.workosId, {
+            currentWeek: currentWorkout.weekNumber,
+            currentSession: currentWorkout.sessionNumber,
+          });
 
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
         } catch (err) {

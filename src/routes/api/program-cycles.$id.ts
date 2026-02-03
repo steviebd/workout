@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle } from '~/lib/db/program';
+import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getCycleWorkouts } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 
 export const Route = createFileRoute('/api/program-cycles/$id')({
@@ -23,9 +23,13 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
+          const workouts = await getCycleWorkouts(db, params.id, session.workosId);
+          const completedCount = workouts.filter((w) => w.isComplete).length;
+
           const responseData = {
             ...cycle,
             preferredGymDays: cycle.preferredGymDays ? cycle.preferredGymDays.split(',') : [],
+            totalSessionsCompleted: completedCount,
           };
 
           return Response.json(responseData);
