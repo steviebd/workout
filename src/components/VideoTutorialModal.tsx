@@ -1,4 +1,4 @@
-import { Play, ExternalLink } from 'lucide-react';
+import { Play } from 'lucide-react';
 import type { VideoTutorial } from '~/lib/exercise-library';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '~/components/ui/Dialog';
 
@@ -15,9 +15,13 @@ export function VideoTutorialModal({
   open,
   onOpenChange,
 }: VideoTutorialModalProps) {
+  const youtubeUrl = videoTutorial.youtubeId.startsWith('http')
+    ? videoTutorial.youtubeId
+    : `https://www.youtube.com/shorts/${videoTutorial.youtubeId}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Play className="h-5 w-5 text-primary" />
@@ -27,15 +31,15 @@ export function VideoTutorialModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="aspect-video w-full overflow-hidden rounded-lg bg-muted">
-            <iframe
-              src={`https://www.youtube.com/embed/${videoTutorial.youtubeId}`}
-              title={videoTutorial.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen={true}
-              className="w-full h-full"
-            />
-          </div>
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+          >
+            <Play className="h-5 w-5" />
+            Watch on YouTube
+          </a>
 
           <div className="space-y-2">
             <h4 className="font-semibold text-sm">Key Cues for {exerciseName}</h4>
@@ -48,16 +52,6 @@ export function VideoTutorialModal({
               ))}
             </ul>
           </div>
-
-          <a
-            href={`https://www.youtube.com/watch?v=${videoTutorial.youtubeId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Watch on YouTube
-          </a>
         </div>
       </DialogContent>
     </Dialog>

@@ -14,18 +14,6 @@ const jenSinklerInfo = {
   category: "women's" as const,
 };
 
-const legCircuitAccessories: ProgramAccessory[] = [
-  { accessoryId: 'leg-extensions', sets: 1, reps: 15, isRequired: false, notes: '3 rounds, 30s each' },
-  { accessoryId: 'leg-curls', sets: 1, reps: 15, isRequired: false, notes: '3 rounds, 30s each' },
-  { accessoryId: 'planks', sets: 1, reps: '30 sec', isRequired: false, notes: '3 rounds, 30s each' },
-];
-
-const upperCircuitAccessories: ProgramAccessory[] = [
-  { accessoryId: 'pushups', sets: 1, reps: 15, isRequired: false, notes: '3 rounds, 30s each' },
-  { accessoryId: 'dumbbell-row', sets: 1, reps: 12, isRequired: false, notes: '3 rounds, 30s each' },
-  { accessoryId: 'lateral-raises', sets: 1, reps: 15, isRequired: false, notes: '3 rounds, 30s each' },
-];
-
 const fullBodyAccessories: ProgramAccessory[] = [
   { accessoryId: 'planks', sets: 3, reps: '45 sec', isRequired: false, notes: 'Core finisher' },
   { accessoryId: 'lunges', sets: 3, reps: 12, isRequired: false },
@@ -34,17 +22,14 @@ const fullBodyAccessories: ProgramAccessory[] = [
 function getJenSinklerAccessories(_week: number, session: number): ProgramAccessory[] {
   if (session === 1) {
     return [
-      { accessoryId: 'leg-extensions', sets: 3, reps: 15, isRequired: false },
-      { accessoryId: 'leg-curls', sets: 3, reps: 15, isRequired: false },
-      ...legCircuitAccessories.slice(0, 1),
+      { accessoryId: 'planks', sets: 3, reps: '45 sec', isRequired: false },
     ];
   }
 
   if (session === 2) {
     return [
       { accessoryId: 'dumbbell-curl', sets: 3, reps: 12, isRequired: false },
-      { accessoryId: 'tricep-extensions', sets: 3, reps: 12, isRequired: false },
-      ...upperCircuitAccessories.slice(0, 1),
+      { accessoryId: 'lateral-raises', sets: 3, reps: 15, isRequired: false },
     ];
   }
 

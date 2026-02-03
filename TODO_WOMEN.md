@@ -94,19 +94,19 @@ export interface ExerciseLibraryItem {
 
 | Exercise | Creator | YouTube ID | Full Link | Title |
 |----------|---------|------------|-----------|-------|
-| Barbell Squat | LISAFIITT | Lq9bf_QUSns  | https://www.youtube.com/shorts/Lq9bf_QUSns | How to Squat with Perfect Form |
+| Squat | LISAFIITT | Lq9bf_QUSns  | https://www.youtube.com/shorts/Lq9bf_QUSns | How to Squat with Perfect Form |
 | Bench Press | LIndseyReneeBell | JvOJdUtx6UQ | https://www.youtube.com/shorts/7GtUE1MAniY | How to Bench Press (Barbell) |
 | Deadlift | bodybuildingcom | O1lJXVUh2Pk | https://www.youtube.com/shorts/O1lJXVUh2Pk | How To Deadlift  |
-| Overhead Press | Megsquats | YD7xwkprtTA | https://www.youtube.com/shorts/YD7xwkprtTA | 4 OVERHEAD PRESS TIPS FOR A NEW PR |
+| Overhead Press | Megsquats | YD7xwkprtTA | https://www.youtube.com/shorts/YD7xwkprtTA | 4 OVERHEAD PRESS TIPS |
 | Barbell Row | Melissa Kendter | SBA5DY_HfUU | https://www.youtube.com/shorts/SBA5DY_HfUU | Barbell Row |
-| Hip Thrust | ArielYu_Fit | x_q2iQ4H5cY | https://www.youtube.com/shorts/_i6qpcI1Nw4 | Hip Thrust Tips
+| Hip Thrust | ArielYu_Fit | PqC0fmyNlmw | https://www.youtube.com/shorts/PqC0fmyNlmw | Hip Thrust Tips |
 | Romanian Deadlift | ArielYu_Fit | CBOhr6H7BEY | https://www.youtube.com/shorts/CBOhr6H7BEY| How to Romanian Deadlift |
 | Lunges | Melissa_Kendter | LdJg-qV0zJ0 | https://www.youtube.com/shorts/2ea3_b9rFdM | Walking Lunges |
-| Pull-ups | KenziieJohnson | e4BvPZW6Iqk | https://www.youtube.com/shorts/j-H5VmNj-Iw | How to Do An Assissted Pull-Up |
+| Pull-ups | KenziieJohnson | j-H5VmNj-Iw | https://youtube.com/shorts/j-H5VmNj-Iw | How to Do An Assissted Pull-Up |
 | Dips | Jen Sinkler | naAv3nWlZFE | https://www.youtube.com/shorts/naAv3nWlZFE | How to Do Dips |
 | Leg Press | Squat University | OlWE5rOjS5o | https://www.youtube.com/shorts/OlWE5rOjS5o | Leg Press Form Tips |
 | Face Pulls | ArielYu_Fit | I41wK3wTZlo | https://www.youtube.com/shorts/I41wK3wTZlo | How to Face Pull |
-| Plank | MarieKme | pSHjTRCQx5I | https://www.youtube.com/shorts/Pkp3SOvipZ0 | How to Plank Correctly |
+| Plank | MarieKme | Pkp3SOvipZ0 | https://www.youtube.com/shorts/Pkp3SOvipZ0 | How to Plank Correctly |
 
 **Notes on Video Selection:**
 - Prioritize Megsquats and Jen Sinkler for women's-specific mechanics
@@ -351,23 +351,25 @@ If videos need to be stored server-side in the future:
   - [x] ESLint passes
   - [x] Video modal integration verified
 
-### YouTube Video Links Reference
+---
 
-| Exercise | Full Link |
-|----------|-----------|
-| Barbell Squat | https://youtu.be/FVV98MS7xJ8 |
-| Bench Press | https://youtu.be/IOVA5JdAqqE |
-| Deadlift | https://youtu.be/wTSBUl9T92s |
-| Overhead Press | https://youtu.be/QAQ64hJ2jHs |
-| Barbell Row | https://youtu.be/6SP1C10yL2U |
-| Hip Thrust | https://youtu.be/x_q2iQ4H5cY |
-| Romanian Deadlift | https://youtu.be/UC5F_4gB1Ks |
-| Lunges | https://youtu.be/LdJg-qV0zJ0 |
-| Pull-ups | https://youtu.be/e4BvPZW6Iqk |
-| Dips | https://youtu.be/c4DAnQ6DtF8 |
-| Leg Press | https://youtu.be/IZO7k-1h6s4 |
-| Face Pulls | https://youtu.be/h7oW7zJ6Q3c |
-| Plank | https://youtu.be/pSHjTRCQx5I |
+## Missing Videos
+
+These exercises are used in programs but have no video tutorial yet:
+
+| Exercise | Creator | YouTube ID | Full Link | Title | Key Cues |
+|----------|---------|------------|-----------|-------|----------|
+| Leg Curl | ArielYu_Fit | yjWAuFOjhuY | https://www.youtube.com/shorts/yjWAuFOjhuY
+| Leg Extension | LISAFIITT | 2zZ3vkPsExQ | https://www.youtube.com/shorts/2zZ3vkPsExQ
+| Tricep Pushdown | infotainment5454 | nhbjwYcL6m8 | https://www.youtube.com/shorts/nhbjwYcL6m8
+| Dumbbell Row | ArielYu_Fit | jpi4reqwiKY | https://www.youtube.com/shorts/jpi4reqwiKY
+| Dumbbell Curl | ArielYu_Fit | j1FjaWu5Am4 | https://www.youtube.com/shorts/j1FjaWu5Am4
+| Lateral Raises | ArielYu_Fit | UFcaodmbXd8 | https://www.youtube.com/shorts/UFcaodmbXd8
+| Lat Pulldown | ArielYu_Fit | diBoTD4-uG8 | https://www.youtube.com/shorts/diBoTD4-uG8
+| Front Squat | lisafittworkouts | -hiSsWvHPc4 | https://www.youtube.com/shorts/-hiSsWvHPc4
+| Tricep Extensions | lisafittworkouts | xiXJxlGKryY | https://www.youtube.com/shorts/xiXJxlGKryY
+
+
 
 ---
 

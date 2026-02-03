@@ -36,13 +36,13 @@ function getMegsquatsAccessories(_week: number, session: number): ProgramAccesso
 
   if (isLowerA) {
     return megsquatsAccessories.filter(acc =>
-      ['hip-thrust', 'romanian-dl', 'leg-press', 'leg-curls', 'planks'].includes(acc.accessoryId)
+      ['leg-curls', 'planks'].includes(acc.accessoryId)
     );
   }
 
   if (isUpperA) {
     return upperAccessories.filter(acc =>
-      ['pullups', 'lat-pulldowns', 'tricep-pushdowns', 'face-pulls', 'lateral-raises'].includes(acc.accessoryId)
+      ['lat-pulldowns', 'lateral-raises'].includes(acc.accessoryId)
     );
   }
 

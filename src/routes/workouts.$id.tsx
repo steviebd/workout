@@ -876,8 +876,8 @@ function WorkoutSession() {
       onOpenChange={() => setSelectedTutorial(null)}
     />
   ) : null}
-</>
-  );
+			</>
+			);
 }
 
 export const Route = createFileRoute('/workouts/$id')({
