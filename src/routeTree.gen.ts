@@ -24,7 +24,6 @@ import { Route as HistoryExerciseIdRouteImport } from './routes/history.$exercis
 import { Route as ExercisesNewRouteImport } from './routes/exercises.new'
 import { Route as ExercisesIndexRouteImport } from './routes/exercises._index'
 import { Route as ExercisesIdRouteImport } from './routes/exercises.$id'
-import { Route as AuthSignoutRouteImport } from './routes/auth.signout'
 import { Route as AuthSigninRouteImport } from './routes/auth.signin'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
@@ -154,11 +153,6 @@ const ExercisesIndexRoute = ExercisesIndexRouteImport.update({
 const ExercisesIdRoute = ExercisesIdRouteImport.update({
   id: '/exercises/$id',
   path: '/exercises/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSignoutRoute = AuthSignoutRouteImport.update({
-  id: '/auth/signout',
-  path: '/auth/signout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSigninRoute = AuthSigninRouteImport.update({
@@ -469,7 +463,6 @@ export interface FileRoutesByFullPath {
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
-  '/auth/signout': typeof AuthSignoutRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
@@ -542,7 +535,6 @@ export interface FileRoutesByTo {
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
-  '/auth/signout': typeof AuthSignoutRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
@@ -616,7 +608,6 @@ export interface FileRoutesById {
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
-  '/auth/signout': typeof AuthSignoutRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises/_index': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
@@ -691,7 +682,6 @@ export interface FileRouteTypes {
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
-    | '/auth/signout'
     | '/exercises/$id'
     | '/exercises'
     | '/exercises/new'
@@ -764,7 +754,6 @@ export interface FileRouteTypes {
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
-    | '/auth/signout'
     | '/exercises/$id'
     | '/exercises'
     | '/exercises/new'
@@ -837,7 +826,6 @@ export interface FileRouteTypes {
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
-    | '/auth/signout'
     | '/exercises/$id'
     | '/exercises/_index'
     | '/exercises/new'
@@ -911,7 +899,6 @@ export interface RootRouteChildren {
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSigninRoute: typeof AuthSigninRoute
-  AuthSignoutRoute: typeof AuthSignoutRoute
   ExercisesIdRoute: typeof ExercisesIdRouteWithChildren
   ExercisesIndexRoute: typeof ExercisesIndexRoute
   ExercisesNewRoute: typeof ExercisesNewRoute
@@ -1047,13 +1034,6 @@ declare module '@tanstack/react-router' {
       path: '/exercises/$id'
       fullPath: '/exercises/$id'
       preLoaderRoute: typeof ExercisesIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/signout': {
-      id: '/auth/signout'
-      path: '/auth/signout'
-      fullPath: '/auth/signout'
-      preLoaderRoute: typeof AuthSignoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/signin': {
@@ -1662,7 +1642,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSigninRoute: AuthSigninRoute,
-  AuthSignoutRoute: AuthSignoutRoute,
   ExercisesIdRoute: ExercisesIdRouteWithChildren,
   ExercisesIndexRoute: ExercisesIndexRoute,
   ExercisesNewRoute: ExercisesNewRoute,

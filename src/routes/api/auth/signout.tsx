@@ -15,52 +15,54 @@ export const Route = createFileRoute('/api/auth/signout')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        console.log('[/api/auth/signout] Signout request received');
         const url = new URL(request.url);
         const isDev = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
         const cookieName = isDev ? 'session_token' : '__Host-session_token';
         const clearCookie = createClearCookie(cookieName, isDev);
 
-        return new Response(null, {
-          status: 302,
-          headers: {
-            'Set-Cookie': clearCookie,
-            'Location': '/auth/signout',
-          },
-        });
-      },
-      POST: async ({ request }) => {
-        console.log('[/api/auth/signout] Signout request received');
-        const url = new URL(request.url);
-        const isDev = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-        const cookieName = isDev ? 'session_token' : '__Host-session_token';
-
         const cookieHeader = request.headers.get('Cookie');
         const token = getTokenFromCookie(cookieHeader, cookieName);
+        
         let workosLogoutUrl: string | null = null;
 
         if (token && WORKOS_API_KEY) {
           try {
             const payload = await verifyToken(token);
+            console.log('[/api/auth/signout] Token payload:', JSON.stringify(payload));
             if (payload?.workosSessionId) {
               const workos = new WorkOS(WORKOS_API_KEY);
               workosLogoutUrl = workos.userManagement.getLogoutUrl({
                 sessionId: payload.workosSessionId,
               });
-              console.log('[/api/auth/signout] WorkOS logout URL generated');
+              console.log('[/api/auth/signout] WorkOS logout URL:', workosLogoutUrl);
             }
           } catch (err) {
-            console.error('[/api/auth/signout] Error getting WorkOS logout URL:', err);
+            console.error('[/api/auth/signout] Error:', err);
           }
         }
 
-        const clearCookie = createClearCookie(cookieName, isDev);
-        console.log('[/api/auth/signout] Clearing cookie:', clearCookie);
+        // Return HTML page that clears cookies/storage and then redirects to WorkOS logout
+        const redirectUrl = workosLogoutUrl ?? `${url.origin}/`;
+        const html = `<!DOCTYPE html>
+<html>
+<head><title>Signing out...</title></head>
+<body>
+<script>
+localStorage.removeItem('auth_user');
+sessionStorage.clear();
+window.location.href = "${redirectUrl}";
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=${redirectUrl}"></noscript>
+</body>
+</html>`;
 
-        return new Response(JSON.stringify({ success: true, logoutUrl: workosLogoutUrl }), {
+        return new Response(html, {
           status: 200,
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/html',
             'Set-Cookie': clearCookie,
+            'Cache-Control': 'no-store',
           },
         });
       },

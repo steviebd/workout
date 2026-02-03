@@ -15,7 +15,7 @@ import { UnitProvider } from '@/lib/context/UnitContext'
 import { DateFormatProvider } from '@/lib/context/DateFormatContext'
 import { StreakProvider } from '@/lib/context/StreakContext'
 import { ThemeProvider } from '@/lib/context/ThemeContext'
-import { cacheUser, getCachedUser } from '@/lib/auth/offline-auth'
+import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,7 +69,9 @@ function AppLayout() {
 
   const signOut = useCallback(() => {
     setUser(null);
-    window.location.href = '/auth/signout';
+    void clearCachedUser();
+    localStorage.removeItem('auth_user');
+    window.location.href = '/api/auth/signout';
   }, []);
 
   useEffect(() => {
