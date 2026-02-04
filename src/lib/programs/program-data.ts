@@ -92,9 +92,9 @@ export const PROGRAMS: ProgramListItem[] = [
     "women's"
   ),
   createProgram(
-    'lift-weights-faster',
-    'Lift Weights Faster (Jen Sinkler)',
-    'An 8-week full body program combining strength and conditioning, perfect for building lean muscle and endurance.',
+    'unapologetically-strong',
+    'Unapologetically Strong (Jen Sinkler)',
+    'An 8-week full body strength program designed to build a solid foundation of power and confidence.',
     'intermediate',
     3,
     8,

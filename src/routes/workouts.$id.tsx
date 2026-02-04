@@ -574,8 +574,8 @@ function WorkoutSession() {
 
   if (auth.loading) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<Loader2 className={'animate-spin text-primary'} size={32} />
+	<div className="min-h-screen flex items-center justify-center">
+		<Loader2 className="animate-spin text-primary" size={32} />
 	</div>
     );
   }
@@ -601,67 +601,36 @@ function WorkoutSession() {
 
 		return (
 			<>
-			<div className={'bg-card border-b border-border sticky top-0 z-10'}>
-				<div className={'max-w-lg mx-auto px-3 py-3 sm:px-4 sm:py-4'}>
-					<div className={'flex items-center justify-between gap-2'}>
-						<div className="min-w-0">
-							<h1 className={'text-lg sm:text-xl font-bold text-foreground truncate'}>{workoutName}</h1>
-							<div className={'flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1'}>
-								<span className={'flex items-center gap-1'}>
-									<Calendar size={12} className="sm:size-14" />
-									<span className="truncate">{formatDate(startedAt)}</span>
-								</span>
-								<span className={'flex items-center gap-1'}>
-									<Dumbbell size={12} className="sm:size-14" />
-									{formatDuration(startedAt)}
-								</span>
-							</div>
-						</div>
-						<div className={'flex items-center gap-1.5 sm:gap-2 shrink-0'}>
-							<button
-								className={'px-2 py-1.5 sm:px-3 sm:py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-xs sm:text-sm font-medium'}
-								onClick={handleDiscardClick}
-							>
-								{'Discard'}
-							</button>
-							<button
-								className={cn(
-									'inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm'
-								)}
-								disabled={completing || totalSetsCount === 0}
-								onClick={handleCompleteWorkoutClickWrapped}
-							>
-								{completing ? (
-									<>
-										<Loader2 className={'animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4'} />
-										{'Saving...'}
-									</>
-                  ) : (
-	<>
-		<Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-		{'Complete'}
-	</>
-                  )}
-							</button>
-						</div>
+			<header className="bg-card border-b border-border py-4">
+				<div className="max-w-lg mx-auto px-4 text-center">
+					<h1 className="text-xl sm:text-2xl font-bold text-foreground">{workoutName}</h1>
+					<div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
+						<span className="flex items-center gap-1.5">
+							<Calendar size={14} />
+							{formatDate(startedAt)}
+						</span>
+						<span className="flex items-center gap-1.5">
+							<Dumbbell size={14} />
+							{formatDuration(startedAt)}
+						</span>
 					</div>
 				</div>
-			</div>
+			</header>
 
-			<main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-24 sm:px-4 sm:py-6">
-			{error ? <div className={'mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'}>
-				<p className={'text-sm text-destructive'}>{error}</p>
+			<main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-36 sm:px-4 sm:py-6">
+			{error ? <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+				<p className="text-sm text-destructive">{error}</p>
             </div> : null}
 
-			<div className={'space-y-4'}>
+			<div className="space-y-4">
 				{exercises.length === 0 ? (
 					<Card className="p-8 text-center">
-						<p className={'text-muted-foreground mb-4'}>{'No exercises added yet'}</p>
+						<p className="text-muted-foreground mb-4">No exercises added yet</p>
 						<Button
 							onClick={handleAddExerciseClickWrapped}
 						>
 							<Plus size={18} />
-							{'Add Exercise'}
+							Add Exercise
 						</Button>
 					</Card>
            ) : (
@@ -713,47 +682,47 @@ function WorkoutSession() {
 						onClick={handleAddExerciseClickWrapped}
 					>
 						<Plus size={18} />
-						{'Add Exercise'}
+						Add Exercise
 					</Button>
 				) : null}
 
-				<div className={'bg-card rounded-lg border border-border p-4'}>
-					<div className={'flex items-center justify-between mb-2'}>
-						<label className={'text-sm font-medium text-foreground'}>{'Workout Notes'}</label>
+				<div className="bg-card rounded-lg border border-border p-4">
+					<div className="flex items-center justify-between mb-2">
+						<span className="text-sm font-medium text-foreground">Workout Notes</span>
 						{editingNotes ? (
-							<div className={'flex items-center gap-2'}>
+							<div className="flex items-center gap-2">
 								<button
-									className={'text-sm text-muted-foreground hover:text-foreground'}
+									className="text-sm text-muted-foreground hover:text-foreground"
 									onClick={handleCancelNotesClick}
 								>
-									{'Cancel'}
+									Cancel
 								</button>
 							<button
-								className={'text-sm text-primary hover:text-primary'}
+								className="text-sm text-primary hover:text-primary"
 								onClick={handleSaveNotesClickWrapped}
 							>
-								{'Save'}
+								Save
 							</button>
 							</div>
               ) : (
 	<button
-		className={'text-sm text-primary hover:text-primary'}
+		className="text-sm text-primary hover:text-primary"
 		onClick={handleEditNotesClick}
 	>
-		{'Edit'}
+		Edit
 	</button>
               )}
 					</div>
 					{editingNotes ? (
 						<textarea
-							className={'w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none'}
+							className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
 							onChange={handleNotesChange}
-							placeholder={'Add notes about this workout...'}
+							placeholder="Add notes about this workout..."
 							rows={3}
 							value={notes}
 						/>
             ) : (
-	<p className={'text-muted-foreground text-sm'}>
+	<p className="text-muted-foreground text-sm">
 		{notes || 'No notes added'}
 	</p>
             )}
@@ -764,39 +733,39 @@ function WorkoutSession() {
 			<Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle>{'Add Exercise'}</DrawerTitle>
+						<DrawerTitle>Add Exercise</DrawerTitle>
 					</DrawerHeader>
-					<div className={'p-4 border-b'}>
-						<div className={'relative'}>
-							<Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
+					<div className="p-4 border-b">
+						<div className="relative">
+							<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
 							<Input
 								autoFocus={true}
-								className={'pl-10'}
+								className="pl-10"
 								onChange={handleExerciseSearchChange}
-								placeholder={'Search exercises...'}
-								type={'text'}
+								placeholder="Search exercises..."
+								type="text"
 								value={exerciseSearch}
 							/>
 						</div>
 					</div>
-					<div className={'flex-1 overflow-y-auto p-4'}>
+					<div className="flex-1 overflow-y-auto p-4">
 						{filteredExercises.length === 0 ? (
-							<div className={'text-center py-8 text-muted-foreground'}>
-								{'No exercises found'}
+							<div className="text-center py-8 text-muted-foreground">
+								No exercises found
 							</div>
 						) : (
-							<div className={'space-y-2'}>
+							<div className="space-y-2">
 								{filteredExercises.map((exercise) => (
 									<button
-										className={'w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors'}
+										className="w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors"
 										data-id={exercise.id}
 										key={exercise.id}
 										onClick={handleAddExerciseClickSharedWrapped}
 									>
 										<div>
-											<h3 className={'font-medium text-foreground'}>{exercise.name}</h3>
+											<h3 className="font-medium text-foreground">{exercise.name}</h3>
 											{exercise.muscleGroup ?
-												<span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full'}>
+												<span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
 													{exercise.muscleGroup}
 												</span> : null}
 										</div>
@@ -811,20 +780,20 @@ function WorkoutSession() {
 		<AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{'Discard Workout?'}</AlertDialogTitle>
+					<AlertDialogTitle>Discard Workout?</AlertDialogTitle>
 				</AlertDialogHeader>
-				<p className={'text-muted-foreground mb-4'}>
-					{'This will permanently delete this workout. This action cannot be undone.'}
+				<p className="text-muted-foreground mb-4">
+					This will permanently delete this workout. This action cannot be undone.
 				</p>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={handleDiscardBackClick}>
-						{'Cancel'}
+						Cancel
 					</AlertDialogCancel>
 					<AlertDialogAction
-						className={'bg-red-600 text-white hover:bg-red-700'}
+						className="bg-red-600 text-white hover:bg-red-700"
 						onClick={handleDiscardConfirmClickWrapped}
 					>
-						{'Discard Workout'}
+						Discard Workout
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
@@ -833,20 +802,19 @@ function WorkoutSession() {
 		<AlertDialog open={showIncompleteSetsConfirm} onOpenChange={setShowIncompleteSetsConfirm}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{'Incomplete Sets'}</AlertDialogTitle>
+					<AlertDialogTitle>Incomplete Sets</AlertDialogTitle>
 				</AlertDialogHeader>
-				<p className={'text-muted-foreground mb-4'}>
+				<p className="text-muted-foreground mb-4">
 					{'You have sets that haven\'t been marked as complete. Are you sure you want to continue?'}
 				</p>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={_handleIncompleteSetsBackClickWrapped}>
-						{'Go Back'}
+						Go Back
 					</AlertDialogCancel>
  					<AlertDialogAction
- 						className={'bg-green-600 text-white hover:bg-green-700'}
+ 						className="bg-green-600 text-white hover:bg-green-700"
  						onClick={handleIncompleteSetsContinueClickWrapped}
- 					>
- 					</AlertDialogAction>
+ 					/>
     </AlertDialogFooter>
    </AlertDialogContent>
   </AlertDialog>
@@ -859,6 +827,36 @@ function WorkoutSession() {
       onOpenChange={() => setSelectedTutorial(null)}
     />
   ) : null}
+
+			<div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-40">
+				<div className="mx-auto max-w-lg flex items-center justify-between gap-2">
+					<button
+						className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-sm font-medium"
+						onClick={handleDiscardClick}
+					>
+						Discard
+					</button>
+					<button
+						className={cn(
+							'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm'
+						)}
+						disabled={completing || totalSetsCount === 0}
+						onClick={handleCompleteWorkoutClickWrapped}
+					>
+						{completing ? (
+							<>
+								<Loader2 className="animate-spin h-4 w-4" />
+								Saving...
+							</>
+						) : (
+							<>
+								<Check className="h-4 w-4" />
+								Complete
+							</>
+						)}
+					</button>
+				</div>
+			</div>
 			</>
 			);
 }

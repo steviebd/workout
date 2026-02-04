@@ -46,7 +46,7 @@ export function findSimilarLibraryExercise(
   name: string,
   muscleGroup: string,
   library: ExerciseLibraryItem[],
-  threshold: number = 0.70
+  threshold = 0.70
 ): FuzzyMatchResult {
   let bestMatch: FuzzyMatchResult = { score: 0, isMatch: false };
 

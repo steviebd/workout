@@ -58,15 +58,16 @@ async function loginUser(page: Page) {
 
 test.describe('Templates E2E Tests', () => {
   test('should redirect to sign in when not authenticated', async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto(`${BASE_URL}/templates`, { waitUntil: 'networkidle' });
-    
     const authResponse = await page.request.get(`${BASE_URL}/api/auth/me`);
     if (authResponse.ok()) {
-      test.skip(true, 'Cannot test unauthenticated redirect when storage state provides authentication');
+      await context.clearCookies();
+      const newPage = await context.newPage();
+      await newPage.goto(`${BASE_URL}/templates`, { waitUntil: 'networkidle' });
+      await expect(newPage).toHaveURL(isAuthKitUrl);
       return;
     }
-    
+
+    await page.goto(`${BASE_URL}/templates`, { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(isAuthKitUrl);
   });
 

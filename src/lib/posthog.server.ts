@@ -24,7 +24,7 @@ function getPostHogClient(): PostHog {
 export function trackEvent(
   event: string,
   properties?: Record<string, unknown>,
-  distinctId: string = 'anonymous'
+  distinctId = 'anonymous'
 ): void {
   const client = getPostHogClient();
   client.capture({

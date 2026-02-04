@@ -3,6 +3,16 @@ import { env } from 'cloudflare:workers';
 import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getCycleWorkouts } from '~/lib/db/program';
 import { getSession } from '~/lib/session';
 
+interface ProgramCycleUpdateBody {
+  squat1rm?: number;
+  bench1rm?: number;
+  deadlift1rm?: number;
+  ohp1rm?: number;
+  currentWeek?: number;
+  currentSession?: number;
+  isComplete?: boolean;
+}
+
 export const Route = createFileRoute('/api/program-cycles/$id')({
   server: {
     handlers: {
@@ -45,15 +55,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
-          const body = await request.json() as {
-            squat1rm?: number;
-            bench1rm?: number;
-            deadlift1rm?: number;
-            ohp1rm?: number;
-            currentWeek?: number;
-            currentSession?: number;
-            isComplete?: boolean;
-          };
+          const body = await request.json() as ProgramCycleUpdateBody;
           const { squat1rm, bench1rm, deadlift1rm, ohp1rm, currentWeek, currentSession, isComplete } = body;
 
           const db = (env as { DB?: D1Database }).DB;

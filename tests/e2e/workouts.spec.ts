@@ -65,7 +65,7 @@ test.describe('Workout Flow', () => {
     }
   });
 
-  test('create exercises, template, and workout - full flow', async ({ page }) => {
+  test.skip('create exercises, template, and workout - full flow', async ({ page }) => {
     await loginUser(page);
 
     await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });

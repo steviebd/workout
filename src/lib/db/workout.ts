@@ -1431,7 +1431,7 @@ export interface PersonalRecord {
 export async function getRecentPRs(
   db: D1Database,
   workosId: string,
-  limit: number = 5
+  limit = 5
 ): Promise<PersonalRecord[]> {
   const drizzleDb = createDb(db);
 

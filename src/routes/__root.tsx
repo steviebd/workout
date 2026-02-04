@@ -31,6 +31,12 @@ const queryClient = new QueryClient({
   },
 });
 
+interface AuthUserData {
+  id: string;
+  email: string;
+  name: string;
+}
+
 type User = { id: string; email: string; name: string } | null;
 
 interface AuthContextType {
@@ -103,7 +109,7 @@ function AppLayout() {
         if (!isMounted) return;
 
         if (apiResponse?.ok) {
-          const userData = (await apiResponse.json()) as User;
+          const userData = (await apiResponse.json()) as AuthUserData | null;
           if (userData) {
             setUser(userData);
             await cacheUser({
@@ -188,14 +194,14 @@ function AppLayout() {
               }}
             />
           </head>
-          <body className={'min-h-screen bg-background font-sans antialiased'}>
-            <div className={'min-h-screen flex flex-col'}>
+          <body className="min-h-screen bg-background font-sans antialiased">
+            <div className="min-h-screen flex flex-col">
               <UnitProvider userId={user?.id}>
                 <DateFormatProvider userId={user?.id}>
                   <StreakProvider>
                     <ThemeProvider>
                       <Header />
-                      <main className={'flex-1 pb-20'}>
+                      <main className="flex-1 pb-20">
                         <div className="mx-auto max-w-lg px-4">
                         <ErrorBoundary>
                           <ToastProvider>

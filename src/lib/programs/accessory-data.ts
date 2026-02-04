@@ -302,7 +302,7 @@ export function getLibraryIdForAccessory(accessoryId: string): string | null {
 export function calculateAccessoryWeight(
   accessoryId: string,
   oneRMs: OneRMValues,
-  addedWeight: number = 0
+  addedWeight = 0
 ): number {
   const accessory = ACCESSORIES[accessoryId];
   if (!accessory) return 0;

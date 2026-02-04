@@ -51,8 +51,8 @@ function calculateTargetWeight(
   week: number,
   session: number,
   _lift: string,
-  isT2: boolean = false,
-  waveNumber: number = 1
+  isT2 = false,
+  waveNumber = 1
 ): number {
   const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGE;
   const wave = waveNumber === 1 ? WAVE_1 : WAVE_2;

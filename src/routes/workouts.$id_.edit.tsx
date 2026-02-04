@@ -398,8 +398,8 @@ function EditWorkout() {
 
   if (auth.loading) {
     return (
-      <div className={'min-h-screen flex items-center justify-center'}>
-        <Loader2 className={'animate-spin text-primary'} size={32} />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
@@ -426,17 +426,17 @@ function EditWorkout() {
 
   return (
     <>
-      <div className={'bg-card border-b border-border sticky top-0 z-10'}>
-        <div className={'max-w-lg mx-auto px-4 py-4'}>
-          <div className={'flex items-center justify-between'}>
+      <div className="bg-card border-b border-border sticky top-0 z-10">
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className={'text-xl font-bold text-foreground'}>{workoutName}</h1>
-              <div className={'flex items-center gap-4 text-sm text-muted-foreground mt-1'}>
-                <span className={'flex items-center gap-1'}>
+              <h1 className="text-xl font-bold text-foreground">{workoutName}</h1>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                <span className="flex items-center gap-1">
                   <Calendar size={14} />
                   {formatDate(startedAt)}
                 </span>
-                <span className={'flex items-center gap-1'}>
+                <span className="flex items-center gap-1">
                   <Dumbbell size={14} />
                   {formatDuration(startedAt)}
                 </span>
@@ -451,13 +451,13 @@ function EditWorkout() {
             >
               {saving ? (
                 <>
-                  <Loader2 className={'animate-spin'} size={18} />
-                  {'Saving...'}
+                  <Loader2 className="animate-spin" size={18} />
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  {'Save'}
+                  Save
                 </>
               )}
             </button>
@@ -467,18 +467,18 @@ function EditWorkout() {
 
       <main className="mx-auto max-w-lg px-4 py-6 pb-24">
         {error ? (
-          <div className={'mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'}>
-            <p className={'text-sm text-destructive'}>{error}</p>
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         ) : null}
 
-        <div className={'space-y-4'}>
+        <div className="space-y-4">
           {exercises.length === 0 ? (
             <Card className="p-8 text-center">
-              <p className={'text-muted-foreground mb-4'}>{'No exercises in this workout'}</p>
+              <p className="text-muted-foreground mb-4">No exercises in this workout</p>
               <Button onClick={handleAddExerciseClickWrapped}>
                 <Plus size={18} />
-                {'Add Exercise'}
+                Add Exercise
               </Button>
             </Card>
           ) : (
@@ -526,47 +526,47 @@ function EditWorkout() {
               onClick={handleAddExerciseClickWrapped}
             >
               <Plus size={18} />
-              {'Add Exercise'}
+              Add Exercise
             </Button>
           ) : null}
 
-          <div className={'bg-card rounded-lg border border-border p-4'}>
-            <div className={'flex items-center justify-between mb-2'}>
-              <label className={'text-sm font-medium text-foreground'}>{'Workout Notes'}</label>
+          <div className="bg-card rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-foreground">Workout Notes</span>
               {editingNotes ? (
-                <div className={'flex items-center gap-2'}>
+                <div className="flex items-center gap-2">
                   <button
-                    className={'text-sm text-muted-foreground hover:text-foreground'}
+                    className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={handleCancelNotesClick}
                   >
-                    {'Cancel'}
+                    Cancel
                   </button>
                   <button
-                    className={'text-sm text-primary hover:text-primary'}
+                    className="text-sm text-primary hover:text-primary"
                     onClick={() => { void handleSaveNotesClick(); }}
                   >
-                    {'Save'}
+                    Save
                   </button>
                 </div>
               ) : (
                 <button
-                  className={'text-sm text-primary hover:text-primary'}
+                  className="text-sm text-primary hover:text-primary"
                   onClick={handleEditNotesClick}
                 >
-                  {'Edit'}
+                  Edit
                 </button>
               )}
             </div>
             {editingNotes ? (
               <textarea
-                className={'w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none'}
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
                 onChange={handleNotesChange}
-                placeholder={'Add notes about this workout...'}
+                placeholder="Add notes about this workout..."
                 rows={3}
                 value={notes}
               />
             ) : (
-              <p className={'text-muted-foreground text-sm'}>
+              <p className="text-muted-foreground text-sm">
                 {notes || 'No notes added'}
               </p>
             )}
@@ -577,39 +577,39 @@ function EditWorkout() {
       <Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>{'Add Exercise'}</DrawerTitle>
+            <DrawerTitle>Add Exercise</DrawerTitle>
           </DrawerHeader>
-          <div className={'p-4 border-b'}>
-            <div className={'relative'}>
-              <Search className={'absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'} size={18} />
+          <div className="p-4 border-b">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <Input
                 autoFocus={true}
-                className={'pl-10'}
+                className="pl-10"
                 onChange={handleExerciseSearchChange}
-                placeholder={'Search exercises...'}
-                type={'text'}
+                placeholder="Search exercises..."
+                type="text"
                 value={exerciseSearch}
               />
             </div>
           </div>
-          <div className={'flex-1 overflow-y-auto p-4'}>
+          <div className="flex-1 overflow-y-auto p-4">
             {filteredExercises.length === 0 ? (
-              <div className={'text-center py-8 text-muted-foreground'}>
-                {'No exercises found'}
+              <div className="text-center py-8 text-muted-foreground">
+                No exercises found
               </div>
             ) : (
-              <div className={'space-y-2'}>
+              <div className="space-y-2">
                 {filteredExercises.map((exercise) => (
                   <button
-                    className={'w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors'}
+                    className="w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors"
                     data-id={exercise.id}
                     key={exercise.id}
                     onClick={handleAddExerciseClickSharedWrapped}
                   >
                     <div>
-                      <h3 className={'font-medium text-foreground'}>{exercise.name}</h3>
+                      <h3 className="font-medium text-foreground">{exercise.name}</h3>
                       {exercise.muscleGroup ?
-                        <span className={'inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full'}>
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
                           {exercise.muscleGroup}
                         </span> : null}
                     </div>

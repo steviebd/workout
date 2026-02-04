@@ -79,7 +79,7 @@ export const PROGRAM_SLUGS = {
   sheiko: 'sheiko',
   nuckols28: 'nuckols-28-programs',
   megsquatsStrongerByTheDay: 'stronger-by-the-day',
-  jenSinklerLiftWeightsFaster: 'lift-weights-faster',
+  jenSinklerUnapologeticallyStrong: 'unapologetically-strong',
 } as const;
 
 export type ProgramSlug = typeof PROGRAM_SLUGS[keyof typeof PROGRAM_SLUGS];

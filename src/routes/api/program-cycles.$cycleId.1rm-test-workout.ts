@@ -5,6 +5,17 @@ import { getSession } from '../../lib/session';
 import { workouts } from '../../lib/db/schema';
 import { createDb } from '../../lib/db';
 
+interface OneRmTestUpdateBody {
+  squat1rm?: number;
+  bench1rm?: number;
+  deadlift1rm?: number;
+  ohp1rm?: number;
+  startingSquat1rm?: number;
+  startingBench1rm?: number;
+  startingDeadlift1rm?: number;
+  startingOhp1rm?: number;
+}
+
 export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-workout')({
   server: {
     handlers: {
@@ -46,16 +57,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
-          const body = await request.json() as {
-            squat1rm?: number;
-            bench1rm?: number;
-            deadlift1rm?: number;
-            ohp1rm?: number;
-            startingSquat1rm?: number;
-            startingBench1rm?: number;
-            startingDeadlift1rm?: number;
-            startingOhp1rm?: number;
-          };
+          const body = (await request.json()) as OneRmTestUpdateBody;
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

@@ -99,7 +99,7 @@ export function TemplateEditor({
         setFormData(prev => ({ ...prev, ...previousState }));
       }
       if (previousState.exercises) {
-        setSelectedExercises(previousState.exercises as SelectedExercise[]);
+        setSelectedExercises(previousState.exercises);
       }
     }
   }, [undo]);
@@ -111,7 +111,7 @@ export function TemplateEditor({
         setFormData(prev => ({ ...prev, ...nextState }));
       }
       if (nextState.exercises) {
-        setSelectedExercises(nextState.exercises as SelectedExercise[]);
+        setSelectedExercises(nextState.exercises);
       }
     }
   }, [redo]);
@@ -402,7 +402,7 @@ export function TemplateEditor({
 
           if (!response.ok) throw new Error('Failed to create exercise');
 
-          const created = await response.json() as Exercise;
+          const created = await response.json() as { id: string };
           exerciseId = created.id;
           libraryId = exercise.id;
           void fetchExercises();
@@ -757,14 +757,15 @@ export function TemplateEditor({
                   })
                     .then(response => {
                       if (!response.ok) throw new Error('Failed to create exercise');
-                      return response.json() as Promise<Exercise>;
+                      return response.json();
                     })
-                    .then(created => {
+                    .then((created) => {
+                      const data = created as { id: string; name: string; muscleGroup: string; description: string };
                       void handleAddExercise({
-                        id: created.id,
-                        name: created.name,
-                        muscleGroup: created.muscleGroup,
-                        description: created.description,
+                        id: data.id,
+                        name: data.name,
+                        muscleGroup: data.muscleGroup,
+                        description: data.description,
                       });
                       toast.success(`Created "${name}"`);
                       void fetchExercises();

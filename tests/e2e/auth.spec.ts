@@ -215,8 +215,8 @@ function isAuthKitUrl(url: URL): boolean {
 			return;
 		}
 
-		const signOutResponse = await page.request.get(`${BASE_URL}/auth/signout`, { maxRedirects: 0 });
-		expect(signOutResponse.status()).toBe(302);
+		const signOutResponse = await page.request.get(`${BASE_URL}/api/auth/signout`, { maxRedirects: 0 });
+		expect(signOutResponse.status()).toBe(200);
 
 		const afterSignOut = await page.request.get(`${BASE_URL}/api/auth/me`);
 		expect(afterSignOut.status()).toBe(401);

@@ -36,7 +36,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
         throw new Error(errorData.error ?? 'Failed to fetch template')
       }
 
-      const templateData = await response.json() as { name: string }
+      const templateData = await response.json() as { name: string };
 
       const createResponse = await fetch('/api/workouts', {
         method: 'POST',

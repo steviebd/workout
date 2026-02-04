@@ -163,7 +163,7 @@ function ProgramDashboard() {
       try {
         const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as CycleData;
           if (isMounted) {
             setCycle(data as CycleData);
           }
@@ -211,20 +211,20 @@ function ProgramDashboard() {
       }
     }
 
-    async function loadAllWorkoutsForWeekCalculation() {
-      try {
-        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
-        if (response.ok) {
-          const workouts = await response.json() as WorkoutForWeekCalculation[];
-          if (isMounted && workouts.length > 0) {
-            const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
-            setCalculatedCurrentWeek(calculatedWeek);
+      async function loadAllWorkoutsForWeekCalculation() {
+        try {
+          const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+          if (response.ok) {
+            const workouts = await response.json() as WorkoutForWeekCalculation[];
+            if (isMounted && workouts.length > 0) {
+              const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
+              setCalculatedCurrentWeek(calculatedWeek);
+            }
           }
+        } catch (error) {
+          console.error('Error loading workouts for week calculation:', error);
         }
-      } catch (error) {
-        console.error('Error loading workouts for week calculation:', error);
       }
-    }
 
     void loadCurrentWorkout();
     void loadAllWorkoutsForWeekCalculation();
@@ -263,13 +263,13 @@ function ProgramDashboard() {
 
         const currentWorkoutResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
         if (currentWorkoutResponse.ok) {
-          const data = await response.json();
-          setCurrentWorkout(data as CurrentWorkoutData);
+          const data = await currentWorkoutResponse.json() as CurrentWorkoutData;
+          setCurrentWorkout(data);
         }
 
         const workoutsResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
         if (workoutsResponse.ok) {
-          const workouts = await response.json() as WorkoutForWeekCalculation[];
+          const workouts = await workoutsResponse.json() as WorkoutForWeekCalculation[];
           const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
           setCalculatedCurrentWeek(calculatedWeek);
         }
@@ -437,9 +437,9 @@ function ProgramDashboard() {
                       body: JSON.stringify({ programCycleWorkoutId, actualDate }),
                     });
                     
-                    if (response.ok) {
-                      const data = await response.json() as { workoutId: string };
-                      void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+      if (response.ok) {
+        const data = await response.json() as { workoutId: string };
+        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
                     } else {
                       toast.error('Failed to start workout');
                     }

@@ -26,10 +26,9 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'candito-6-week': candito,
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
-  'stronger-by-the-day': megsquats,
-  'lift-weights-faster': jenSinkler,
-};
-
+      'stronger-by-the-day': megsquats,
+      'unapologetically-strong': jenSinkler,
+    };
 interface CreateProgramCycleRequest {
   programSlug: string;
   squat1rm: number;
@@ -118,7 +117,7 @@ export const Route = createFileRoute('/api/program-cycles')({
             generatedWorkouts,
             new Date(`${programStartDate}T00:00:00Z`),
             {
-              preferredDays: preferredGymDays.map(d => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
+              preferredDays: preferredGymDays.map((d: string) => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
               preferredTimeOfDay: preferredTimeOfDay,
               forceFirstSessionDate: new Date(`${firstSessionDate}T00:00:00Z`),
             }

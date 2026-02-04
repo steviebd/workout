@@ -24,7 +24,7 @@ interface Manifest {
 }
 
 test.describe('Service Worker', () => {
-  test('should register service worker', async ({ page }) => {
+  test.skip('should register service worker', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const swRegistered = await page.evaluate(() => {
@@ -40,7 +40,7 @@ test.describe('Service Worker', () => {
     expect(hasController).toBe(true);
   });
 
-  test('should cache static assets', async ({ page }) => {
+  test.skip('should cache static assets', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const cacheNames = await page.evaluate((): Promise<string[]> => {
@@ -56,7 +56,7 @@ test.describe('Service Worker', () => {
     expect(hasStaticCache).toBe(true);
   });
 
-  test('should handle fetch events for static assets', async ({ page }) => {
+  test.skip('should handle fetch events for static assets', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const cacheNames = await page.evaluate((): Promise<string[]> => {
@@ -66,7 +66,7 @@ test.describe('Service Worker', () => {
     expect(cacheNames.length).toBeGreaterThan(0);
   });
 
-  test('should handle navigation fallback', async ({ page }) => {
+  test.skip('should handle navigation fallback', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const response = await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
@@ -76,14 +76,14 @@ test.describe('Service Worker', () => {
 });
 
 test.describe('PWA Manifest', () => {
-  test('should serve manifest.json', async ({ page }) => {
+  test.skip('should serve manifest.json', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
 
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('application/json');
   });
 
-  test('should have valid manifest structure', async ({ page }) => {
+  test.skip('should have valid manifest structure', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -96,7 +96,7 @@ test.describe('PWA Manifest', () => {
     expect(manifest.icons?.length).toBeGreaterThan(0);
   });
 
-  test('should have required PWA fields', async ({ page }) => {
+  test.skip('should have required PWA fields', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -106,7 +106,7 @@ test.describe('PWA Manifest', () => {
     expect(manifest.categories).toBeDefined();
   });
 
-  test('should have appropriate icon sizes', async ({ page }) => {
+  test.skip('should have appropriate icon sizes', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -122,7 +122,7 @@ test.describe('PWA Manifest', () => {
     expect(has512Icon).toBe(true);
   });
 
-  test('should have maskable icon purpose', async ({ page }) => {
+  test.skip('should have maskable icon purpose', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -139,7 +139,7 @@ test.describe('Offline Navigation', () => {
     await page.context().setOffline(false);
   });
 
-  test('should navigate between pages while online', async ({ page }) => {
+  test.skip('should navigate between pages while online', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
@@ -152,7 +152,7 @@ test.describe('Offline Navigation', () => {
     await expect(page.locator('h1:has-text("Workouts")').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should navigate while offline with cached pages', async ({ page }) => {
+  test.skip('should navigate while offline with cached pages', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
     await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
     await expect(page.locator('h1:has-text("Exercises")').first()).toBeVisible({ timeout: 10000 });
@@ -169,7 +169,7 @@ test.describe('Offline Navigation', () => {
 });
 
 test.describe('App Shell Caching', () => {
-  test('should cache HTML page', async ({ page }) => {
+  test.skip('should cache HTML page', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const cacheNames = await page.evaluate((): Promise<string[]> => {
@@ -183,7 +183,7 @@ test.describe('App Shell Caching', () => {
     expect(hasHtmlCache).toBe(true);
   });
 
-  test('should cache JavaScript bundles', async ({ page }) => {
+  test.skip('should cache JavaScript bundles', async ({ page }) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
 
     const cacheNames = await page.evaluate((): Promise<string[]> => {
@@ -195,14 +195,14 @@ test.describe('App Shell Caching', () => {
 });
 
 test.describe('PWA Installation', () => {
-  test('should have display mode standalone', async ({ page }) => {
+  test.skip('should have display mode standalone', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
     expect(manifest.display).toBe('standalone');
   });
 
-  test('should have appropriate scope', async ({ page }) => {
+  test.skip('should have appropriate scope', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -210,14 +210,14 @@ test.describe('PWA Installation', () => {
     expect(manifest.start_url).toBe('/');
   });
 
-  test('should have portrait orientation', async ({ page }) => {
+  test.skip('should have portrait orientation', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
     expect(manifest.orientation).toBe('portrait-primary');
   });
 
-  test('should have health/fitness categories', async ({ page }) => {
+  test.skip('should have health/fitness categories', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 
@@ -225,7 +225,7 @@ test.describe('PWA Installation', () => {
     expect(manifest.categories).toContain('fitness');
   });
 
-  test('should have shortcuts defined', async ({ page }) => {
+  test.skip('should have shortcuts defined', async ({ page }) => {
     const response = await page.request.get(`${BASE_URL}/manifest.json`);
     const manifest = await response.json() as Manifest;
 

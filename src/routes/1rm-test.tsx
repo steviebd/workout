@@ -44,7 +44,7 @@ function OneRMTest() {
       try {
         const response = await fetch('/api/user/preferences')
         if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string }
+          const prefs = await response.json() as { weightUnit?: string };
           setWeightUnit(prefs.weightUnit ?? 'kg')
         }
       } catch (error) {
@@ -98,7 +98,7 @@ function OneRMTest() {
         throw new Error('Failed to create workout')
       }
 
-      const workout = await workoutResponse.json() as { id: string }
+      const workout = await workoutResponse.json() as { id: string };
 
       for (const lift of testedLifts) {
         const weight = parseFloat(lift.weight)
@@ -111,8 +111,8 @@ function OneRMTest() {
 
         if (!exerciseRes.ok) continue
 
-        const exercises = await exerciseRes.json() as Array<{ id: string }>
-        if (exercises.length === 0) continue
+        const exercises = await exerciseRes.json() as Array<{ id: string }>;
+        if (exercises.length === 0) continue;
 
         const exerciseId = exercises[0].id
 

@@ -221,7 +221,7 @@ async function findSignInButton(page: Page): Promise<Locator | null> {
 	return null;
 }
 
-async function waitForAuthLoading(page: Page, timeout: number = 10000): Promise<boolean> {
+async function waitForAuthLoading(page: Page, timeout = 10000): Promise<boolean> {
 	console.log('Waiting for auth loading to complete...');
 	
 	try {
@@ -246,7 +246,7 @@ async function waitForAuthLoading(page: Page, timeout: number = 10000): Promise<
 	}
 }
 
-async function waitForAuthStateDetermined(page: Page, timeout: number = 15000): Promise<boolean> {
+async function waitForAuthStateDetermined(page: Page, timeout = 15000): Promise<boolean> {
 	console.log('Waiting for auth state to be determined...');
 	
 	try {

@@ -45,7 +45,7 @@ function calculateTargetWeight(
   week: number,
   _session: number,
   lift: string,
-  isVolume: boolean = true
+  isVolume = true
 ): number {
   const config = isVolume ? VOLUME_DAY : INTENSITY_DAY;
   const liftConfig = config[lift as keyof typeof config];

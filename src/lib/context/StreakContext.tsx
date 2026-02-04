@@ -50,7 +50,7 @@ export function StreakProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/streaks', { credentials: 'include' });
       
       if (response.ok) {
-        const streakData = await response.json() as unknown as StreakContextValue;
+        const streakData = await response.json() as { currentStreak: number; longestStreak: number };
         setData(prev => ({ ...prev, ...streakData, loading: false }));
       } else {
         setData(prev => ({ ...prev, loading: false }));

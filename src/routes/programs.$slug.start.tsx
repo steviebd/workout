@@ -47,7 +47,7 @@ function shouldShowStartModeToggle(
   if (!startDate || preferredGymDays.length === 0) return false;
 
   const date = new Date(`${startDate}T00:00:00`);
-  const dayName = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
+  const dayName = DAYS_OF_WEEK[date.getDay()];
 
   return !preferredGymDays.includes(dayName);
 }
@@ -111,7 +111,7 @@ function ProgramStart() {
       if (hasLoadedPrevious) return;
 
       if (oneRmRes.ok) {
-        const data = await oneRmRes.json() as { squat1rm?: number | null; bench1rm?: number | null; deadlift1rm?: number | null; ohp1rm?: number | null };
+        const data = await oneRmRes.json() as { squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number };
         
         let hasAnyValues = false;
         const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
@@ -184,7 +184,7 @@ function ProgramStart() {
   };
 
   const toggleDay = (dayIndex: number) => {
-    const day = DAYS_OF_WEEK[dayIndex] as DayOfWeek;
+    const day = DAYS_OF_WEEK[dayIndex];
     setPreferredGymDays(prev => {
       if (prev.includes(day)) {
         return prev.filter(d => d !== day);
@@ -495,7 +495,7 @@ function ProgramStart() {
             </p>
             <div className="flex gap-2">
               {DAYS_DISPLAY.map((day, index) => {
-                const dayName = DAYS_OF_WEEK[index] as DayOfWeek;
+                const dayName = DAYS_OF_WEEK[index];
                 const isSelected = preferredGymDays.includes(dayName);
                 return (
                   <button
@@ -676,7 +676,7 @@ function ProgramStart() {
                       : false;
 
                     return DAYS_DISPLAY.map((day, index) => {
-                      const dayName = DAYS_OF_WEEK[index] as DayOfWeek;
+                      const dayName = DAYS_OF_WEEK[index];
                       const isSelected = preferredGymDays.includes(dayName);
 
                       if (!isSelected) return null;
@@ -734,7 +734,7 @@ function ProgramStart() {
                     for (let i = 1; scheduledDates.length < 7; i++) {
                       const dateToCheck = new Date(currentDate);
                       dateToCheck.setDate(startDate.getDate() + i);
-                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()] as DayOfWeek;
+                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
                       if (preferredGymDays.includes(dayName)) {
                         scheduledDates.push({
                           date: dateToCheck,
@@ -783,7 +783,7 @@ function ProgramStart() {
                     for (let i = 0; i < 14 && scheduledDates.length < 7; i++) {
                       const dateToCheck = new Date(firstSessionDate);
                       dateToCheck.setDate(firstSessionDate.getDate() + i);
-                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()] as DayOfWeek;
+                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
                       if (preferredGymDays.includes(dayName)) {
                         scheduledDates.push({
                           date: dateToCheck,

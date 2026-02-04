@@ -68,8 +68,8 @@ export async function countWorkoutsInRange(
 export async function getWorkoutsPerWeek(
   db: D1Database,
   workosId: string,
-  weeksBack: number = 8,
-  targetPerWeek: number = 3
+  weeksBack = 8,
+  targetPerWeek = 3
 ): Promise<WeeklyWorkoutCount[]> {
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -104,8 +104,8 @@ export async function getWorkoutsPerWeek(
 export async function calculateThirtyDayStreak(
   db: D1Database,
   workosId: string,
-  targetPerWeek: number = 3,
-  weeksBack: number = 8
+  targetPerWeek = 3,
+  weeksBack = 8
 ): Promise<ThirtyDayStreakResult> {
   const weeklyDetails = await getWorkoutsPerWeek(db, workosId, weeksBack, targetPerWeek);
   
@@ -232,7 +232,7 @@ export async function updateUserLastWorkout(
 export async function checkAndResetBrokenStreaks(
   db: D1Database,
   workosId: string,
-  targetPerWeek: number = 3
+  targetPerWeek = 3
 ): Promise<void> {
   const weeklyDetails = await getWorkoutsPerWeek(db, workosId, 2, targetPerWeek);
   const today = new Date();

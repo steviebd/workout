@@ -73,7 +73,7 @@ function OneRMTest() {
         }
 
         if (workoutRes.ok) {
-          const workoutData: WorkoutData = await workoutRes.json();
+          const workoutData = await workoutRes.json() as WorkoutData;
           if (workoutData.squat1rm) {
             setFormData({
               squat1rm: workoutData.squat1rm.toString(),

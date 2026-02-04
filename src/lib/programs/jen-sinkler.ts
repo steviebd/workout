@@ -3,9 +3,9 @@ import { generateWorkoutAccessories } from './accessory-data';
 import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
 
 const jenSinklerInfo = {
-  slug: 'lift-weights-faster',
-  name: 'Lift Weights Faster (Jen Sinkler)',
-  description: 'An 8-week full body program combining strength and conditioning, perfect for building lean muscle and endurance.',
+  slug: 'unapologetically-strong',
+  name: 'Unapologetically Strong (Jen Sinkler)',
+  description: 'An 8-week full body strength program designed to build a solid foundation of power and confidence.',
   difficulty: 'intermediate' as const,
   daysPerWeek: 3,
   estimatedWeeks: 8,

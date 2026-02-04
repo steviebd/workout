@@ -50,7 +50,7 @@ export function createWaveSets(
 export function calculateWeight(
   oneRM: number,
   percentage: number,
-  round: boolean = true
+  round = true
 ): number {
   const weight = oneRM * percentage;
   return round ? roundToPlate(weight) : weight;

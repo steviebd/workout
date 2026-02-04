@@ -139,7 +139,7 @@ function History() {
     }
   }, []);
 
-  const fetchWorkouts = useCallback(async (pageNum: number = 1, append: boolean = false) => {
+  const fetchWorkouts = useCallback(async (pageNum = 1, append = false) => {
     try {
       if (!append) {
         setIsLoadingWorkouts(true);

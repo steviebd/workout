@@ -44,7 +44,7 @@ function calculateTargetWeight(
   week: number,
   session: number,
   _lift: string,
-  isT2: boolean = false
+  isT2 = false
 ): number {
   const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGE;
   let percentage = 0.75;
