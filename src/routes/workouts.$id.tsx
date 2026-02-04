@@ -9,6 +9,7 @@ import {
   Loader2,
   Plus,
   Search,
+  X,
 } from 'lucide-react';
 import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -23,9 +24,8 @@ import { VideoTutorialModal } from '@/components/VideoTutorialModal';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 import { Input } from '@/components/ui/Input';
-import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '~/components/ui/Skeleton';
@@ -377,7 +377,7 @@ function WorkoutSession() {
           <Skeleton className="h-32 w-full rounded-lg" />
           <Skeleton className="h-32 w-full rounded-lg" />
         </div>
-        <div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 md:pb-safe">
           <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       </main>
@@ -595,9 +595,9 @@ function WorkoutSession() {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard Workout?</AlertDialogTitle>
           </AlertDialogHeader>
-          <p className="text-muted-foreground mb-4">
+          <AlertDialogDescription>
             This will permanently delete this workout. This action cannot be undone.
-          </p>
+          </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowDiscardConfirm(false)}>
               Cancel
@@ -617,9 +617,9 @@ function WorkoutSession() {
           <AlertDialogHeader>
             <AlertDialogTitle>Incomplete Sets</AlertDialogTitle>
           </AlertDialogHeader>
-          <p className="text-muted-foreground mb-4">
-            {'You have sets that haven\'t been marked as complete. Are you sure you want to continue?'}
-          </p>
+          <AlertDialogDescription>
+            You have sets that haven&apos;t been marked as complete. Are you sure you want to continue?
+          </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowIncompleteSetsConfirm(false)}>
               Go Back
@@ -643,18 +643,18 @@ function WorkoutSession() {
         />
       ) : null}
 
-      <div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-40">
-        <div className="mx-auto max-w-lg flex items-center justify-between gap-2">
-          <button
-            className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-sm font-medium"
+      <div className="fixed bottom-[88px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-b border-border px-4 py-3 z-50 md:bottom-0 md:border-t md:border-b-0 md:pb-safe">
+        <div className="mx-auto max-w-lg flex items-center justify-between gap-3">
+          <Button
+            variant="destructive"
+            className="flex-1"
             onClick={() => setShowDiscardConfirm(true)}
           >
+            <X className="h-4 w-4" />
             Discard
-          </button>
-          <button
-            className={cn(
-              'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm'
-            )}
+          </Button>
+          <Button
+            className="flex-1"
             disabled={completeWorkoutMutation.isPending || totalSetsCount === 0}
             onClick={handleCompleteWorkout}
           >
@@ -669,7 +669,7 @@ function WorkoutSession() {
                 Complete
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </>

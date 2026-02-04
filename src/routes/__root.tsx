@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unassigned-import */
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
@@ -57,13 +57,12 @@ const AuthContext = createContext<AuthContextType>({
   isOnline: true,
   isSyncing: false,
   pendingCount: 0,
-});
+})
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext)
 
 function AppLayout() {
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -212,7 +211,7 @@ function AppLayout() {
                         </ErrorBoundary>
                         </div>
                       </main>
-                      <BottomNav />
+                      {!location.pathname.startsWith('/workouts/') && <BottomNav />}
                     </ThemeProvider>
                   </StreakProvider>
                 </DateFormatProvider>

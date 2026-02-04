@@ -6,9 +6,8 @@ import { getSession } from '~/lib/session';
 import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
 import { createDb } from '~/lib/db';
-import { workoutExercises, workoutSets, programCycleWorkouts } from '~/lib/db/schema';
-
-const BATCH_SIZE = 7;
+import { workoutExercises, workoutSets, programCycleWorkouts, generateId } from '~/lib/db/schema';
+import { insertWithAutoBatching } from '~/lib/db/utils';
 
 export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
   server: {
@@ -27,7 +26,6 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
 
           const drizzleDb = createDb(db);
 
-          // Check if a specific programCycleWorkoutId was provided
           let requestBody: { programCycleWorkoutId?: string; actualDate?: string } = {};
           try {
             const text = await request.text();
@@ -35,7 +33,6 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
               requestBody = JSON.parse(text) as { programCycleWorkoutId?: string; actualDate?: string };
             }
           } catch {
-            // No body or invalid JSON, use default behavior
           }
 
           const actualDate = requestBody.actualDate ? new Date(requestBody.actualDate).toISOString() : new Date().toISOString();
@@ -99,6 +96,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           console.log('Start workout - created workout:', workout.id);
 
           const workoutExerciseInserts = templateExercises.map((te) => ({
+            id: generateId(),
             workoutId: workout.id,
             exerciseId: te.exerciseId,
             orderIndex: te.orderIndex,
@@ -108,17 +106,12 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             setNumber: te.setNumber ?? null,
           }));
 
-          const insertedExercises: Array<{ id: string }> = [];
-          for (let i = 0; i < workoutExerciseInserts.length; i += BATCH_SIZE) {
-            const batch = workoutExerciseInserts.slice(i, i + BATCH_SIZE);
-            const result = await drizzleDb.insert(workoutExercises).values(batch).returning({ id: workoutExercises.id }).all();
-            insertedExercises.push(...result);
-          }
+          await insertWithAutoBatching(drizzleDb, workoutExercises, workoutExerciseInserts);
 
           const workoutSetInserts: Array<typeof workoutSets.$inferInsert> = [];
           for (let i = 0; i < templateExercises.length; i++) {
             const te = templateExercises[i];
-            const insertedExercise = insertedExercises[i];
+            const insertedExercise = workoutExerciseInserts[i];
             if (!insertedExercise) continue;
 
             const numSets = te.sets ?? 1;
@@ -127,6 +120,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
 
             for (let setNum = 1; setNum <= numSets; setNum++) {
               workoutSetInserts.push({
+                id: generateId(),
                 workoutExerciseId: insertedExercise.id,
                 setNumber: setNum,
                 weight: targetWeight,
@@ -138,10 +132,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             }
           }
 
-          for (let i = 0; i < workoutSetInserts.length; i += BATCH_SIZE) {
-            const batch = workoutSetInserts.slice(i, i + BATCH_SIZE);
-            await drizzleDb.insert(workoutSets).values(batch).run();
-          }
+          await insertWithAutoBatching(drizzleDb, workoutSets, workoutSetInserts);
 
           await updateProgramCycleProgress(db, params.id, session.sub, {
             currentWeek: currentWorkout.weekNumber,
@@ -149,8 +140,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           });
 
           if (currentWorkout.scheduledDate !== actualDateOnly) {
-            await drizzleDb
-              .update(programCycleWorkouts)
+            await drizzleDb.update(programCycleWorkouts)
               .set({
                 scheduledDate: actualDateOnly,
                 updatedAt: new Date().toISOString(),

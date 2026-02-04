@@ -18,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl shadow-lg pb-safe">
-      <div className="mx-auto flex h-14 max-w-[280px] items-center justify-around rounded-full shadow-xl border border-border/50 my-4 mb-6">
+      <div className="mx-auto flex h-14 max-w-2xl items-center justify-around rounded-full shadow-xl border border-border/50 my-4 mb-6">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== '/' && location.pathname.startsWith(item.href))

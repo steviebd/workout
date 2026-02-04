@@ -13,7 +13,9 @@ import {
   workoutSets,
   workouts,
 } from './schema';
-import { createDb } from './index';
+import { createDb, calculateChunkSize } from './index';
+
+type DbOrTx = D1Database | ReturnType<typeof createDb>;
 
 export type { Workout, NewWorkout, WorkoutExercise, NewWorkoutExercise, WorkoutSet, NewWorkoutSet };
 
@@ -78,13 +80,14 @@ export interface LastWorkoutData {
 }
 
 export async function createWorkout(
-  db: D1Database,
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
   data: CreateWorkoutData & { workosId: string },
   startedAt?: string
 ): Promise<Workout> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const workout = await drizzleDb
+  const workout = await db
     .insert(workouts)
     .values({
       workosId: data.workosId,
@@ -102,7 +105,7 @@ export async function createWorkout(
 }
 
 export async function getLastWorkoutSetsForExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   exerciseIds: string[]
 ): Promise<Map<string, LastWorkoutSetData[]>> {
@@ -110,9 +113,10 @@ export async function getLastWorkoutSetsForExercises(
     return new Map();
   }
 
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const recentWorkoutExercises = await drizzleDb
+  const recentWorkoutExercises = await db
     .select({
       exerciseId: workoutExercises.exerciseId,
       workoutExerciseId: workoutExercises.id,
@@ -142,7 +146,7 @@ export async function getLastWorkoutSetsForExercises(
 
   const workoutExerciseIds = [...latestWeByExercise.values()];
 
-  const sets = await drizzleDb
+  const sets = await db
     .select({
       workoutExerciseId: workoutSets.workoutExerciseId,
       setNumber: workoutSets.setNumber,
@@ -177,13 +181,14 @@ export async function getLastWorkoutSetsForExercises(
 }
 
 export async function getWorkoutExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workoutId: string,
   workosId: string
 ): Promise<WorkoutExerciseWithDetails[]> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const results = await drizzleDb
+  const results = await db
     .select({
       id: workoutExercises.id,
       localId: workoutExercises.localId,
@@ -252,13 +257,14 @@ export async function getWorkoutExercises(
 }
 
 export async function createWorkoutWithDetails(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   data: CreateWorkoutData & { workosId: string; exerciseIds: string[] },
   startedAt?: string
 ): Promise<WorkoutWithExercises> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const workout = await drizzleDb
+  const workout = await db
     .insert(workouts)
     .values({
       workosId: data.workosId,
@@ -298,7 +304,7 @@ export async function createWorkoutWithDetails(
   let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
 
   if (workoutExercisesData.length > 0) {
-    newWorkoutExercises = await drizzleDb
+    newWorkoutExercises = await db
       .insert(workoutExercises)
       .values(workoutExercisesData)
       .returning()
@@ -335,10 +341,10 @@ export async function createWorkoutWithDetails(
   }
 
   if (setsToInsert.length > 0) {
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < setsToInsert.length; i += BATCH_SIZE) {
-      const batch = setsToInsert.slice(i, i + BATCH_SIZE);
-      await drizzleDb.insert(workoutSets).values(batch).run();
+    const CHUNK_SIZE = calculateChunkSize(7);
+    for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
+      const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
+      await db.insert(workoutSets).values(batch).run();
     }
   }
 
@@ -696,14 +702,15 @@ export interface ExerciseOrder {
 }
 
 export async function reorderWorkoutExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workoutId: string,
   exerciseOrders: ExerciseOrder[],
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const workout = await drizzleDb
+  const workout = await db
     .select()
     .from(workouts)
     .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
@@ -714,7 +721,7 @@ export async function reorderWorkoutExercises(
   }
 
   const updates = exerciseOrders.map(order =>
-    drizzleDb
+    db
       .update(workoutExercises)
       .set({ orderIndex: order.orderIndex })
       .where(and(

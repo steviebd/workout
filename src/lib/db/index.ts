@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/d1';
 import schema from './schema';
+export { calculateChunkSize, MAX_SQL_VARS } from './utils';
 
 export { schema };
 

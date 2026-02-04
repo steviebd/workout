@@ -296,7 +296,11 @@ function ProgramDashboard() {
       
       if (response.ok) {
         const data = await response.json() as { workoutId: string };
-        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+        try {
+          void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+        } catch {
+          window.location.href = `/workouts/${data.workoutId}`;
+        }
       } else {
         toast.error('Failed to start workout');
       }
@@ -437,9 +441,13 @@ function ProgramDashboard() {
                       body: JSON.stringify({ programCycleWorkoutId, actualDate }),
                     });
                     
-      if (response.ok) {
-        const data = await response.json() as { workoutId: string };
-        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+                    if (response.ok) {
+                      const data = await response.json() as { workoutId: string };
+                      try {
+                        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+                      } catch {
+                        window.location.href = `/workouts/${data.workoutId}`;
+                      }
                     } else {
                       toast.error('Failed to start workout');
                     }
