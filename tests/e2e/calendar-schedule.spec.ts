@@ -11,7 +11,7 @@ async function loginUser(page: Page) {
 		const loading = document.querySelector('.animate-spin, .animate-pulse');
 		const hasUser = document.querySelector('button.rounded-full');
 		const hasSignIn = document.querySelector('button:has-text("Sign In")');
-		return (!loading || !loading.closest('.min-h-screen')) && (hasUser || hasSignIn);
+		return (!loading?.closest('.min-h-screen')) && (hasUser ?? hasSignIn);
 	}, { timeout: 15000 }).catch(() => {});
 
 	await page.waitForTimeout(2000);

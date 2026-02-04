@@ -5,7 +5,7 @@ function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="skeleton"
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      className={cn('animate-pulse rounded-xl bg-muted', className)}
       {...props}
     />
   )
@@ -25,9 +25,9 @@ export function SkeletonCard(): ReactNode {
       <div className="flex items-center justify-between pt-3 border-t border-border">
         <Skeleton className="h-3 w-20" />
         <div className="flex gap-2">
-          <Skeleton className="h-6 w-6 rounded" />
-          <Skeleton className="h-6 w-6 rounded" />
-          <Skeleton className="h-6 w-6 rounded" />
+          <Skeleton className="h-6 w-6 rounded-xl" />
+          <Skeleton className="h-6 w-6 rounded-xl" />
+          <Skeleton className="h-6 w-6 rounded-xl" />
         </div>
       </div>
     </div>
@@ -97,12 +97,12 @@ export function SkeletonExerciseCard(): ReactNode {
         </div>
       </div>
       <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between p-2 bg-secondary rounded">
+        <div className="flex items-center justify-between p-2 bg-secondary rounded-xl">
           <Skeleton className="h-4 w-20" />
           <div className="flex gap-2">
-            <Skeleton className="h-6 w-12 rounded" />
-            <Skeleton className="h-6 w-12 rounded" />
-            <Skeleton className="h-6 w-8 rounded" />
+            <Skeleton className="h-6 w-12 rounded-xl" />
+            <Skeleton className="h-6 w-12 rounded-xl" />
+            <Skeleton className="h-6 w-8 rounded-xl" />
           </div>
         </div>
       </div>
@@ -122,19 +122,19 @@ export function SkeletonWorkoutCard(): ReactNode {
       </div>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded-xl" />
           <Skeleton className="h-4 w-32" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded-xl" />
           <Skeleton className="h-4 w-28" />
         </div>
       </div>
       <div className="flex justify-between pt-3 mt-3 border-t border-border">
         <Skeleton className="h-3 w-16" />
         <div className="flex gap-2">
-          <Skeleton className="h-8 w-8 rounded" />
-          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded-xl" />
+          <Skeleton className="h-8 w-8 rounded-xl" />
         </div>
       </div>
     </div>

@@ -138,7 +138,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="group flex w-full items-center justify-between rounded-lg border border-border bg-secondary/30 p-3 active:scale-95 transition-all hover:border-primary/50 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex w-full items-center justify-between rounded-lg border border-border bg-secondary/30 p-3 transition-colors hover:border-primary/50 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="text-left">
               <p className="font-medium group-hover:text-primary transition-colors">

@@ -26,15 +26,15 @@ export function EmptyState({
   const IconComponent = icon;
 
   return (
-    <div className={`text-center py-12 ${className}`}>
+    <div className={`text-center py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 ${className}`}>
       <div className="flex items-center justify-center mb-6">
         <div className="relative">
-          <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
           {IconComponent ? (
-            <IconComponent size={56} className="relative text-primary" />
+            <IconComponent size={56} className="relative text-primary/80" />
           ) : (
             <svg
-              className="relative text-primary"
+              className="relative text-primary/80"
               width={56}
               height={56}
               viewBox="0 0 24 24"
@@ -51,9 +51,9 @@ export function EmptyState({
           )}
         </div>
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2 tracking-tight">{title}</h3>
       {description ? (
-        <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm leading-relaxed">
+        <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm leading-relaxed text-muted-foreground/80">
           {description}
         </p>
       ) : null}

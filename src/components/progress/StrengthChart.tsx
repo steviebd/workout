@@ -56,13 +56,13 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
             {exerciseName} Progress
           </CardTitle>
           {improvement > 0 && (
-            <div className="flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-1 text-success animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center gap-1 rounded-xl bg-success/20 px-2.5 py-1 text-success animate-in fade-in zoom-in duration-300">
               <TrendingUp className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">+{improvementPercent}%</span>
             </div>
           )}
           {improvement < 0 && (
-            <div className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+            <div className="flex items-center gap-1 rounded-xl bg-muted px-2.5 py-1 text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5 rotate-180" />
               <span className="text-xs font-medium">{improvementPercent}%</span>
             </div>
@@ -115,7 +115,7 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
                     contentStyle={{
                       backgroundColor: 'var(--card)',
                       border: '1px solid var(--border)',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       color: 'var(--foreground)',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
@@ -128,10 +128,10 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
                     type="monotone"
                     dataKey="weight"
                     stroke="url(#lineGradient)"
-                    strokeWidth={2.5}
-                    dot={{ fill: 'var(--primary)', strokeWidth: 2, r: data.length > 20 ? 2 : 4, strokeOpacity: 0.8 }}
+                    strokeWidth={3}
+                    dot={{ fill: 'var(--primary)', strokeWidth: 2, r: data.length > 20 ? 3 : 5, strokeOpacity: 0.8 }}
                     activeDot={{ r: 6, fill: 'var(--primary)', stroke: 'var(--card)', strokeWidth: 2 }}
-                    animationDuration={500}
+                    animationDuration={750}
                   />
                 </LineChart>
               </ResponsiveContainer>

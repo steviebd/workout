@@ -105,7 +105,7 @@ export function PullToRefresh({
       </div>
 
       <div
-        className="transition-transform duration-75"
+        className="transition-transform duration-150"
         style={{
           transform: `translateY(${Math.min(pullDistance * 0.3, threshold * 0.5)}px)`,
         }}
