@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/workouts/sets')({
       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/workouts/sets')({
            const workoutSet = await createWorkoutSet(
              db,
              workoutExerciseId,
-             session.workosId,
+             session.sub,
             setNumber,
             weight,
             reps,

@@ -55,7 +55,7 @@ async function calculateWeeklyBadgeProgress(
   return {
     progress: weeklyCount,
     unlocked: weeklyCount >= requirement,
-    unlockedAt: weeklyCount >= requirement ? new Date().toISOString().split('T')[0] : undefined,
+    unlockedAt: weeklyCount >= requirement ? new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : undefined,
   };
 }
 

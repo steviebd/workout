@@ -11,6 +11,7 @@ const madcowInfo = {
   estimatedWeeks: 8,
   totalSessions: 24,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'powerlifting' as const,
 };
 
 const WEEK_PERCENTAGES = [

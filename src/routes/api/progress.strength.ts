@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/progress/strength')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/progress/strength')({
             }
           }
 
-           const strengthHistory = await getStrengthHistory(db, session.workosId, exerciseId, { fromDate, toDate });
+           const strengthHistory = await getStrengthHistory(db, session.sub, exerciseId, { fromDate, toDate });
 
           const strengthData = strengthHistory.map(point => ({
             date: point.date,

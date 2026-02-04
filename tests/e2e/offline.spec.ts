@@ -151,7 +151,7 @@ test.describe.skip('Offline - Workout Flow', () => {
   });
 
   test('should create workout offline and queue for sync', async ({ page }) => {
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
     await expect(page).not.toHaveURL(isAuthKitUrl);
 
     const workoutName = `Offline Workout Test ${Date.now()}`;
@@ -177,7 +177,7 @@ test.describe.skip('Offline - Workout Flow', () => {
   });
 
   test('should add sets to workout while offline', async ({ page }) => {
-    await page.goto(`${BASE_URL}/workouts/new`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
     await expect(page).not.toHaveURL(isAuthKitUrl);
 
     const workoutName = `Offline Sets Test ${Date.now()}`;

@@ -12,10 +12,10 @@ export const Route = createFileRoute('/api/badges' as const)({
     handlers: {
       GET: async ({ request }: { request: Request }) => {
         const session = await getSession(request);
-        if (!session) {
+        if (!session?.sub) {
           return Response.json({ error: 'Not authenticated' }, { status: 401 });
         }
-        const workosId = session.workosId;
+        const workosId = session.sub;
 
         const db = (env as { DB?: D1Database }).DB;
         if (!db) {
@@ -28,8 +28,8 @@ export const Route = createFileRoute('/api/badges' as const)({
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDay() === 0 ? today.getDate() - 6 : today.getDate() - today.getDay() + 1);
         startOfWeek.setHours(0, 0, 0, 0);
-        const startDateStr = startOfWeek.toISOString().split('T')[0];
-        const endDateStr = today.toISOString().split('T')[0];
+        const startDateStr = new Date(startOfWeek.getTime() - startOfWeek.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
         const weeklyWorkoutCount = await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
 

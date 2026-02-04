@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
-import { X, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { X, Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
+import { cn } from '~/lib/cn';
 
 interface ExerciseListItem {
   id: string;
@@ -8,6 +9,12 @@ interface ExerciseListItem {
   muscleGroup: string | null;
   description: string | null;
   libraryId?: string | null;
+}
+
+interface SwipeState {
+  id: string | null;
+  offset: number;
+  direction: 'left' | 'right' | null;
 }
 
 interface ExerciseListProps {
@@ -28,9 +35,34 @@ export function ExerciseList({
   onMoveDown,
 }: ExerciseListProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [swipeState] = useState<SwipeState>({ id: null, offset: 0, direction: null });
   const dragOverIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+  const dropIndicatorRef = useRef<HTMLDivElement>(null);
+
+  // Add drop indicator element
+  useEffect(() => {
+    if (!listRef.current) return;
+
+    // Create drop indicator if it doesn't exist
+    if (!dropIndicatorRef.current) {
+      const indicator = document.createElement('div');
+      indicator.className = 'absolute left-0 right-0 h-0 border-t-2 border-primary pointer-events-none z-10';
+      indicator.style.display = 'none';
+      listRef.current.appendChild(indicator);
+      dropIndicatorRef.current = indicator;
+    }
+  }, []);
+
+  const getSwipeStyles = (id: string) => {
+    if (swipeState.id !== id) return {};
+    const offset = swipeState.offset;
+    return {
+      transform: `translateX(-${offset}px)`,
+      transition: offset === 0 ? 'none' : undefined,
+    };
+  };
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -89,6 +121,10 @@ export function ExerciseList({
     const target = e.currentTarget;
     target.setPointerCapture(touch.identifier);
     setDraggedIndex(index);
+    
+    if (target) {
+      target.classList.add('opacity-50', 'shadow-xl', 'scale-[1.02]', 'z-20');
+    }
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -103,6 +139,17 @@ export function ExerciseList({
       const index = allItems.indexOf(listItem);
       if (index !== -1 && index !== draggedIndex) {
         dragOverIndexRef.current = index;
+        
+        if (dropIndicatorRef.current) {
+          const rect = listItem.getBoundingClientRect();
+          const listRect = listRef.current?.getBoundingClientRect();
+          if (listRect) {
+            dropIndicatorRef.current.style.display = 'block';
+            dropIndicatorRef.current.style.top = `${rect.top - listRect.top + 2}px`;
+            dropIndicatorRef.current.style.left = '0px';
+            dropIndicatorRef.current.style.width = '100%';
+          }
+        }
       }
     }
   }, [draggedIndex]);
@@ -113,6 +160,15 @@ export function ExerciseList({
     }
     setDraggedIndex(null);
     dragOverIndexRef.current = null;
+    
+    const allItems = Array.from(listRef.current?.children ?? []);
+    allItems.forEach(item => {
+      item.classList.remove('opacity-50', 'shadow-xl', 'scale-[1.02]', 'z-20');
+    });
+    
+    if (dropIndicatorRef.current) {
+      dropIndicatorRef.current.style.display = 'none';
+    }
   }, [draggedIndex, onReorder]);
 
   if (exercises.length === 0) {
@@ -127,7 +183,13 @@ export function ExerciseList({
   }
 
   return (
-    <ul className="space-y-2" ref={listRef}>
+    <ul className="space-y-2 relative" ref={listRef}>
+      {/* Drop indicator for touch drag operations */}
+      <div
+        ref={dropIndicatorRef}
+        className="absolute left-0 right-0 h-0.5 bg-primary pointer-events-none z-10"
+        style={{ display: 'none' }}
+      />
       {exercises.map((exercise, index) => (
         // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <li
@@ -136,9 +198,7 @@ export function ExerciseList({
             if (el) itemRefs.current.set(exercise.id, el);
             else itemRefs.current.delete(exercise.id);
           }}
-          className={`exercise-item flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border touch-none ${
-            draggedIndex === index ? 'opacity-50' : ''
-          }`}
+          className={`exercise-item flex items-center gap-3 p-3.5 bg-secondary/50 rounded-lg border border-border/60 transition-all duration-200 hover:bg-secondary hover:border-border hover:shadow-sm touch-manipulation relative ${draggedIndex === index ? 'opacity-50 shadow-xl scale-[1.02] z-20 border-primary' : ''} ${dragOverIndexRef.current === index ? 'border-primary border-2' : ''}`}
           draggable={draggedIndex === null}
           onDragStart={(e) => handleDragStart(e, index)}
           onDragEnd={handleDragEnd}
@@ -148,58 +208,75 @@ export function ExerciseList({
           onTouchStart={(e) => handleTouchStart(e, index)}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          style={getSwipeStyles(exercise.id)}
         >
-          <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
+          <div
+            className={cn(
+              'absolute inset-y-0 right-0 flex items-center pr-3 transition-opacity duration-200',
+              swipeState.id === exercise.id && swipeState.offset > 20 ? 'opacity-100' : 'opacity-0'
+            )}
+          >
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/20"
+              onClick={() => onRemove(exercise.id)}
+              type="button"
+            >
+              <Trash2 size={18} />
+            </Button>
+          </div>
+          <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-xs font-semibold rounded shrink-0">
             {index + 1}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{exercise.name}</p>
+            <p className="font-medium truncate text-sm">{exercise.name}</p>
             {exercise.muscleGroup !== null && exercise.muscleGroup !== undefined && (
-              <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{exercise.muscleGroup}</p>
             )}
           </div>
           <div className="flex items-center gap-1 group">
             {onMoveUp !== null && onMoveUp !== undefined && (
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="ghost"
                 onClick={() => onMoveUp?.(index)}
                 disabled={index === 0}
                 aria-label={`Move ${exercise.name} up`}
                 className="opacity-0 group-hover:opacity-100 focus:opacity-100"
               >
-                <ChevronUp size={16} />
+                <ChevronUp size={20} />
               </Button>
             )}
             {onMoveDown !== null && onMoveDown !== undefined && (
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="ghost"
                 onClick={() => onMoveDown?.(index)}
                 disabled={index === exercises.length - 1}
                 aria-label={`Move ${exercise.name} down`}
                 className="opacity-0 group-hover:opacity-100 focus:opacity-100"
               >
-                <ChevronDown size={16} />
+                <ChevronDown size={20} />
               </Button>
             )}
             <Button
-              size="icon-sm"
+              size="icon"
               variant="ghost"
               className="text-muted-foreground hover:text-foreground"
               onClick={() => onEdit(exercise.id)}
               type="button"
             >
-              <Pencil size={16} />
+              <Pencil size={18} />
             </Button>
             <Button
-              size="icon-sm"
+              size="icon"
               variant="ghost"
               className="text-muted-foreground hover:text-destructive"
               onClick={() => onRemove(exercise.id)}
               type="button"
             >
-              <X size={18} />
+              <Trash2 size={18} />
             </Button>
           </div>
         </li>
@@ -225,18 +302,18 @@ export function ExerciseListRow({
 }: ExerciseListRowProps) {
   return (
     <div
-      className={`flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border ${
-        isDragging ? 'opacity-50' : ''
+      className={`flex items-center gap-3 p-3.5 bg-secondary/50 rounded-lg border border-border/60 transition-all duration-200 hover:bg-secondary hover:shadow-sm ${
+        isDragging ? 'opacity-50 shadow-xl scale-[1.02] z-20 border-primary' : ''
       }`}
     >
-      <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
+      <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-xs font-semibold rounded shrink-0">
         {index + 1}
       </span>
 
       <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{exercise.name}</p>
+        <p className="font-medium truncate text-sm">{exercise.name}</p>
         {exercise.muscleGroup !== null && exercise.muscleGroup !== undefined && (
-          <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{exercise.muscleGroup}</p>
         )}
       </div>
 

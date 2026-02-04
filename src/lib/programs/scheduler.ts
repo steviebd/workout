@@ -38,16 +38,17 @@ export interface WorkoutScheduleEntry {
   scheduledTime?: string;
 }
 
-export interface ScheduleOptions {
-  preferredDays: DayOfWeek[];
-  preferredTimeOfDay?: 'morning' | 'afternoon' | 'evening';
-  skipBankHolidays?: boolean;
-}
-
 export interface ProgramWorkout {
   weekNumber: number;
   sessionNumber: number;
   sessionName: string;
+}
+
+export interface ScheduleOptions {
+  preferredDays: DayOfWeek[];
+  preferredTimeOfDay?: 'morning' | 'afternoon' | 'evening';
+  skipBankHolidays?: boolean;
+  forceFirstSessionDate?: Date;
 }
 
 export function generateWorkoutSchedule(
@@ -57,6 +58,7 @@ export function generateWorkoutSchedule(
 ): WorkoutScheduleEntry[] {
   const schedule: WorkoutScheduleEntry[] = [];
   let currentDate = new Date(startDate);
+  const scheduledDates = new Set<string>();
 
   const timeMap = {
     morning: 7,
@@ -65,16 +67,27 @@ export function generateWorkoutSchedule(
   };
   const hour = options.preferredTimeOfDay ? timeMap[options.preferredTimeOfDay] : undefined;
 
-  for (const workout of workouts) {
+  for (let workoutIndex = 0; workoutIndex < workouts.length; workoutIndex++) {
+    const workout = workouts[workoutIndex];
     let foundDate: Date | null = null;
 
-    while (!foundDate) {
-      const dateToCheck = new Date(currentDate);
-      if (isGymDay(dateToCheck, options.preferredDays) &&
-          !schedule.some(s => isSameDate(s.scheduledDate, dateToCheck))) {
-        foundDate = dateToCheck;
-      } else {
-        currentDate = addDays(currentDate, 1);
+    const isFirstWorkout = workoutIndex === 0;
+    const forceDate = isFirstWorkout && options.forceFirstSessionDate ? options.forceFirstSessionDate : null;
+
+    if (forceDate) {
+      foundDate = forceDate;
+      scheduledDates.add(`${foundDate.getFullYear()}-${foundDate.getMonth()}-${foundDate.getDate()}`);
+    } else {
+      while (!foundDate) {
+        const dateToCheck = new Date(currentDate);
+        const dateKey = `${dateToCheck.getFullYear()}-${dateToCheck.getMonth()}-${dateToCheck.getDate()}`;
+
+        if (isGymDay(dateToCheck, options.preferredDays) && !scheduledDates.has(dateKey)) {
+          foundDate = dateToCheck;
+          scheduledDates.add(dateKey);
+        } else {
+          currentDate = addDays(currentDate, 1);
+        }
       }
     }
 

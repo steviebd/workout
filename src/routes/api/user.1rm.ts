@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/user/1rm')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/user/1rm')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const oneRMs = await getLatestOneRMs(db, session.workosId);
+          const oneRMs = await getLatestOneRMs(db, session.sub);
 
           if (!oneRMs) {
             return Response.json({

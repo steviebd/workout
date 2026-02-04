@@ -35,14 +35,7 @@ function getFirstGymDayInWeek(startDate: Date, preferredGymDays: DayOfWeek[]): D
 
 function getFirstSessionDate(startDate: Date, preferredGymDays: DayOfWeek[], mode: 'smart' | 'strict'): Date {
   if (mode === 'smart') {
-    for (let i = 0; i < 7; i++) {
-      const dateToCheck = new Date(startDate);
-      dateToCheck.setDate(startDate.getDate() + i);
-      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()] as DayOfWeek;
-      if (preferredGymDays.includes(dayName)) {
-        return dateToCheck;
-      }
-    }
+    return startDate;
   }
   return getFirstGymDayInWeek(startDate, preferredGymDays);
 }
@@ -51,12 +44,7 @@ function shouldShowStartModeToggle(
   startDate: string | null,
   preferredGymDays: DayOfWeek[]
 ): boolean {
-  if (!startDate || preferredGymDays.length === 0) return false;
-
-  const date = new Date(`${startDate}T00:00:00`);
-  const dayName = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
-
-  return !preferredGymDays.includes(dayName);
+  return !!(startDate && preferredGymDays.length > 0);
 }
 
 function ProgramStart() {
@@ -118,7 +106,7 @@ function ProgramStart() {
       if (hasLoadedPrevious) return;
 
       if (oneRmRes.ok) {
-        const data = await oneRmRes.json() as { squat1rm?: number | null; bench1rm?: number | null; deadlift1rm?: number | null; ohp1rm?: number | null };
+        const data = await oneRmRes.json() as { squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number };
         
         let hasAnyValues = false;
         const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
@@ -191,7 +179,7 @@ function ProgramStart() {
   };
 
   const toggleDay = (dayIndex: number) => {
-    const day = DAYS_OF_WEEK[dayIndex] as DayOfWeek;
+    const day = DAYS_OF_WEEK[dayIndex];
     setPreferredGymDays(prev => {
       if (prev.includes(day)) {
         return prev.filter(d => d !== day);
@@ -229,9 +217,13 @@ function ProgramStart() {
     setIsLoading(true);
 
     const startModeValue = showStartMode ? (startMode ?? 'smart') : 'smart';
-    const firstSessionDate = programStartDate
-      ? getFirstSessionDate(new Date(`${programStartDate}T00:00:00`), preferredGymDays, startModeValue).toISOString().split('T')[0]
-      : programStartDate;
+    const startDateObj = new Date(`${programStartDate}T00:00:00Z`);
+    const firstSessionDateResult = programStartDate
+      ? getFirstSessionDate(startDateObj, preferredGymDays, startModeValue)
+      : null;
+    const firstSessionDateStr = firstSessionDateResult
+      ? firstSessionDateResult.toISOString().split('T')[0]
+      : null;
 
     try {
       const response = await fetch('/api/program-cycles', {
@@ -246,7 +238,7 @@ function ProgramStart() {
           preferredGymDays,
           preferredTimeOfDay,
           programStartDate,
-          firstSessionDate,
+          firstSessionDate: firstSessionDateStr,
         }),
       });
 
@@ -312,7 +304,7 @@ function ProgramStart() {
               <p className="text-xs font-medium">Not sure what to enter?</p>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
                 <li>
-                  <Link to="/1rm-test" className="text-primary hover:underline">
+                  <Link to="/1rm-test" search={{ returnTo: `/programs/${params.slug}/start` }} className="text-primary hover:underline">
                     Test it first
                   </Link>
                   {' '}— Complete our guided 1RM test
@@ -470,7 +462,7 @@ function ProgramStart() {
           Continue <ChevronRight className="w-4 h-4 ml-1" />
         </Button>
 
-        <Link to="/programs/$slug" params={{ slug: params.slug }}>
+        <Link to="/programs">
           <Button type="button" variant="outline" className="w-full">
             Cancel
           </Button>
@@ -498,7 +490,7 @@ function ProgramStart() {
             </p>
             <div className="flex gap-2">
               {DAYS_DISPLAY.map((day, index) => {
-                const dayName = DAYS_OF_WEEK[index] as DayOfWeek;
+                const dayName = DAYS_OF_WEEK[index];
                 const isSelected = preferredGymDays.includes(dayName);
                 return (
                   <button
@@ -553,7 +545,7 @@ function ProgramStart() {
             <DatePicker
               value={programStartDate}
               onChange={setProgramStartDate}
-              min={new Date().toISOString().split('T')[0]}
+              min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
             />
             {programStartDate !== null && (
               <p className="text-sm text-muted-foreground">
@@ -582,7 +574,7 @@ function ProgramStart() {
           </Button>
         </div>
 
-        <Link to="/programs/$slug" params={{ slug: params.slug }}>
+        <Link to="/programs">
           <Button type="button" variant="outline" className="w-full">
             Cancel
           </Button>
@@ -666,62 +658,30 @@ function ProgramStart() {
             </dl>
           </div>
 
-          <div className="border-t pt-4 space-y-3">
-            <h3 className="font-medium text-lg">Your Schedule</h3>
-            <div className="flex gap-2">
-              {DAYS_DISPLAY.map((day, index) => {
-                const dayName = DAYS_OF_WEEK[index] as DayOfWeek;
-                const isSelected = preferredGymDays.includes(dayName);
-                return (
-                  <div
-                    key={day}
-                    className={`flex-1 py-2 rounded-lg text-center text-sm font-medium ${
-                      isSelected
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted/50 text-muted-foreground'
-                    }`}
-                  >
-                    {day}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Preferred time:</span>
-              <span className="font-medium capitalize">{preferredTimeOfDay}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Start date:</span>
-              <span className="font-medium">{programStartDate ? formatDate(programStartDate) : '-'}</span>
-            </div>
-
-            {showStartMode && startMode === 'strict' ? (
+          {showStartMode && startMode === 'strict' ? (
               <div className="border-t pt-4">
                 <h4 className="font-medium text-sm mb-3">First Week Preview</h4>
                 <div className="flex flex-wrap gap-2">
                   {(() => {
                     const firstDate = programStartDate
-                      ? getFirstSessionDate(new Date(`${programStartDate}T00:00:00`), preferredGymDays, 'strict')
+                      ? getFirstSessionDate(new Date(`${programStartDate}T00:00:00Z`), preferredGymDays, 'strict')
                       : null;
                     const isFirstDateSkipped = showStartMode && startMode === 'strict' && firstDate && programStartDate
-                      ? new Date(`${programStartDate}T00:00:00`) > firstDate
+                      ? new Date(`${programStartDate}T00:00:00Z`) > firstDate
                       : false;
 
                     return DAYS_DISPLAY.map((day, index) => {
-                      const dayName = DAYS_OF_WEEK[index] as DayOfWeek;
+                      const dayName = DAYS_OF_WEEK[index];
                       const isSelected = preferredGymDays.includes(dayName);
 
                       if (!isSelected) return null;
 
                        const baseDate = firstDate ?? new Date();
-                       const dayDate = new Date(baseDate);
-                       dayDate.setDate(baseDate.getDate() - baseDate.getDay() + index);
-                       const isFirstGymDay = firstDate?.toDateString() === dayDate.toDateString();
-                       const skipped = isFirstGymDay && isFirstDateSkipped;
+                         const dayDate = new Date(baseDate);
+                         dayDate.setDate(baseDate.getDate() - baseDate.getDay() + index);
+                         const dayDateStr = dayDate.toISOString().split('T')[0];
+                         const isFirstGymDay = firstDate?.toDateString() === dayDate.toDateString();
+                        const skipped = isFirstGymDay && isFirstDateSkipped;
 
                       return (
                         <div
@@ -733,7 +693,7 @@ function ProgramStart() {
                           } ${skipped ? 'border-2 border-red-300 dark:border-red-700' : ''}`}
                         >
                           <span>{day}</span>
-                          <span className="text-xs opacity-80">{formatDate(dayDate.toISOString().split('T')[0])}</span>
+                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
                           {skipped ? (
                             <span className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded">
                               (Skipped)
@@ -746,13 +706,120 @@ function ProgramStart() {
                 </div>
               </div>
             ) : null}
-          </div>
 
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              A personalized workout schedule will be generated based on your preferences.
-            </p>
-          </div>
+            {showStartMode && startMode === 'smart' && programStartDate ? (
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-3">Your Schedule</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Based on your Smart Start, workouts will begin on your preferred days starting from {formatDate(programStartDate)}.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const startDate = new Date(`${programStartDate}T00:00:00Z`);
+                    const scheduledDates: Array<{ date: Date; day: string }> = [];
+                    
+                    scheduledDates.push({
+                      date: startDate,
+                      day: DAYS_DISPLAY[startDate.getDay()],
+                    });
+
+                    const currentDate = new Date(startDate);
+                    currentDate.setDate(startDate.getDate() + 1);
+
+                    for (let i = 1; scheduledDates.length < 7; i++) {
+                      const dateToCheck = new Date(currentDate);
+                      dateToCheck.setDate(startDate.getDate() + i);
+                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
+                      if (preferredGymDays.includes(dayName)) {
+                        scheduledDates.push({
+                          date: dateToCheck,
+                          day: DAYS_DISPLAY[dateToCheck.getDay()],
+                        });
+                      }
+                    }
+
+                    return scheduledDates.slice(0, 7).map((item, idx) => {
+                      const dayDateStr = item.date.toISOString().split('T')[0];
+                      const isFirstSession = idx === 0;
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex-1 py-3 px-2 rounded-lg text-center text-sm font-medium flex flex-col items-center gap-1 ${
+                            isFirstSession
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-primary/10 text-primary'
+                          }`}
+                        >
+                          <span>{item.day}</span>
+                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
+                          {isFirstSession ? (
+                            <span className="text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded">
+                              First
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            ) : null}
+
+            {!showStartMode && programStartDate ? (
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-3">Your Schedule</h4>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const startDate = new Date(`${programStartDate}T00:00:00Z`);
+                    const firstSessionDate = getFirstSessionDate(startDate, preferredGymDays, 'smart');
+                    const scheduledDates: Array<{ date: Date; day: string }> = [];
+
+                    for (let i = 0; i < 14 && scheduledDates.length < 7; i++) {
+                      const dateToCheck = new Date(firstSessionDate);
+                      dateToCheck.setDate(firstSessionDate.getDate() + i);
+                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
+                      if (preferredGymDays.includes(dayName)) {
+                        scheduledDates.push({
+                          date: dateToCheck,
+                          day: DAYS_DISPLAY[dateToCheck.getDay()],
+                        });
+                      }
+                    }
+
+                    return scheduledDates.slice(0, 7).map((item, idx) => {
+                      const dayDateStr = item.date.toISOString().split('T')[0];
+                      const isFirstSession = idx === 0;
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex-1 py-3 px-2 rounded-lg text-center text-sm font-medium flex flex-col items-center gap-1 ${
+                            isFirstSession
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-primary/10 text-primary'
+                          }`}
+                        >
+                          <span>{item.day}</span>
+                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
+                          {isFirstSession ? (
+                            <span className="text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded">
+                              First
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                A personalized workout schedule will be generated based on your preferences.
+              </p>
+            </div>
         </div>
       </Card>
 
@@ -774,7 +841,7 @@ function ProgramStart() {
           </Button>
         </div>
 
-        <Link to="/programs/$slug" params={{ slug: params.slug }}>
+        <Link to="/programs">
           <Button type="button" variant="outline" className="w-full">
             Cancel
           </Button>

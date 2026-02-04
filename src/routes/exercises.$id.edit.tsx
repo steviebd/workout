@@ -218,8 +218,8 @@ function EditExercise() {
 
   if (auth.loading || redirecting || loading) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
+	<div className="min-h-screen flex items-center justify-center">
+		<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
 	</div>
     );
   }
@@ -229,13 +229,13 @@ function EditExercise() {
       <main className="mx-auto max-w-lg px-4 py-6">
         <div className="space-y-4">
           <div className="bg-background rounded-lg border border-border p-8 text-center">
-            <p className="text-muted-foreground">{'Exercise not found'}</p>
+            <p className="text-muted-foreground">Exercise not found</p>
             <Link
               className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
-              to={'/exercises'}
+              to="/exercises"
             >
               <ArrowLeft size={16} />
-              {'Back to exercises'}
+              Back to exercises
             </Link>
           </div>
         </div>
@@ -253,17 +253,17 @@ function EditExercise() {
         <Link
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           params={{ id }}
-          to={'/exercises/$id'}
+          to="/exercises/$id"
         >
           <ArrowLeft size={20} />
-          {'Back to exercise'}
+          Back to exercise
         </Link>
       </div>
 
       <div className="space-y-4">
         <div className="bg-background rounded-lg border border-border shadow-sm">
           <div className="px-6 py-4 border-b border-border">
-            <h1 className="text-xl font-semibold text-foreground">{'Edit Exercise'}</h1>
+            <h1 className="text-xl font-semibold text-foreground">Edit Exercise</h1>
           </div>
 
           <form className="p-6 space-y-6" onSubmit={handleSubmit}>
@@ -275,73 +275,73 @@ function EditExercise() {
             ) : null}
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'name'}>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
                 {'Name '}
-                <span className="text-red-500">{'*'}</span>
+                <span className="text-red-500">*</span>
               </label>
               <input
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
                   errors.name ? 'border-red-500' : 'border-input'
                 }`}
-                id={'name'}
+                id="name"
                 onChange={handleNameChange}
-                placeholder={'e.g., Bench Press'}
-                type={'text'}
+                placeholder="e.g., Bench Press"
+                type="text"
                 value={formData.name}
               />
               {errors.name ? <p className="mt-1 text-sm text-red-600">{errors.name}</p> : null}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'muscleGroup'}>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="muscleGroup">
                 {'Muscle Group '}
-                <span className="text-red-500">{'*'}</span>
+                <span className="text-red-500">*</span>
               </label>
               <select
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow bg-background ${
                   errors.muscleGroup ? 'border-red-500' : 'border-input'
                 }`}
-                id={'muscleGroup'}
+                id="muscleGroup"
                 onChange={handleMuscleGroupChange}
                 value={selectedMuscleGroupValue}
               >
-                <option value={''}>{'Select muscle group'}</option>
+                <option value="">Select muscle group</option>
                 {MUSCLE_GROUPS.filter((g) => g !== 'Custom').map((group) => (
                   <option key={group} value={group}>
                     {group}
                   </option>
                 ))}
-                <option value={'Custom'}>{'Custom...'}</option>
+                <option value="Custom">Custom...</option>
               </select>
               {errors.muscleGroup ? <p className="mt-1 text-sm text-red-600">{errors.muscleGroup}</p> : null}
             </div>
 
             {selectedMuscleGroupValue === 'Custom' ? (
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'customMuscleGroup'}>
-                  {'Custom Muscle Group'}
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="customMuscleGroup">
+                  Custom Muscle Group
                 </label>
                 <input
                   className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow"
-                  id={'customMuscleGroup'}
+                  id="customMuscleGroup"
                   onChange={handleCustomMuscleGroupChange}
-                  placeholder={'Enter custom muscle group'}
-                  type={'text'}
+                  placeholder="Enter custom muscle group"
+                  type="text"
                   value={formData.customMuscleGroup}
                 />
               </div>
             ) : null}
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'description'}>
+              <label className="block text-sm font-medium text-foreground mb-1" htmlFor="description">
                 {'Description '}
-                <span className="text-muted-foreground font-normal">{'(optional)'}</span>
+                <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
               <textarea
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none bg-background"
-                id={'description'}
+                id="description"
                 onChange={handleDescriptionChange}
-                placeholder={'Add a description for this exercise...'}
+                placeholder="Add a description for this exercise..."
                 rows={4}
                 value={formData.description}
               />
@@ -351,24 +351,24 @@ function EditExercise() {
               <Link
                 className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
                 params={{ id }}
-                to={'/exercises/$id'}
+                to="/exercises/$id"
               >
-                {'Cancel'}
+                Cancel
               </Link>
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={submitting}
-                type={'submit'}
+                type="submit"
               >
                 {submitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
-                    {'Saving...'}
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save size={20} />
-                    {'Save Changes'}
+                    Save Changes
                   </>
                 )}
               </button>

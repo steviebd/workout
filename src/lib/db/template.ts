@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
 import { type NewTemplate, type NewTemplateExercise, type Template, type TemplateExercise, exercises, templateExercises, templates } from './schema';
-import { createDb } from './index';
+import { createDb, calculateChunkSize } from './index';
+
+type DbOrTx = D1Database | ReturnType<typeof createDb>;
 
 export interface TemplateExerciseWithDetails extends TemplateExercise {
   exercise?: {
@@ -12,14 +14,15 @@ export interface TemplateExerciseWithDetails extends TemplateExercise {
 }
 
 export async function getTemplateExerciseSetCount(
-  db: D1Database,
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
   templateId: string,
   exerciseId: string
 ): Promise<number> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const result = await drizzleDb
-    .select({ count: drizzleDb.$count(templateExercises, and(
+  const result = await db
+    .select({ count: db.$count(templateExercises, and(
       eq(templateExercises.templateId, templateId),
       eq(templateExercises.exerciseId, exerciseId)
     ))})
@@ -80,13 +83,14 @@ export async function createTemplate(
 }
 
 export async function getTemplateById(
-  db: D1Database,
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
   templateId: string,
   workosId: string
 ): Promise<Template | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const template = await drizzleDb
+  const template = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -96,11 +100,12 @@ export async function getTemplateById(
 }
 
 export async function getTemplatesByWorkosId(
-  db: D1Database,
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
   workosId: string,
   options: GetTemplatesOptions = {}
 ): Promise<TemplateWithExerciseCount[]> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
   const {
     search,
@@ -116,7 +121,7 @@ export async function getTemplatesByWorkosId(
     conditions.push(like(templates.name, `%${search}%`));
   }
 
-  let query = drizzleDb
+  let query = db
     .select({
       id: templates.id,
       workosId: templates.workosId,
@@ -126,7 +131,7 @@ export async function getTemplatesByWorkosId(
       isDeleted: templates.isDeleted,
       createdAt: templates.createdAt,
       updatedAt: templates.updatedAt,
-      exerciseCount: drizzleDb.$count(
+      exerciseCount: db.$count(
         templateExercises,
         and(eq(templateExercises.templateId, templates.id))
       ),
@@ -207,13 +212,14 @@ export async function softDeleteTemplate(
  * Used when user wants to modify an existing template without affecting the original.
  */
 export async function copyTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<Template | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const original = await drizzleDb
+  const original = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -223,7 +229,7 @@ export async function copyTemplate(
     return null;
   }
 
-  const newTemplate = await drizzleDb
+  const newTemplate = await db
     .insert(templates)
     .values({
       workosId,
@@ -234,7 +240,7 @@ export async function copyTemplate(
     .returning()
     .get();
 
-  const originalExercises = await drizzleDb
+  const originalExercises = await db
     .select()
     .from(templateExercises)
     .where(eq(templateExercises.templateId, templateId))
@@ -248,10 +254,10 @@ export async function copyTemplate(
       orderIndex: te.orderIndex,
     }));
 
-    const BATCH_SIZE = 7;
-    for (let i = 0; i < newExercises.length; i += BATCH_SIZE) {
-      const batch = newExercises.slice(i, i + BATCH_SIZE);
-      await drizzleDb.insert(templateExercises).values(batch).run();
+    const CHUNK_SIZE = calculateChunkSize(5);
+    for (let i = 0; i < newExercises.length; i += CHUNK_SIZE) {
+      const batch = newExercises.slice(i, i + CHUNK_SIZE);
+      await db.insert(templateExercises).values(batch).run();
     }
   }
 
@@ -321,13 +327,14 @@ export async function removeExerciseFromTemplate(
 }
 
 export async function getTemplateExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<TemplateExerciseWithDetails[]> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const template = await drizzleDb
+  const template = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -337,7 +344,7 @@ export async function getTemplateExercises(
     return [];
   }
 
-  const results = await drizzleDb
+  const results = await db
     .select({
       id: templateExercises.id,
       templateId: templateExercises.templateId,
@@ -374,14 +381,15 @@ export interface ExerciseOrder {
  * Batch update ensures atomic reordering - either all succeed or none do.
  */
 export async function reorderTemplateExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   exerciseOrders: ExerciseOrder[],
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const template = await drizzleDb
+  const template = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -392,7 +400,7 @@ export async function reorderTemplateExercises(
   }
 
   const updates = exerciseOrders.map(order =>
-    drizzleDb
+    db
       .update(templateExercises)
       .set({ orderIndex: order.orderIndex })
       .where(and(

@@ -102,16 +102,16 @@ function ExerciseDetail() {
 
   if (auth.loading || (!auth.user && !auth.loading)) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-muted-foreground'}>{'Loading...'}</p>
+	<div className="min-h-screen flex items-center justify-center">
+		<p className="text-muted-foreground">Loading...</p>
 	</div>
     );
   }
 
   if (loading) {
     return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<p className={'text-muted-foreground'}>{'Loading exercise...'}</p>
+	<div className="min-h-screen flex items-center justify-center">
+		<p className="text-muted-foreground">Loading exercise...</p>
 	</div>
     );
   }
@@ -133,10 +133,10 @@ function ExerciseDetail() {
       <main className="mx-auto max-w-lg px-4 py-6">
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <h1 className="text-2xl font-bold text-foreground">{'Exercise Not Found'}</h1>
-            <p className="text-muted-foreground">{"The exercise you're looking for doesn't exist or has been deleted."}</p>
-            <a className="text-primary hover:text-primary/80 inline-block" href={'/exercises'}>
-              {'← Back to Exercises'}
+            <h1 className="text-2xl font-bold text-foreground">Exercise Not Found</h1>
+            <p className="text-muted-foreground">The exercise you're looking for doesn't exist or has been deleted.</p>
+            <a className="text-primary hover:text-primary/80 inline-block" href="/exercises">
+              ← Back to Exercises
             </a>
           </CardContent>
         </Card>
@@ -147,8 +147,8 @@ function ExerciseDetail() {
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
       <div className="mb-6">
-        <a className="text-primary hover:text-primary/80 text-sm" href={'/exercises'}>
-          {'← Back to Exercises'}
+        <a className="text-primary hover:text-primary/80 text-sm" href="/exercises">
+          ← Back to Exercises
         </a>
       </div>
 
@@ -159,7 +159,7 @@ function ExerciseDetail() {
             <div className="flex space-x-3">
               <Button variant="outline" asChild={true}>
                 <a href={`/exercises/${exercise.id}/edit`}>
-                  {'Edit'}
+                  Edit
                 </a>
               </Button>
               <Button
@@ -174,27 +174,27 @@ function ExerciseDetail() {
 
           {exercise.muscleGroup ? (
             <div>
-              <label className="block text-sm font-medium text-muted-foreground">{'Muscle Group'}</label>
+              <span className="block text-sm font-medium text-muted-foreground">Muscle Group</span>
               <p className="text-foreground">{exercise.muscleGroup}</p>
             </div>
           ) : null}
 
           {exercise.description ? (
             <div>
-              <label className="block text-sm font-medium text-muted-foreground">{'Description'}</label>
+              <span className="block text-sm font-medium text-muted-foreground">Description</span>
               <p className="text-foreground whitespace-pre-wrap">{exercise.description}</p>
             </div>
           ) : null}
 
           <div className="grid grid-cols-2 gap-4 pt-4">
             <div>
-              <label className="block text-sm font-medium text-muted-foreground">{'Created'}</label>
+              <span className="block text-sm font-medium text-muted-foreground">Created</span>
               <p className="text-foreground text-sm">
                 {formatDateLong(exercise.createdAt)}
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground">{'Last Updated'}</label>
+              <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
               <p className="text-foreground text-sm">
                 {formatDateLong(exercise.updatedAt)}
               </p>

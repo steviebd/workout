@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/templates')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const templates = await getTemplatesByWorkosId(db, session.workosId, {
+           const templates = await getTemplatesByWorkosId(db, session.sub, {
             search,
             sortBy,
             sortOrder,
@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/templates')({
        POST: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -60,7 +60,7 @@ export const Route = createFileRoute('/api/templates')({
           }
 
            const template = await createTemplate(db, {
-             workosId: session.workosId,
+             workosId: session.sub,
             name,
             description,
             notes,

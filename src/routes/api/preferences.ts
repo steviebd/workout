@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/preferences')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/preferences')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const preferences = await getUserPreferences(db, session.workosId);
+           const preferences = await getUserPreferences(db, session.sub);
 
            return Response.json(preferences ?? { weightUnit: 'kg', theme: 'light', dateFormat: 'dd/mm/yyyy', weeklyWorkoutTarget: 3 });
          } catch (err) {
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/preferences')({
        PUT: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/preferences')({
           return Response.json({ error: 'Database not available' }, { status: 500 });
         }
 
-         const preferences = await upsertUserPreferences(db, session.workosId, {
+         const preferences = await upsertUserPreferences(db, session.sub, {
           weightUnit,
           theme,
           dateFormat,

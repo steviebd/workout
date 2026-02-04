@@ -14,9 +14,11 @@ import { nsuns } from '~/lib/programs/nsuns';
 import { candito } from '~/lib/programs/candito';
 import { sheiko } from '~/lib/programs/sheiko';
 import { nuckols } from '~/lib/programs/nuckols';
+import { megsquats } from '~/lib/programs/megsquats';
+import { jenSinkler } from '~/lib/programs/jen-sinkler';
 import { generateWorkoutSchedule, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 
-const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols> = {
+const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols | typeof megsquats | typeof jenSinkler> = {
   'stronglifts-5x5': stronglifts,
   '531': wendler531,
   'madcow-5x5': madcow,
@@ -24,8 +26,9 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
   'candito-6-week': candito,
   'sheiko': sheiko,
   'nuckols-28-programs': nuckols,
-};
-
+      'stronger-by-the-day': megsquats,
+      'unapologetically-strong': jenSinkler,
+    };
 interface CreateProgramCycleRequest {
   programSlug: string;
   squat1rm: number;
@@ -44,7 +47,7 @@ export const Route = createFileRoute('/api/program-cycles')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -59,9 +62,9 @@ export const Route = createFileRoute('/api/program-cycles')({
 
           let cycles;
           if (activeOnly) {
-            cycles = await getActiveProgramCycles(db, session.workosId);
+            cycles = await getActiveProgramCycles(db, session.sub);
           } else {
-            cycles = await getProgramCyclesByWorkosId(db, session.workosId, { status });
+            cycles = await getProgramCyclesByWorkosId(db, session.sub, { status });
           }
 
           return Response.json(cycles);
@@ -73,7 +76,7 @@ export const Route = createFileRoute('/api/program-cycles')({
       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -112,10 +115,11 @@ export const Route = createFileRoute('/api/program-cycles')({
 
           const schedule = generateWorkoutSchedule(
             generatedWorkouts,
-            new Date(firstSessionDate),
+            new Date(`${programStartDate}T00:00:00Z`),
             {
-              preferredDays: preferredGymDays.map(d => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
+              preferredDays: preferredGymDays.map((d: string) => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
               preferredTimeOfDay: preferredTimeOfDay,
+              forceFirstSessionDate: new Date(`${firstSessionDate}T00:00:00Z`),
             }
           );
 
@@ -134,7 +138,7 @@ export const Route = createFileRoute('/api/program-cycles')({
             };
           });
 
-          const cycle = await createProgramCycle(db, session.workosId, {
+          const cycle = await createProgramCycle(db, session.sub, {
             programSlug,
             name: cycleName,
             squat1rm,

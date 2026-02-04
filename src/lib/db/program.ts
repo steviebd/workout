@@ -12,7 +12,9 @@ import {
   workouts,
   generateId,
 } from './schema';
-import { createDb } from './index';
+import { createDb, calculateChunkSize } from './index';
+
+type DbOrTx = D1Database | ReturnType<typeof createDb>;
 
 export type { UserProgramCycle, ProgramCycleWorkout };
 
@@ -52,13 +54,14 @@ export interface ProgramWorkoutData {
 }
 
 export async function createProgramCycle(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   data: CreateProgramCycleData
 ): Promise<UserProgramCycle> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const cycle = await drizzleDb
+  const cycle = await db
     .insert(userProgramCycles)
     .values({
       id: generateId(),
@@ -79,25 +82,22 @@ export async function createProgramCycle(
     .get();
 
   if (data.workouts && data.workouts.length > 0) {
-    for (const workout of data.workouts) {
-      await db
-        .prepare(
-          `INSERT INTO program_cycle_workouts (id, cycle_id, template_id, week_number, session_number, session_name, target_lifts, is_complete, scheduled_date, scheduled_time)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        )
-        .bind(
-          generateId(),
-          cycle.id,
-          null,
-          workout.weekNumber,
-          workout.sessionNumber,
-          workout.sessionName,
-          workout.targetLifts ?? null,
-          0,
-          workout.scheduledDate,
-          workout.scheduledTime ?? null
-        )
-        .run();
+    const CHUNK_SIZE = 4;
+    for (let i = 0; i < data.workouts.length; i += CHUNK_SIZE) {
+      const chunk = data.workouts.slice(i, i + CHUNK_SIZE);
+      const workoutInserts = chunk.map((workout) => ({
+        id: generateId(),
+        cycleId: cycle.id,
+        templateId: null,
+        weekNumber: workout.weekNumber,
+        sessionNumber: workout.sessionNumber,
+        sessionName: workout.sessionName,
+        targetLifts: workout.targetLifts ?? null,
+        isComplete: false,
+        scheduledDate: workout.scheduledDate,
+        scheduledTime: workout.scheduledTime ?? null,
+      }));
+      await db.insert(programCycleWorkouts).values(workoutInserts).run();
     }
   }
 
@@ -105,13 +105,14 @@ export async function createProgramCycle(
 }
 
 export async function getProgramCycleById(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string
 ): Promise<UserProgramCycle | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const cycle = await drizzleDb
+  const cycle = await db
     .select()
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -196,12 +197,13 @@ export async function updateProgramCycle1RM(
 }
 
 export async function updateProgramCycleProgress(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string,
   data: { currentWeek?: number; currentSession?: number }
 ): Promise<UserProgramCycle | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
   const updates: Partial<UserProgramCycle> = {
     updatedAt: new Date().toISOString(),
@@ -210,7 +212,7 @@ export async function updateProgramCycleProgress(
   if (data.currentWeek !== undefined) updates.currentWeek = data.currentWeek;
   if (data.currentSession !== undefined) updates.currentSession = data.currentSession;
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(userProgramCycles)
     .set(updates)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -221,13 +223,14 @@ export async function updateProgramCycleProgress(
 }
 
 export async function completeProgramCycle(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string
 ): Promise<UserProgramCycle | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(userProgramCycles)
     .set({
       status: 'completed',
@@ -262,13 +265,14 @@ export async function softDeleteProgramCycle(
 }
 
 export async function getCycleWorkouts(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string
 ): Promise<ProgramCycleWorkout[]> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const cycle = await drizzleDb
+  const cycle = await db
     .select({ id: userProgramCycles.id })
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -278,7 +282,7 @@ export async function getCycleWorkouts(
     return [];
   }
 
-  const cycleWorkouts = await drizzleDb
+  const cycleWorkouts = await db
     .select()
     .from(programCycleWorkouts)
     .where(eq(programCycleWorkouts.cycleId, cycleId))
@@ -289,13 +293,14 @@ export async function getCycleWorkouts(
 }
 
 export async function getCurrentWorkout(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string
 ): Promise<ProgramCycleWorkout | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const cycle = await drizzleDb
+  const cycle = await db
     .select()
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -305,7 +310,7 @@ export async function getCurrentWorkout(
     return null;
   }
 
-  const workout = await drizzleDb
+  const workout = await db
     .select()
     .from(programCycleWorkouts)
     .where(
@@ -321,15 +326,16 @@ export async function getCurrentWorkout(
 }
 
 export async function markWorkoutComplete(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workoutId: string,
   cycleId: string,
   workosId: string,
   actualWorkoutId: string
 ): Promise<void> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const workout = await drizzleDb
+  const workout = await db
     .select()
     .from(programCycleWorkouts)
     .where(eq(programCycleWorkouts.id, workoutId))
@@ -339,7 +345,7 @@ export async function markWorkoutComplete(
     return;
   }
 
-  await drizzleDb
+  await db
     .update(programCycleWorkouts)
     .set({
       workoutId: actualWorkoutId,
@@ -354,7 +360,7 @@ export async function markWorkoutComplete(
     const allWorkouts = await getCycleWorkouts(db, cycleId, workosId);
     const completedCount = allWorkouts.filter((w) => w.isComplete).length;
 
-    await drizzleDb
+    await db
       .update(userProgramCycles)
       .set({
         totalSessionsCompleted: completedCount,
@@ -506,12 +512,12 @@ export async function createProgramCycleWorkouts(
       sessionName: workout.sessionName,
       targetLifts,
       isComplete: false,
-      scheduledDate: defaultScheduledDate ?? new Date().toISOString().split('T')[0],
+      scheduledDate: defaultScheduledDate ?? new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
       scheduledTime: null,
     };
   });
 
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 4;
 
   for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
     const batch = workoutData.slice(i, i + BATCH_SIZE);
@@ -520,14 +526,15 @@ export async function createProgramCycleWorkouts(
 }
 
 export async function getOrCreateExerciseForWorkout(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   exerciseName: string,
   lift: string | undefined
 ): Promise<string> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
-  const existing = await drizzleDb
+  const existing = await db
     .select()
     .from(exercises)
     .where(and(eq(exercises.workosId, workosId), eq(exercises.name, exerciseName)))
@@ -543,7 +550,7 @@ export async function getOrCreateExerciseForWorkout(
       ? 'Chest'
       : 'Shoulders';
 
-  const newExercise = await drizzleDb
+  const newExercise = await db
     .insert(exercises)
     .values({
       workosId,
@@ -561,12 +568,13 @@ function getBaseExerciseName(name: string): string {
 }
 
 export async function generateTemplateFromWorkout(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   cycleWorkout: ProgramCycleWorkout,
   cycle: UserProgramCycle
 ): Promise<string> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
   console.log('generateTemplateFromWorkout - cycleWorkout.targetLifts:', cycleWorkout.targetLifts, 'type:', typeof cycleWorkout.targetLifts);
   
@@ -579,12 +587,10 @@ export async function generateTemplateFromWorkout(
       parsed = cycleWorkout.targetLifts;
     }
     
-    // Handle both formats: direct array or object with exercises/accessories
     if (Array.isArray(parsed)) {
       targetLifts = parsed as TargetLift[];
     } else if (parsed && typeof parsed === 'object') {
       const obj = parsed as { exercises?: TargetLift[]; accessories?: TargetLift[] };
-      // Combine exercises and accessories
       const targetExercises = obj.exercises ?? [];
       const accessories = (obj.accessories ?? []).map(a => ({ ...a, isAccessory: true, isRequired: false }));
       targetLifts = [...targetExercises, ...accessories];
@@ -597,7 +603,7 @@ export async function generateTemplateFromWorkout(
 
   const templateName = `${cycle.name} - ${cycleWorkout.sessionName}`;
 
-  const template = await drizzleDb
+  const template = await db
     .insert(templates)
     .values({
       workosId,
@@ -640,14 +646,14 @@ export async function generateTemplateFromWorkout(
     orderIndex++;
   }
 
-  const BATCH_SIZE = 7;
+  const CHUNK_SIZE = calculateChunkSize(12);
 
-  for (let i = 0; i < templateExercisesData.length; i += BATCH_SIZE) {
-    const batch = templateExercisesData.slice(i, i + BATCH_SIZE);
-    await drizzleDb.insert(templateExercises).values(batch).run();
+  for (let i = 0; i < templateExercisesData.length; i += CHUNK_SIZE) {
+    const batch = templateExercisesData.slice(i, i + CHUNK_SIZE);
+    await db.insert(templateExercises).values(batch).run();
   }
 
-  await drizzleDb
+  await db
     .update(programCycleWorkouts)
     .set({ templateId: template.id, updatedAt: new Date().toISOString() })
     .where(eq(programCycleWorkouts.id, cycleWorkout.id))
@@ -681,14 +687,15 @@ export async function updateProgramCycleWorkout(
 }
 
 export async function getProgramCycleWorkoutById(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workoutId: string,
   workosId?: string
 ): Promise<ProgramCycleWorkout | null> {
-  const drizzleDb = createDb(db);
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 
   if (workosId) {
-    const result = await drizzleDb
+    const result = await db
       .select({ workout: programCycleWorkouts })
       .from(programCycleWorkouts)
       .innerJoin(userProgramCycles, eq(programCycleWorkouts.cycleId, userProgramCycles.id))
@@ -702,7 +709,7 @@ export async function getProgramCycleWorkoutById(
     return result?.workout as ProgramCycleWorkout | null;
   }
 
-  const workout = await drizzleDb
+  const workout = await db
     .select()
     .from(programCycleWorkouts)
     .where(eq(programCycleWorkouts.id, workoutId))

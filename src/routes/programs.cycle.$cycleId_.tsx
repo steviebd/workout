@@ -1,17 +1,20 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, memo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
+import { getVideoTutorialByName, type VideoTutorial } from '~/lib/exercise-library';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Progress } from '~/components/ui/Progress';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
 import { useToast } from '@/components/ToastProvider';
 import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
 import { WeeklySchedule } from '~/components/WeeklySchedule';
 import { RescheduleDialog } from '~/components/RescheduleDialog';
 import { formatTime } from '~/lib/programs/scheduler';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { VideoTutorialButton } from '~/components/VideoTutorialButton';
+import { VideoTutorialModal } from '~/components/VideoTutorialModal';
 
 interface CycleData {
   id: string;
@@ -112,18 +115,25 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
   }
 }
 
-const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit }: { readonly exercise: ExerciseDetail; readonly weightUnit: string }) {
+const ExerciseItem = memo(function ExerciseItem({ exercise, weightUnit, onOpenTutorial }: { readonly exercise: ExerciseDetail; readonly weightUnit: string; readonly onOpenTutorial: (tutorial: VideoTutorial, name: string) => void }) {
+  const videoTutorial = getVideoTutorialByName(exercise.exercise.name);
+
   return (
     <div className="flex items-center justify-between py-2 border-b last:border-0">
       <div className="flex items-center gap-3">
         <Dumbbell className="h-5 w-5 text-muted-foreground" />
-        <div>
+        <div className="flex items-center gap-2">
           <p className="font-medium">{exercise.exercise.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
-            {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
-          </p>
+          {videoTutorial ? <VideoTutorialButton
+              videoTutorial={videoTutorial}
+              exerciseName={exercise.exercise.name}
+              onClick={() => onOpenTutorial(videoTutorial, exercise.exercise.name)}
+          /> : null}
         </div>
+        <p className="text-sm text-muted-foreground">
+          {exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : ''}
+          {exercise.targetWeight ? ` @ ${exercise.targetWeight}${weightUnit}` : ''}
+        </p>
       </div>
     </div>
   );
@@ -139,7 +149,12 @@ function ProgramDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [weightUnit, setWeightUnit] = useState('kg');
   const [rescheduleWorkout, setRescheduleWorkout] = useState<{ id: string; weekNumber: number; sessionNumber: number; sessionName: string; scheduledDate: string; scheduledTime?: string; isComplete: boolean; } | null>(null);
+  const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
   const { formatDate } = useDateFormat();
+
+  const handleOpenTutorial = (tutorial: VideoTutorial, exerciseName: string) => {
+    setSelectedTutorial({ tutorial, exerciseName });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -148,7 +163,7 @@ function ProgramDashboard() {
       try {
         const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as CycleData;
           if (isMounted) {
             setCycle(data as CycleData);
           }
@@ -184,7 +199,7 @@ function ProgramDashboard() {
             const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
             if (data.scheduledDate) {
-              const workoutDate = new Date(`${data.scheduledDate}T00:00:00`);
+              const workoutDate = new Date(`${data.scheduledDate}T00:00:00Z`);
               if (workoutDate.getTime() === todayDate.getTime()) {
                 setCalculatedCurrentWeek(data.weekNumber);
               }
@@ -196,20 +211,20 @@ function ProgramDashboard() {
       }
     }
 
-    async function loadAllWorkoutsForWeekCalculation() {
-      try {
-        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
-        if (response.ok) {
-          const workouts = await response.json() as WorkoutForWeekCalculation[];
-          if (isMounted && workouts.length > 0) {
-            const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
-            setCalculatedCurrentWeek(calculatedWeek);
+      async function loadAllWorkoutsForWeekCalculation() {
+        try {
+          const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+          if (response.ok) {
+            const workouts = await response.json() as WorkoutForWeekCalculation[];
+            if (isMounted && workouts.length > 0) {
+              const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
+              setCalculatedCurrentWeek(calculatedWeek);
+            }
           }
+        } catch (error) {
+          console.error('Error loading workouts for week calculation:', error);
         }
-      } catch (error) {
-        console.error('Error loading workouts for week calculation:', error);
       }
-    }
 
     void loadCurrentWorkout();
     void loadAllWorkoutsForWeekCalculation();
@@ -248,8 +263,8 @@ function ProgramDashboard() {
 
         const currentWorkoutResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
         if (currentWorkoutResponse.ok) {
-          const data = await currentWorkoutResponse.json();
-          setCurrentWorkout(data as CurrentWorkoutData);
+          const data = await currentWorkoutResponse.json() as CurrentWorkoutData;
+          setCurrentWorkout(data);
         }
 
         const workoutsResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
@@ -281,7 +296,11 @@ function ProgramDashboard() {
       
       if (response.ok) {
         const data = await response.json() as { workoutId: string };
-        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+        try {
+          void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+        } catch {
+          window.location.href = `/workouts/${data.workoutId}`;
+        }
       } else {
         toast.error('Failed to start workout');
       }
@@ -295,8 +314,25 @@ function ProgramDashboard() {
     void navigate({ to: '/programs/cycle/$cycleId/1rm-update', params: { cycleId: params.cycleId } });
   };
 
-  const handleEndProgram = () => {
-    void navigate({ to: '/programs/cycle/$cycleId/complete', params: { cycleId: params.cycleId } });
+  const handleEndProgram = async () => {
+    try {
+      await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isComplete: true }),
+      });
+
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/create-1rm-test-workout`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const data = await response.json() as { workoutId: string };
+        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+      }
+    } catch (error) {
+      console.error('Error starting 1RM test:', error);
+      toast.error('Failed to start 1RM test');
+    }
   };
 
   const handleDeleteProgram = async () => {
@@ -364,27 +400,11 @@ function ProgramDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Starting 1RMs</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Squat</span>
-              <span className="font-medium">{cycle.squat1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Bench</span>
-              <span className="font-medium">{cycle.bench1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Deadlift</span>
-              <span className="font-medium">{cycle.deadlift1rm} {weightUnit}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">OHP</span>
-              <span className="font-medium">{cycle.ohp1rm} {weightUnit}</span>
-            </div>
-          </div>
-        </Card>
+        <div className="flex flex-col gap-2">
+          <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
+          <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
+          <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
+        </div>
 
         {!!(currentWorkout && currentWorkout.exercises.length > 0) && (
           <Card className="p-4">
@@ -400,7 +420,7 @@ function ProgramDashboard() {
             </div>
             <div className="space-y-3">
               {currentWorkout.exercises.map((exercise) => (
-                <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} />
+                <ExerciseItem key={exercise.id} exercise={exercise} weightUnit={weightUnit} onOpenTutorial={handleOpenTutorial} />
               ))}
             </div>
           </Card>
@@ -411,6 +431,7 @@ function ProgramDashboard() {
             <WeeklySchedule
               cycleId={params.cycleId}
               currentWeek={calculatedCurrentWeek}
+              firstSessionDate={cycle.firstSessionDate ?? undefined}
               onStartWorkout={(programCycleWorkoutId, actualDate) => {
                 void (async () => {
                   try {
@@ -422,7 +443,11 @@ function ProgramDashboard() {
                     
                     if (response.ok) {
                       const data = await response.json() as { workoutId: string };
-                      void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+                      try {
+                        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
+                      } catch {
+                        window.location.href = `/workouts/${data.workoutId}`;
+                      }
                     } else {
                       toast.error('Failed to start workout');
                     }
@@ -443,21 +468,36 @@ function ProgramDashboard() {
               onClose={() => setRescheduleWorkout(null)}
               onReschedule={(id, date) => { void handleRescheduleWorkout(id, date); }}
             />
-          </>
-        )}
 
-        {cycle.isComplete ? (
-          <Card className="p-4 bg-muted">
-            <div className="text-center">
-              <h3 className="font-semibold mb-2">Program Complete</h3>
-              <p className="text-sm text-muted-foreground">You've completed all sessions in this program cycle.</p>
-            </div>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => { void handleStartWorkout(); }} className="w-full">Start Today's Workout</Button>
-            <Button variant="outline" onClick={() => { void handleUpdate1RM(); }} className="w-full">Update 1RM Values</Button>
-            <Button variant="outline" onClick={() => { void handleEndProgram(); }} className="w-full">End Program & Test 1RM</Button>
+            {selectedTutorial ? <VideoTutorialModal
+                videoTutorial={selectedTutorial.tutorial}
+                exerciseName={selectedTutorial.exerciseName}
+                open={!!selectedTutorial}
+                onOpenChange={(open) => { if (!open) setSelectedTutorial(null); }}
+            /> : null}
+
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3">Starting 1RMs</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Squat</span>
+                  <span className="font-medium">{cycle.squat1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bench</span>
+                  <span className="font-medium">{cycle.bench1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Deadlift</span>
+                  <span className="font-medium">{cycle.deadlift1rm} {weightUnit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">OHP</span>
+                  <span className="font-medium">{cycle.ohp1rm} {weightUnit}</span>
+                </div>
+              </div>
+            </Card>
+
             <AlertDialog>
               <AlertDialogTrigger asChild={true}>
                 <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
@@ -468,10 +508,10 @@ function ProgramDashboard() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Program?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this program cycle and all its progress. This action cannot be undone.
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
-                <p className="text-muted-foreground">
-                  This will permanently delete this program cycle and all its progress. This action cannot be undone.
-                </p>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={() => { void handleDeleteProgram(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
@@ -480,8 +520,17 @@ function ProgramDashboard() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
+          </>
         )}
+
+        {cycle.isComplete ? (
+          <Card className="p-4 bg-muted">
+            <div className="text-center">
+              <h3 className="font-semibold mb-2">Program Complete</h3>
+              <p className="text-sm text-muted-foreground">You've completed all sessions in this program cycle.</p>
+            </div>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

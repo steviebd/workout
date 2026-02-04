@@ -1,13 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAuth } from './__root'
-import { StreakCard } from '~/components/dashboard/StreakCard'
-import { VolumeSummary } from '~/components/dashboard/VolumeSummary'
-import { QuickActions } from '~/components/dashboard/QuickActions'
-import { RecentPRs } from '~/components/dashboard/RecentPRs'
-import { EmptyStateBanner } from '~/components/dashboard/EmptyStateBanner'
-import { Skeleton } from '~/components/ui/Skeleton'
-import { useStreak } from '@/lib/context/StreakContext'
+import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
+import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
+import { DashboardProvider } from '@/lib/context/DashboardContext'
 import { formatRelativeDate } from '~/lib/date'
 
 interface WorkoutHistoryStats {
@@ -53,22 +49,14 @@ function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { weeklyCount, weeklyTarget, thirtyDayStreak, totalWorkouts, loading: streakLoading } = useStreak()
-
-  console.log('[Dashboard] auth state:', { loading: auth.loading, user: auth.user })
-  console.log('[Dashboard] local state:', { loading, error, hasData: !!data })
 
   useEffect(() => {
-    console.log('[Dashboard useEffect] auth.loading:', auth.loading, 'auth.user:', auth.user)
-    
     if (!auth.loading && !auth.user) {
-      console.log('[Dashboard] No user, redirecting to signin')
       window.location.href = '/auth/signin'
       return
     }
 
     if (!auth.user) {
-      console.log('[Dashboard] auth.user is null, waiting...')
       return
     }
 
@@ -135,13 +123,13 @@ function Dashboard() {
     return (
       <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
+          <div className="h-8 w-48 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-64 rounded bg-muted animate-pulse" />
         </div>
-        <Skeleton className="h-[120px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[200px] rounded-xl" />
-        <Skeleton className="h-[150px] rounded-xl" />
+        <div className="h-[120px] rounded-xl bg-muted animate-pulse" />
+        <div className="h-[100px] rounded-xl bg-muted animate-pulse" />
+        <div className="h-[200px] rounded-xl bg-muted animate-pulse" />
+        <div className="h-[150px] rounded-xl bg-muted animate-pulse" />
       </div>
     )
   }
@@ -164,31 +152,24 @@ function Dashboard() {
   const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{greeting}</h1>
-          <p className="text-muted-foreground">Ready to crush your workout?</p>
+    <DashboardProvider>
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{greeting}</h1>
+            <p className="text-muted-foreground">Ready to crush your workout?</p>
+          </div>
+          <DashboardCustomizer />
         </div>
 
-        {isNewUser ? <EmptyStateBanner /> : null}
-
-        <div className="space-y-4">
-          <StreakCard
-            weeklyCount={streakLoading ? 0 : weeklyCount}
-            weeklyTarget={streakLoading ? 3 : weeklyTarget}
-            thirtyDayStreak={streakLoading ? { current: 0, target: 4, progress: 0, maxConsecutive: 0, weeklyDetails: [] } : thirtyDayStreak}
-            totalWorkouts={streakLoading ? 0 : totalWorkouts}
-          />
-          <VolumeSummary
-            totalVolume={stats.totalVolume}
-            weeklyVolume={stats.totalVolume / 4}
-            volumeGoal={50000}
-            volumeChange={12}
-          />
-          <QuickActions templates={templates} />
-          <RecentPRs records={personalRecords} />
-        </div>
-    </main>
+        <DashboardWidgets
+          templates={templates}
+          personalRecords={personalRecords}
+          stats={stats}
+          isNewUser={isNewUser}
+        />
+      </main>
+    </DashboardProvider>
   )
 }
 

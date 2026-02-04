@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/exercises/$id/last-workout')({
       GET: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/exercises/$id/last-workout')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const lastWorkout = await getLastWorkoutForExercise(db, session.workosId, params.id);
+           const lastWorkout = await getLastWorkoutForExercise(db, session.sub, params.id);
 
           if (!lastWorkout) {
             return Response.json(null);

@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
              db,
              params.id,
              exerciseOrders,
-             session.workosId
+             session.sub
            );
 
           if (!reordered) {

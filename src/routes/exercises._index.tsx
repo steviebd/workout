@@ -2,8 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Plus, Search, X, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { EmptyExercises } from '@/components/EmptyState';
-import { SkeletonList } from '@/components/LoadingSpinner';
+import { EmptyExercises } from '@/components/ui/EmptyState';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -11,6 +11,7 @@ import { Badge } from '~/components/ui/Badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useToast } from '@/components/ToastProvider';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 interface Exercise {
   id: string;
@@ -132,14 +133,14 @@ function Exercises() {
 
   if (auth.loading || redirecting) {
     return (
-      <div className={'min-h-screen flex items-center justify-center bg-background'}>
-        <p className={'text-muted-foreground'}>{'Redirecting to sign in...'}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Redirecting to sign in...</p>
       </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Exercises</h1>
           {!showCreateForm && (
@@ -232,35 +233,37 @@ function Exercises() {
           </div>
         </div>
 
-        {loading ? (
-          <SkeletonList count={6} />
-        ) : exercises.length === 0 ? (
-          <EmptyExercises
-            searchActive={!!search}
-            onCreate={handleCreateClick}
-          />
-        ) : (
-          <div className="space-y-3">
-            {exercises.map((exercise) => (
-              <Link key={exercise.id} to="/exercises/$id" params={{ id: exercise.id }}>
-                <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold line-clamp-1">{exercise.name}</h3>
-                    {exercise.muscleGroup ? <Badge variant="secondary">{exercise.muscleGroup}</Badge> : null}
-                  </div>
-                  {exercise.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{exercise.description}</p> : null}
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      {formatDate(exercise.createdAt)}
+        <PullToRefresh onRefresh={fetchExercises}>
+          {loading ? (
+            <SkeletonList count={6} />
+          ) : exercises.length === 0 ? (
+            <EmptyExercises
+              searchActive={!!search}
+              onCreate={handleCreateClick}
+            />
+          ) : (
+            <div className="space-y-3">
+              {exercises.map((exercise) => (
+                <Link key={exercise.id} to="/exercises/$id" params={{ id: exercise.id }}>
+                  <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer touch-manipulation">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold line-clamp-1">{exercise.name}</h3>
+                      {exercise.muscleGroup ? <Badge variant="secondary">{exercise.muscleGroup}</Badge> : null}
                     </div>
-                    <span className="text-xs text-primary font-medium">View Details</span>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
+                    {exercise.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{exercise.description}</p> : null}
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {formatDate(exercise.createdAt)}
+                      </div>
+                      <span className="text-xs text-primary font-medium">View Details</span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </PullToRefresh>
     </main>
   );
 }

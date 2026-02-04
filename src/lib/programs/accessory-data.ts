@@ -202,6 +202,15 @@ export const ACCESSORIES: Record<string, AccessoryDefinition> = {
     muscleGroup: 'Quads',
     libraryId: 'leg-extension',
   },
+  'leg-press': {
+    id: 'leg-press',
+    name: 'Leg Press',
+    category: 'leg',
+    baseLift: 'squat',
+    defaultPercentage: 0.80,
+    muscleGroup: 'Quads',
+    libraryId: 'leg-press',
+  },
   'leg-curls': {
     id: 'leg-curls',
     name: 'Leg Curl',
@@ -275,6 +284,15 @@ export const ACCESSORIES: Record<string, AccessoryDefinition> = {
     muscleGroup: 'Core',
     libraryId: 'cable-crunch',
   },
+  'hip-thrust': {
+    id: 'hip-thrust',
+    name: 'Hip Thrust',
+    category: 'leg',
+    baseLift: 'deadlift',
+    defaultPercentage: 0.60,
+    muscleGroup: 'Glutes',
+    libraryId: 'hip-thrust',
+  },
 };
 
 export function getLibraryIdForAccessory(accessoryId: string): string | null {
@@ -284,7 +302,7 @@ export function getLibraryIdForAccessory(accessoryId: string): string | null {
 export function calculateAccessoryWeight(
   accessoryId: string,
   oneRMs: OneRMValues,
-  addedWeight: number = 0
+  addedWeight = 0
 ): number {
   const accessory = ACCESSORIES[accessoryId];
   if (!accessory) return 0;

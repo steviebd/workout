@@ -2,9 +2,9 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
-import { EmptyWorkouts } from '@/components/EmptyState';
+import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { Skeleton } from '~/components/ui/Skeleton';
-import { SkeletonCard } from '@/components/LoadingSpinner';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Card } from '~/components/ui/Card';
 import { Input } from '~/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
@@ -139,7 +139,7 @@ function History() {
     }
   }, []);
 
-  const fetchWorkouts = useCallback(async (pageNum: number = 1, append: boolean = false) => {
+  const fetchWorkouts = useCallback(async (pageNum = 1, append = false) => {
     try {
       if (!append) {
         setIsLoadingWorkouts(true);
@@ -327,7 +327,7 @@ function History() {
   }, [handleQuickFilter]);
 
   const handleStartWorkout = useCallback(() => {
-    window.location.href = '/workouts/new';
+    window.location.href = '/workouts';
   }, []);
 
   if (auth.loading || redirecting) {

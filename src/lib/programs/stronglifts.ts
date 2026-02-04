@@ -11,6 +11,7 @@ const strongliftsInfo = {
   estimatedWeeks: 8,
   totalSessions: 24,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp', 'row'] as LiftType[],
+  category: 'general-strength' as const,
 };
 
 export const strongliftsAccessories: ProgramAccessory[] = [

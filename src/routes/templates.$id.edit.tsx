@@ -319,30 +319,36 @@ function EditTemplate() {
        void handleSubmit(e);
      }, [handleSubmit]);
 
-   if (auth.loading || redirecting || loading) {
-    return (
-	<div className={'min-h-screen flex items-center justify-center'}>
-		<div className={'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'} />
-	</div>
-    );
-  }
-
-  if (!template) {
-    return (
-      <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="rounded-lg border border-border p-8 text-center">
-          <p className="text-muted-foreground">{'Template not found'}</p>
-          <Link
-            className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
-            to={'/templates'}
-          >
-            <ArrowLeft size={16} />
-            {'Back to templates'}
-          </Link>
+    if (auth.loading || redirecting || loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+              <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+            </div>
+            <p className="text-muted-foreground">Loading template...</p>
+          </div>
         </div>
-      </main>
-    );
-  }
+      );
+    }
+
+   if (!template) {
+     return (
+       <main className="mx-auto max-w-lg px-4 py-6">
+         <div className="rounded-lg border border-border p-8 text-center">
+           <p className="text-muted-foreground">Template not found</p>
+           <Link
+             className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
+             to="/templates"
+           >
+             <ArrowLeft size={16} />
+             Back to templates
+           </Link>
+         </div>
+       </main>
+     );
+   }
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
@@ -350,16 +356,16 @@ function EditTemplate() {
         <Link
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           params={{ id }}
-          to={'/templates/$id'}
+          to="/templates/$id"
         >
           <ArrowLeft size={20} />
-          {'Back to template'}
+          Back to template
         </Link>
       </div>
 
       <div className="rounded-lg border border-border shadow-sm">
         <div className="px-6 py-4 border-b border-border">
-          <h1 className="text-xl font-semibold text-foreground">{'Edit Template'}</h1>
+          <h1 className="text-xl font-semibold text-foreground">Edit Template</h1>
         </div>
 
         <form className="p-6 space-y-6" onSubmit={handleFormSubmit}>
@@ -368,48 +374,48 @@ function EditTemplate() {
                            </div> : null}
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'name'}>
+            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
               {'Template Name '}
-              <span className="text-red-500">{'*'}</span>
+              <span className="text-red-500">*</span>
             </label>
             <input
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
                 errors.name ? 'border-red-500' : 'border-border'
               }`}
-              id={'name'}
+              id="name"
               onChange={handleNameChange}
-              placeholder={'e.g., Upper Body Workout'}
-              type={'text'}
+              placeholder="e.g., Upper Body Workout"
+              type="text"
               value={formData.name}
             />
             {errors.name ? <p className="mt-1 text-sm text-red-600">{errors.name}</p> : null}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'description'}>
+            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="description">
               {'Description '}
-              <span className="text-muted-foreground font-normal">{'(optional)'}</span>
+              <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <textarea
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
-              id={'description'}
+              id="description"
               onChange={handleDescriptionChange}
-              placeholder={'Brief description of this template...'}
+              placeholder="Brief description of this template..."
               rows={2}
               value={formData.description}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1" htmlFor={'notes'}>
+            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="notes">
               {'Notes '}
-              <span className="text-muted-foreground font-normal">{'(optional)'}</span>
+              <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <textarea
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
-              id={'notes'}
+              id="notes"
               onChange={handleNotesChange}
-              placeholder={'Additional notes or instructions...'}
+              placeholder="Additional notes or instructions..."
               rows={3}
               value={formData.notes}
             />
@@ -419,15 +425,15 @@ function EditTemplate() {
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-foreground">
                 {'Exercises '}
-                <span className="text-red-500">{'*'}</span>
+                <span className="text-red-500">*</span>
               </label>
               <button
                 className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                 onClick={handleAddExerciseButtonClick}
-                type={'button'}
+                type="button"
               >
                 <Plus size={16} />
-                {'Add Exercise'}
+                Add Exercise
               </button>
             </div>
 
@@ -435,9 +441,9 @@ function EditTemplate() {
 
             {selectedExercises.length === 0 ? (
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                <p className="text-muted-foreground">{'No exercises added yet'}</p>
+                <p className="text-muted-foreground">No exercises added yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {'Click "Add Exercise" to add exercises to this template'}
+                  Click "Add Exercise" to add exercises to this template
                 </p>
               </div>
             ) : (
@@ -457,20 +463,20 @@ function EditTemplate() {
                     <div className="flex items-center gap-1">
                       <button
                         className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                        data-direction={'down'}
+                        data-direction="down"
                         data-index={index}
                         disabled={index === selectedExercises.length - 1}
                         onClick={handleMoveClick}
-                        type={'button'}
+                        type="button"
                       >
-                        {'↓'}
+                        ↓
                       </button>
 
                       <button
                         className="p-1 text-muted-foreground hover:text-red-600"
                         data-id={exercise.id}
                         onClick={handleRemoveClick}
-                        type={'button'}
+                        type="button"
                       >
                         <X size={18} />
                       </button>
@@ -485,24 +491,24 @@ function EditTemplate() {
             <Link
               className="px-4 py-2 text-foreground hover:text-foreground/80 transition-colors"
               params={{ id }}
-              to={'/templates/$id'}
+              to="/templates/$id"
             >
-              {'Cancel'}
+              Cancel
             </Link>
             <button
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={submitting}
-              type={'submit'}
+              type="submit"
             >
               {submitting ? (
                 <>
-                  <Loader2 className={'animate-spin'} size={18} />
-                  {'Saving...'}
+                  <Loader2 className="animate-spin" size={18} />
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  {'Save Changes'}
+                  Save Changes
                 </>
               )}
             </button>
@@ -513,7 +519,7 @@ function EditTemplate() {
       {showExerciseSelector ? <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">{'Add Exercise'}</h2>
+            <h2 className="text-lg font-semibold text-foreground">Add Exercise</h2>
             <button
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
               onClick={handleCloseExerciseSelector}
@@ -529,8 +535,8 @@ function EditTemplate() {
                 autoFocus={true}
                 className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={handleExerciseSearchChange}
-                placeholder={'Search exercises...'}
-                type={'text'}
+                placeholder="Search exercises..."
+                type="text"
                 value={exerciseSearch}
               />
             </div>
@@ -538,7 +544,7 @@ function EditTemplate() {
 
           <div className="flex-1 overflow-y-auto p-4">
             {filteredExercises.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">{'No exercises found'}</div>
+              <div className="text-center py-8 text-muted-foreground">No exercises found</div>
             ) : (
               <div className="space-y-2">
                 {filteredExercises.map((exercise) => {
@@ -560,7 +566,7 @@ function EditTemplate() {
                             {exercise.muscleGroup}
                                                   </span> : null}
                         </div>
-                        {isSelected ? <span className="text-green-600 text-sm font-medium">{'Added'}</span> : null}
+                        {isSelected ? <span className="text-green-600 text-sm font-medium">Added</span> : null}
                       </div>
                     </button>
                   );

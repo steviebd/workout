@@ -44,7 +44,7 @@ function OneRMTest() {
       try {
         const response = await fetch('/api/user/preferences')
         if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string }
+          const prefs = await response.json() as { weightUnit?: string };
           setWeightUnit(prefs.weightUnit ?? 'kg')
         }
       } catch (error) {
@@ -98,23 +98,21 @@ function OneRMTest() {
         throw new Error('Failed to create workout')
       }
 
-      const workout = await workoutResponse.json() as { id: string }
+      const workout = await workoutResponse.json() as { id: string };
 
       for (const lift of testedLifts) {
         const weight = parseFloat(lift.weight)
         if (isNaN(weight)) continue
 
-        const exerciseRes = await fetch('/api/exercises/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const exerciseRes = await fetch(`/api/exercises?search=${encodeURIComponent(lift.name)}`, {
+          method: 'GET',
           credentials: 'include',
-          body: JSON.stringify({ name: lift.name }),
         })
 
         if (!exerciseRes.ok) continue
 
-        const exercises = await exerciseRes.json() as Array<{ id: string }>
-        if (exercises.length === 0) continue
+        const exercises = await exerciseRes.json() as Array<{ id: string }>;
+        if (exercises.length === 0) continue;
 
         const exerciseId = exercises[0].id
 
@@ -135,7 +133,12 @@ function OneRMTest() {
       }
 
       toast.success('1RM test saved!')
-      void navigate({ to: '/workouts/$id', params: { id: workout.id } })
+      const returnTo = new URLSearchParams(window.location.search).get('returnTo')
+      if (returnTo) {
+        void navigate({ to: returnTo })
+      } else {
+        void navigate({ to: '/workouts/$id', params: { id: workout.id } })
+      }
     } catch (error) {
       toast.error('Failed to save 1RM test')
       console.error('Error saving 1RM test:', error)

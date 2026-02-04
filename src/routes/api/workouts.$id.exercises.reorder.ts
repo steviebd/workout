@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises/reorder')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/workouts/$id/exercises/reorder')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const reordered = await reorderWorkoutExercises(db, params.id, exerciseOrders, session.workosId);
+           const reordered = await reorderWorkoutExercises(db, params.id, exerciseOrders, session.sub);
 
           if (!reordered) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });

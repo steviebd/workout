@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Loader2, Save, Undo, Redo } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Undo, Redo, Plus } from 'lucide-react';
 import { useAuth } from '@/routes/__root';
 import { useToast } from '@/components/ToastProvider';
 import { Button } from '@/components/ui/Button';
@@ -99,7 +99,7 @@ export function TemplateEditor({
         setFormData(prev => ({ ...prev, ...previousState }));
       }
       if (previousState.exercises) {
-        setSelectedExercises(previousState.exercises as SelectedExercise[]);
+        setSelectedExercises(previousState.exercises);
       }
     }
   }, [undo]);
@@ -111,7 +111,7 @@ export function TemplateEditor({
         setFormData(prev => ({ ...prev, ...nextState }));
       }
       if (nextState.exercises) {
-        setSelectedExercises(nextState.exercises as SelectedExercise[]);
+        setSelectedExercises(nextState.exercises);
       }
     }
   }, [redo]);
@@ -402,7 +402,7 @@ export function TemplateEditor({
 
           if (!response.ok) throw new Error('Failed to create exercise');
 
-          const created = await response.json() as Exercise;
+          const created = await response.json() as { id: string };
           exerciseId = created.id;
           libraryId = exercise.id;
           void fetchExercises();
@@ -527,46 +527,52 @@ export function TemplateEditor({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+            <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+          </div>
+          <p className="text-muted-foreground">Loading editor...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 sm:px-6 py-6">
       <div className="mb-6">
         <a
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors py-2"
           href={mode === 'create' ? '/templates' : `/templates/${templateId}`}
         >
           <ArrowLeft size={20} />
-          {mode === 'create' ? 'Back to templates' : 'Back to template'}
+          <span className="text-sm sm:text-base">{mode === 'create' ? 'Back to templates' : 'Back to template'}</span>
         </a>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 bg-gradient-to-br from-card to-card/50">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl font-bold text-foreground leading-tight">
             {mode === 'create' ? 'Create Template' : 'Edit Template'}
           </h1>
           <div className="flex items-center gap-1">
-            <Button
+<Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               onClick={handleUndo}
               disabled={!canUndo}
               title="Undo"
-            >
-              <Undo size={18} />
-            </Button>
+>
+              <Undo size={20} />
+</Button>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               onClick={handleRedo}
               disabled={!canRedo}
               title="Redo"
             >
-              <Redo size={18} />
+              <Redo size={20} />
             </Button>
           </div>
         </div>
@@ -589,7 +595,7 @@ export function TemplateEditor({
 
          <form className="space-y-6" onSubmit={(e) => void handleSubmit(e)}>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
+            <label className="block text-sm font-medium text-foreground mb-1.5" htmlFor="name">
               Template Name <span className="text-destructive">*</span>
             </label>
             <Input
@@ -605,8 +611,8 @@ export function TemplateEditor({
           <CollapsibleSection label="Description (optional)" defaultOpen={false}>
             <textarea
               id="description"
-              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
-              rows={2}
+              className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none min-h-[100px] text-base"
+              rows={3}
               value={formData.description}
               onChange={e => handleFormChange('description', e.target.value)}
               onBlur={() => void autoSave.save()}
@@ -615,17 +621,20 @@ export function TemplateEditor({
           </CollapsibleSection>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="block text-sm font-medium text-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
+              <span className="block text-base font-medium text-foreground">
                 Exercises <span className="text-destructive">*</span>
               </span>
               <Button
-                size="sm"
-                variant="outline"
+                variant="default"
+                size="lg"
                 onClick={() => setShowExerciseSelector(true)}
                 type="button"
+                className="w-full sm:w-auto min-h-[48px] text-base"
               >
-                Add Exercise
+                <Plus className="h-5 w-5 sm:mr-2" />
+                <span className="sm:hidden">Add Exercise</span>
+                <span className="hidden sm:inline">Add Exercise</span>
               </Button>
             </div>
 
@@ -675,8 +684,8 @@ export function TemplateEditor({
 
           <CollapsibleSection label="Notes (optional)" defaultOpen={false}>
             <textarea
-              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
-              rows={3}
+              className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none min-h-[120px] text-base"
+              rows={4}
               value={formData.notes}
               onChange={e => handleFormChange('notes', e.target.value)}
               onBlur={() => void autoSave.save()}
@@ -684,12 +693,13 @@ export function TemplateEditor({
             />
           </CollapsibleSection>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border/60">
             <Button
               variant="ghost"
               asChild={true}
+              className="px-5 py-2.5"
             >
-              <a href={mode === 'create' ? '/templates' : `/templates/${templateId}`}>
+              <a href={mode === 'create' ? '/templates' : `/templates/${templateId}`} className="px-6 py-3 text-center rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors">
                 Cancel
               </a>
             </Button>
@@ -699,12 +709,12 @@ export function TemplateEditor({
             >
               {saving ? (
                 <>
-                  <Loader2 className="animate-spin" size={18} />
+                  <Loader2 className="animate-spin" size={20} />
                   {mode === 'create' ? 'Creating...' : 'Saving...'}
                 </>
               ) : (
                 <>
-                  <Save size={18} />
+                  <Save size={20} />
                   {mode === 'create' ? 'Create Template' : 'Save Changes'}
                 </>
               )}
@@ -719,9 +729,11 @@ export function TemplateEditor({
               <Button asChild={true}>
                 <a href={`/workouts/start/${createdTemplate.id}`}>Start Workout</a>
               </Button>
-              <Button variant="outline" asChild={true}>
-                <a href={`/templates/${createdTemplate.id}`}>View Template</a>
-              </Button>
+<Button variant="outline" asChild={true}>
+                <a href={`/templates/${createdTemplate.id}`} className="px-6 py-3 text-center rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors">
+                  View Template
+                </a>
+</Button>
             </div>
                            </div> : null}
       </Card>
@@ -745,14 +757,15 @@ export function TemplateEditor({
                   })
                     .then(response => {
                       if (!response.ok) throw new Error('Failed to create exercise');
-                      return response.json() as Promise<Exercise>;
+                      return response.json();
                     })
-                    .then(created => {
+                    .then((created) => {
+                      const data = created as { id: string; name: string; muscleGroup: string; description: string };
                       void handleAddExercise({
-                        id: created.id,
-                        name: created.name,
-                        muscleGroup: created.muscleGroup,
-                        description: created.description,
+                        id: data.id,
+                        name: data.name,
+                        muscleGroup: data.muscleGroup,
+                        description: data.description,
                       });
                       toast.success(`Created "${name}"`);
                       void fetchExercises();

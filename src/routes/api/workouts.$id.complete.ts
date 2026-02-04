@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -56,25 +56,26 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const completed = await completeWorkout(db, params.id, session.workosId);
+          const drizzleDb = createDb(db);
+
+          const completed = await completeWorkout(db, params.id, session.sub);
 
           if (!completed) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
-           if (completed.completedAt) {
-             const workoutDate = completed.completedAt.split('T')[0];
-             await updateUserLastWorkout(db, session.workosId, workoutDate);
-           }
-
-           const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
+          const workout = await getWorkoutWithExercises(db, params.id, session.sub);
 
           if (!workout) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
           }
 
+          let cycleWorkoutId: string | null = null;
+          let cycleWorkoutCycleId: string | null = null;
+          let is1RMTest = false;
+          let tested1RMs = { squat: 0, bench: 0, deadlift: 0, ohp: 0 };
+
           if (workout.templateId) {
-            const drizzleDb = createDb(db);
             const cycleWorkout = await drizzleDb
               .select()
               .from(programCycleWorkouts)
@@ -82,8 +83,62 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
               .get();
             
             if (cycleWorkout) {
-              await markWorkoutComplete(db, cycleWorkout.id, cycleWorkout.cycleId, session.workosId, params.id);
+              cycleWorkoutId = cycleWorkout.id;
+              cycleWorkoutCycleId = cycleWorkout.cycleId;
             }
+          }
+
+          if (workout.name === '1RM Test') {
+            is1RMTest = true;
+            const exercises = workout.exercises.map((ex) => ({
+              id: ex.id,
+              exerciseId: ex.exerciseId,
+              name: ex.exercise?.name ?? 'Unknown Exercise',
+              muscleGroup: ex.exercise?.muscleGroup ?? null,
+              orderIndex: ex.orderIndex,
+              notes: ex.notes,
+              sets: ex.sets,
+            }));
+            tested1RMs = extractTested1RMs(exercises);
+          }
+
+          const shouldUpdate1RMs = is1RMTest && (tested1RMs.squat || tested1RMs.bench || tested1RMs.deadlift || tested1RMs.ohp);
+
+          let startingSquat1rm: number | null = null;
+          let startingBench1rm: number | null = null;
+          let startingDeadlift1rm: number | null = null;
+          let startingOhp1rm: number | null = null;
+          
+          if (shouldUpdate1RMs && workout.programCycleId) {
+            const cycle = await getProgramCycleById(db, workout.programCycleId, session.sub);
+            if (cycle) {
+              startingSquat1rm = cycle.startingSquat1rm ?? cycle.squat1rm;
+              startingBench1rm = cycle.startingBench1rm ?? cycle.bench1rm;
+              startingDeadlift1rm = cycle.startingDeadlift1rm ?? cycle.deadlift1rm;
+              startingOhp1rm = cycle.startingOhp1rm ?? cycle.ohp1rm;
+            }
+          }
+
+          if (completed.completedAt) {
+            const workoutDate = completed.completedAt.split('T')[0];
+            await updateUserLastWorkout(db, session.sub, workoutDate);
+          }
+
+          if (cycleWorkoutId && cycleWorkoutCycleId) {
+            await markWorkoutComplete(db, cycleWorkoutId, cycleWorkoutCycleId, session.sub, params.id);
+          }
+
+          if (shouldUpdate1RMs) {
+            await updateWorkout(db, params.id, session.sub, {
+              squat1rm: tested1RMs.squat || null,
+              bench1rm: tested1RMs.bench || null,
+              deadlift1rm: tested1RMs.deadlift || null,
+              ohp1rm: tested1RMs.ohp || null,
+              startingSquat1rm,
+              startingBench1rm,
+              startingDeadlift1rm,
+              startingOhp1rm,
+            });
           }
 
           const exercises = workout.exercises.map((ex) => ({
@@ -96,50 +151,19 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             sets: ex.sets,
           }));
 
-          if (workout.name === '1RM Test') {
-            const tested = extractTested1RMs(exercises);
-            if (tested.squat || tested.bench || tested.deadlift || tested.ohp) {
-              let startingSquat1rm: number | null = null;
-              let startingBench1rm: number | null = null;
-              let startingDeadlift1rm: number | null = null;
-              let startingOhp1rm: number | null = null;
-              
-              if (workout.programCycleId) {
-                const cycle = await getProgramCycleById(db, workout.programCycleId, session.workosId);
-                if (cycle) {
-                  startingSquat1rm = cycle.startingSquat1rm ?? cycle.squat1rm;
-                  startingBench1rm = cycle.startingBench1rm ?? cycle.bench1rm;
-                  startingDeadlift1rm = cycle.startingDeadlift1rm ?? cycle.deadlift1rm;
-                  startingOhp1rm = cycle.startingOhp1rm ?? cycle.ohp1rm;
-                }
-              }
-              
-              await updateWorkout(db, params.id, session.workosId, {
-                squat1rm: tested.squat || null,
-                bench1rm: tested.bench || null,
-                deadlift1rm: tested.deadlift || null,
-                ohp1rm: tested.ohp || null,
-                startingSquat1rm,
-                startingBench1rm,
-                startingDeadlift1rm,
-                startingOhp1rm,
-              });
-              Object.assign(workout, {
-                squat1rm: tested.squat || null,
-                bench1rm: tested.bench || null,
-                deadlift1rm: tested.deadlift || null,
-                ohp1rm: tested.ohp || null,
-                startingSquat1rm,
-                startingBench1rm,
-                startingDeadlift1rm,
-                startingOhp1rm,
-              });
-            }
-          }
-
           const response = {
             ...workout,
             exercises,
+            ...(shouldUpdate1RMs ? {
+              squat1rm: tested1RMs.squat || null,
+              bench1rm: tested1RMs.bench || null,
+              deadlift1rm: tested1RMs.deadlift || null,
+              ohp1rm: tested1RMs.ohp || null,
+              startingSquat1rm,
+              startingBench1rm,
+              startingDeadlift1rm,
+              startingOhp1rm,
+            } : {}),
           };
 
           console.log('Workout completed with data:', {
@@ -156,16 +180,16 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             }))
           });
 
-           return Response.json(response, {
-             headers: {
-               'Cache-Control': 'no-store, no-cache, must-revalidate',
-             },
-           });
-         } catch (err) {
-           console.error('Complete workout error:', err);
-           return Response.json({ error: 'Server error' }, { status: 500 });
-         }
-       },
+          return Response.json(response, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          });
+        } catch (err) {
+          console.error('Complete workout error:', err);
+          return Response.json({ error: 'Server error' }, { status: 500 });
+        }
+      },
     },
   },
 });

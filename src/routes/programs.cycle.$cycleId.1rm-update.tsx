@@ -41,10 +41,10 @@ function Update1RM() {
           const data = await response.json() as CycleData;
           setCycle(data);
           setFormData({
-            squat1rm: data.squat1rm?.toString() || '',
-            bench1rm: data.bench1rm?.toString() || '',
-            deadlift1rm: data.deadlift1rm?.toString() || '',
-            ohp1rm: data.ohp1rm?.toString() || '',
+            squat1rm: data.squat1rm?.toString() ?? '',
+            bench1rm: data.bench1rm?.toString() ?? '',
+            deadlift1rm: data.deadlift1rm?.toString() ?? '',
+            ohp1rm: data.ohp1rm?.toString() ?? '',
           });
         }
 

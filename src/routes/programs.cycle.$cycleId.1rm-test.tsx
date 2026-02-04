@@ -73,7 +73,7 @@ function OneRMTest() {
         }
 
         if (workoutRes.ok) {
-          const workoutData: WorkoutData = await workoutRes.json();
+          const workoutData = await workoutRes.json() as WorkoutData;
           if (workoutData.squat1rm) {
             setFormData({
               squat1rm: workoutData.squat1rm.toString(),
@@ -151,7 +151,7 @@ function OneRMTest() {
         }),
       });
 
-      void navigate({ to: '/programs' });
+      void navigate({ to: '/programs/cycle/$cycleId/complete', params: { cycleId: params.cycleId } });
     } catch (error) {
       console.error('Error saving 1RM test results:', error);
     } finally {

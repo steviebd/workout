@@ -131,9 +131,9 @@ class SyncEngine {
       }
 
       if (op.type === 'create') {
-        const responseData = await response.json() as { id: string; updatedAt: string };
+        const responseData = await response.json() as { id: string; updatedAt?: string };
         if (responseData.id) {
-          await this.storeServerId(op.entity, op.localId, responseData.id, responseData.updatedAt);
+          await this.storeServerId(op.entity, op.localId, responseData.id, responseData.updatedAt ?? '');
         }
       }
 

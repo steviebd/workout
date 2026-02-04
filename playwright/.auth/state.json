@@ -1,8 +1,18 @@
 {
   "cookies": [
     {
+      "name": "oauth_state",
+      "value": "e47d67ee-bfc6-4f62-8095-50d8d1a91b24",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1770165810.239094,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
       "name": "_cfuvid",
-      "value": "1mit6hwwVg4VWbUyAT.cRflRDJ9pzclUSCWbGS.ssLA-1769752417395-0.0.1.1-604800000",
+      "value": "o2EfmMcz2jjaY9U8yStfqoe1ZYEFVnwMawfBFHhoTvE-1770165210613-0.0.1.1-604800000",
       "domain": ".workos.com",
       "path": "/",
       "expires": -1,
@@ -11,38 +21,28 @@
       "sameSite": "None"
     },
     {
-      "name": "__Host-state-01KG6QDMZQ4ZBWQJZZW23KX1EX",
-      "value": "Fe26.2*1*0ebdd4bbd57f5435a53962cc608ce0c13ea91f358148dbf818af6770e1625f8f*Pl_7it22lBTqGJDRXxiiUg*Hefq2W9l679uSiMu3sWfMwuSCTKrmAP5-JfEpB18AWlmXRvrso7gAqvUDGRkhz02MR8x3ATcKnx3LmS-ZMUUwa7r7FBHdSZeUAkMbIhh5To*1770962018055*925920a333fb0d2001d166c1e07a075d15daab65d0940a1c13e0a9bf2aad8a51*sUejMdVFLCLoWhsHRb83uvCZKfOPfmyeIZj4cppkP-8~2",
-      "domain": "fastidious-fuchsia-08-staging.authkit.app",
-      "path": "/",
-      "expires": 1769838818.368615,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "Lax"
-    },
-    {
       "name": "__wuid",
-      "value": "Fe26.2*1*a2ff66777414814e5e9843ae649e461fc2a70c17385fbf6fdcd2d68eae32523c*WQJX0flTjZbn5Sl_pKF2TQ*aHC3J1m1eNbVnxjjr9U1kT37c_BrZAxsLnGuACLpDJi2C_qE9DCisVNDEqT7jXq_XFgM8wLLjUlE2wzVVCQEcVG34-sBU0YNIXRDLpBdu6U*1774936421273*494de324f2a3d975b339d1bd460ed79bb9ebf07de3b7475ead908d2a5a22fe2d*NgHFsRur22dKbj3Cp-PVZ2gHI1fcIhZCGnQgbihqiVU~2",
+      "value": "Fe26.2*1*21bbae2a8d7a430d65155ce01103fc2d43e63d74349ebfd450c1b1a5f2601e55*4HjptjRzXJkCBcfht_gjKA*exupv4Ys11kW-_FjxuTbNkfCfNbm11YEbghPCh-8hvLwBTdS7IdBTfzCmOGcQqP45b4icenDUJP4958YiXTaHF8MRGiHI_DdfZmwQIsvn4Q*1775349213130*795989c7b461b8b0aae880e624c0d769fb76c5d137349a826b352e1f06a0eea8*8I3NskPvF_JD5ZF5b1IyV81cvnKam8Po1T8AZL-NUeU~2",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
-      "expires": 1774936421,
+      "expires": 1775349213,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "_dd_s",
-      "value": "aid=0d4cabdb-02d9-43be-85cb-975451d79352&rum=2&id=a2ce32fe-b4a9-4876-83fc-70403257f2a3&created=1769752419324&expire=1769753321623",
+      "value": "aid=cc64702e-105f-445b-a6c1-0027374ace49&rum=2&id=0cdbe32d-1567-46c4-bc33-98a956676d54&created=1770165211923&expire=1770166122584",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
-      "expires": 1801288421,
+      "expires": 1801701222,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Strict"
     },
     {
       "name": "session",
-      "value": "doVzIl7IA393lI4GltaAgH4kz",
+      "value": "OpC2LLY5almOgcr4HKvJHPOSt",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
       "expires": -1,
@@ -52,44 +52,58 @@
     },
     {
       "name": "access-token",
-      "value": "eyJhbGciOiJSUzI1NiIsImtpZCI6InNzb19vaWRjX2tleV9wYWlyXzAxSzJINURFTUZUVlBEWlNLSFpWQ0RHWkM4In0.eyJhdWQiOiJodHRwczovL2FwaS53b3Jrb3MuY29tL3gvYXV0aGtpdCIsImlzcyI6Imh0dHBzOi8vYXBpLndvcmtvcy5jb20veC9hdXRoa2l0Iiwic3ViIjoidXNlcl8wMUs5Q0ZROTNZQ0EwRDhBUDg1QVNEUVdLUiIsInNpZCI6InNlc3Npb25fMDFLRzZRRFNZM0tHS0MyRUEwS0RHUVo4MkgiLCJqdGkiOiIwMUtHNlFEU1pKVkFEU0NXRzVYVEZDWUY3MyIsImV4cCI6MTc2OTc1MjcyMiwiaWF0IjoxNzY5NzUyNDIyfQ.uzCv8aSDFTGOB8TMbYNMhyfDI5ICh7NUzQUcAnSbfJ6fZLpcAgy1ag-foBdYXIFX3CT5FoH47Y7B8jxIRhzANwLMSeQnThJa5x1iyvaY8KBPRGGTt61yN-h_FP24VxrMUGCrwEavlt72DzAQCcbcPqDflRectMCu0DAUXH-4Rj4jVWnf19uOULlaUv3h2obsGky9wLGZqUOXDFriCWQiFK6-HHIgRMxaV_HxoSY1b62dKo8OLYjdYZ3vwWYgfT0yNbmo4224JePpaIQWXYI2EowGPezS9tvfmpmsI4z7gKH-6Qwz55bObgHwuJe3TwocjFeHoroKI1j0PtTp-6jAGA",
+      "value": "eyJhbGciOiJSUzI1NiIsImtpZCI6InNzb19vaWRjX2tleV9wYWlyXzAxSzJINURFTUZUVlBEWlNLSFpWQ0RHWkM4In0.eyJhdWQiOiJodHRwczovL2FwaS53b3Jrb3MuY29tL3gvYXV0aGtpdCIsImlzcyI6Imh0dHBzOi8vYXBpLndvcmtvcy5jb20veC9hdXRoa2l0Iiwic3ViIjoidXNlcl8wMUs5Q0ZROTNZQ0EwRDhBUDg1QVNEUVdLUiIsInNpZCI6InNlc3Npb25fMDFLR0sxM0ZaNjk4MVFWWEE4UEgyV0tYR1ciLCJqdGkiOiIwMUtHSzEzRzBYVFpRSEhIUFdUNEdLUEM1MiIsImV4cCI6MTc3MDE2NTUyMywiaWF0IjoxNzcwMTY1MjIzfQ.qSDjslaZxoz0Augnvp5opcm9qYHK19H6m5n1LRey2VH354Kfe8iWYgSz3UFugbELP12Sl_E9CthchG6dN0vgyN7b_76d8RDXetC4mtSswHMtIeAYLkDqxCza8W9VVRBSqFnCRNdbwQw-S8iQT41YxBX6ScnYYVj4y9okm9K7IxP3hY1_iPzsNMIq56vAQaapGSZcv8dLDobH2BjukTDCLcY1q3LQFRRK2lObns70aPICfQk3jHMUP3tEgXH1ms8WJ9zky0vvs--IZYKYPhQQSrkOyvCwHLjhCJUlYrlFslxQo8OZnDNoTaXh4AH-hh03SLL_Jl1853jvYLOZ7qVQ2A",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
-      "expires": 1769752722.56397,
+      "expires": 1770165523.617036,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "__kduid",
-      "value": "Fe26.2*1*7fb09e9b76f391933db26f478264a26c86630e9403dc2e6a2cbe2302db129418*8E4nPVsjAPywf44G5Lei5A*jBhz8SVkSs3VCyF2IGsHvUgmoKZA2Qk1Ht4ZXVcTkkUjbTN-ELdCCEroqgBPN9TFnd4r0LZm4Sc40L1a0DAKF9iRo8ojQiOnra5s9TMxBAbdj-pAwNaF4VqTAvRN9HLd*1801288422437*7da700c854afc056ee8e7e9872cea29e1c7741d9d277e50fe706ae46533fcb39*Bn7CA-Y4aj7Ycq2cyFov8oSbvq_jpU78dcC-LWERQ7U~2",
+      "value": "Fe26.2*1*b365a63491fc27d6b71c17a2b26ce645fd7897cafddfcb4615b20aa89d8e6218*eiE1nrOAeiGb272i5iwAIg*YVrqdRYArPDZytK3hzhHP9hGau3LMyT9_F_6jy-WyX7ebUa0uQXx_DpbI-aTPGIp4lltQkZv2bgR6kkTTYGWEerdC-bH0B9darD2l1_spjupvNP2lrwOdh2sFa6X1RMW*1801701223509*d6fa42e685d5a07d899ca7523c39e9e204d43f4970dedab54f16f697f0fa6ceb*mnvBCJz7Iwmu2hpgT3wu6R8yJSWA86mkbYzFu8RDKBM~2",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
-      "expires": 1801288422.563992,
+      "expires": 1801701223.61711,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "__recent_auth",
-      "value": "Fe26.2*1*0eaa19bd4b7ea816755f8cc39f486f26805a9bfc3555ad38253a9d99e10c999b*R3kwERnC_aIb5-IqwZo1PQ*US-FG-FoS4L64JXt_bgtJSk7D2J-T95bxykg1HkbC5gJosJ0YELXVCOH-jQCjB8IvqXVgai666sxmem-2gh9Ww*1770357222439*6e4d3d3bbe74905cf5c4c098d0b6c4f674af460bc32987eca322ba9b401a973f*uh6cIB2waU3lRRchlcU-BgZ0BEu_5uqm3KJa02P0te8~2",
+      "value": "Fe26.2*1*256b1d5f9dc592e798d846528f2f5abce53648b18ebbef18ed06a143df8e5f87*87ANnLmQaT2p6l8rGpNwfg*h_vC2UhDjjXDQHa5ng4kuCRUnGEaD2Fr7yjQuyaOZubRoToE_AA4Dq4K30Nm9cd_ZydiWZPQf2Df-qxc30J2TA*1770770023512*22243634e5303580d12497717a98bb3690b2a7f009cff0c9679db3140521f402*JcF2INnUACpEpA2HRplj3hzMHbG0JY3T33sTjiydz_g~2",
       "domain": "fastidious-fuchsia-08-staging.authkit.app",
       "path": "/",
-      "expires": 1770357222.564005,
+      "expires": 1770770023.617171,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "session_token",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzAxSzlDRlE5M1lDQTBEOEFQODVBU0RRV0tSIiwidXNlcklkIjoiZGZiZjExYjAtN2NkYi00NjA5LTkxM2UtNzRkZGI1NGExNTM5IiwiZW1haWwiOiJzdGV2aW8ud29uZGVyQGdtYWlsLmNvbSIsIndvcmtvc1Nlc3Npb25JZCI6InNlc3Npb25fMDFLRzZRRFNZM0tHS0MyRUEwS0RHUVo4MkgiLCJpYXQiOjE3Njk3NTI0MjIsImV4cCI6MTc3MDM1NzIyMn0.Rnt0-4MkISdhyrc1MP9vtlPeXUCoEN9JfRfJIH4X9eU",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzAxSzlDRlE5M1lDQTBEOEFQODVBU0RRV0tSIiwiZW1haWwiOiJzdGV2aW8ud29uZGVyQGdtYWlsLmNvbSIsIndvcmtvc1Nlc3Npb25JZCI6InNlc3Npb25fMDFLR0sxM0ZaNjk4MVFWWEE4UEgyV0tYR1ciLCJpYXQiOjE3NzAxNjUyMjMsImV4cCI6MTc3MDMzODAyMywiaXNzIjoiZml0LXdvcmtvdXQtYXBwIiwiYXVkIjoiZml0LXdvcmtvdXQtYXBwIn0.xj6MDMVveO61k5aHV2es-wPyAtsKlVWl75KaMfCzBxE",
       "domain": "localhost",
       "path": "/",
-      "expires": 1770357222.999348,
+      "expires": 1770338023.986804,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
     }
   ],
-  "origins": []
+  "origins": [
+    {
+      "origin": "http://localhost:8787",
+      "localStorage": [
+        {
+          "name": "theme",
+          "value": "system"
+        },
+        {
+          "name": "auth_user",
+          "value": "{\"id\":\"user_01K9CFQ93YCA0D8AP85ASDQWKR\",\"email\":\"stevio.wonder@gmail.com\",\"name\":\"stevio.wonder\",\"cachedAt\":1770165224376}"
+        }
+      ]
+    }
+  ]
 }

@@ -1,72 +1,30 @@
-import { getTokenFromCookie, verifyToken } from './auth';
-
-const SESSION_COOKIE_NAME = 'session_token';
-
-export interface Session {
+export interface SessionPayload {
+  sub: string;
   email: string;
-  workosId: string;
+  workosId?: string;
+  exp?: number;
 }
 
-function isLocalhost(request: Request): boolean {
-  const url = new URL(request.url);
-  return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-}
-
-export async function getSession(request: Request): Promise<Session | null> {
+export async function getSession(request: Request): Promise<SessionPayload | null> {
   const cookieHeader = request.headers.get('Cookie');
-  const isDev = isLocalhost(request);
-  const cookieName = isDev ? SESSION_COOKIE_NAME : `__Host-${SESSION_COOKIE_NAME}`;
-  const token = getTokenFromCookie(cookieHeader, cookieName);
+  if (!cookieHeader) return null;
 
-  if (!token) return null;
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  const sessionCookie = cookies.find(c => c.startsWith('session='));
+  if (!sessionCookie) return null;
 
-  const payload = await verifyToken(token);
-  if (!payload) return null;
-
-  return {
-    email: payload.email,
-    workosId: payload.sub,
-  };
+  const token = sessionCookie.split('=')[1];
+  
+  const { verifyToken } = await import('./auth');
+  return await verifyToken(token);
 }
 
-function getCookieName(isDev: boolean): string {
-  return isDev ? SESSION_COOKIE_NAME : `__Host-${SESSION_COOKIE_NAME}`;
-}
-
-function createSessionCookie(token: string, isDev: boolean): string {
-  const cookieName = getCookieName(isDev);
-  if (isDev) {
-    return `${cookieName}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=172800`;
-  }
-  return `${cookieName}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=172800`;
-}
-
-function createClearCookie(isDev: boolean): string {
-  const cookieName = getCookieName(isDev);
-  if (isDev) {
-    return `${cookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
-  }
-  return `${cookieName}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
-}
-
-export function createSessionResponse(token: string, request: Request, redirectTo = '/'): Response {
-  const isDev = isLocalhost(request);
+export function createSessionResponse(token: string, _request: Request, redirectPath: string): Response {
   return new Response(null, {
     status: 302,
     headers: {
-      'Set-Cookie': createSessionCookie(token, isDev),
-      'Location': redirectTo,
-    },
-  });
-}
-
-export function destroySessionResponse(request: Request, redirectTo = '/'): Response {
-  const isDev = isLocalhost(request);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Set-Cookie': createClearCookie(isDev),
-      'Location': redirectTo,
+      Location: redirectPath,
+      'Set-Cookie': `session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=604800`,
     },
   });
 }

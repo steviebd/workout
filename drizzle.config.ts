@@ -10,4 +10,7 @@ export default {
     databaseId: process.env["CLOUDFLARE_D1_DATABASE_ID"] ?? "",
     token: process.env["CLOUDFLARE_API_TOKEN"] ?? "",
   },
+  migrations: {
+    table: "__drizzle_migrations",
+  },
 } satisfies Config;

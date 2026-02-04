@@ -32,17 +32,46 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
   const [reps, setReps] = useState(() => sanitizeReps(set.reps))
   const [isEditingWeight, setIsEditingWeight] = useState(false)
   const [isEditingReps, setIsEditingReps] = useState(false)
+  const [swipeOffset, setSwipeOffset] = useState(0)
+  const [isSwiping, setIsSwiping] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const startX = useRef<number | null>(null)
   const weightInputRef = useRef<HTMLInputElement>(null)
   const repsInputRef = useRef<HTMLInputElement>(null)
 
-  const handleComplete = () => {
-    onUpdate({
-      ...set,
-      weight,
-      reps,
-      completed: !set.completed,
-    })
-  }
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isEditingWeight || isEditingReps) return;
+    startX.current = e.touches[0].clientX;
+    setIsSwiping(true);
+  }, [isEditingWeight, isEditingReps]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (startX.current === null || !isSwiping) return;
+
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX.current;
+
+    if (diff > 0 && diff < 100) {
+      setSwipeOffset(diff);
+    }
+  }, [isSwiping]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (startX.current === null) return;
+
+    if (swipeOffset >= 50) {
+      onUpdate({
+        ...set,
+        weight,
+        reps,
+        completed: !set.completed,
+      });
+    }
+
+    setSwipeOffset(0);
+    setIsSwiping(false);
+    startX.current = null;
+  }, [swipeOffset, set, weight, reps, onUpdate]);
 
   const adjustWeight = useCallback((delta: number) => {
     const newWeight = Math.max(0, weight + delta)
@@ -136,29 +165,61 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
 
   return (
     <div
+      ref={containerRef}
       className={cn(
-        'flex items-center gap-3 rounded-lg border p-3 transition-all',
+        'rounded-lg border p-2 sm:p-3 transition-all relative overflow-hidden',
         set.completed
           ? 'border-success/50 bg-success/10'
-          : 'border-border bg-secondary/30'
+          : 'border-border bg-secondary/30',
+        isSwiping && 'cursor-grab active:cursor-grabbing'
       )}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        transform: `translateX(${Math.min(swipeOffset * 0.5, 60)}px)`,
+        transition: isSwiping ? 'none' : undefined,
+        touchAction: 'pan-y',
+      }}
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
-        {setNumber}
+      <div
+        className={cn(
+          'rounded-lg border p-1.5 sm:p-3 transition-all relative overflow-hidden',
+          set.completed
+            ? 'border-success/50 bg-success/10'
+            : 'border-border bg-secondary/30',
+          isSwiping && 'cursor-grab active:cursor-grabbing'
+        )}
+      >
+        <div className={cn(
+          'h-10 w-10 rounded-full flex items-center justify-center',
+          set.completed ? 'bg-success/20' : 'bg-primary/20'
+        )}
+        >
+          <Check className={cn(
+            'h-5 w-5',
+            set.completed ? 'text-success' : 'text-primary'
+          )}
+          />
+        </div>
       </div>
+      <div className="flex items-center justify-between gap-1">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-semibold shrink-0 sm:h-10 sm:w-10 sm:text-sm">
+          {setNumber}
+        </div>
 
-      <div className="flex flex-1 items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <button
             onClick={handleWeightDecrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            aria-label="Decrease weight"
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
           <div
             className={cn(
-              'w-20 text-center cursor-pointer rounded px-2 py-1 transition-colors',
-              isEditingWeight ? 'bg-background' : 'hover:bg-secondary/50'
+              'w-10 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-16 sm:px-2 sm:h-10 sm:rounded-lg',
+              isEditingWeight ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
             )}
             onClick={startEditingWeight}
             onKeyDown={(e) => {
@@ -169,11 +230,12 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             }}
             role="button"
             tabIndex={0}
+            aria-label="Edit weight"
           >
             {isEditingWeight ? (
               <input
                 ref={weightInputRef}
-                className="w-full text-lg font-bold text-center outline-none"
+                className="w-full text-xs font-bold text-center outline-none bg-transparent sm:text-sm sm:font-semibold"
                 onBlur={handleWeightBlur}
                 onChange={handleWeightChange}
                 onKeyDown={handleWeightKeyDown}
@@ -184,30 +246,32 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
               />
             ) : (
               <>
-                <span className="text-lg font-bold">{weight}</span>
-                <span className="text-xs text-muted-foreground ml-0.5">{weightUnit}</span>
+                <span className="text-xs font-bold sm:text-sm sm:font-semibold">{weight}</span>
+                <span className="text-[8px] text-muted-foreground ml-0.5 sm:text-[10px]">{weightUnit}</span>
               </>
             )}
           </div>
           <button
             onClick={handleWeightIncrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            aria-label="Increase weight"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
-        </div>
 
-        <div className="flex items-center gap-2">
+          <div className="w-1 sm:w-3" />
+
           <button
             onClick={handleRepsDecrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            aria-label="Decrease reps"
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
           <div
             className={cn(
-              'w-16 text-center cursor-pointer rounded px-2 py-1 transition-colors',
-              isEditingReps ? 'bg-background' : 'hover:bg-secondary/50'
+              'w-8 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-12 sm:h-10 sm:rounded-lg',
+              isEditingReps ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
             )}
             onClick={startEditingReps}
             onKeyDown={(e) => {
@@ -218,11 +282,12 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             }}
             role="button"
             tabIndex={0}
+            aria-label="Edit reps"
           >
             {isEditingReps ? (
               <input
                 ref={repsInputRef}
-                className="w-full text-lg font-bold text-center outline-none"
+                className="w-full text-xs font-bold text-center outline-none bg-transparent sm:text-sm sm:font-semibold"
                 onBlur={handleRepsBlur}
                 onChange={handleRepsChange}
                 onKeyDown={handleRepsKeyDown}
@@ -232,32 +297,37 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
                 pattern="[0-9]*"
               />
             ) : (
-              <>
-                <span className="text-lg font-bold">{reps}</span>
-                <span className="text-xs text-muted-foreground ml-0.5">reps</span>
-              </>
+              <span className="text-xs font-bold sm:text-sm sm:font-semibold">{reps}</span>
             )}
           </div>
           <button
             onClick={handleRepsIncrease}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            aria-label="Increase reps"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
         </div>
-      </div>
 
-      <Button
-        size="icon"
-        variant={set.completed ? 'default' : 'outline'}
-        onClick={handleComplete}
-        className={cn(
-          'h-10 w-10 rounded-full',
-          set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
-        )}
-      >
-        <Check className="h-5 w-5" />
-      </Button>
+        <Button
+          size="icon"
+          variant={set.completed ? 'default' : 'outline'}
+          onClick={() => {
+            onUpdate({
+              ...set,
+              weight,
+              reps,
+              completed: !set.completed,
+            })
+          }}
+          className={cn(
+            'h-7 w-7 rounded-full sm:h-10 sm:w-10',
+            set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
+          )}
+        >
+          <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+        </Button>
+      </div>
     </div>
   )
 }

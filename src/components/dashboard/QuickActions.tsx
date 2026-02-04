@@ -36,7 +36,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
         throw new Error(errorData.error ?? 'Failed to fetch template')
       }
 
-      const templateData = await response.json() as { name: string }
+      const templateData = await response.json() as { name: string };
 
       const createResponse = await fetch('/api/workouts', {
         method: 'POST',
@@ -91,13 +91,13 @@ export function QuickActions({ templates }: QuickActionsProps) {
             <div className="flex flex-col gap-2">
               <Button asChild={true} className="w-full">
                 <Link to="/programs">
-                  <Calendar className="mr-2 h-4 w-4" />
+                  <Calendar className="mr-2 h-5 w-5" />
                   Browse Programs
                 </Link>
               </Button>
               <Button asChild={true} variant="outline" className="w-full bg-transparent">
                 <Link to="/1rm-test">
-                  <Dumbbell className="mr-2 h-4 w-4" />
+                  <Dumbbell className="mr-2 h-5 w-5" />
                   Test Your 1RM
                 </Link>
               </Button>
@@ -106,14 +106,14 @@ export function QuickActions({ templates }: QuickActionsProps) {
 
           <div className="flex gap-2 pt-2">
             <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-              <Link to="/workouts/new">
-                <Plus className="mr-2 h-4 w-4" />
+              <Link to="/workouts">
+<Plus className="mr-2 h-5 w-5" />
                 New Workout
               </Link>
             </Button>
             <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
               <Link to="/history">
-                <History className="mr-2 h-4 w-4" />
+<History className="mr-2 h-5 w-5" />
                 History
               </Link>
             </Button>
@@ -138,7 +138,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="group flex w-full items-center justify-between rounded-lg border border-border bg-secondary/30 p-3 active:scale-95 transition-all hover:border-primary/50 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex w-full items-center justify-between rounded-lg border border-border bg-secondary/30 p-3 transition-colors hover:border-primary/50 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="text-left">
               <p className="font-medium group-hover:text-primary transition-colors">
@@ -149,16 +149,16 @@ export function QuickActions({ templates }: QuickActionsProps) {
               </p>
             </div>
             {loadingTemplateId === template.id ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             ) : (
-              <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <Play className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
             )}
           </button>
         ))}
 
         <div className="flex gap-2 pt-2">
           <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-            <Link to="/workouts/new">
+            <Link to="/workouts">
               <Plus className="mr-2 h-4 w-4" />
               New Workout
             </Link>

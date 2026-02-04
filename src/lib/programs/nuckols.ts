@@ -11,6 +11,7 @@ const nuckolsInfo = {
   estimatedWeeks: 8,
   totalSessions: 32,
   mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
+  category: 'general-strength' as const,
 };
 
 const WAVE_1 = {
@@ -50,8 +51,8 @@ function calculateTargetWeight(
   week: number,
   session: number,
   _lift: string,
-  isT2: boolean = false,
-  waveNumber: number = 1
+  isT2 = false,
+  waveNumber = 1
 ): number {
   const trainingMax = estimatedOneRM * TRAINING_MAX_PERCENTAGE;
   const wave = waveNumber === 1 ? WAVE_1 : WAVE_2;

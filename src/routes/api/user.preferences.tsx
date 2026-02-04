@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/user/preferences')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/user/preferences')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const prefs = await getUserPreferences(db, session.workosId);
+          const prefs = await getUserPreferences(db, session.sub);
           if (!prefs) {
             return Response.json({ weightUnit: 'kg', dateFormat: 'dd/mm/yyyy', theme: 'light' });
           }

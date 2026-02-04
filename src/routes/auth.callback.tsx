@@ -24,12 +24,12 @@ function Callback() {
   if (error) {
     return (
       <main className="mx-auto max-w-lg px-4 py-6">
-        <div className={'min-h-[50vh] flex items-center justify-center'}>
-          <div className={'text-center'}>
-            <h1 className={'text-xl font-semibold text-destructive mb-2'}>{'Authentication Failed'}</h1>
-            <p className={'text-muted-foreground'}>{error}</p>
-            <a className={'text-primary hover:underline mt-4 block'} href={'/auth/signin'}>
-              {'Try again'}
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold text-destructive mb-2">Authentication Failed</h1>
+            <p className="text-muted-foreground">{error}</p>
+            <a className="text-primary hover:underline mt-4 block" href="/auth/signin">
+              Try again
             </a>
           </div>
         </div>
@@ -39,8 +39,8 @@ function Callback() {
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
-      <div className={'min-h-[50vh] flex items-center justify-center'}>
-        <p className={'text-muted-foreground'}>{'Completing sign in...'}</p>
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-muted-foreground">Completing sign in...</p>
       </div>
     </main>
   );

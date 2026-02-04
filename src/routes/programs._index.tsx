@@ -1,31 +1,58 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
+import type { ProgramCategory } from '~/lib/programs/types';
 import { getAllPrograms } from '~/lib/programs';
 import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
+import { Tabs, TabsList, TabsTrigger } from '~/components/ui/Tabs';
 
 function ProgramsIndex() {
   const programs = getAllPrograms();
+  const [activeCategory, setActiveCategory] = useState<ProgramCategory | 'all'>('all');
 
-  const difficultyColors: Record<string, 'default' | 'secondary' | 'outline'> = {
-    beginner: 'default',
-    intermediate: 'secondary',
-    advanced: 'outline',
+  const categories: Array<{ value: ProgramCategory | 'all'; label: string }> = [
+    { value: 'all', label: 'All' },
+    { value: 'powerlifting', label: 'Powerlifting' },
+    { value: 'general-strength', label: 'General Strength' },
+    { value: "women's", label: "Women's" },
+  ];
+
+  const categoryColors: Record<ProgramCategory, 'default' | 'secondary' | 'outline'> = {
+    powerlifting: 'outline',
+    'general-strength': 'secondary',
+    "women's": 'default',
   };
+
+  const filteredPrograms = activeCategory === 'all'
+    ? programs
+    : programs.filter((p) => p.category === activeCategory);
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      <PageHeader title="Powerlifting Programs" subtitle="Train with proven programs" />
+      <PageHeader title="Programs" subtitle="Train with proven programs" />
+
+      <div className="px-4">
+        <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as ProgramCategory | 'all')}>
+          <TabsList className="w-full justify-start overflow-x-auto">
+            {categories.map((cat) => (
+              <TabsTrigger key={cat.value} value={cat.value}>
+                {cat.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="grid gap-4 px-4">
-        {programs.map((program) => (
-          <Link key={program.slug} to="/programs/$slug" params={{ slug: program.slug }}>
+        {filteredPrograms.map((program) => (
+          <Link key={program.slug} to="/programs/$slug/start" params={{ slug: program.slug }}>
             <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <h3 className="font-semibold text-lg truncate">{program.name}</h3>
-                  <Badge variant={difficultyColors[program.difficulty]}>
-                    {program.difficulty}
+                  <Badge variant={categoryColors[program.category]}>
+                    {program.category === "women's" ? "Women's" : program.category}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{program.description}</p>

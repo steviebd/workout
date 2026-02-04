@@ -16,7 +16,7 @@ function getJwtSecret(): Uint8Array {
 export type SessionPayload = JWTPayload & {
   sub: string;
   email: string;
-  workosSessionId?: string;
+  workosId?: string;
 }
 
 export interface UserFromWorkOS {
@@ -26,11 +26,11 @@ export interface UserFromWorkOS {
   lastName: string;
 }
 
-export async function createToken(user: UserFromWorkOS, workosSessionId?: string): Promise<string> {
+export async function createToken(user: UserFromWorkOS, workosId?: string): Promise<string> {
   const token = await new SignJWT({
     sub: user.id,
     email: user.email,
-    workosSessionId,
+    workosId,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

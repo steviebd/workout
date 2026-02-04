@@ -3,13 +3,15 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { EmptyTemplates } from '@/components/EmptyState';
-import { SkeletonList } from '@/components/LoadingSpinner';
+import { EmptyTemplates } from '@/components/ui/EmptyState';
+import { SkeletonList } from '@/components/ui/Skeleton';
+import { InlineError } from '@/components/ui/ErrorState';
 import { Card, CardContent } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Badge } from '~/components/ui/Badge';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 type Template = {
   id: string;
@@ -108,8 +110,12 @@ function Templates() {
 
   return (
     <>
-      {error ? <div className="text-destructive px-4 pt-4">{error}</div> : null}
-      <main className="mx-auto max-w-lg px-4 py-6">
+      {error ? (
+        <div className="px-4 pt-4">
+          <InlineError message={error} onRetry={() => void fetchTemplates()} onDismiss={() => setError(null)} />
+        </div>
+      ) : null}
+      <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Templates</h1>
           <Button asChild={true} size="sm">
@@ -133,68 +139,70 @@ function Templates() {
           </div>
         </div>
 
-        {loading ? (
-          <SkeletonList count={4} />
-        ) : templates.length === 0 ? (
-          <EmptyTemplates
-            searchActive={!!search}
-            onCreate={handleCreateTemplate}
-          />
-        ) : (
-          <div className="space-y-3">
-            {templates.map((template) => (
-              <Card key={template.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <Link
-                      className="font-semibold hover:text-primary"
-                      to="/templates/$id"
-                      params={{ id: template.id }}
-                    >
-                      {template.name}
-                    </Link>
-                    <Badge variant="secondary">
-                      {template.exerciseCount} exercises
-                    </Badge>
-                  </div>
-                  {template.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{template.description}</p> : null}
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      {formatDate(template.createdAt)}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                        data-id={template.id}
-                        onClick={handleDeleteClick}
-                        title="Delete template"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
+        <PullToRefresh onRefresh={fetchTemplates}>
+          {loading ? (
+            <SkeletonList count={4} />
+          ) : templates.length === 0 ? (
+            <EmptyTemplates
+              searchActive={!!search}
+              onCreate={handleCreateTemplate}
+            />
+          ) : (
+            <div className="space-y-3">
+              {templates.map((template) => (
+                <Card key={template.id} className="overflow-hidden touch-manipulation">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
                       <Link
-                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        to="/templates/$id/edit"
+                        className="font-semibold hover:text-primary"
+                        to="/templates/$id"
                         params={{ id: template.id }}
-                        title="Edit template"
                       >
-                        <Edit className="h-4 w-4" />
+                        {template.name}
                       </Link>
-                      <button
-                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                        data-id={template.id}
-                        onClick={handleDeleteClick}
-                        title="Delete template"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <Badge variant="secondary">
+                        {template.exerciseCount} exercises
+                      </Badge>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    {template.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{template.description}</p> : null}
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {formatDate(template.createdAt)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          data-id={template.id}
+                          onClick={handleDeleteClick}
+                          title="Delete template"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                        <Link
+                          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          to="/templates/$id/edit"
+                          params={{ id: template.id }}
+                          title="Edit template"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          data-id={template.id}
+                          onClick={handleDeleteClick}
+                          title="Delete template"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </PullToRefresh>
       </main>
 
     </>

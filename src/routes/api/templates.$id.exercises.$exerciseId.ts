@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')
       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')
              db,
              id,
              exerciseId,
-             session.workosId
+             session.sub
            );
 
           if (!removed) {
