@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
       POST: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -41,12 +41,12 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           const actualDate = requestBody.actualDate ? new Date(requestBody.actualDate).toISOString() : new Date().toISOString();
           const actualDateOnly = actualDate.split('T')[0];
 
-          console.log('Start workout - params.id:', params.id, 'session.workosId:', session.workosId, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
+          console.log('Start workout - params.id:', params.id, 'session.sub:', session.sub, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
           const [cycle, currentWorkout] = await Promise.all([
-            getProgramCycleById(db, params.id, session.workosId),
+            getProgramCycleById(db, params.id, session.sub),
             requestBody.programCycleWorkoutId 
-              ? getProgramCycleWorkoutById(db, requestBody.programCycleWorkoutId, session.workosId)
-              : getCurrentWorkout(db, params.id, session.workosId),
+              ? getProgramCycleWorkoutById(db, requestBody.programCycleWorkoutId, session.sub)
+              : getCurrentWorkout(db, params.id, session.sub),
           ]);
 
           console.log('Start workout - cycle:', cycle?.id, 'currentWorkout:', currentWorkout?.id);
@@ -70,15 +70,15 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           console.log('Start workout - currentWorkout id:', currentWorkout.id, 'templateId:', currentWorkout.templateId);
           if (!templateId) {
             console.log('Start workout - calling generateTemplateFromWorkout');
-            templateId = await generateTemplateFromWorkout(db, session.workosId, currentWorkout, cycle);
+            templateId = await generateTemplateFromWorkout(db, session.sub, currentWorkout, cycle);
             console.log('Start workout - generateTemplateFromWorkout returned:', templateId);
           } else {
             console.log('Start workout - using existing templateId:', templateId);
           }
 
           const [templateResult, templateExercises] = await Promise.all([
-            getTemplateById(db, templateId, session.workosId),
-            getTemplateExercises(db, templateId, session.workosId),
+            getTemplateById(db, templateId, session.sub),
+            getTemplateExercises(db, templateId, session.sub),
           ]);
 
           console.log('Start workout - templateResult:', templateResult?.id, 'templateExercises count:', templateExercises.length);
@@ -91,7 +91,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           const template = templateResult;
 
           const workout = await createWorkout(db, {
-            workosId: session.workosId,
+            workosId: session.sub,
             templateId: template.id,
             programCycleId: template.programCycleId ?? undefined,
             name: template.name,
@@ -143,7 +143,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             await drizzleDb.insert(workoutSets).values(batch).run();
           }
 
-          await updateProgramCycleProgress(db, params.id, session.workosId, {
+          await updateProgramCycleProgress(db, params.id, session.sub, {
             currentWeek: currentWorkout.weekNumber,
             currentSession: currentWorkout.sessionNumber,
           });

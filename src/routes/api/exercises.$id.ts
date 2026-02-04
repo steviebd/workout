@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
       GET: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const exercise = await getExerciseById(db, params.id, session.workosId);
+           const exercise = await getExerciseById(db, params.id, session.sub);
 
           if (!exercise) {
             return Response.json({ error: 'Exercise not found' }, { status: 404 });
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -45,7 +45,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const exercise = await updateExercise(db, params.id, session.workosId, {
+           const exercise = await updateExercise(db, params.id, session.sub, {
             name,
             muscleGroup,
             description,
@@ -64,7 +64,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/api/exercises/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const deleted = await softDeleteExercise(db, params.id, session.workosId);
+           const deleted = await softDeleteExercise(db, params.id, session.sub);
 
           if (!deleted) {
             return Response.json({ error: 'Exercise not found' }, { status: 404 });

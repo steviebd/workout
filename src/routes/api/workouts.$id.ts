@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
       GET: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -33,18 +33,18 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-            const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
+            const workout = await getWorkoutWithExercises(db, params.id, session.sub);
 
            if (!workout) {
-             console.log('API: Workout not found for id:', params.id, 'workosId:', session.workosId);
+             console.log('API: Workout not found for id:', params.id, 'workosId:', session.sub);
              return Response.json({ error: 'Workout not found' }, { status: 404 });
            }
 
              console.log('API: Workout found:', {
                workoutId: workout.id,
                workoutWorkosId: workout.workosId,
-               requestWorkosId: session.workosId,
-               match: workout.workosId === session.workosId,
+               requestWorkosId: session.sub,
+               match: workout.workosId === session.sub,
              });
 
           const response = {
@@ -88,7 +88,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -100,7 +100,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const workout = await updateWorkout(db, params.id, session.workosId, {
+           const workout = await updateWorkout(db, params.id, session.sub, {
             name,
             notes,
             completedAt,
@@ -119,7 +119,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
        DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -128,7 +128,7 @@ export const Route = createFileRoute('/api/workouts/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const deleted = await deleteWorkout(db, params.id, session.workosId);
+           const deleted = await deleteWorkout(db, params.id, session.sub);
 
           if (!deleted) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });

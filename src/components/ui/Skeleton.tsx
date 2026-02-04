@@ -163,3 +163,75 @@ export function SkeletonTemplateCard(): ReactNode {
     </div>
   );
 }
+
+export function SkeletonProgramCard(): ReactNode {
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div>
+            <Skeleton className="h-5 w-40 mb-1" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-5 w-5 rounded" />
+      </div>
+    </div>
+  );
+}
+
+export function SkeletonExerciseCardMini(): ReactNode {
+  return (
+    <div className="bg-card border border-border rounded-lg p-3 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-4 w-32 mb-1" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <Skeleton className="h-4 w-4 rounded" />
+      </div>
+    </div>
+  );
+}
+
+export function SkeletonWorkoutsPage(): ReactNode {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <Skeleton className="h-8 w-32 rounded" />
+      <div>
+        <Skeleton className="h-6 w-40 mb-4" />
+        <div className="space-y-3">
+          <SkeletonProgramCard />
+          <SkeletonProgramCard />
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-8 w-36 rounded-lg" />
+        </div>
+        <div className="space-y-3">
+          <SkeletonTemplateCard />
+          <SkeletonTemplateCard />
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-8 w-36 rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <SkeletonExerciseCardMini />
+          <SkeletonExerciseCardMini />
+          <SkeletonExerciseCardMini />
+        </div>
+      </div>
+      <div>
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+}

@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/progress/volume')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/api/progress/volume')({
             ? exerciseId
             : undefined;
 
-           const weeklyVolume = await getWeeklyVolume(db, session.workosId, {
+           const weeklyVolume = await getWeeklyVolume(db, session.sub, {
             fromDate,
             toDate,
             exerciseId: exerciseFilter,

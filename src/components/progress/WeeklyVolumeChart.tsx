@@ -6,6 +6,15 @@ import { Dumbbell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UnitContext'
 
+const BarShape = (props: React.SVGProps<SVGRectElement>) => {
+  return (
+    <rect
+      {...props}
+      fill="url(#barGradient)"
+    />
+  )
+}
+
 interface WeeklyVolume {
   week: string
   volume: number
@@ -105,9 +114,11 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
                   />
                   <Bar
                     dataKey="volume"
-                    fill="url(#barGradient)"
+                    shape={<BarShape />}
                     radius={[6, 6, 0, 0]}
                     animationDuration={500}
+                    isAnimationActive={false}
+                    activeBar={{ fill: 'url(#barGradient)' }}
                   />
                 </BarChart>
               </ResponsiveContainer>

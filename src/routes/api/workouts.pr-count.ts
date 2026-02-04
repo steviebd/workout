@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/workouts/pr-count')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/workouts/pr-count')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const count = await getPrCount(db, session.workosId);
+           const count = await getPrCount(db, session.sub);
 
           return Response.json({ count });
         } catch (err) {

@@ -50,7 +50,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
       GET: async ({ params, request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -71,7 +71,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
               ohp1rm: userProgramCycles.ohp1rm,
             })
             .from(userProgramCycles)
-            .where(and(eq(userProgramCycles.id, params.id), eq(userProgramCycles.workosId, session.workosId)))
+            .where(and(eq(userProgramCycles.id, params.id), eq(userProgramCycles.workosId, session.sub)))
             .get();
 
           if (!cycle) {
@@ -91,7 +91,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
             .from(programCycleWorkouts)
             .leftJoin(templates, and(
               eq(programCycleWorkouts.templateId, templates.id),
-              eq(templates.workosId, session.workosId)
+              eq(templates.workosId, session.sub)
             ))
             .where(and(
               eq(programCycleWorkouts.cycleId, params.id),

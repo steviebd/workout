@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -78,10 +78,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const workoutSet = await updateWorkoutSet(db, params.setId, session.workosId, updateData as Partial<NewWorkoutSet>);
+           const workoutSet = await updateWorkoutSet(db, params.setId, session.sub, updateData as Partial<NewWorkoutSet>);
 
           if (!workoutSet) {
-             console.warn('Set not found or does not belong to user:', { setId: params.setId, workosId: session.workosId });
+             console.warn('Set not found or does not belong to user:', { setId: params.setId, workosId: session.sub });
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
        DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -108,10 +108,10 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const deleted = await deleteWorkoutSet(db, params.setId, session.workosId);
+           const deleted = await deleteWorkoutSet(db, params.setId, session.sub);
 
           if (!deleted) {
-             console.warn('Delete set failed - not found or does not belong to user:', { setId: params.setId, workosId: session.workosId });
+             console.warn('Delete set failed - not found or does not belong to user:', { setId: params.setId, workosId: session.sub });
             return Response.json({ error: 'Set not found or does not belong to you' }, { status: 404 });
           }
 

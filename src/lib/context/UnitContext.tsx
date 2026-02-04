@@ -1,7 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { type WeightUnit } from '../units';
+
+interface PreferencesApiData {
+  weightUnit?: WeightUnit;
+  dateFormat?: 'dd/mm/yyyy' | 'mm/dd/yyyy';
+  weeklyWorkoutTarget?: number;
+}
 
 interface UnitContextType {
   weightUnit: WeightUnit;
@@ -9,9 +16,16 @@ interface UnitContextType {
   convertWeight: (weight: number, toUnit?: WeightUnit) => number;
   formatWeight: (weight: number) => string;
   formatVolume: (volumeKg: number) => string;
+  loading: boolean;
 }
 
 const UnitContext = createContext<UnitContextType | null>(null);
+
+async function fetchPreferences(): Promise<PreferencesApiData> {
+  const res = await fetch('/api/preferences', { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to fetch preferences');
+  return res.json();
+}
 
 export function useUnit() {
   const context = useContext(UnitContext);
@@ -28,29 +42,16 @@ interface UnitProviderProps {
 }
 
 export function UnitProvider({ children, initialUnit = 'kg', userId }: UnitProviderProps) {
-  const [weightUnit, setWeightUnitState] = useState<WeightUnit>(initialUnit);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    async function fetchPreferences() {
-      if (!userId) return;
-      
-      try {
-        const res = await fetch('/api/preferences', {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const prefs: { weightUnit?: WeightUnit } = await res.json();
-          if (prefs.weightUnit) {
-            setWeightUnitState(prefs.weightUnit);
-          }
-        }
-      } catch {
-        console.error('Failed to fetch unit preferences');
-      }
-    }
+  const { data, isLoading } = useQuery<PreferencesApiData>({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+  });
 
-    void fetchPreferences();
-  }, [userId]);
+  const weightUnit = data?.weightUnit ?? initialUnit;
 
   const setWeightUnit = useCallback(async (unit: WeightUnit) => {
     try {
@@ -61,12 +62,15 @@ export function UnitProvider({ children, initialUnit = 'kg', userId }: UnitProvi
         body: JSON.stringify({ weightUnit: unit }),
       });
       if (res.ok) {
-        setWeightUnitState(unit);
+        queryClient.setQueryData<PreferencesApiData>(['preferences'], (old) => ({
+          ...old,
+          weightUnit: unit,
+        }));
       }
     } catch (err) {
       console.error('Failed to update weight unit:', err);
     }
-  }, []);
+  }, [queryClient]);
 
   const convertWeight = useCallback((weight: number, toUnit?: WeightUnit): number => {
     const target = toUnit ?? weightUnit;
@@ -95,6 +99,7 @@ export function UnitProvider({ children, initialUnit = 'kg', userId }: UnitProvi
         convertWeight,
         formatWeight,
         formatVolume,
+        loading: isLoading,
       }}
     >
       {children}

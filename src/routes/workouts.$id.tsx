@@ -10,7 +10,8 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
@@ -27,534 +28,321 @@ import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { ErrorState } from '@/components/ui/ErrorState';
-
+import { Skeleton } from '~/components/ui/Skeleton';
 
 interface WorkoutExercise {
-   id: string;
-   exerciseId: string;
-   name: string;
-   muscleGroup: string | null;
-   orderIndex: number;
-   sets: WorkoutSet[];
-   notes: string | null;
-   isAmrap: boolean;
- }
+  id: string;
+  exerciseId: string;
+  name: string;
+  muscleGroup: string | null;
+  orderIndex: number;
+  sets: WorkoutSet[];
+  notes: string | null;
+  isAmrap: boolean;
+}
 
 interface WorkoutSet {
-    id: string;
-    workoutExerciseId: string;
-    setNumber: number;
-    weight: number | null;
-    reps: number | null;
-    rpe: number | null;
-    isComplete: boolean;
-    completedAt: string | null;
-    createdAt: string | null;
-  }
+  id: string;
+  workoutExerciseId: string;
+  setNumber: number;
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+  isComplete: boolean;
+  completedAt: string | null;
+  createdAt: string | null;
+}
 
 interface Exercise {
-   id: string;
-   name: string;
-   muscleGroup: string | null;
- }
-
-interface NewWorkoutExerciseResponse {
-   id: string;
-   notes: string | null;
- }
-
-interface ApiError {
-   message?: string;
- }
+  id: string;
+  name: string;
+  muscleGroup: string | null;
+}
 
 function WorkoutSession() {
   const auth = useAuth();
   const router = useRouter();
   const params = useParams({ from: '/workouts/$id' });
+  const workoutId = params.id;
   const toast = useToast();
   const { formatDate } = useDateFormat();
-  const [workoutId, setWorkoutId] = useState<string | null>(null);
-  const [workoutName, setWorkoutName] = useState('');
-  const [startedAt, setStartedAt] = useState('');
-  const [programCycleId, setProgramCycleId] = useState<string | null>(null);
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const queryClient = useQueryClient();
+
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
-  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
-  const [completing, setCompleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState('');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showIncompleteSetsConfirm, setShowIncompleteSetsConfirm] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
-  const fetchedRef = useRef(false);
-  const redirectingRef = useRef(false);
 
-  const filteredExercises = availableExercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&
-    !exercises.some((e) => e.exerciseId === exercise.id)
-  );
+  const { data: workout, isLoading: workoutLoading, error: workoutError } = useQuery<Workout>({
+    throwOnError: false,
+    queryKey: ['workout', workoutId],
+    queryFn: async () => {
+      if (!workoutId) throw new Error('No workout ID');
+      const res = await fetch(`/api/workouts/${workoutId}`, { credentials: 'include' });
+      if (!res.ok) {
+        let errorData: { error?: string } = { error: 'Workout not found' };
+        try {
+          errorData = await res.json();
+        } catch {
+          // Use default error message
+        }
+        throw new Error(errorData.error ?? 'Workout not found');
+      }
+      return res.json();
+    },
+    enabled: !!workoutId && !!auth.user,
+    retry: false,
+  });
 
-  const handleUpdateSet = useCallback(async (
-    exerciseId: string,
-    setId: string,
-    updates: Partial<WorkoutSet>
-  ) => {
-    const cleanUpdates = Object.fromEntries(
-      Object.entries(updates)
-    ) as Record<string, number | null | boolean>;
+  const { data: exercises = [] } = useQuery<WorkoutExercise[]>({
+    queryKey: ['workout-exercises', workoutId],
+    queryFn: async () => {
+      if (!workoutId) return [];
+      const res = await fetch(`/api/workouts/${workoutId}/exercises`, { credentials: 'include' });
+      if (!res.ok) return [];
+      const data: WorkoutExerciseWithDetails[] = await res.json();
+      return data.map((e) => ({
+        id: e.id,
+        exerciseId: e.exerciseId,
+        orderIndex: e.orderIndex,
+        notes: e.notes,
+        name: e.exercise?.name ?? '',
+        muscleGroup: e.exercise?.muscleGroup ?? null,
+        sets: e.sets as WorkoutSet[],
+        isAmrap: e.isAmrap,
+      }));
+    },
+    enabled: !!workoutId && !!auth.user,
+  });
 
-    if (cleanUpdates.weight !== null && (cleanUpdates.weight as number) < 0) return;
-    if (cleanUpdates.reps !== null && (cleanUpdates.reps as number) < 0) return;
-    if (cleanUpdates.rpe !== null && (cleanUpdates.rpe as number) < 0) return;
+  const { data: availableExercises = [], isLoading: availableExercisesLoading } = useQuery<Exercise[]>({
+    queryKey: ['exercises'],
+    queryFn: async () => {
+      const res = await fetch('/api/exercises', { credentials: 'include' });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!auth.user,
+    staleTime: 30 * 1000,
+  });
 
-    try {
+  useEffect(() => {
+    if (!auth.loading && !auth.user) {
+      window.location.href = '/auth/signin';
+    }
+  }, [auth.loading, auth.user]);
+
+  useEffect(() => {
+    if (workout?.completedAt && workoutId) {
+      void router.navigate({ to: `/workouts/${workoutId}/summary`, replace: true });
+    }
+  }, [workout?.completedAt, workoutId, router]);
+
+  const updateSetMutation = useMutation({
+    mutationFn: async ({ setId, updates }: { setId: string; updates: Partial<WorkoutSet> }) => {
       const res = await fetch(`/api/workouts/sets/${setId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(cleanUpdates),
+        body: JSON.stringify(updates),
       });
+      if (!res.ok) throw new Error('Failed to update set');
+      return res.json();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
+    },
+  });
 
-      if (res.ok) {
-        setExercises(
-          exercises.map((e) =>
-            e.exerciseId === exerciseId
-              ? {
-                  ...e,
-                  sets: e.sets.map((s: WorkoutSet) =>
-                    s.id === setId ? { ...s, ...cleanUpdates } : s
-                  ),
-                }
-              : e
-          )
-        );
-      } else if (res.status === 404) {
-        toast.error('Set not found. Please refresh and try again.');
-      }
-    } catch (err) {
-      console.error('Failed to update set:', err);
-      setError('Failed to update set');
-      toast.error('Failed to update set');
-    }
-  }, [exercises, toast]);
+  const addSetMutation = useMutation({
+    mutationFn: async ({ workoutExerciseId, setNumber, weight, reps, rpe }: { workoutExerciseId: string; setNumber: number; weight?: number | null; reps?: number | null; rpe?: number | null }) => {
+      const res = await fetch('/api/workouts/sets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ workoutExerciseId, setNumber, weight, reps, rpe }),
+      });
+      if (!res.ok) throw new Error('Failed to add set');
+      return res.json();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
+    },
+  });
 
-  const addSetToBackend = useCallback(async (
-    workoutExerciseId: string,
-    setNumber: number,
-    weight?: number | null,
-    reps?: number | null,
-    rpe?: number | null
-  ): Promise<WorkoutSet | null> => {
-    const res = await fetch('/api/workouts/sets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        workoutExerciseId,
-        setNumber,
-        weight,
-        reps,
-        rpe,
-      }),
-    });
-
-    if (res.ok) {
-      const newSet: WorkoutSet = await res.json();
-      return newSet;
-    }
-
-    return null;
-  }, []);
-
-  const handleAddSet = useCallback(async (
-    exerciseId: string,
-    _currentSets: Array<{ id: string; reps: number; weight: number; completed: boolean }>
-  ) => {
-    const exercise = exercises.find(e => e.exerciseId === exerciseId);
-    if (!exercise) return;
-    
-    const setNumber = exercise.sets.length + 1;
-    const lastSet = exercise.sets[exercise.sets.length - 1];
-    
-    const newSet = await addSetToBackend(exercise.id, setNumber, lastSet.weight, lastSet.reps, null);
-    
-    if (newSet) {
-      setExercises(prev => prev.map(e => {
-        if (e.exerciseId === exerciseId) {
-          return {
-            ...e,
-            sets: [...e.sets, newSet]
-          };
-        }
-        return e;
-      }));
-    }
-  }, [exercises, addSetToBackend]);
-
-  const handleAddExercise = useCallback(async (exercise: Exercise) => {
-    const orderIndex = exercises.length;
-
-    try {
+  const addExerciseMutation = useMutation({
+    mutationFn: async ({ exerciseId, orderIndex }: { exerciseId: string; orderIndex: number }) => {
       const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          exerciseId: exercise.id,
-          orderIndex,
-        }),
+        body: JSON.stringify({ exerciseId, orderIndex }),
       });
+      if (!res.ok) throw new Error('Failed to add exercise');
+      return res.json();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
+    },
+  });
 
-      if (res.ok) {
-        const newExerciseData: NewWorkoutExerciseResponse = await res.json();
+  const completeWorkoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/workouts/${workoutId}/complete`, {
+        method: 'PUT',
+        credentials: 'include',
+      });
+       if (!res.ok) {
+         let errorData: { message?: string } = { message: 'Failed to complete workout' };
+         try {
+           errorData = await res.json();
+         } catch {
+           // Use default error message
+         }
+         throw new Error(errorData.message ?? 'Failed to complete workout');
+       }
+      return res.json();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
+      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
+      void queryClient.invalidateQueries({ queryKey: ['streak'] });
+    },
+  });
 
-        const lastWorkoutSetsRes = await fetch(`/api/exercises/${exercise.id}/last-workout-sets`, {
-          credentials: 'include',
-        });
+  const deleteWorkoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/workouts/${workoutId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete workout');
+    },
+    onSuccess: () => {
+      void router.navigate({ to: '/workouts', replace: true });
+    },
+  });
 
-        let lastSetData: Array<{ setNumber: number; weight: number | null; reps: number | null; rpe: number | null }> = [];
-        if (lastWorkoutSetsRes.ok) {
-          const lastWorkoutSetsData: { sets?: Array<{ setNumber: number; weight: number | null; reps: number | null; rpe: number | null }> } = await lastWorkoutSetsRes.json();
-          lastSetData = lastWorkoutSetsData.sets ?? [];
-        }
+  const saveNotesMutation = useMutation({
+    mutationFn: async (notesValue: string) => {
+      const res = await fetch(`/api/workouts/${workoutId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ notes: notesValue }),
+      });
+      if (!res.ok) throw new Error('Failed to save notes');
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
+    },
+  });
 
-        const workoutExercise: WorkoutExercise = {
-          id: newExerciseData.id,
-          exerciseId: exercise.id,
-          name: exercise.name,
-          muscleGroup: exercise.muscleGroup,
-          orderIndex,
-          sets: [],
-          notes: newExerciseData.notes ?? null,
-          isAmrap: false,
-        };
+  const filteredExercises = useMemo(() =>
+    availableExercises.filter((exercise) =>
+      exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&
+      !exercises.some((e) => e.exerciseId === exercise.id)
+    ), [availableExercises, exerciseSearch, exercises]);
 
-        const updatedExercises = [...exercises, workoutExercise];
-        setExercises(updatedExercises);
+  const handleUpdateSet = useCallback((_exerciseId: string, setId: string, updates: Partial<WorkoutSet>) => {
+    updateSetMutation.mutate({ setId, updates });
+  }, [updateSetMutation]);
 
-        if (lastSetData.length > 0) {
-          for (const setData of lastSetData) {
-            const newSet = await addSetToBackend(newExerciseData.id, setData.setNumber, setData.weight, setData.reps, setData.rpe);
-            if (newSet) {
-              workoutExercise.sets.push(newSet);
-            }
-          }
-        } else {
-          const newSet = await addSetToBackend(newExerciseData.id, 1, null, null, null);
-          if (newSet) {
-            workoutExercise.sets.push(newSet);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to add exercise:', err);
-      setError('Failed to add exercise');
-    }
+  const handleAddSet = useCallback((_exerciseId: string, _currentSets: Array<{ id: string; reps: number; weight: number; completed: boolean }>) => {
+    const exercise = exercises.find(e => e.exerciseId === _exerciseId);
+    if (!exercise) return;
+    const setNumber = exercise.sets.length + 1;
+    const lastSet = exercise.sets[exercise.sets.length - 1];
+    addSetMutation.mutate({
+      workoutExerciseId: exercise.id,
+      setNumber,
+      weight: lastSet?.weight ?? null,
+      reps: lastSet?.reps ?? null,
+      rpe: null,
+    });
+  }, [exercises, addSetMutation]);
 
+  const handleAddExercise = useCallback((exercise: Exercise) => {
+    const orderIndex = exercises.length;
+    addExerciseMutation.mutate({ exerciseId: exercise.id, orderIndex });
     setShowExerciseSelector(false);
     setExerciseSearch('');
-  }, [exercises, workoutId, addSetToBackend]);
+  }, [exercises, addExerciseMutation]);
+
+  const handleAddExerciseClick = useCallback(() => {
+    setShowExerciseSelector(true);
+  }, []);
 
   const handleAddExerciseClickShared = useCallback((e: React.MouseEvent) => {
     const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
     const exercise = filteredExercises.find(ex => ex.id === id);
     if (exercise) {
-      void handleAddExercise(exercise);
+      handleAddExercise(exercise);
     }
   }, [filteredExercises, handleAddExercise]);
 
-   const handleSaveNotes = useCallback(async () => {
-     if (!workoutId) return;
+  const handleSaveNotes = useCallback(() => {
+    saveNotesMutation.mutate(notes);
+    setEditingNotes(false);
+  }, [saveNotesMutation, notes]);
 
-     try {
-       const res = await fetch(`/api/workouts/${workoutId}`, {
-         method: 'PUT',
-         headers: { 'Content-Type': 'application/json' },
-         credentials: 'include',
-         body: JSON.stringify({ notes }),
-       });
+  const handleCompleteWorkout = useCallback(() => {
+    const incompleteSetsCount = exercises.reduce((acc, e) => {
+      return acc + e.sets.filter((s) => !s.isComplete).length;
+    }, 0);
 
-       if (res.ok) {
-         setEditingNotes(false);
-       }
-     } catch (err) {
-       console.error('Failed to save notes:', err);
-       setError('Failed to save notes');
-     }
-   }, [workoutId, notes]);
+    if (incompleteSetsCount > 0) {
+      setShowIncompleteSetsConfirm(true);
+      return;
+    }
 
-    const completeWorkout = useCallback(async () => {
-      if (!workoutId) {
-        console.error('completeWorkout: workoutId is undefined');
-        setError('Workout ID is missing');
-        return;
-      }
-
-      console.log('completeWorkout: Starting with workoutId:', workoutId);
-      setCompleting(true);
-      setError(null);
-
-      try {
-        const res = await fetch(`/api/workouts/${workoutId}/complete`, {
-          method: 'PUT',
-          credentials: 'include',
-        });
-
-        console.log('completeWorkout: API response status:', res.status);
-
-        if (!res.ok) {
-          const data: ApiError = await res.json();
-          console.error('completeWorkout: API error:', data);
-          const errorMsg = data.message ?? 'Failed to complete workout';
-          setError(errorMsg);
-          toast.error(errorMsg);
-          return;
-        }
-
-        await res.json();
+    completeWorkoutMutation.mutate(undefined, {
+      onSuccess: () => {
         const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);
-        const completedSets = exercises.reduce((acc, e) => acc + e.sets.filter((s: WorkoutSet) => s.isComplete).length, 0);
+        const completedSets = exercises.reduce((acc, e) => acc + e.sets.filter((s) => s.isComplete).length, 0);
         void trackEvent('workout_completed', {
           workout_id: workoutId,
-          workout_name: workoutName,
+          workout_name: workout?.name ?? '',
           total_sets: totalSets,
           completed_sets: completedSets,
           exercise_count: exercises.length,
         });
         toast.success('Workout completed successfully!');
-        
-        const is1RMTest = workoutName === '1RM Test' && programCycleId;
-        const redirectUrl = is1RMTest 
-          ? `/programs/cycle/${programCycleId}/1rm-test`
+
+        const is1RMTest = workout?.name === '1RM Test' && workout?.programCycleId;
+        const redirectUrl = is1RMTest
+          ? `/programs/cycle/${workout?.programCycleId}/1rm-test`
           : `/workouts/${workoutId}/summary`;
-        
-        console.log('completeWorkout: Workout completed successfully, redirecting to:', redirectUrl);
+
         setTimeout(() => {
           window.location.href = redirectUrl;
         }, 1000);
-      } catch (err) {
-        console.error('completeWorkout: Error:', err);
-        const errorMsg = err instanceof Error ? err.message : 'An error occurred';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        setCompleting(false);
-      }
-    }, [workoutId, exercises, workoutName, programCycleId, toast]);
+      },
+      onError: (error) => {
+        toast.error(error instanceof Error ? error.message : 'Failed to complete workout');
+      },
+    });
+  }, [exercises, completeWorkoutMutation, workout, workoutId, toast]);
 
-    const handleCompleteWorkout = useCallback(async () => {
-     if (!workoutId) return;
+  const handleDiscardWorkout = useCallback(() => {
+    deleteWorkoutMutation.mutate();
+  }, [deleteWorkoutMutation]);
 
-     const incompleteSetsCount = exercises.reduce((acc, e) => {
-       return acc + e.sets.filter((s: WorkoutSet) => !s.isComplete).length;
-     }, 0);
+  const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(e.target.value);
+  }, []);
 
-     if (incompleteSetsCount > 0) {
-       setShowIncompleteSetsConfirm(true);
-       return;
-     }
+  const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setExerciseSearch(e.target.value);
+  }, []);
 
-     await completeWorkout();
-   }, [workoutId, exercises, completeWorkout]);
-
-   const handleDiscardWorkout = useCallback(async () => {
-     if (!workoutId) return;
-
-     try {
-       const res = await fetch(`/api/workouts/${workoutId}`, {
-         method: 'DELETE',
-         credentials: 'include',
-       });
-
-       if (res.ok) {
-         window.location.href = '/workouts';
-       }
-     } catch (err) {
-       console.error('Failed to discard workout:', err);
-       setError('Failed to discard workout');
-     }
-   }, [workoutId]);
-
-   const handleCompleteWorkoutClick = useCallback(async () => {
-     await handleCompleteWorkout();
-   }, [handleCompleteWorkout]);
-
-    const handleDiscardClick = useCallback(() => {
-     setShowDiscardConfirm(true);
-   }, []);
-
-   const handleDiscardBackClick = useCallback(() => {
-     setShowDiscardConfirm(false);
-   }, []);
-
-
-
-   const handleSaveNotesClick = useCallback(async () => {
-     await handleSaveNotes();
-   }, [handleSaveNotes]);
-
-   const handleEditNotesClick = useCallback(() => {
-     setEditingNotes(true);
-   }, []);
-
-   const handleCancelNotesClick = useCallback(() => {
-     setEditingNotes(false);
-   }, []);
-
-    const handleAddExerciseClick = useCallback(() => {
-      setShowExerciseSelector(true);
-    }, []);
-
-   const handleDiscardConfirmClick = useCallback(async () => {
-     await handleDiscardWorkout();
-   }, [handleDiscardWorkout]);
-
-      const handleIncompleteSetsContinueClick = useCallback(async () => {
-        setShowIncompleteSetsConfirm(false);
-        await completeWorkout();
-      }, [completeWorkout]);
-
-      const handleIncompleteSetsBackClick = useCallback(() => {
-        setShowIncompleteSetsConfirm(false);
-      }, []);
-
-   const handleCompleteWorkoutClickWrapped = useCallback(() => {
-     void handleCompleteWorkoutClick();
-   }, [handleCompleteWorkoutClick]);
-
-    const handleAddExerciseClickWrapped = useCallback(() => {
-      void handleAddExerciseClick();
-    }, [handleAddExerciseClick]);
-
-    const handleSaveNotesClickWrapped = useCallback(() => {
-      void handleSaveNotesClick();
-    }, [handleSaveNotesClick]);
-
-    const handleAddExerciseClickSharedWrapped = useCallback((e: React.MouseEvent) => {
-      void handleAddExerciseClickShared(e);
-    }, [handleAddExerciseClickShared]);
-
-    const handleDiscardConfirmClickWrapped = useCallback(() => {
-      void handleDiscardConfirmClick();
-    }, [handleDiscardConfirmClick]);
-
-    const handleIncompleteSetsContinueClickWrapped = useCallback(() => {
-      void handleIncompleteSetsContinueClick();
-    }, [handleIncompleteSetsContinueClick]);
-
-    const _handleIncompleteSetsBackClickWrapped = useCallback(() => {
-      void handleIncompleteSetsBackClick();
-    }, [handleIncompleteSetsBackClick]);
-
-    const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setNotes(e.target.value);
-    }, []);
-
-     const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-       setExerciseSearch(e.target.value);
-     }, []);
-
-   useEffect(() => {
-    if (!auth.loading && !auth.user && !redirectingRef.current) {
-      redirectingRef.current = true;
-      window.location.href = '/auth/signin';
-    }
-   }, [auth.loading, auth.user]);
-
-   async function fetchExercises() {
-     try {
-       const res = await fetch('/api/exercises', {
-         credentials: 'include',
-       });
-
-       if (res.ok) {
-         const data: Exercise[] = await res.json();
-         setAvailableExercises(data);
-       }
-     } catch (err) {
-       console.error('Failed to fetch exercises:', err);
-     }
-   }
-
-    const loadWorkout = useCallback(async () => {
-      const {id} = params;
-      if (!id) return;
-      setWorkoutId(id);
-
-      try {
-        console.log('Fetching workout:', id);
-        const res = await fetch(`/api/workouts/${id}`, {
-          credentials: 'include',
-        });
-
-        console.log('Workout API response status:', res.status);
-
-        if (res.ok) {
-          const data: Workout = await res.json();
-          console.log('Workout fetched successfully:', data.id);
-          setWorkoutName(data.name);
-          setStartedAt(data.startedAt);
-          setNotes(data.notes ?? '');
-          setProgramCycleId((data as unknown as { programCycleId?: string | null }).programCycleId ?? null);
-
-          if (data.completedAt && !redirectingRef.current) {
-            console.log('Workout: Detected completed workout, redirecting to summary');
-            redirectingRef.current = true;
-            await router.navigate({ to: `/workouts/${id}/summary`, replace: true });
-            return;
-          }
-
-          const exerciseData = await fetch(`/api/workouts/${id}/exercises`, {
-            credentials: 'include',
-          });
-
-           if (exerciseData.ok) {
-              const exercisesData: WorkoutExerciseWithDetails[] = await exerciseData.json();
-              const flattenedExercises = exercisesData.map((e) => ({
-                id: e.id,
-                exerciseId: e.exerciseId,
-                orderIndex: e.orderIndex,
-                notes: e.notes,
-                name: e.exercise?.name ?? '',
-                muscleGroup: e.exercise?.muscleGroup ?? null,
-                sets: e.sets as WorkoutSet[],
-                isAmrap: e.isAmrap,
-              }));
-              setExercises(flattenedExercises);
-            }
-        } else {
-          let errorData: { error?: string } = {};
-          try {
-            errorData = await res.json();
-          } catch {
-            // Ignore JSON parse errors
-          }
-          console.error('Failed to fetch workout:', errorData);
-          setError(errorData.error ?? 'Workout not found');
-          toast.error(errorData.error ?? 'Workout not found');
-        }
-      } catch (err) {
-        console.error('Failed to load workout:', err);
-        setError('Failed to load workout');
-        toast.error('Failed to load workout');
-      }
-
-
-       void fetchExercises();
-      }, [params, router, toast]);
-
-    useEffect(() => {
-     if (!auth.loading && auth.user && params.id && !fetchedRef.current) {
-       fetchedRef.current = true;
-       void loadWorkout();
-     }
-    }, [auth.loading, auth.user, params.id, loadWorkout]);
-
-
-
-
-
+  const handleIncompleteSetsContinue = useCallback(() => {
+    setShowIncompleteSetsConfirm(false);
+    handleCompleteWorkout();
+  }, [handleCompleteWorkout]);
 
   const totalSetsCount = exercises.reduce((acc, e) => acc + e.sets.length, 0);
 
@@ -572,293 +360,320 @@ function WorkoutSession() {
     return `${mins}m`;
   };
 
-  if (auth.loading) {
-    return (
-	<div className="min-h-screen flex items-center justify-center">
-		<Loader2 className="animate-spin text-primary" size={32} />
-	</div>
-    );
-  }
-
-  if (error && !exercises.length) {
+  if (auth.loading || workoutLoading) {
     return (
       <main className="mx-auto max-w-lg px-4 py-6">
-          <div className="flex items-center gap-3 mb-6">
-            <a href="/workouts" className="p-2 rounded-lg hover:bg-secondary transition-colors">
-              <ChevronLeft className="h-5 w-5" />
-            </a>
-            <h1 className="text-xl font-bold">Workout</h1>
-          </div>
-          <ErrorState
-            title="Workout Not Found"
-            description={error}
-            onGoHome={() => { window.location.href = '/'; }}
-            onGoBack={() => { window.history.back(); }}
-          />
+        <div className="flex items-center gap-3 mb-6">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-7 w-32" />
+        </div>
+        <Skeleton className="h-6 w-48 mx-auto mb-2" />
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+        <div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3">
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
       </main>
     );
   }
 
-		return (
-			<>
-			<header className="bg-card border-b border-border py-4">
-				<div className="max-w-lg mx-auto px-4 text-center">
-					<h1 className="text-xl sm:text-2xl font-bold text-foreground">{workoutName}</h1>
-					<div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
-						<span className="flex items-center gap-1.5">
-							<Calendar size={14} />
-							{formatDate(startedAt)}
-						</span>
-						<span className="flex items-center gap-1.5">
-							<Dumbbell size={14} />
-							{formatDuration(startedAt)}
-						</span>
-					</div>
-				</div>
-			</header>
+  if (workoutError || !workout) {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="flex items-center gap-3 mb-6">
+          <a href="/workouts" className="p-2 rounded-lg hover:bg-secondary transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </a>
+          <h1 className="text-xl font-bold">Workout</h1>
+        </div>
+        <ErrorState
+          title="Workout Not Found"
+          description={workoutError instanceof Error ? workoutError.message : 'Workout not found'}
+          onGoHome={() => { window.location.href = '/'; }}
+          onGoBack={() => { window.history.back(); }}
+        />
+      </main>
+    );
+  }
 
-			<main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-36 sm:px-4 sm:py-6">
-			{error ? <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-				<p className="text-sm text-destructive">{error}</p>
-            </div> : null}
+  return (
+    <>
+      <header className="bg-card border-b border-border py-4">
+        <div className="max-w-lg mx-auto px-4 text-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{workout.name}</h1>
+          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
+            <span className="flex items-center gap-1.5">
+              <Calendar size={14} />
+              {formatDate(workout.startedAt)}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Dumbbell size={14} />
+              {formatDuration(workout.startedAt)}
+            </span>
+          </div>
+        </div>
+      </header>
 
-			<div className="space-y-4">
-				{exercises.length === 0 ? (
-					<Card className="p-8 text-center">
-						<p className="text-muted-foreground mb-4">No exercises added yet</p>
-						<Button
-							onClick={handleAddExerciseClickWrapped}
-						>
-							<Plus size={18} />
-							Add Exercise
-						</Button>
-					</Card>
-           ) : (
-             exercises.map((exercise) => {
-               const videoTutorial = getVideoTutorialByName(exercise.name);
-               return (
-                 <ExerciseLogger
-                   key={exercise.id}
-                   exercise={{
-                     id: exercise.exerciseId,
-                     name: exercise.name,
-                     muscleGroup: exercise.muscleGroup ?? '',
-                     isAmrap: exercise.isAmrap,
-                   }}
-                   sets={exercise.sets.map((set) => ({
-                     id: set.id,
-                     reps: set.reps ?? 0,
-                     weight: set.weight ?? 0,
-                     completed: set.isComplete,
-                   }))}
-                   onSetsUpdate={(newSets) => {
-                     for (let i = 0; i < newSets.length && i < exercise.sets.length; i++) {
-                       const newSet = newSets[i];
-                       const oldSet = exercise.sets[i];
-                       const hasChanges =
-                         newSet.weight !== (oldSet.weight ?? 0) ||
-                         newSet.reps !== (oldSet.reps ?? 0) ||
-                         newSet.completed !== oldSet.isComplete;
-                       if (hasChanges) {
-                         void handleUpdateSet(exercise.exerciseId, newSet.id, {
-                           weight: newSet.weight,
-                           reps: newSet.reps,
-                           isComplete: newSet.completed,
-                         });
-                       }
-                     }
-                   }}
-                   onAddSet={(exerciseId, currentSets) => handleAddSet(exerciseId, currentSets)}
-                   videoTutorial={videoTutorial ?? null}
-                 />
-               );
-             })
-           )}
+      <main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-36 sm:px-4 sm:py-6">
+        {Boolean(updateSetMutation.isError) && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">Failed to update set</p>
+          </div>
+        )}
 
-				{exercises.length > 0 ? (
-					<Button
-						variant="outline"
-						className="w-full border-dashed"
-						onClick={handleAddExerciseClickWrapped}
-					>
-						<Plus size={18} />
-						Add Exercise
-					</Button>
-				) : null}
+        <div className="space-y-4">
+          {exercises.length === 0 ? (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground mb-4">No exercises added yet</p>
+              <Button onClick={handleAddExerciseClick}>
+                <Plus size={18} />
+                Add Exercise
+              </Button>
+            </Card>
+          ) : (
+            exercises.map((exercise) => {
+              const videoTutorial = getVideoTutorialByName(exercise.name);
+              return (
+                <ExerciseLogger
+                  key={exercise.id}
+                  exercise={{
+                    id: exercise.exerciseId,
+                    name: exercise.name,
+                    muscleGroup: exercise.muscleGroup ?? '',
+                    isAmrap: exercise.isAmrap,
+                  }}
+                  sets={exercise.sets.map((set) => ({
+                    id: set.id,
+                    reps: set.reps ?? 0,
+                    weight: set.weight ?? 0,
+                    completed: set.isComplete,
+                  }))}
+                  onSetsUpdate={(newSets) => {
+                    for (let i = 0; i < newSets.length && i < exercise.sets.length; i++) {
+                      const newSet = newSets[i];
+                      const oldSet = exercise.sets[i];
+                      const hasChanges =
+                        newSet.weight !== (oldSet.weight ?? 0) ||
+                        newSet.reps !== (oldSet.reps ?? 0) ||
+                        newSet.completed !== oldSet.isComplete;
+                      if (hasChanges) {
+                        handleUpdateSet(exercise.exerciseId, newSet.id, {
+                          weight: newSet.weight,
+                          reps: newSet.reps,
+                          isComplete: newSet.completed,
+                        });
+                      }
+                    }
+                  }}
+                  onAddSet={async (exerciseId, currentSets) => {
+                    await handleAddSet(exerciseId, currentSets);
+                  }}
+                  videoTutorial={videoTutorial ?? null}
+                />
+              );
+            })
+          )}
 
-				<div className="bg-card rounded-lg border border-border p-4">
-					<div className="flex items-center justify-between mb-2">
-						<span className="text-sm font-medium text-foreground">Workout Notes</span>
-						{editingNotes ? (
-							<div className="flex items-center gap-2">
-								<button
-									className="text-sm text-muted-foreground hover:text-foreground"
-									onClick={handleCancelNotesClick}
-								>
-									Cancel
-								</button>
-							<button
-								className="text-sm text-primary hover:text-primary"
-								onClick={handleSaveNotesClickWrapped}
-							>
-								Save
-							</button>
-							</div>
+          {exercises.length > 0 ? (
+            <Button
+              variant="outline"
+              className="w-full border-dashed"
+              onClick={handleAddExerciseClick}
+            >
+              <Plus size={18} />
+              Add Exercise
+            </Button>
+          ) : null}
+
+          <div className="bg-card rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-foreground">Workout Notes</span>
+              {editingNotes ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => setEditingNotes(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="text-sm text-primary hover:text-primary"
+                    onClick={handleSaveNotes}
+                  >
+                    Save
+                  </button>
+                </div>
               ) : (
-	<button
-		className="text-sm text-primary hover:text-primary"
-		onClick={handleEditNotesClick}
-	>
-		Edit
-	</button>
+                <button
+                  className="text-sm text-primary hover:text-primary"
+                  onClick={() => setEditingNotes(true)}
+                >
+                  Edit
+                </button>
               )}
-					</div>
-					{editingNotes ? (
-						<textarea
-							className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-							onChange={handleNotesChange}
-							placeholder="Add notes about this workout..."
-							rows={3}
-							value={notes}
-						/>
+            </div>
+            {editingNotes ? (
+              <textarea
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+                onChange={handleNotesChange}
+                placeholder="Add notes about this workout..."
+                rows={3}
+                value={notes}
+              />
             ) : (
-	<p className="text-muted-foreground text-sm">
-		{notes || 'No notes added'}
-	</p>
+              <p className="text-muted-foreground text-sm">
+                {notes ?? workout.notes ?? 'No notes added'}
+              </p>
             )}
-				</div>
-			</div>
-			</main>
+          </div>
+        </div>
+      </main>
 
-			<Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
-				<DrawerContent>
-					<DrawerHeader>
-						<DrawerTitle>Add Exercise</DrawerTitle>
-					</DrawerHeader>
-					<div className="p-4 border-b">
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-							<Input
-								autoFocus={true}
-								className="pl-10"
-								onChange={handleExerciseSearchChange}
-								placeholder="Search exercises..."
-								type="text"
-								value={exerciseSearch}
-							/>
-						</div>
-					</div>
-					<div className="flex-1 overflow-y-auto p-4">
-						{filteredExercises.length === 0 ? (
-							<div className="text-center py-8 text-muted-foreground">
-								No exercises found
-							</div>
-						) : (
-							<div className="space-y-2">
-								{filteredExercises.map((exercise) => (
-									<button
-										className="w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors"
-										data-id={exercise.id}
-										key={exercise.id}
-										onClick={handleAddExerciseClickSharedWrapped}
-									>
-										<div>
-											<h3 className="font-medium text-foreground">{exercise.name}</h3>
-											{exercise.muscleGroup ?
-												<span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
-													{exercise.muscleGroup}
-												</span> : null}
-										</div>
-									</button>
-								))}
-							</div>
-						)}
-					</div>
-				</DrawerContent>
-			</Drawer>
+      <Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Add Exercise</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 border-b">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Input
+                autoFocus={true}
+                className="pl-10"
+                onChange={handleExerciseSearchChange}
+                placeholder="Search exercises..."
+                type="text"
+                value={exerciseSearch}
+              />
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            {availableExercisesLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : filteredExercises.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No exercises found
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredExercises.map((exercise) => (
+                  <button
+                    className="w-full text-left p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+                    data-id={exercise.id}
+                    key={exercise.id}
+                    onClick={handleAddExerciseClickShared}
+                  >
+                    <div>
+                      <h3 className="font-medium text-foreground">{exercise.name}</h3>
+                      {exercise.muscleGroup ? (
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/10 rounded-full">
+                          {exercise.muscleGroup}
+                        </span>
+                      ) : null}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
-		<AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>Discard Workout?</AlertDialogTitle>
-				</AlertDialogHeader>
-				<p className="text-muted-foreground mb-4">
-					This will permanently delete this workout. This action cannot be undone.
-				</p>
-				<AlertDialogFooter>
-					<AlertDialogCancel onClick={handleDiscardBackClick}>
-						Cancel
-					</AlertDialogCancel>
-					<AlertDialogAction
-						className="bg-red-600 text-white hover:bg-red-700"
-						onClick={handleDiscardConfirmClickWrapped}
-					>
-						Discard Workout
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+      <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard Workout?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-muted-foreground mb-4">
+            This will permanently delete this workout. This action cannot be undone.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDiscardConfirm(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDiscardWorkout}
+            >
+              Discard Workout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-		<AlertDialog open={showIncompleteSetsConfirm} onOpenChange={setShowIncompleteSetsConfirm}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>Incomplete Sets</AlertDialogTitle>
-				</AlertDialogHeader>
-				<p className="text-muted-foreground mb-4">
-					{'You have sets that haven\'t been marked as complete. Are you sure you want to continue?'}
-				</p>
-				<AlertDialogFooter>
-					<AlertDialogCancel onClick={_handleIncompleteSetsBackClickWrapped}>
-						Go Back
-					</AlertDialogCancel>
- 					<AlertDialogAction
- 						className="bg-green-600 text-white hover:bg-green-700"
- 						onClick={handleIncompleteSetsContinueClickWrapped}
- 					/>
-    </AlertDialogFooter>
-   </AlertDialogContent>
-  </AlertDialog>
+      <AlertDialog open={showIncompleteSetsConfirm} onOpenChange={setShowIncompleteSetsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Incomplete Sets</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-muted-foreground mb-4">
+            {'You have sets that haven\'t been marked as complete. Are you sure you want to continue?'}
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowIncompleteSetsConfirm(false)}>
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-green-600 text-white hover:bg-green-700"
+              onClick={handleIncompleteSetsContinue}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-  {selectedTutorial ? (
-    <VideoTutorialModal
-      videoTutorial={selectedTutorial.tutorial}
-      exerciseName={selectedTutorial.exerciseName}
-      open={!!selectedTutorial}
-      onOpenChange={() => setSelectedTutorial(null)}
-    />
-  ) : null}
+      {selectedTutorial ? (
+        <VideoTutorialModal
+          videoTutorial={selectedTutorial.tutorial}
+          exerciseName={selectedTutorial.exerciseName}
+          open={!!selectedTutorial}
+          onOpenChange={() => setSelectedTutorial(null)}
+        />
+      ) : null}
 
-			<div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-40">
-				<div className="mx-auto max-w-lg flex items-center justify-between gap-2">
-					<button
-						className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-sm font-medium"
-						onClick={handleDiscardClick}
-					>
-						Discard
-					</button>
-					<button
-						className={cn(
-							'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm'
-						)}
-						disabled={completing || totalSetsCount === 0}
-						onClick={handleCompleteWorkoutClickWrapped}
-					>
-						{completing ? (
-							<>
-								<Loader2 className="animate-spin h-4 w-4" />
-								Saving...
-							</>
-						) : (
-							<>
-								<Check className="h-4 w-4" />
-								Complete
-							</>
-						)}
-					</button>
-				</div>
-			</div>
-			</>
-			);
+      <div className="fixed bottom-[68px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-40">
+        <div className="mx-auto max-w-lg flex items-center justify-between gap-2">
+          <button
+            className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors text-sm font-medium"
+            onClick={() => setShowDiscardConfirm(true)}
+          >
+            Discard
+          </button>
+          <button
+            className={cn(
+              'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm'
+            )}
+            disabled={completeWorkoutMutation.isPending || totalSetsCount === 0}
+            onClick={handleCompleteWorkout}
+          >
+            {completeWorkoutMutation.isPending ? (
+              <>
+                <Loader2 className="animate-spin h-4 w-4" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                Complete
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export const Route = createFileRoute('/workouts/$id')({

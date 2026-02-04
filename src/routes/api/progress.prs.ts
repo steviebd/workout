@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/progress/prs')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/progress/prs')({
           const limitParam = url.searchParams.get('limit');
           const limit = limitParam ? parseInt(limitParam, 10) : 5;
 
-           const recentPRs = await getRecentPRs(db, session.workosId, limit);
+           const recentPRs = await getRecentPRs(db, session.sub, limit);
 
           return Response.json({
             recentPRs: recentPRs.map(pr => ({

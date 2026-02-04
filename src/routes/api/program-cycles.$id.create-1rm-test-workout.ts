@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
       POST: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -20,13 +20,13 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const cycle = await getProgramCycleById(db, params.id, session.workosId);
+          const cycle = await getProgramCycleById(db, params.id, session.sub);
           if (!cycle) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
           const workout = await createWorkout(db, {
-            workosId: session.workosId,
+            workosId: session.sub,
             name: '1RM Test',
             programCycleId: params.id,
           });
@@ -40,11 +40,11 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
 
           let orderIndex = 0;
           for (const lift of mainLifts) {
-            const exercises = await getExercisesByWorkosId(db, session.workosId, { search: lift.name, limit: 1 });
+            const exercises = await getExercisesByWorkosId(db, session.sub, { search: lift.name, limit: 1 });
             let exercise = exercises.find(e => e.name.toLowerCase() === lift.name.toLowerCase());
             
             exercise ??= await createExercise(db, {
-              workosId: session.workosId,
+              workosId: session.sub,
               name: lift.name,
               muscleGroup: lift.muscleGroup,
             });
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
             const workoutExercise = await createWorkoutExercise(
               db,
               workout.id,
-              session.workosId,
+              session.sub,
               exercise.id,
               orderIndex
             );
@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
               await createWorkoutSet(
                 db,
                 workoutExercise.id,
-                session.workosId,
+                session.sub,
                 1,
                 0,
                 1

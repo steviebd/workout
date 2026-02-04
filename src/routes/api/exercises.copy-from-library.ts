@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/exercises/copy-from-library')({
       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/exercises/copy-from-library')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const exercise = await copyExerciseFromLibrary(db, session.workosId, {
+           const exercise = await copyExerciseFromLibrary(db, session.sub, {
             name,
             muscleGroup,
             description,

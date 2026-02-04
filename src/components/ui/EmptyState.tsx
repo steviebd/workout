@@ -202,39 +202,6 @@ export function EmptyWorkouts({
   );
 }
 
-export function EmptySearchResults({
-  onClear,
-}: {
-  readonly onClear?: () => void;
-}): ReactNode {
-  const SearchIcon = ({ size = 56, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-
-  return (
-    <EmptyState
-      icon={SearchIcon}
-      title="No Results Found"
-      description="We couldn't find anything matching your search criteria. Try adjusting your filters or search terms."
-      actionLabel="Clear Search"
-      onAction={onClear}
-    />
-  );
-}
-
 export function EmptyExerciseHistory(): ReactNode {
   const CalendarIcon = ({ size = 56, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
     <svg
@@ -264,39 +231,4 @@ export function EmptyExerciseHistory(): ReactNode {
   );
 }
 
-export function EmptyHomeState({
-  onCreateTemplate,
-  onStartWorkout,
-}: {
-  readonly onCreateTemplate?: () => void;
-  readonly onStartWorkout?: () => void;
-}): ReactNode {
-  const HomeIcon = ({ size = 56, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
 
-  return (
-    <EmptyState
-      icon={HomeIcon}
-      title="Welcome to Fit Workout!"
-      description="Get started by creating your first workout template or jump straight into a workout. Your fitness journey starts here."
-      actionLabel="Create Template"
-      onAction={onCreateTemplate}
-      secondaryActionLabel="Start Workout"
-      onSecondaryAction={onStartWorkout}
-    />
-  );
-}

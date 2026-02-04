@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/exercises')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/exercises')({
           const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'muscleGroup' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
 
-          const exercises = await getExercisesByWorkosId(db, session.workosId, {
+          const exercises = await getExercisesByWorkosId(db, session.sub, {
             search,
             muscleGroup,
             sortBy,
@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/exercises')({
       POST: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -57,7 +57,7 @@ export const Route = createFileRoute('/api/exercises')({
           }
 
           const exercise = await createExercise(db, {
-            workosId: session.workosId,
+            workosId: session.sub,
             name,
             muscleGroup,
             description,

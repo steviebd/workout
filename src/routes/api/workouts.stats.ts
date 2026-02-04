@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/workouts/stats')({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/workouts/stats')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const stats = await getWorkoutHistoryStats(db, session.workosId);
+           const stats = await getWorkoutHistoryStats(db, session.sub);
 
           return Response.json(stats);
         } catch (err) {

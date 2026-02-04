@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
       GET: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -28,12 +28,12 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const cycle = await getProgramCycleById(db, params.id, session.workosId);
+          const cycle = await getProgramCycleById(db, params.id, session.sub);
           if (!cycle) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
-          const workouts = await getCycleWorkouts(db, params.id, session.workosId);
+          const workouts = await getCycleWorkouts(db, params.id, session.sub);
           const completedCount = workouts.filter((w) => w.isComplete).length;
 
           const responseData = {
@@ -51,7 +51,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -68,13 +68,13 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
           const hasProgressUpdate = currentWeek !== undefined || currentSession !== undefined;
           
           if (has1RMUpdate) {
-            updated = await updateProgramCycle1RM(db, params.id, session.workosId, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
+            updated = await updateProgramCycle1RM(db, params.id, session.sub, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
           }
           if (hasProgressUpdate) {
-            updated = await updateProgramCycleProgress(db, params.id, session.workosId, { currentWeek, currentSession });
+            updated = await updateProgramCycleProgress(db, params.id, session.sub, { currentWeek, currentSession });
           }
           if (isComplete) {
-            updated = await completeProgramCycle(db, params.id, session.workosId);
+            updated = await completeProgramCycle(db, params.id, session.sub);
           }
 
           if (!updated) {
@@ -90,7 +90,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
       DELETE: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -99,7 +99,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const success = await softDeleteProgramCycle(db, params.id, session.workosId);
+          const success = await softDeleteProgramCycle(db, params.id, session.sub);
           if (!success) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }

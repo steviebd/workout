@@ -1,6 +1,5 @@
 'use client';
 
-// @ts-nocheck
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import {
   Calendar,
@@ -58,7 +57,6 @@ interface NewWorkoutExerciseResponse {
   notes: string | null;
 }
 
-// @ts-nocheck
 function EditWorkout() {
   const auth = useAuth();
   const params = useParams({ from: '/workouts/$id_/edit' });

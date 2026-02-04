@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { AlertCircle, Calendar, Loader2, Trophy, TrendingUp } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { EmptyExerciseHistory } from '@/components/EmptyState';
+import { EmptyExerciseHistory } from '@/components/ui/EmptyState';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useUnit } from '@/lib/context/UnitContext';
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useCallback, ReactNode } from 'react';
 
 export interface WeeklyWorkoutCount {
   weekStart: string;
@@ -16,6 +17,14 @@ export interface ThirtyDayStreakResult {
   weeklyDetails: WeeklyWorkoutCount[];
 }
 
+interface StreakApiData {
+  weeklyCount: number;
+  weeklyTarget: number;
+  thirtyDayStreak: ThirtyDayStreakResult;
+  totalWorkouts: number;
+  rolling30Days: number;
+}
+
 export interface StreakContextValue {
   weeklyCount: number;
   weeklyTarget: number;
@@ -28,45 +37,43 @@ export interface StreakContextValue {
 
 const StreakContext = createContext<StreakContextValue | null>(null);
 
+async function fetchStreakData(): Promise<StreakApiData> {
+  const response = await fetch('/api/streaks', { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch streak');
+  return response.json();
+}
+
 export function StreakProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<StreakContextValue>({
-    weeklyCount: 0,
-    weeklyTarget: 3,
-    thirtyDayStreak: {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery<StreakApiData>({
+    queryKey: ['streak'],
+    queryFn: fetchStreakData,
+    staleTime: 30 * 1000,
+  });
+
+  const refetch = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['streak'] });
+  }, [queryClient]);
+
+  const value: StreakContextValue = {
+    weeklyCount: data?.weeklyCount ?? 0,
+    weeklyTarget: data?.weeklyTarget ?? 3,
+    thirtyDayStreak: data?.thirtyDayStreak ?? {
       current: 0,
       target: 4,
       progress: 0,
       maxConsecutive: 0,
       weeklyDetails: [],
     },
-    totalWorkouts: 0,
-    rolling30Days: 0,
-    loading: true,
-    refetch: async () => {},
-  });
-
-  const fetchStreak = useCallback(async () => {
-    try {
-      const response = await fetch('/api/streaks', { credentials: 'include' });
-      
-      if (response.ok) {
-        const streakData = await response.json() as { currentStreak: number; longestStreak: number };
-        setData(prev => ({ ...prev, ...streakData, loading: false }));
-      } else {
-        setData(prev => ({ ...prev, loading: false }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch streak:', error);
-      setData(prev => ({ ...prev, loading: false }));
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchStreak();
-  }, [fetchStreak]);
+    totalWorkouts: data?.totalWorkouts ?? 0,
+    rolling30Days: data?.rolling30Days ?? 0,
+    loading: isLoading,
+    refetch,
+  };
 
   return (
-    <StreakContext.Provider value={{ ...data, refetch: fetchStreak }}>
+    <StreakContext.Provider value={value}>
       {children}
     </StreakContext.Provider>
   );

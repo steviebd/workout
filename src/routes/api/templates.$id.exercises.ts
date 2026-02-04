@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
       GET: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const exercises = await getTemplateExercises(db, params.id, session.workosId);
+          const exercises = await getTemplateExercises(db, params.id, session.sub);
 
           return Response.json(exercises);
         } catch (err) {
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
       POST: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

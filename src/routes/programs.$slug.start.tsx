@@ -44,12 +44,7 @@ function shouldShowStartModeToggle(
   startDate: string | null,
   preferredGymDays: DayOfWeek[]
 ): boolean {
-  if (!startDate || preferredGymDays.length === 0) return false;
-
-  const date = new Date(`${startDate}T00:00:00`);
-  const dayName = DAYS_OF_WEEK[date.getDay()];
-
-  return !preferredGymDays.includes(dayName);
+  return !!(startDate && preferredGymDays.length > 0);
 }
 
 function ProgramStart() {

@@ -12,10 +12,10 @@ export const Route = createFileRoute('/api/badges' as const)({
     handlers: {
       GET: async ({ request }: { request: Request }) => {
         const session = await getSession(request);
-        if (!session) {
+        if (!session?.sub) {
           return Response.json({ error: 'Not authenticated' }, { status: 401 });
         }
-        const workosId = session.workosId;
+        const workosId = session.sub;
 
         const db = (env as { DB?: D1Database }).DB;
         if (!db) {

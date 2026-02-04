@@ -30,10 +30,10 @@ export const Route = createFileRoute('/api/auth/signout')({
           try {
             const payload = await verifyToken(token);
             console.log('[/api/auth/signout] Token payload:', JSON.stringify(payload));
-            if (payload?.workosSessionId) {
+            if (payload?.workosId) {
               const workos = new WorkOS(WORKOS_API_KEY);
               workosLogoutUrl = workos.userManagement.getLogoutUrl({
-                sessionId: payload.workosSessionId,
+                sessionId: payload.workosId,
               });
               console.log('[/api/auth/signout] WorkOS logout URL:', workosLogoutUrl);
             }

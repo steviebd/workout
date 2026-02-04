@@ -1,7 +1,15 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { type DateFormat } from '../db/preferences';
+import { type WeightUnit } from '../units';
+
+interface PreferencesApiData {
+  weightUnit?: WeightUnit;
+  dateFormat?: DateFormat;
+  weeklyWorkoutTarget?: number;
+}
 
 interface DateFormatContextType {
   dateFormat: DateFormat;
@@ -14,6 +22,12 @@ interface DateFormatContextType {
 }
 
 const DateFormatContext = createContext<DateFormatContextType | null>(null);
+
+async function fetchPreferences(): Promise<PreferencesApiData> {
+  const res = await fetch('/api/preferences', { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to fetch preferences');
+  return res.json();
+}
 
 export function useDateFormat() {
   const context = useContext(DateFormatContext);
@@ -29,38 +43,18 @@ interface DateFormatProviderProps {
 }
 
 export function DateFormatProvider({ children, userId }: DateFormatProviderProps) {
-  const [dateFormat, setDateFormatState] = useState<DateFormat>('dd/mm/yyyy');
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    async function fetchPreferences() {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const res = await fetch('/api/preferences', {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const prefs: { dateFormat?: DateFormat } = await res.json();
-          if (prefs.dateFormat) {
-            setDateFormatState(prefs.dateFormat);
-          }
-        }
-      } catch {
-        console.error('Failed to fetch date format preferences');
-      } finally {
-        setLoading(false);
-      }
-    }
+  const { data, isLoading } = useQuery<PreferencesApiData>({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+  });
 
-    void fetchPreferences();
-  }, [userId]);
+  const dateFormat = data?.dateFormat ?? 'dd/mm/yyyy';
 
   const setDateFormat = useCallback(async (format: DateFormat) => {
-    setLoading(true);
     try {
       const res = await fetch('/api/preferences', {
         method: 'PUT',
@@ -69,17 +63,15 @@ export function DateFormatProvider({ children, userId }: DateFormatProviderProps
         body: JSON.stringify({ dateFormat: format }),
       });
       if (res.ok) {
-        const updatedPrefs: { dateFormat?: DateFormat } = await res.json();
-        if (updatedPrefs.dateFormat) {
-          setDateFormatState(updatedPrefs.dateFormat);
-        }
+        queryClient.setQueryData<PreferencesApiData>(['preferences'], (old) => ({
+          ...old,
+          dateFormat: format,
+        }));
       }
     } catch (err) {
       console.error('Failed to update date format:', err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   const formatDate = useCallback((dateString: string): string => {
     const date = new Date(dateString);
@@ -153,7 +145,7 @@ export function DateFormatProvider({ children, userId }: DateFormatProviderProps
     <DateFormatContext.Provider
       value={{
         dateFormat,
-        loading,
+        loading: isLoading,
         setDateFormat,
         formatDate,
         formatDateShort,

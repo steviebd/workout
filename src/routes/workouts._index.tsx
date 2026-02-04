@@ -1,12 +1,14 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ChevronRight, Dumbbell, Plus, Search, Trophy } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from './__root';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
 import { Input } from '~/components/ui/Input';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { EmptyTemplates, EmptyExercises } from '@/components/ui/EmptyState';
+import { SkeletonWorkoutsPage } from '~/components/ui/Skeleton';
 
 interface Template {
   id: string;
@@ -35,85 +37,62 @@ interface ProgramCycle {
 
 function WorkoutsPage() {
   const auth = useAuth();
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [activePrograms, setActivePrograms] = useState<ProgramCycle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [exerciseSearch, setExerciseSearch] = useState('');
 
-  const fetchAllData = useCallback(async () => {
-    if (!auth.user) return;
+  const { data: templates = [], isLoading: templatesLoading } = useQuery<Template[]>({
+    queryKey: ['templates'],
+    queryFn: async () => {
+      const res = await fetch('/api/templates', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch templates');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
-    try {
-      setLoading(true);
-      const [templatesRes, exercisesRes, programsRes] = await Promise.all([
-        fetch('/api/templates', { credentials: 'include' }),
-        fetch(`/api/exercises?${exerciseSearch ? `search=${encodeURIComponent(exerciseSearch)}` : ''}`, { credentials: 'include' }),
-        fetch('/api/program-cycles?active=true', { credentials: 'include' }),
-      ]);
+  const { data: exercises = [], isLoading: exercisesLoading } = useQuery<Exercise[]>({
+    queryKey: ['exercises', exerciseSearch],
+    queryFn: async () => {
+      const url = exerciseSearch
+        ? `/api/exercises?search=${encodeURIComponent(exerciseSearch)}`
+        : '/api/exercises';
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch exercises');
+      return res.json();
+    },
+    enabled: !!auth.user,
+    staleTime: 30 * 1000,
+  });
 
-      if (templatesRes.ok) {
-        const data: Template[] = await templatesRes.json();
-        setTemplates(data);
-      }
+  const { data: activePrograms = [], isLoading: programsLoading } = useQuery<ProgramCycle[]>({
+    queryKey: ['program-cycles', 'active'],
+    queryFn: async () => {
+      const res = await fetch('/api/program-cycles?active=true', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch programs');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
-      if (exercisesRes.ok) {
-        const data: Exercise[] = await exercisesRes.json();
-        setExercises(data);
-      }
+  const loading = auth.loading || templatesLoading || exercisesLoading || programsLoading;
 
-      if (programsRes.ok) {
-        const data: ProgramCycle[] = await programsRes.json();
-        setActivePrograms(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [auth.user, exerciseSearch]);
-
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-      return;
-    }
-
-    if (auth.user) {
-      void fetchAllData();
-    }
-  }, [auth.loading, auth.user, fetchAllData]);
-
-  useEffect(() => {
-    if (auth.user) {
-      const delayDebounceFn = setTimeout(() => {
-        void fetchAllData();
-      }, 300);
-      return () => clearTimeout(delayDebounceFn);
-    }
-  }, [exerciseSearch, auth.user, fetchAllData]);
+  const refreshAll = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['templates'] });
+    await queryClient.invalidateQueries({ queryKey: ['exercises'] });
+    await queryClient.invalidateQueries({ queryKey: ['program-cycles', 'active'] });
+  }, [queryClient]);
 
   const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setExerciseSearch(e.target.value);
   }, []);
 
-  if (auth.loading || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
-            <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-          </div>
-          <p className="text-muted-foreground">Loading your workouts...</p>
-        </div>
-      </div>
+      <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
+        <SkeletonWorkoutsPage />
+      </main>
     );
   }
-
-  const refreshAll = async () => {
-    await fetchAllData();
-  };
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>

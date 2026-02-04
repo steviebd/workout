@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
       PUT: async ({ request, params }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.workosId) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -56,7 +56,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const completed = await completeWorkout(db, params.id, session.workosId);
+           const completed = await completeWorkout(db, params.id, session.sub);
 
           if (!completed) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
@@ -64,10 +64,10 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
 
            if (completed.completedAt) {
              const workoutDate = completed.completedAt.split('T')[0];
-             await updateUserLastWorkout(db, session.workosId, workoutDate);
+             await updateUserLastWorkout(db, session.sub, workoutDate);
            }
 
-           const workout = await getWorkoutWithExercises(db, params.id, session.workosId);
+           const workout = await getWorkoutWithExercises(db, params.id, session.sub);
 
           if (!workout) {
             return Response.json({ error: 'Workout not found' }, { status: 404 });
@@ -82,7 +82,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
               .get();
             
             if (cycleWorkout) {
-              await markWorkoutComplete(db, cycleWorkout.id, cycleWorkout.cycleId, session.workosId, params.id);
+              await markWorkoutComplete(db, cycleWorkout.id, cycleWorkout.cycleId, session.sub, params.id);
             }
           }
 
@@ -105,7 +105,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
               let startingOhp1rm: number | null = null;
               
               if (workout.programCycleId) {
-                const cycle = await getProgramCycleById(db, workout.programCycleId, session.workosId);
+                const cycle = await getProgramCycleById(db, workout.programCycleId, session.sub);
                 if (cycle) {
                   startingSquat1rm = cycle.startingSquat1rm ?? cycle.squat1rm;
                   startingBench1rm = cycle.startingBench1rm ?? cycle.bench1rm;
@@ -114,7 +114,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
                 }
               }
               
-              await updateWorkout(db, params.id, session.workosId, {
+              await updateWorkout(db, params.id, session.sub, {
                 squat1rm: tested.squat || null,
                 bench1rm: tested.bench || null,
                 deadlift1rm: tested.deadlift || null,

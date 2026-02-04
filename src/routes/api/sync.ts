@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/sync' as const)({
       GET: async ({ request }) => {
         try {
           const session = await getSession(request);
-          if (!session) {
+          if (!session?.sub) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/sync' as const)({
               updatedAt: exercisesTable.updatedAt,
             })
             .from(exercisesTable)
-            .where(eq(exercisesTable.workosId, session.workosId))
+            .where(eq(exercisesTable.workosId, session.sub))
             .orderBy(desc(exercisesTable.updatedAt))
             .limit(1000);
 
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/sync' as const)({
               updatedAt: templatesTable.updatedAt,
             })
             .from(templatesTable)
-            .where(eq(templatesTable.workosId, session.workosId))
+            .where(eq(templatesTable.workosId, session.sub))
             .orderBy(desc(templatesTable.updatedAt))
             .limit(1000);
 
@@ -69,7 +69,7 @@ export const Route = createFileRoute('/api/sync' as const)({
               createdAt: workoutsTable.createdAt,
             })
             .from(workoutsTable)
-            .where(eq(workoutsTable.workosId, session.workosId))
+            .where(eq(workoutsTable.workosId, session.sub))
             .orderBy(desc(workoutsTable.startedAt))
             .limit(1000);
 
