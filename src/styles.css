@@ -141,6 +141,10 @@
   .active-scale:active:not(:disabled) {
     transform: scale(0.97);
   }
+
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @layer base {

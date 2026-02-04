@@ -405,8 +405,8 @@ function WorkoutSession() {
 
   return (
     <>
-      <header className="bg-card border-b border-border py-4">
-        <div className="max-w-lg mx-auto px-4 text-center">
+      <header className="bg-card border-b border-border py-4 px-4">
+        <div className="max-w-lg mx-auto text-center">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">{workout.name}</h1>
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
             <span className="flex items-center gap-1.5">
@@ -421,7 +421,7 @@ function WorkoutSession() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md sm:max-w-lg md:max-w-xl px-3 py-4 pb-36 sm:px-4 sm:py-6">
+      <main className="mx-auto max-w-lg px-3 py-4 pb-28 sm:px-4 sm:py-6 sm:pb-32">
         {Boolean(updateSetMutation.isError) && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <p className="text-sm text-destructive">Failed to update set</p>
@@ -643,7 +643,7 @@ function WorkoutSession() {
         />
       ) : null}
 
-      <div className="fixed bottom-[88px] left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-b border-border px-4 py-3 z-50 md:bottom-0 md:border-t md:border-b-0 md:pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 safe-area-pb">
         <div className="mx-auto max-w-lg flex items-center justify-between gap-3">
           <Button
             variant="destructive"

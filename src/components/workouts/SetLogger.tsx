@@ -184,8 +184,11 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
     >
       <div
         className={cn(
-          'absolute inset-0 flex items-center justify-end pr-4 transition-opacity duration-200 pointer-events-none',
-          swipeOffset > 20 ? 'opacity-100' : 'opacity-0'
+          'rounded-lg border p-1.5 sm:p-3 transition-all relative overflow-hidden',
+          set.completed
+            ? 'border-success/50 bg-success/10'
+            : 'border-border bg-secondary/30',
+          isSwiping && 'cursor-grab active:cursor-grabbing'
         )}
       >
         <div className={cn(
@@ -201,21 +204,21 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
         </div>
       </div>
       <div className="flex items-center justify-between gap-1">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold shrink-0 sm:h-10 sm:w-10 sm:text-sm">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-semibold shrink-0 sm:h-10 sm:w-10 sm:text-sm">
           {setNumber}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <button
             onClick={handleWeightDecrease}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
             aria-label="Decrease weight"
           >
-            <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
           <div
             className={cn(
-              'w-12 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-8 flex items-center justify-center sm:w-16 sm:px-2 sm:h-10 sm:rounded-lg',
+              'w-10 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-16 sm:px-2 sm:h-10 sm:rounded-lg',
               isEditingWeight ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
             )}
             onClick={startEditingWeight}
@@ -244,30 +247,30 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             ) : (
               <>
                 <span className="text-xs font-bold sm:text-sm sm:font-semibold">{weight}</span>
-                <span className="text-[9px] text-muted-foreground ml-0.5 sm:text-[10px]">{weightUnit}</span>
+                <span className="text-[8px] text-muted-foreground ml-0.5 sm:text-[10px]">{weightUnit}</span>
               </>
             )}
           </div>
           <button
             onClick={handleWeightIncrease}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
             aria-label="Increase weight"
           >
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
 
-          <div className="w-2 sm:w-3" />
+          <div className="w-1 sm:w-3" />
 
           <button
             onClick={handleRepsDecrease}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
             aria-label="Decrease reps"
           >
-            <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
           <div
             className={cn(
-              'w-9 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-8 flex items-center justify-center sm:w-12 sm:h-10 sm:rounded-lg',
+              'w-8 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-12 sm:h-10 sm:rounded-lg',
               isEditingReps ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
             )}
             onClick={startEditingReps}
@@ -299,10 +302,10 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
           </div>
           <button
             onClick={handleRepsIncrease}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
             aria-label="Increase reps"
           >
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
         </div>
 
@@ -318,7 +321,7 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             })
           }}
           className={cn(
-            'h-8 w-8 rounded-full sm:h-10 sm:w-10',
+            'h-7 w-7 rounded-full sm:h-10 sm:w-10',
             set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
           )}
         >

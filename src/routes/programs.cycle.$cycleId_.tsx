@@ -6,7 +6,7 @@ import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Progress } from '~/components/ui/Progress';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
 import { useToast } from '@/components/ToastProvider';
 import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
 import { WeeklySchedule } from '~/components/WeeklySchedule';
@@ -508,10 +508,10 @@ function ProgramDashboard() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Program?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this program cycle and all its progress. This action cannot be undone.
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
-                <p className="text-muted-foreground">
-                  This will permanently delete this program cycle and all its progress. This action cannot be undone.
-                </p>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={() => { void handleDeleteProgram(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
