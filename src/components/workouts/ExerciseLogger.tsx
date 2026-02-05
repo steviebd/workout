@@ -130,7 +130,7 @@ export function ExerciseLogger({
         </CardHeader>
 
         {isExpanded ? (
-          <CardContent className="space-y-2 sm:space-y-3 px-3 pb-3 sm:px-4 sm:pb-4 pt-0">
+          <CardContent className="space-y-2 px-3 pb-3 sm:px-4 sm:pb-4 pt-0">
             {sets.map((set, index) => (
               <SetLogger
                 key={set.id}

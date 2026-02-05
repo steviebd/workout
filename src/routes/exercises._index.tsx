@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useToast } from '@/components/ToastProvider';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { PageLayout } from '~/components/ui/PageLayout';
 
 interface Exercise {
   id: string;
@@ -140,17 +141,17 @@ function Exercises() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Exercises</h1>
-          {!showCreateForm && (
-            <Button onClick={handleCreateClick} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New
-            </Button>
-          )}
-        </div>
-
+    <PageLayout
+      title="Exercises"
+      action={
+        !showCreateForm ? (
+          <Button onClick={handleCreateClick} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            New
+          </Button>
+        ) : null
+      }
+    >
         {showCreateForm ? <Card className="p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Create Exercise</h2>
@@ -264,7 +265,7 @@ function Exercises() {
             </div>
           )}
         </PullToRefresh>
-    </main>
+    </PageLayout>
   );
 }
 

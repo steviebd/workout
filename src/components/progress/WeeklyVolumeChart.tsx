@@ -44,7 +44,11 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
   const avgVolume = Math.round(totalVolume / data.length)
 
   function formatWeek(value: string): string {
-    return value.replace('Week ', 'W')
+    const datePart = value.replace('Week of ', '')
+    const date = new Date(datePart)
+    const month = date.toLocaleDateString('en-US', { month: 'short' })
+    const day = date.getDate()
+    return `Week of ${month} ${day}`
   }
 
   function formatVolumeTick(value: number): string {
@@ -57,7 +61,7 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
       <CardHeader className="pb-2 space-y-1">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Dumbbell className="h-5 w-5 text-accent" />
+            <Dumbbell className="h-5 w-5 text-volume" />
             Weekly Volume
           </CardTitle>
           <span className="text-xs text-muted-foreground">
@@ -79,8 +83,8 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
                 >
                   <defs>
                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={1} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.6} />
+                      <stop offset="0%" stopColor="var(--volume)" stopOpacity={1} />
+                      <stop offset="100%" stopColor="var(--volume)" stopOpacity={0.6} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />

@@ -77,7 +77,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
         <div className="border-t border-primary/10 pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-chart-5" />
+              <Trophy className="h-5 w-5 text-achievement" />
               <p className="text-sm text-muted-foreground">Total Workouts</p>
             </div>
             <p className="text-xl font-bold text-foreground">{totalWorkouts}</p>

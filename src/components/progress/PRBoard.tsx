@@ -23,7 +23,7 @@ export function PRBoard({ records }: PRBoardProps) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Trophy className="h-5 w-5 text-chart-4" />
+          <Trophy className="h-5 w-5 text-achievement" />
           Personal Records
         </CardTitle>
       </CardHeader>
@@ -31,9 +31,9 @@ export function PRBoard({ records }: PRBoardProps) {
         {records.map((record, index) => (
           <div
             key={record.id}
-            className="relative flex items-center gap-4 rounded-lg border border-border bg-secondary/30 p-4 transition-all hover:border-chart-4/50 hover:bg-secondary/50"
+            className="relative flex items-center gap-4 rounded-lg border border-border bg-secondary/30 p-4 transition-all hover:border-achievement/50 hover:bg-secondary/50"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-4/20 text-lg font-bold text-chart-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-achievement/20 text-lg font-bold text-achievement">
               #{index + 1}
             </div>
             
@@ -53,7 +53,7 @@ export function PRBoard({ records }: PRBoardProps) {
             </div>
 
             <div className="text-right">
-              <p className="text-xl font-bold text-chart-4">{formatWeight(record.weight)}</p>
+              <p className="text-xl font-bold text-achievement">{formatWeight(record.weight)}</p>
               {record.previousRecord ? (
                 <p className="flex items-center justify-end gap-1 text-xs text-success">
                   <TrendingUp className="h-3 w-3" />

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { StreakDisplay } from '~/components/achievements/StreakDisplay'
 import { BadgeCard } from '~/components/achievements/BadgeCard'
-import { cn } from '~/lib/cn'
+import { PageLayout } from '~/components/ui/PageLayout'
+import { FilterPills } from '~/components/ui/FilterPills'
 
 interface Badge {
   id: string
@@ -84,53 +85,33 @@ function AchievementsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-6">Achievements</h1>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </main>
+      <PageLayout title="Achievements">
+        <p className="text-muted-foreground">Loading...</p>
+      </PageLayout>
     )
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-6">Achievements</h1>
-        <p className="text-muted-foreground">
-          {unlockedCount} of {totalCount} badges earned
-        </p>
-      </div>
-      
+    <PageLayout
+      title="Achievements"
+      subtitle={`${unlockedCount} of ${totalCount} badges earned`}
+    >
       <StreakDisplay stats={stats} workoutDatesInWeek={workoutDatesInWeek} />
 
-      <section className="mt-4 mb-6">
-        <div className="flex justify-center overflow-x-auto pb-2 scrollbar-hide">
-          <div className="flex gap-3 px-4">
-            {filters.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={cn(
-                  'whitespace-nowrap flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all',
-                  filter === f.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <section className="mt-4">
+        <FilterPills
+          options={filters}
+          value={filter}
+          onChange={(value) => setFilter(value as BadgeFilter)}
+        />
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 mt-4">
           {filteredBadges.map((badge) => (
             <BadgeCard key={badge.id} badge={badge} />
           ))}
         </div>
       </section>
-    </main>
+    </PageLayout>
   )
 }
 

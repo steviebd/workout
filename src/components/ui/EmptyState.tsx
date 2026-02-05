@@ -1,6 +1,7 @@
+import { useState, useEffect, type ComponentType, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from './Button';
-import type { ComponentType, ReactNode } from 'react';
+import { Card } from './Card';
 
 interface EmptyStateProps {
   icon?: ComponentType<{ readonly size?: number; readonly className?: string }>;
@@ -11,6 +12,7 @@ interface EmptyStateProps {
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
   className?: string;
+  variant?: 'card' | 'inline';
 }
 
 export function EmptyState({
@@ -22,19 +24,24 @@ export function EmptyState({
   secondaryActionLabel,
   onSecondaryAction,
   className = '',
+  variant = 'inline',
 }: EmptyStateProps): ReactNode {
+  const [mounted, setMounted] = useState(false);
   const IconComponent = icon;
 
-  return (
-    <div className={`text-center py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 ${className}`}>
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const content = (
+    <div className={`text-center py-12 ${className}`}>
       <div className="flex items-center justify-center mb-6">
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
+        <div className={`flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ${mounted ? 'animate-in fade-in zoom-in duration-300' : ''}`}>
           {IconComponent ? (
-            <IconComponent size={56} className="relative text-primary/80" />
+            <IconComponent size={56} className="text-primary/80" />
           ) : (
             <svg
-              className="relative text-primary/80"
+              className="text-primary/80"
               width={56}
               height={56}
               viewBox="0 0 24 24"
@@ -74,6 +81,12 @@ export function EmptyState({
       ) : null}
     </div>
   );
+
+  if (variant === 'card') {
+    return <Card className="p-4">{content}</Card>;
+  }
+
+  return content;
 }
 
 export function EmptyTemplates({

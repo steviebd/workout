@@ -26,6 +26,9 @@ export interface UserFromWorkOS {
   lastName: string;
 }
 
+export const TOKEN_EXPIRY_SECONDS = 4 * 24 * 60 * 60; // 4 days in seconds
+export const REFRESH_THRESHOLD_SECONDS = 24 * 60 * 60; // Refresh if < 24 hours remaining
+
 export async function createToken(user: UserFromWorkOS, workosId?: string): Promise<string> {
   const token = await new SignJWT({
     sub: user.id,
@@ -34,7 +37,7 @@ export async function createToken(user: UserFromWorkOS, workosId?: string): Prom
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('2d')
+    .setExpirationTime('4d')
     .setIssuer('fit-workout-app')
     .setAudience('fit-workout-app')
     .sign(getJwtSecret());
@@ -57,6 +60,37 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
     return payload as SessionPayload;
   } catch {
     return null;
+  }
+}
+
+export function shouldRefreshToken(exp: number | undefined): boolean {
+  if (!exp) return true;
+  const now = Math.floor(Date.now() / 1000);
+  const remaining = exp - now;
+  return remaining < REFRESH_THRESHOLD_SECONDS;
+}
+
+export async function refreshTokenIfNeeded(
+  token: string,
+  user: UserFromWorkOS,
+  workosId?: string
+): Promise<{ token: string; refreshed: boolean }> {
+  try {
+    const decoded = await verifyToken(token);
+    if (!decoded || !decoded.exp) {
+      const newToken = await createToken(user, workosId);
+      return { token: newToken, refreshed: true };
+    }
+
+    if (shouldRefreshToken(decoded.exp)) {
+      const newToken = await createToken(user, workosId);
+      return { token: newToken, refreshed: true };
+    }
+
+    return { token, refreshed: false };
+  } catch {
+    const newToken = await createToken(user, workosId);
+    return { token: newToken, refreshed: true };
   }
 }
 
