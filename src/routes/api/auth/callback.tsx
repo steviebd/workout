@@ -13,6 +13,13 @@ function getStateFromCookie(cookieHeader: string | null): string | null {
   return stateCookie.split('=')[1];
 }
 
+function createErrorRedirect(error: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `/?error=${error}` },
+  });
+}
+
 const {WORKOS_API_KEY} = process.env;
 const {WORKOS_CLIENT_ID} = process.env;
 
@@ -25,37 +32,25 @@ export const Route = createFileRoute('/api/auth/callback')({
         const state = url.searchParams.get('state');
 
         if (!code) {
-          return new Response(null, {
-            status: 302,
-            headers: { Location: '/?error=no_code' },
-          });
+          return createErrorRedirect('no_code');
         }
 
         const storedState = getStateFromCookie(request.headers.get('Cookie'));
         if (!state || !storedState || state !== storedState) {
           console.error('OAuth state mismatch or missing');
-          return new Response(null, {
-            status: 302,
-            headers: { Location: '/?error=invalid_state' },
-          });
+          return createErrorRedirect('invalid_state');
         }
 
         try {
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {
             console.error('Database not available in auth callback');
-            return new Response(null, {
-              status: 302,
-              headers: { Location: '/?error=db_unavailable' },
-            });
+            return createErrorRedirect('db_unavailable');
           }
 
           if (!WORKOS_API_KEY || !WORKOS_CLIENT_ID) {
             console.error('WorkOS configuration missing');
-            return new Response(null, {
-              status: 302,
-              headers: { Location: '/?error=config_missing' },
-            });
+            return createErrorRedirect('config_missing');
           }
 
           const workos = new WorkOS(WORKOS_API_KEY);
@@ -86,10 +81,7 @@ export const Route = createFileRoute('/api/auth/callback')({
           return createSessionResponse(token, request, '/');
         } catch (err) {
           console.error('Auth callback error:', err);
-          return new Response(null, {
-            status: 302,
-            headers: { Location: '/?error=auth_failed' },
-          });
+          return createErrorRedirect('auth_failed');
         }
       },
     },

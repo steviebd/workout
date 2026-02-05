@@ -20,15 +20,15 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const categoryColors: Record<string, string> = {
   streak: 'from-primary/20 to-primary/5 border-primary/30',
-  volume: 'from-accent/20 to-accent/5 border-accent/30',
-  pr: 'from-chart-4/20 to-chart-4/5 border-chart-4/30',
+  volume: 'from-exercise/20 to-exercise/5 border-exercise/30',
+  pr: 'from-volume/20 to-volume/5 border-volume/30',
   consistency: 'from-success/20 to-success/5 border-success/30',
 }
 
 const categoryIconColors: Record<string, string> = {
   streak: 'text-primary bg-primary/20',
-  volume: 'text-accent bg-accent/20',
-  pr: 'text-chart-4 bg-chart-4/20',
+  volume: 'text-exercise bg-exercise/20',
+  pr: 'text-volume bg-volume/20',
   consistency: 'text-success bg-success/20',
 }
 
@@ -103,8 +103,8 @@ export function BadgeCard({ badge }: BadgeCardProps) {
                 className={cn(
                   'h-full rounded-full transition-all duration-500',
                   badge.category === 'streak' && 'bg-primary',
-                  badge.category === 'volume' && 'bg-accent',
-                  badge.category === 'pr' && 'bg-chart-4',
+                  badge.category === 'volume' && 'bg-exercise',
+                  badge.category === 'pr' && 'bg-volume',
                   badge.category === 'consistency' && 'bg-success'
                 )}
                 style={{ width: `${progressPercent}%` }}

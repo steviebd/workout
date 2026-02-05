@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
+import { Dumbbell } from 'lucide-react';
 import { useAuth } from './__root';
 import { StrengthChart } from '~/components/progress/StrengthChart';
 import { WeeklyVolumeChart } from '~/components/progress/WeeklyVolumeChart';
@@ -9,6 +10,8 @@ import { DateRangeSelector, type DateRange } from '~/components/progress/DateRan
 import { VolumeScopeToggle, type VolumeScope } from '~/components/progress/VolumeScopeToggle';
 import { Card } from '~/components/ui/Card';
 import { Skeleton } from '~/components/ui/Skeleton';
+import { PageLayout } from '~/components/ui/PageLayout';
+import { EmptyState } from '~/components/ui/EmptyState';
 
 interface Exercise {
   id: string;
@@ -132,11 +135,11 @@ function ProgressPage() {
 
   if (auth.loading) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <PageLayout title="Progress">
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Loading...</p>
         </div>
-      </main>
+      </PageLayout>
     );
   }
 
@@ -145,12 +148,10 @@ function ProgressPage() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Progress</h1>
-        <DateRangeSelector value={dateRange} onChange={handleDateRangeChange} />
-      </div>
-
+    <PageLayout
+      title="Progress"
+      action={<DateRangeSelector value={dateRange} onChange={handleDateRangeChange} />}
+    >
       {isLoadingExercises ? (
         <div className="space-y-6">
           <div className="h-10 bg-secondary rounded-full animate-pulse" />
@@ -159,9 +160,13 @@ function ProgressPage() {
           <Skeleton className="h-[200px] rounded-lg" />
         </div>
       ) : exercises.length === 0 ? (
-        <Card className="p-6 text-center">
-          <p className="text-muted-foreground">No exercises yet. Create your first exercise to track progress.</p>
-        </Card>
+        <EmptyState
+          icon={Dumbbell}
+          title="No exercises yet"
+          description="Create your first exercise to track progress."
+          actionLabel="Add Exercise"
+          onAction={() => { window.location.href = '/exercises/new'; }}
+        />
       ) : (
         <>
           <ExerciseSelector
@@ -218,7 +223,7 @@ function ProgressPage() {
           </div>
         </>
       )}
-    </main>
+    </PageLayout>
   );
 }
 

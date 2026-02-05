@@ -9,6 +9,8 @@ import { Input } from '~/components/ui/Input';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { EmptyTemplates, EmptyExercises } from '@/components/ui/EmptyState';
 import { SkeletonWorkoutsPage } from '~/components/ui/Skeleton';
+import { PageLayout } from '~/components/ui/PageLayout';
+import { SectionHeader } from '~/components/ui/SectionHeader';
 
 interface Template {
   id: string;
@@ -95,15 +97,11 @@ function WorkoutsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
-        <h1 className="text-2xl font-bold mb-6">Workouts</h1>
-
-        <PullToRefresh onRefresh={refreshAll}>
+    <PageLayout title="Workouts">
+      <PullToRefresh onRefresh={refreshAll}>
           {activePrograms.length > 0 ? (
             <section className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Active Programs</h2>
-              </div>
+              <SectionHeader title="Active Programs" />
               <div className="space-y-3">
                 {activePrograms.map((program) => (
                   <Link
@@ -137,15 +135,17 @@ function WorkoutsPage() {
           ) : null}
 
           <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Your Templates</h2>
-              <Button asChild={true} variant="outline" size="sm">
-                <Link to="/templates/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Link>
-              </Button>
-            </div>
+            <SectionHeader
+              title="Your Templates"
+              action={
+                <Button asChild={true} variant="outline" size="sm">
+                  <Link to="/templates/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Template
+                  </Link>
+                </Button>
+              }
+            />
 
             {templates.length === 0 ? (
               <EmptyTemplates
@@ -183,15 +183,17 @@ function WorkoutsPage() {
           </section>
 
           <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Your Exercises</h2>
-              <Button asChild={true} variant="outline" size="sm">
-                <Link to="/exercises/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Exercise
-                </Link>
-              </Button>
-            </div>
+            <SectionHeader
+              title="Your Exercises"
+              action={
+                <Button asChild={true} variant="outline" size="sm">
+                  <Link to="/exercises/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Exercise
+                  </Link>
+                </Button>
+              }
+            />
 
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -249,8 +251,8 @@ function WorkoutsPage() {
               </Link>
             </Button>
           </section>
-        </PullToRefresh>
-    </main>
+      </PullToRefresh>
+    </PageLayout>
   );
 }
 

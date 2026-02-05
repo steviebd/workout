@@ -12,6 +12,8 @@ import { Input } from '~/components/ui/Input';
 import { Badge } from '~/components/ui/Badge';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { PageLayout } from '~/components/ui/PageLayout';
+import { IconButton } from '~/components/ui/IconButton';
 
 type Template = {
   id: string;
@@ -88,16 +90,40 @@ function Templates() {
        }
      }, [fetchTemplates]);
 
-    const handleDeleteClick = useCallback((e: React.MouseEvent) => {
-      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-      if (id) {
-        void handleDelete(id);
-      }
-    }, [handleDelete]);
+     const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+       const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+       if (id) {
+         void handleDelete(id);
+       }
+     }, [handleDelete]);
 
-    const handleCreateTemplate = useCallback(() => {
-      window.location.href = '/templates/new';
-    }, []);
+     const handleDuplicate = useCallback(async (templateId: string) => {
+       try {
+         const response = await fetch(`/api/templates/${templateId}/duplicate`, {
+           method: 'POST',
+           credentials: 'include',
+         });
+
+         if (response.ok) {
+           void fetchTemplates();
+         } else {
+           setError('Failed to duplicate template');
+         }
+       } catch {
+         setError('Failed to duplicate template');
+       }
+     }, [fetchTemplates]);
+
+     const handleDuplicateClick = useCallback((e: React.MouseEvent) => {
+       const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+       if (id) {
+         void handleDuplicate(id);
+       }
+     }, [handleDuplicate]);
+
+     const handleCreateTemplate = useCallback(() => {
+       window.location.href = '/templates/new';
+     }, []);
 
 
   if (auth.loading || redirecting) {
@@ -115,17 +141,17 @@ function Templates() {
           <InlineError message={error} onRetry={() => void fetchTemplates()} onDismiss={() => setError(null)} />
         </div>
       ) : null}
-      <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Templates</h1>
+      <PageLayout
+        title="Templates"
+        action={
           <Button asChild={true} size="sm">
             <Link to="/templates/new">
               <Plus className="h-4 w-4 mr-1" />
               New
             </Link>
           </Button>
-        </div>
-
+        }
+      >
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -171,30 +197,30 @@ function Templates() {
                         {formatDate(template.createdAt)}
                       </div>
                       <div className="flex items-center gap-1">
-                        <button
-                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        <IconButton
+                          icon={Copy}
+                          label="Duplicate template"
+                          variant="ghost"
+                          size="sm"
                           data-id={template.id}
-                          onClick={handleDeleteClick}
-                          title="Delete template"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        <Link
-                          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                          to="/templates/$id/edit"
-                          params={{ id: template.id }}
-                          title="Edit template"
-                        >
-                          <Edit className="h-4 w-4" />
+                          onClick={handleDuplicateClick}
+                        />
+                        <Link to="/templates/$id/edit" params={{ id: template.id }}>
+                          <IconButton
+                            icon={Edit}
+                            label="Edit template"
+                            variant="ghost"
+                            size="sm"
+                          />
                         </Link>
-                        <button
-                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        <IconButton
+                          icon={Trash2}
+                          label="Delete template"
+                          variant="ghost"
+                          size="sm"
                           data-id={template.id}
                           onClick={handleDeleteClick}
-                          title="Delete template"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        />
                       </div>
                     </div>
                   </CardContent>
@@ -203,8 +229,7 @@ function Templates() {
             </div>
           )}
         </PullToRefresh>
-      </main>
-
+      </PageLayout>
     </>
   );
 }

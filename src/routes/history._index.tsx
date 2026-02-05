@@ -10,6 +10,9 @@ import { Input } from '~/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { useUnit } from '@/lib/context/UnitContext';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { PageLayout } from '~/components/ui/PageLayout';
+import { StatCard } from '~/components/ui/StatCard';
+import { FilterPills } from '~/components/ui/FilterPills';
 
 interface WorkoutHistoryItem {
   id: string;
@@ -339,10 +342,7 @@ function History() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Workout History</h1>
-      </div>
+    <PageLayout title="Workout History">
       <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {isLoadingStats ? (
@@ -354,49 +354,36 @@ function History() {
               </>
             ) : (
               <>
-                <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
+                <StatCard
+                  icon={Trophy}
+                  label="Total Workouts"
+                  value={stats?.totalWorkouts ?? 0}
+                  variant="primary"
                   onClick={handleTotalWorkoutsClick}
-                  type="button"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Trophy className="text-primary" size={16} />
-                    <span className="text-xs text-muted-foreground">Total Workouts</span>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{stats?.totalWorkouts ?? 0}</p>
-                </button>
+                />
 
-                <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
+                <StatCard
+                  icon={Calendar}
+                  label="This Week"
+                  value={stats?.thisWeek ?? 0}
+                  variant="primary"
                   onClick={handleThisWeekStatClick}
-                  type="button"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Calendar className="text-accent" size={16} />
-                    <span className="text-xs text-muted-foreground">This Week</span>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{stats?.thisWeek ?? 0}</p>
-                </button>
+                />
 
-                <button
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 hover:shadow-md active:scale-95 transition-all text-left cursor-pointer"
+                <StatCard
+                  icon={Calendar}
+                  label="This Month"
+                  value={stats?.thisMonth ?? 0}
+                  variant="primary"
                   onClick={handleThisMonthStatClick}
-                  type="button"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Calendar className="text-chart-5" size={16} />
-                    <span className="text-xs text-muted-foreground">This Month</span>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{stats?.thisMonth ?? 0}</p>
-                </button>
+                />
 
-                <div className="bg-card border border-border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Scale className="text-chart-4" size={16} />
-                    <span className="text-xs text-muted-foreground">Total Volume</span>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{formatVolume(stats?.totalVolume ?? 0)}</p>
-                </div>
+                <StatCard
+                  icon={Scale}
+                  label="Total Volume"
+                  value={formatVolume(stats?.totalVolume ?? 0)}
+                  variant="primary"
+                />
               </>
             )}
           </div>
@@ -405,51 +392,28 @@ function History() {
             {isLoadingStats ? (
               <Skeleton className="h-[68px] rounded-lg" />
             ) : (
-              <div className="bg-card border border-border rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Dumbbell className="text-destructive" size={16} />
-                  <span className="text-xs text-muted-foreground">Total Sets</span>
-                </div>
-                <p className="text-xl font-bold text-foreground">{stats?.totalSets ?? 0}</p>
-              </div>
+              <StatCard
+                icon={Dumbbell}
+                label="Total Sets"
+                value={stats?.totalSets ?? 0}
+                variant="primary"
+              />
             )}
           </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
-              !fromDate && !toDate
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-            onClick={handleAllTimeClick}
-            type="button"
-          >
-            All Time
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
-              fromDate && fromDate === getThisWeekRange().from
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-            onClick={handleThisWeekClick}
-            type="button"
-          >
-            This Week
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors active:scale-95 ${
-              fromDate && fromDate === getThisMonthRange().from
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-            onClick={handleThisMonthClick}
-            type="button"
-          >
-            This Month
-          </button>
-        </div>
+          <FilterPills
+            options={[
+              { value: 'allTime', label: 'All Time' },
+              { value: 'thisWeek', label: 'This Week' },
+              { value: 'thisMonth', label: 'This Month' },
+            ]}
+            value={!fromDate && !toDate ? 'allTime' : fromDate === getThisWeekRange().from ? 'thisWeek' : 'thisMonth'}
+            onChange={(value) => {
+              if (value === 'allTime') handleAllTimeClick();
+              else if (value === 'thisWeek') handleThisWeekClick();
+              else if (value === 'thisMonth') handleThisMonthClick();
+            }}
+          />
 
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1 min-w-0">
@@ -610,7 +574,7 @@ function History() {
           </div>
         )}
       </div>
-    </main>
+    </PageLayout>
   );
 }
 

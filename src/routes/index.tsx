@@ -5,6 +5,7 @@ import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
 import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
 import { DashboardProvider } from '@/lib/context/DashboardContext'
 import { formatRelativeDate } from '~/lib/date'
+import { PageLayout } from '~/components/ui/PageLayout'
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -153,22 +154,18 @@ function Dashboard() {
 
   return (
     <DashboardProvider>
-      <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{greeting}</h1>
-            <p className="text-muted-foreground">Ready to crush your workout?</p>
-          </div>
-          <DashboardCustomizer />
-        </div>
-
+      <PageLayout
+        title={greeting}
+        subtitle="Ready to crush your workout?"
+        action={<DashboardCustomizer />}
+      >
         <DashboardWidgets
           templates={templates}
           personalRecords={personalRecords}
           stats={stats}
           isNewUser={isNewUser}
         />
-      </main>
+      </PageLayout>
     </DashboardProvider>
   )
 }

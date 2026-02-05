@@ -10,14 +10,14 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.72 0.18 25);
+  --primary: oklch(0.65 0.18 25);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.15 0 0);
   --muted: oklch(0.96 0 0);
   --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.65 0.2 30);
-  --accent-foreground: oklch(0.15 0 0);
+  --accent: oklch(0.65 0.18 195);
+  --accent-foreground: oklch(0.99 0 0);
   --success: oklch(0.72 0.19 142);
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.8 0.18 85);
@@ -26,21 +26,31 @@
   --destructive-foreground: oklch(0.99 0 0);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.72 0.18 25);
-  --chart-1: oklch(0.72 0.22 25);
-  --chart-2: oklch(0.7 0.18 195);
+  --ring: oklch(0.65 0.18 25);
+  --chart-1: oklch(0.65 0.18 25);
+  --chart-2: oklch(0.65 0.18 195);
   --chart-3: oklch(0.72 0.19 142);
   --chart-4: oklch(0.7 0.2 70);
-  --chart-5: oklch(0.7 0.2 280);
+  --chart-5: oklch(0.65 0.2 280);
   --radius: 0.75rem;
   --sidebar: oklch(0.96 0 0);
   --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.72 0.18 25);
+  --sidebar-primary: oklch(0.65 0.18 25);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.94 0 0);
   --sidebar-accent-foreground: oklch(0.15 0 0);
   --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.72 0.18 25);
+  --sidebar-ring: oklch(0.65 0.18 25);
+  --workout: oklch(0.65 0.18 25);
+  --workout-foreground: oklch(0.99 0 0);
+  --exercise: oklch(0.65 0.18 195);
+  --exercise-foreground: oklch(0.99 0 0);
+  --volume: oklch(0.65 0.18 280);
+  --volume-foreground: oklch(0.99 0 0);
+  --streak: oklch(0.70 0.18 85);
+  --streak-foreground: oklch(0.15 0 0);
+  --achievement: oklch(0.65 0.2 320);
+  --achievement-foreground: oklch(0.99 0 0);
 }
 
 .dark {
@@ -50,14 +60,14 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.12 0.02 260);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.7 0.2 265);
+  --primary: oklch(0.70 0.18 25);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.18 0.02 260);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.18 0 0);
   --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.65 0.18 260);
-  --accent-foreground: oklch(0.15 0 0);
+  --accent: oklch(0.65 0.18 195);
+  --accent-foreground: oklch(0.99 0 0);
   --success: oklch(0.72 0.19 142);
   --success-foreground: oklch(0.1 0 0);
   --warning: oklch(0.8 0.18 85);
@@ -66,21 +76,31 @@
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.25 0 0);
   --input: oklch(0.2 0 0);
-  --ring: oklch(0.7 0.2 265);
-  --chart-1: oklch(0.7 0.22 265);
-  --chart-2: oklch(0.7 0.18 195);
+  --ring: oklch(0.70 0.18 25);
+  --chart-1: oklch(0.70 0.18 25);
+  --chart-2: oklch(0.70 0.18 195);
   --chart-3: oklch(0.72 0.19 142);
   --chart-4: oklch(0.7 0.2 70);
-  --chart-5: oklch(0.7 0.2 280);
+  --chart-5: oklch(0.70 0.2 280);
   --radius: 0.75rem;
   --sidebar: oklch(0.1 0.02 260);
   --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.7 0.2 265);
+  --sidebar-primary: oklch(0.70 0.18 25);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.18 0 0);
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.7 0.2 265);
+  --sidebar-ring: oklch(0.70 0.18 25);
+  --workout: oklch(0.70 0.18 25);
+  --workout-foreground: oklch(0.99 0 0);
+  --exercise: oklch(0.70 0.18 195);
+  --exercise-foreground: oklch(0.99 0 0);
+  --volume: oklch(0.70 0.18 280);
+  --volume-foreground: oklch(0.99 0 0);
+  --streak: oklch(0.75 0.18 85);
+  --streak-foreground: oklch(0.15 0 0);
+  --achievement: oklch(0.70 0.2 320);
+  --achievement-foreground: oklch(0.99 0 0);
 }
 
 @theme inline {
@@ -126,6 +146,26 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-workout: var(--workout);
+  --color-workout-foreground: var(--workout-foreground);
+  --color-exercise: var(--exercise);
+  --color-exercise-foreground: var(--exercise-foreground);
+  --color-volume: var(--volume);
+  --color-volume-foreground: var(--volume-foreground);
+  --color-streak: var(--streak);
+  --color-streak-foreground: var(--streak-foreground);
+  --color-achievement: var(--achievement);
+  --color-achievement-foreground: var(--achievement-foreground);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @layer utilities {
@@ -164,4 +204,11 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Recharts tooltip cursor fix for dark mode */
+.recharts-tooltip-cursor {
+  fill: var(--card) !important;
+  stroke: var(--border) !important;
+  stroke-width: 1px;
 }

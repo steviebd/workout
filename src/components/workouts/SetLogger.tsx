@@ -167,7 +167,7 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
     <div
       ref={containerRef}
       className={cn(
-        'rounded-lg border p-2 sm:p-3 transition-all relative overflow-hidden',
+        'rounded-lg border p-1.5 sm:p-3 transition-all relative overflow-hidden',
         set.completed
           ? 'border-success/50 bg-success/10'
           : 'border-border bg-secondary/30',
@@ -182,131 +182,114 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
         touchAction: 'pan-y',
       }}
     >
-      <div
-        className={cn(
-          'rounded-lg border p-1.5 sm:p-3 transition-all relative overflow-hidden',
-          set.completed
-            ? 'border-success/50 bg-success/10'
-            : 'border-border bg-secondary/30',
-          isSwiping && 'cursor-grab active:cursor-grabbing'
-        )}
-      >
-        <div className={cn(
-          'h-10 w-10 rounded-full flex items-center justify-center',
-          set.completed ? 'bg-success/20' : 'bg-primary/20'
-        )}
-        >
-          <Check className={cn(
-            'h-5 w-5',
-            set.completed ? 'text-success' : 'text-primary'
-          )}
-          />
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-semibold shrink-0 sm:h-10 sm:w-10 sm:text-sm">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold shrink-0">
           {setNumber}
         </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-1">
-          <button
-            onClick={handleWeightDecrease}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
-            aria-label="Decrease weight"
-          >
-            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
-          </button>
-          <div
-            className={cn(
-              'w-10 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-16 sm:px-2 sm:h-10 sm:rounded-lg',
-              isEditingWeight ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
-            )}
-            onClick={startEditingWeight}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                startEditingWeight();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Edit weight"
-          >
-            {isEditingWeight ? (
-              <input
-                ref={weightInputRef}
-                className="w-full text-xs font-bold text-center outline-none bg-transparent sm:text-sm sm:font-semibold"
-                onBlur={handleWeightBlur}
-                onChange={handleWeightChange}
-                onKeyDown={handleWeightKeyDown}
-                type="text"
-                value={weight}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            ) : (
-              <>
-                <span className="text-xs font-bold sm:text-sm sm:font-semibold">{weight}</span>
-                <span className="text-[8px] text-muted-foreground ml-0.5 sm:text-[10px]">{weightUnit}</span>
-              </>
-            )}
+        <div className="flex items-end gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={handleWeightDecrease}
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              aria-label="Decrease weight"
+            >
+              <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+            </button>
+            <div
+              className={cn(
+                'w-11 sm:w-14 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background border border-border',
+                isEditingWeight ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'
+              )}
+              onClick={startEditingWeight}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  startEditingWeight();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Edit weight"
+            >
+              {isEditingWeight ? (
+                <input
+                  ref={weightInputRef}
+                  className="w-full text-xs sm:text-sm font-bold text-center outline-none bg-transparent"
+                  onBlur={handleWeightBlur}
+                  onChange={handleWeightChange}
+                  onKeyDown={handleWeightKeyDown}
+                  type="text"
+                  value={weight}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              ) : (
+                <>
+                  <span className="text-xs sm:text-sm font-bold">{weight}</span>
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground ml-0.5">{weightUnit}</span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={handleWeightIncrease}
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              aria-label="Increase weight"
+            >
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+            </button>
           </div>
-          <button
-            onClick={handleWeightIncrease}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
-            aria-label="Increase weight"
-          >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-          </button>
 
-          <div className="w-1 sm:w-3" />
+          <span className="text-muted-foreground font-bold text-xs sm:text-lg mb-0.5">×</span>
 
-          <button
-            onClick={handleRepsDecrease}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
-            aria-label="Decrease reps"
-          >
-            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
-          </button>
-          <div
-            className={cn(
-              'w-8 text-center cursor-pointer rounded-md px-1 py-1 transition-colors h-7 flex items-center justify-center sm:w-12 sm:h-10 sm:rounded-lg',
-              isEditingReps ? 'bg-background ring-2 ring-primary' : 'hover:bg-secondary/50'
-            )}
-            onClick={startEditingReps}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                startEditingReps();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Edit reps"
-          >
-            {isEditingReps ? (
-              <input
-                ref={repsInputRef}
-                className="w-full text-xs font-bold text-center outline-none bg-transparent sm:text-sm sm:font-semibold"
-                onBlur={handleRepsBlur}
-                onChange={handleRepsChange}
-                onKeyDown={handleRepsKeyDown}
-                type="text"
-                value={reps}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            ) : (
-              <span className="text-xs font-bold sm:text-sm sm:font-semibold">{reps}</span>
-            )}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={handleRepsDecrease}
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              aria-label="Decrease reps"
+            >
+              <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+            </button>
+            <div
+              className={cn(
+                'w-9 sm:w-12 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background border border-border',
+                isEditingReps ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'
+              )}
+              onClick={startEditingReps}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  startEditingReps();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Edit reps"
+            >
+              {isEditingReps ? (
+                <input
+                  ref={repsInputRef}
+                  className="w-full text-xs sm:text-sm font-bold text-center outline-none bg-transparent"
+                  onBlur={handleRepsBlur}
+                  onChange={handleRepsChange}
+                  onKeyDown={handleRepsKeyDown}
+                  type="text"
+                  value={reps}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              ) : (
+                <span className="text-xs sm:text-sm font-bold">{reps}</span>
+              )}
+            </div>
+            <button
+              onClick={handleRepsIncrease}
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              aria-label="Increase reps"
+            >
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+            </button>
           </div>
-          <button
-            onClick={handleRepsIncrease}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95 sm:h-9 sm:w-9"
-            aria-label="Increase reps"
-          >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-          </button>
         </div>
 
         <Button
@@ -321,7 +304,7 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             })
           }}
           className={cn(
-            'h-7 w-7 rounded-full sm:h-10 sm:w-10',
+            'h-8 w-8 sm:h-10 sm:w-10 rounded-full',
             set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
           )}
         >

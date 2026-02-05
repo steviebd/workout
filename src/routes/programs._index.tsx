@@ -2,10 +2,10 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { ProgramCategory } from '~/lib/programs/types';
 import { getAllPrograms } from '~/lib/programs';
-import { PageHeader } from '~/components/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/Tabs';
+import { PageLayout } from '~/components/ui/PageLayout';
 
 function ProgramsIndex() {
   const programs = getAllPrograms();
@@ -29,9 +29,7 @@ function ProgramsIndex() {
     : programs.filter((p) => p.category === activeCategory);
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <PageHeader title="Programs" subtitle="Train with proven programs" />
-
+    <PageLayout title="Programs" subtitle="Train with proven programs">
       <div className="px-4">
         <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as ProgramCategory | 'all')}>
           <TabsList className="w-full justify-start overflow-x-auto">
@@ -65,7 +63,7 @@ function ProgramsIndex() {
           </Link>
         ))}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
