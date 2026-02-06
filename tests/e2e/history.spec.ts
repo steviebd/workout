@@ -84,7 +84,7 @@ test.describe('Workout History', () => {
     await page.waitForTimeout(500);
   });
 
-  test.skip('can filter by exercise', async ({ page }) => {
+  test('can filter by exercise', async ({ page }) => {
     await loginUser(page);
 
     await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });
@@ -165,7 +165,7 @@ test.describe('Workout History', () => {
     await page.waitForTimeout(500);
   });
 
-  test.skip('can sort workouts', async ({ page }) => {
+  test('can sort workouts', async ({ page }) => {
     await loginUser(page);
 
     await page.goto(`${BASE_URL}/history`, { waitUntil: 'networkidle' });

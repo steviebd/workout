@@ -27,6 +27,8 @@ import { Route as ExercisesIdRouteImport } from './routes/exercises.$id'
 import { Route as AuthSigninRouteImport } from './routes/auth.signin'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
+import { Route as ApiWorkoutSetsRouteImport } from './routes/api/workout-sets'
+import { Route as ApiWorkoutExercisesRouteImport } from './routes/api/workout-exercises'
 import { Route as ApiTemplatesRouteImport } from './routes/api/templates'
 import { Route as ApiSyncRouteImport } from './routes/api/sync'
 import { Route as ApiStreaksRouteImport } from './routes/api/streaks'
@@ -168,6 +170,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const ApiWorkoutsRoute = ApiWorkoutsRouteImport.update({
   id: '/api/workouts',
   path: '/api/workouts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorkoutSetsRoute = ApiWorkoutSetsRouteImport.update({
+  id: '/api/workout-sets',
+  path: '/api/workout-sets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorkoutExercisesRoute = ApiWorkoutExercisesRouteImport.update({
+  id: '/api/workout-exercises',
+  path: '/api/workout-exercises',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTemplatesRoute = ApiTemplatesRouteImport.update({
@@ -460,6 +472,8 @@ export interface FileRoutesByFullPath {
   '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
+  '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
+  '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
@@ -532,6 +546,8 @@ export interface FileRoutesByTo {
   '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
+  '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
+  '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
@@ -605,6 +621,8 @@ export interface FileRoutesById {
   '/api/streaks': typeof ApiStreaksRoute
   '/api/sync': typeof ApiSyncRoute
   '/api/templates': typeof ApiTemplatesRouteWithChildren
+  '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
+  '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
@@ -679,6 +697,8 @@ export interface FileRouteTypes {
     | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
+    | '/api/workout-exercises'
+    | '/api/workout-sets'
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
@@ -751,6 +771,8 @@ export interface FileRouteTypes {
     | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
+    | '/api/workout-exercises'
+    | '/api/workout-sets'
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
@@ -823,6 +845,8 @@ export interface FileRouteTypes {
     | '/api/streaks'
     | '/api/sync'
     | '/api/templates'
+    | '/api/workout-exercises'
+    | '/api/workout-sets'
     | '/api/workouts'
     | '/auth/callback'
     | '/auth/signin'
@@ -896,6 +920,8 @@ export interface RootRouteChildren {
   ApiStreaksRoute: typeof ApiStreaksRoute
   ApiSyncRoute: typeof ApiSyncRoute
   ApiTemplatesRoute: typeof ApiTemplatesRouteWithChildren
+  ApiWorkoutExercisesRoute: typeof ApiWorkoutExercisesRoute
+  ApiWorkoutSetsRoute: typeof ApiWorkoutSetsRoute
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSigninRoute: typeof AuthSigninRoute
@@ -1055,6 +1081,20 @@ declare module '@tanstack/react-router' {
       path: '/api/workouts'
       fullPath: '/api/workouts'
       preLoaderRoute: typeof ApiWorkoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/workout-sets': {
+      id: '/api/workout-sets'
+      path: '/api/workout-sets'
+      fullPath: '/api/workout-sets'
+      preLoaderRoute: typeof ApiWorkoutSetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/workout-exercises': {
+      id: '/api/workout-exercises'
+      path: '/api/workout-exercises'
+      fullPath: '/api/workout-exercises'
+      preLoaderRoute: typeof ApiWorkoutExercisesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/templates': {
@@ -1639,6 +1679,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStreaksRoute: ApiStreaksRoute,
   ApiSyncRoute: ApiSyncRoute,
   ApiTemplatesRoute: ApiTemplatesRouteWithChildren,
+  ApiWorkoutExercisesRoute: ApiWorkoutExercisesRoute,
+  ApiWorkoutSetsRoute: ApiWorkoutSetsRoute,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSigninRoute: AuthSigninRoute,

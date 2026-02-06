@@ -646,7 +646,7 @@ test.describe('Calendar Scheduling Feature', () => {
 	});
 
 	test.describe('Week Calculation (Date-based)', () => {
-		test.skip('5.1 current week based on today date', async ({ page }) => {
+		test('5.1 current week based on today date', async ({ page }) => {
 			const tomorrow = new Date();
 			tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -667,7 +667,7 @@ test.describe('Calendar Scheduling Feature', () => {
 			console.log('Current week displayed:', weekText);
 		});
 
-		test.skip('5.2 dashboard shows no workout when rest day', async ({ page }) => {
+		test('5.2 dashboard shows no workout when rest day', async ({ page }) => {
 			const nextMonday = new Date();
 			nextMonday.setDate(nextMonday.getDate() + ((7 - nextMonday.getDay()) % 7 + 1) % 7 || 7);
 
@@ -688,7 +688,7 @@ test.describe('Calendar Scheduling Feature', () => {
 	});
 
 	test.describe('Full Program Flow with Calendar', () => {
-		test.skip('complete program flow: start program, complete workout, verify calendar updates', async ({ page }) => {
+		test('complete program flow: start program, complete workout, verify calendar updates', async ({ page }) => {
 			const tomorrow = new Date();
 			tomorrow.setDate(tomorrow.getDate() + 7);
 
@@ -736,7 +736,7 @@ test.describe('Calendar Scheduling Feature', () => {
 	});
 
 	test.describe('Edge Cases', () => {
-		test.skip('6.1 scheduling respects preferred days - first workout on preferred day', async ({ page }) => {
+		test('6.1 scheduling respects preferred days - first workout on preferred day', async ({ page }) => {
 			const saturday = new Date();
 			const daysUntilSaturday = (6 - saturday.getDay() + 7) % 7;
 			saturday.setDate(saturday.getDate() + (daysUntilSaturday || 7));
@@ -756,7 +756,7 @@ test.describe('Calendar Scheduling Feature', () => {
 			console.log('Program started - scheduling respects preferred days');
 		});
 
-		test.skip('6.2 multiple week navigation works correctly', async ({ page }) => {
+		test('6.2 multiple week navigation works correctly', async ({ page }) => {
 			const tomorrow = new Date();
 			tomorrow.setDate(tomorrow.getDate() + 7);
 

@@ -66,7 +66,7 @@ test.describe('Exercise List Flow', () => {
 });
 
 test.describe('Create Exercise Flow', () => {
-	test.skip('create new exercise with all fields - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+	test('create new exercise with all fields', async ({ page }) => {
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Test Exercise ${Date.now()}`;
@@ -94,7 +94,7 @@ test.describe('Create Exercise Flow', () => {
 		await deleteExercise(page, testExerciseName);
 	});
 
-	test.skip('create exercise with required fields only - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+	test('create exercise with required fields only', async ({ page }) => {
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'networkidle' });
 
 		const testExerciseName = `Minimal Exercise ${Date.now()}`;
@@ -156,7 +156,7 @@ test.describe('View Exercise Detail', () => {
 });
 
 test.describe('Search and Filter Flow', () => {
-  test.skip('create multiple exercises with different muscle groups - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+  test('create multiple exercises with different muscle groups', async ({ page }) => {
     const timestamp = Date.now();
     const exercises = [
       { name: `Chest Test Alpha ${timestamp}`, muscleGroup: 'Chest' },
@@ -209,7 +209,7 @@ test.describe('Search and Filter Flow', () => {
 });
 
 test.describe('Template Integration Flow', () => {
-  test.skip('create exercise from template flow - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+  test('create exercise from template flow', async ({ page }) => {
     await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'networkidle' });
     await expect(page.locator('h1:has-text("Create Template")').first()).toBeVisible({ timeout: 10000 });
 

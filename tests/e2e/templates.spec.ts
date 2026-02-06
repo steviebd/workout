@@ -71,7 +71,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page).toHaveURL(isAuthKitUrl);
   });
 
-  test.skip('should create and display a new template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+  test('should create and display a new template', async ({ page }) => {
     await loginUser(page);
 
     const templateName = `Test Template ${Date.now()}`;
@@ -98,7 +98,6 @@ test.describe('Templates E2E Tests', () => {
   });
 
   test('should update template name', async ({ page }) => {
-    test.skip(true, 'Flaky test - timing issues with template creation');
 
     await loginUser(page);
 
@@ -132,7 +131,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test.skip('should copy a template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+  test('should copy a template', async ({ page }) => {
     await loginUser(page);
 
     const timestamp = Date.now();
@@ -157,7 +156,7 @@ test.describe('Templates E2E Tests', () => {
     await expect(page.locator(`text=${templateName} (Copy)`).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test.skip('should delete a template - consolidated in exercise-template-flow.spec.ts', async ({ page }) => {
+  test('should delete a template', async ({ page }) => {
     await loginUser(page);
 
     const timestamp = Date.now();
@@ -188,7 +187,6 @@ test.describe('Templates E2E Tests', () => {
   });
 
   test('should add multiple exercises to template', async ({ page }) => {
-    test.skip(true, 'Flaky test - timing issues with modal and exercise selection');
 
     await loginUser(page);
 

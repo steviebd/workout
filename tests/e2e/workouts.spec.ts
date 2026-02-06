@@ -65,7 +65,7 @@ test.describe('Workout Flow', () => {
     }
   });
 
-  test.skip('create exercises, template, and workout - full flow', async ({ page }) => {
+  test('create exercises, template, and workout - full flow', async ({ page }) => {
     await loginUser(page);
 
     await page.goto(`${BASE_URL}/workouts`, { waitUntil: 'networkidle' });
@@ -145,7 +145,6 @@ test.describe('Workout Flow', () => {
   });
 
   test('prepopulates sets and reps from previous workout', async ({ page }) => {
-    test.skip(true, 'Flaky test - timing issues with exercise card expansion');
 
     await loginUser(page);
 
@@ -426,7 +425,6 @@ test.describe('Workout Flow', () => {
   });
 
   test('can start workout from template on workouts page', async ({ page }) => {
-    test.skip(true, 'Skipping - requires templates and exercises to exist. Run create-exercises test first.');
 
     await loginUser(page);
 

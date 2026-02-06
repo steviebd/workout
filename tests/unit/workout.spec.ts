@@ -27,6 +27,7 @@ const mockWorkoutData: Workout = {
   completedAt: null,
   notes: 'Great workout',
   createdAt: '2024-01-01T10:00:00.000Z',
+  updatedAt: '2024-01-01T10:00:00.000Z',
   isDeleted: false,
   squat1rm: null,
   bench1rm: null,
@@ -49,6 +50,8 @@ const mockWorkoutSetData: WorkoutSet = {
   isComplete: true,
   completedAt: '2024-01-01T10:05:00.000Z',
   createdAt: '2024-01-01T10:05:00.000Z',
+  updatedAt: '2024-01-01T10:05:00.000Z',
+  isDeleted: false,
 };
 
 const mockUserPreferenceData: UserPreference = {
@@ -428,6 +431,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
       completedAt: '2024-01-10T11:00:00.000Z',
       notes: null,
       createdAt: '2024-01-10T10:00:00.000Z',
+      updatedAt: '2024-01-10T10:00:00.000Z',
       isDeleted: false,
       squat1rm: null,
       bench1rm: null,
@@ -448,6 +452,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
       completedAt: '2024-01-12T11:00:00.000Z',
       notes: null,
       createdAt: '2024-01-12T10:00:00.000Z',
+      updatedAt: '2024-01-12T10:00:00.000Z',
       isDeleted: false,
       squat1rm: null,
       bench1rm: null,
@@ -468,6 +473,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
       completedAt: '2024-01-14T11:00:00.000Z',
       notes: null,
       createdAt: '2024-01-14T10:00:00.000Z',
+      updatedAt: '2024-01-14T10:00:00.000Z',
       isDeleted: false,
       squat1rm: null,
       bench1rm: null,
@@ -1625,6 +1631,8 @@ describe('Workout Session - addSetToBackend API behavior', () => {
       isComplete: false,
       completedAt: null,
       createdAt: '2024-01-15T12:00:00.000Z',
+      updatedAt: '2024-01-15T12:00:00.000Z',
+      isDeleted: false,
     };
 
     const mockFetch = vi.fn().mockResolvedValue({
@@ -1818,6 +1826,8 @@ describe('Workout Session - Frontend set ID consistency', () => {
       isComplete: false,
       completedAt: null,
       createdAt: '2024-01-15T12:00:00.000Z',
+      updatedAt: '2024-01-15T12:00:00.000Z',
+      isDeleted: false,
     };
 
     const mockFetch = vi.fn().mockResolvedValue({

@@ -78,6 +78,7 @@ export const workouts = sqliteTable('workouts', {
   notes: text('notes'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   squat1rm: real('squat_1rm'),
   bench1rm: real('bench_1rm'),
   deadlift1rm: real('deadlift_1rm'),
@@ -97,6 +98,8 @@ export const workoutExercises = sqliteTable('workout_exercises', {
   notes: text('notes'),
   isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
   setNumber: integer('set_number'),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const workoutSets = sqliteTable('workout_sets', {
@@ -110,6 +113,8 @@ export const workoutSets = sqliteTable('workout_sets', {
   isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
   completedAt: text('completed_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const userStreaks = sqliteTable('user_streaks', {
@@ -193,10 +198,12 @@ export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workou
 export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
 export const _workoutExercisesExerciseIdIdx = index('idx_workout_exercises_exercise_id').on(workoutExercises.exerciseId);
 export const _workoutExercisesLocalIdIdx = index('idx_workout_exercises_local_id').on(workoutExercises.localId);
+export const _workoutExercisesUpdatedAtIdx = index('idx_workout_exercises_updated_at').on(workoutExercises.updatedAt);
 
 export const _workoutSetsWorkoutExerciseIdIdx = index('idx_workout_sets_workout_exercise_id').on(workoutSets.workoutExerciseId);
 export const _workoutSetsCompletedAtIdx = index('idx_workout_sets_completed_at').on(workoutSets.completedAt);
 export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(workoutSets.localId);
+export const _workoutSetsUpdatedAtIdx = index('idx_workout_sets_updated_at').on(workoutSets.updatedAt);
 
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);

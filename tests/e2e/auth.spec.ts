@@ -40,7 +40,6 @@ function isAuthKitUrl(url: URL): boolean {
 	});
 
 	test('complete login flow and verify authenticated state', async ({ page }) => {
-		test.skip(true, 'Skipped - WorkOS form validation prevents automated testing in this environment. Test requires manual browser testing or CI environment with proper auth token caching.');
 
 		const response = await page.request.get(`${BASE_URL}/api/auth/me`);
 		if (response.ok()) {
@@ -225,7 +224,6 @@ function isAuthKitUrl(url: URL): boolean {
 	});
 
 	test('re-authentication after logout redirects to protected route', async ({ page, context }) => {
-		test.skip(true, 'Flaky test - WorkOS session caching causes inconsistent behavior');
 
 		await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 		await page.waitForTimeout(2000);
