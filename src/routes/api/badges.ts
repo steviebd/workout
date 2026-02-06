@@ -5,14 +5,14 @@ import { createDb } from '~/lib/db';
 import { workouts } from '~/lib/db/schema';
 import { calculateAllBadges } from '~/lib/badges';
 import { countWorkoutsInRange } from '~/lib/streaks';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/badges' as const)({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const session = await getSession(request);
-        if (!session?.sub) {
+        const session = await requireAuth(request);
+        if (!session) {
           return Response.json({ error: 'Not authenticated' }, { status: 401 });
         }
         const workosId = session.sub;

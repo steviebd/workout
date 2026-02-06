@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { updateProgramCycleWorkout, getProgramCycleWorkoutById } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutId/reschedule')({
   server: {
     handlers: {
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
+          const session = await requireAuth(request);
           if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }

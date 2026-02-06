@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { eq } from 'drizzle-orm';
 import { getProgramCycleById, getCurrentWorkout, getProgramCycleWorkoutById, generateTemplateFromWorkout, updateProgramCycleProgress } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 import { createWorkout } from '~/lib/db/workout';
 import { getTemplateById, getTemplateExercises } from '~/lib/db/template';
 import { createDb } from '~/lib/db';
@@ -14,8 +14,8 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

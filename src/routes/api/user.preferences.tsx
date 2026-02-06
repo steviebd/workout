@@ -1,15 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { getUserPreferences } from '~/lib/db/preferences';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/user/preferences')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

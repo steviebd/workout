@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { createWorkoutSet } from '../../lib/db/workout';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/workouts/sets')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.sub) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       POST: async ({ request }) => {
+         try {
+           const session = await requireAuth(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
           const body = await request.json();
           const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {

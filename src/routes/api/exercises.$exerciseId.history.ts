@@ -2,18 +2,18 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { getExerciseById, getExerciseByIdOnly } from '../../lib/db/exercise';
 import { getExerciseHistory, getExerciseHistoryStats } from '../../lib/db/workout';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/exercises/$exerciseId/history')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            console.log('[ExerciseHistory] No session found');
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        GET: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              console.log('[ExerciseHistory] No session found');
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

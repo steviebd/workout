@@ -24,13 +24,15 @@ function isAuthKitUrl(url: URL): boolean {
 		test.skip(true, 'This test requires manual browser testing - the auth state is determined client-side');
 	});
 
-	test('protected route redirects to signin', async ({ page }) => {
+	test('protected route redirects to signin', async ({ page, context }) => {
 		const response = await page.request.get(`${BASE_URL}/api/auth/me`);
 		if (response.ok()) {
 			test.skip(true, 'User is authenticated - this test verifies redirect for unauthenticated users');
 			return;
 		}
-		
+
+		await context.clearCookies();
+
 		await page.goto(`${BASE_URL}/exercises`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 		await page.waitForTimeout(2000);
 

@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { copyTemplate } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/templates/$id/copy')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        POST: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

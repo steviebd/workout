@@ -7,15 +7,15 @@ import {
   softDeleteTemplate,
   updateTemplate
 } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '../../lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -24,13 +24,13 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const template = await getTemplateById(db, params.id, session.sub);
+          const template = await getTemplateById(db, params.id, session.sub);
 
           if (!template) {
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-           const exercises = await getTemplateExercises(db, params.id, session.sub);
+          const exercises = await getTemplateExercises(db, params.id, session.sub);
 
           return Response.json({ ...template, exercises });
         } catch (err) {
@@ -40,8 +40,8 @@ export const Route = createFileRoute('/api/templates/$id')({
       },
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -53,7 +53,7 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const template = await updateTemplate(db, params.id, session.sub, {
+          const template = await updateTemplate(db, params.id, session.sub, {
             name,
             description,
             notes,
@@ -71,8 +71,8 @@ export const Route = createFileRoute('/api/templates/$id')({
       },
       DELETE: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -81,7 +81,7 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-           const deleted = await softDeleteTemplate(db, params.id, session.sub);
+          const deleted = await softDeleteTemplate(db, params.id, session.sub);
 
           if (!deleted) {
             return Response.json({ error: 'Template not found' }, { status: 404 });

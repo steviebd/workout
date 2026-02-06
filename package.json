@@ -3,8 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && vite dev --port 8787'",
-		"dev:wrangler": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && REMOTE=true WRANGLER_ENV=dev bun run build && REMOTE=true bun run wrangler dev'",
+		"dev": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'npx tsx scripts/generate-wrangler-config.ts --env dev && vite dev --port 8787'",
+		"dev:wrangler": "lsof -ti :8787 | xargs -r kill -9 2>/dev/null; infisical run --env dev -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env dev && REMOTE=true WRANGLER_ENV=dev bun run build && REMOTE=true bun run wrangler dev'",
 		"build": "vite build",
 		"serve": "vite preview",
 		"test": "vitest run",
@@ -16,11 +16,10 @@
 		"check": "bun run lint && bun run typecheck",
 		"cf-typegen": "wrangler types",
 		"db:generate": "drizzle-kit generate",
-		"db:push:dev": "infisical run --env dev -- sh -c 'scripts/generate-wrangler-config.sh --env dev && for dir in drizzle/*/; do npx wrangler d1 execute workout-dev-db --local --file=\"$dir/migration.sql\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" || true; done'",
-		"db:deploy:wrangler": "infisical run --env dev -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env dev && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-dev-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" || true; done'",
-		"db:deploy:migrate": "drizzle-kit generate",
-		"db:deploy:staging": "infisical run --env staging -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env staging && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-staging-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" | grep -v \"Cannot create table\" || true; done'",
-		"db:deploy:prod": "infisical run --env prod -- sh -c 'REMOTE=true scripts/generate-wrangler-config.sh --env prod && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-prod-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" | grep -v \"Cannot create table\" || true; done'",
+		"db:push:dev": "infisical run --env dev -- sh -c 'npx tsx scripts/generate-wrangler-config.ts --env dev && for dir in drizzle/*/; do npx wrangler d1 execute workout-dev-db --local --file=\"$dir/migration.sql\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" || true; done'",
+		"db:deploy:wrangler": "infisical run --env dev -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env dev && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-dev-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" || true; done'",
+		"db:deploy:staging": "infisical run --env staging -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env staging && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-staging-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" | grep -v \"Cannot create table\" || true; done'",
+		"db:deploy:prod": "infisical run --env prod -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env prod && find drizzle -name \"migration.sql\" -type f | while read -r file; do npx wrangler d1 execute workout-prod-db --remote --file=\"$file\" 2>&1 | grep -v \"already exists\" | grep -v \"duplicate column\" | grep -v \"no such table\" | grep -v \"Cannot create table\" || true; done'",
 		"db:reset": "rm -rf .wrangler/state/v3/d1/miniflare-D1DatabaseObject && bun run db:push:dev"
 	},
 	"dependencies": {

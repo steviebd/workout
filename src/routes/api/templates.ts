@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { type CreateTemplateData, createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -12,12 +12,12 @@ const MAX_LIMIT = 100;
 export const Route = createFileRoute('/api/templates')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.sub) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        GET: async ({ request }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const url = new URL(request.url);
           const search = url.searchParams.get('search') ?? undefined;
@@ -55,12 +55,12 @@ export const Route = createFileRoute('/api/templates')({
             return Response.json({ error: 'Server error' }, { status: 500 });
          }
        },
-       POST: async ({ request }) => {
-         try {
-           const session = await getSession(request);
-           if (!session?.sub) {
-             return Response.json({ error: 'Not authenticated' }, { status: 401 });
-           }
+        POST: async ({ request }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
            const body = await request.json();
            const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };

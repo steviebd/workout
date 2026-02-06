@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { removeExerciseFromTemplate } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 interface Params {
   id: string;
@@ -11,12 +11,12 @@ interface Params {
 export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        DELETE: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const { id, exerciseId } = params as Params;
 

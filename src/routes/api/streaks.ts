@@ -7,14 +7,14 @@ import {
   getRolling30DayWorkoutCount,
 } from '~/lib/streaks';
 import { getUserPreferences } from '~/lib/db/preferences';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/streaks' as const)({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const session = await getSession(request);
-        if (!session?.sub) {
+        const session = await requireAuth(request);
+        if (!session) {
           return Response.json({ error: 'Not authenticated' }, { status: 401 });
         }
         const workosId = session.sub;

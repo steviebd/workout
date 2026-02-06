@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { eq, desc } from 'drizzle-orm';
-import { getSession } from '../../lib/session';
+import { eq, desc, and } from 'drizzle-orm';
+import { requireAuth } from '../../lib/api/route-helpers';
 import { workouts } from '../../lib/db/schema';
 import { createDb } from '../../lib/db';
 
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
     handlers: {
       GET: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
+          const session = await requireAuth(request);
           if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
           const workout = await drizzleDb
             .select()
             .from(workouts)
-            .where(eq(workouts.programCycleId, params.cycleId))
+            .where(and(eq(workouts.programCycleId, params.cycleId), eq(workouts.workosId, session.sub)))
             .orderBy(desc(workouts.completedAt))
             .get();
 
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
       },
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
+          const session = await requireAuth(request);
           if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
@@ -69,7 +69,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
           const workout = await drizzleDb
             .select()
             .from(workouts)
-            .where(eq(workouts.programCycleId, params.cycleId))
+            .where(and(eq(workouts.programCycleId, params.cycleId), eq(workouts.workosId, session.sub)))
             .orderBy(desc(workouts.completedAt))
             .get();
 

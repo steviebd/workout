@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { type LibraryExercise, copyExerciseFromLibrary } from '../../lib/db/exercise';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/exercises/copy-from-library')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        POST: async ({ request }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const body = await request.json();
           const { name, muscleGroup, description } = body as LibraryExercise;

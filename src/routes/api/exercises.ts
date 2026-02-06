@@ -1,18 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { type CreateExerciseData, createExercise, getExercisesByWorkosId } from '../../lib/db/exercise';
-import { getSession } from '../../lib/session';
-
-const MAX_NAME_LENGTH = 200;
-const MAX_DESCRIPTION_LENGTH = 1000;
+import { createExercise, getExercisesByWorkosId } from '../../lib/db/exercise';
+import { requireAuth, validateBody, MAX_SEARCH_TERM_LENGTH } from '~/lib/api/route-helpers';
+import { createExerciseSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/exercises')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -27,7 +25,7 @@ export const Route = createFileRoute('/api/exercises')({
           const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'muscleGroup' | 'name' | undefined;
           const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
 
-          if (search && search.length > 100) {
+          if (search && search.length > MAX_SEARCH_TERM_LENGTH) {
             return Response.json({ error: 'Search term too long' }, { status: 400 });
           }
 
@@ -46,8 +44,8 @@ export const Route = createFileRoute('/api/exercises')({
       },
       POST: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -56,20 +54,12 @@ export const Route = createFileRoute('/api/exercises')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const body = await request.json();
-          const { name, muscleGroup, description, localId, libraryId } = body as CreateExerciseData & { localId?: string; libraryId?: string };
-
-          if (!name || typeof name !== 'string') {
-            return Response.json({ error: 'Name is required' }, { status: 400 });
+          const body = await validateBody(request, createExerciseSchema);
+          if (!body) {
+            return Response.json({ error: 'Invalid request body' }, { status: 400 });
           }
 
-          if (name.length > MAX_NAME_LENGTH) {
-            return Response.json({ error: `Name too long (max ${MAX_NAME_LENGTH} characters)` }, { status: 400 });
-          }
-
-          if (description && typeof description === 'string' && description.length > MAX_DESCRIPTION_LENGTH) {
-            return Response.json({ error: `Description too long (max ${MAX_DESCRIPTION_LENGTH} characters)` }, { status: 400 });
-          }
+          const { name, muscleGroup, description, localId, libraryId } = body;
 
           const exercise = await createExercise(db, {
             workosId: session.sub,

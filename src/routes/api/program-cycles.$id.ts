@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getCycleWorkouts } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
+import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, getCycleWorkouts, completeProgramCycle } from '~/lib/db/program';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 interface ProgramCycleUpdateBody {
   squat1rm?: number;
@@ -18,8 +18,8 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
     handlers: {
       GET: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -50,8 +50,8 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
       },
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -63,19 +63,20 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
+          const workosId = session.sub;
           let updated;
           const has1RMUpdate = squat1rm !== undefined || bench1rm !== undefined || deadlift1rm !== undefined || ohp1rm !== undefined;
           const hasProgressUpdate = currentWeek !== undefined || currentSession !== undefined;
           
-          if (has1RMUpdate) {
-            updated = await updateProgramCycle1RM(db, params.id, session.sub, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
-          }
-          if (hasProgressUpdate) {
-            updated = await updateProgramCycleProgress(db, params.id, session.sub, { currentWeek, currentSession });
-          }
-          if (isComplete) {
-            updated = await completeProgramCycle(db, params.id, session.sub);
-          }
+           if (has1RMUpdate) {
+             updated = await updateProgramCycle1RM(db, params.id, workosId, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
+           }
+           if (hasProgressUpdate) {
+             updated = await updateProgramCycleProgress(db, params.id, workosId, { currentWeek, currentSession });
+           }
+           if (isComplete) {
+             updated = await completeProgramCycle(db, params.id, workosId);
+           }
 
           if (!updated) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
@@ -89,8 +90,8 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
       },
       DELETE: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -99,7 +100,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const success = await softDeleteProgramCycle(db, params.id, session.sub);
+           const success = await softDeleteProgramCycle(db, params.id, session.sub);
           if (!success) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }

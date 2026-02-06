@@ -1,15 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { type UpdatePreferencesData, getUserPreferences, upsertUserPreferences } from '../../lib/db/preferences';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '../../lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/preferences')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -28,8 +28,8 @@ export const Route = createFileRoute('/api/preferences')({
        },
        PUT: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

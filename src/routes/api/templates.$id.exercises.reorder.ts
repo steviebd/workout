@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { type ExerciseOrder, reorderTemplateExercises } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
   server: {
     handlers: {
-      PUT: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        PUT: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const body = await request.json();
           const { exerciseOrders } = body as { exerciseOrders: ExerciseOrder[] };

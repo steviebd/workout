@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { getProgramCycleById } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
 import { getExercisesByWorkosId, createExercise } from '~/lib/db/exercise';
 
@@ -10,8 +10,8 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

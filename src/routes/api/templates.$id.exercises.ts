@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { addExerciseToTemplate, getTemplateExercises } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/templates/$id/exercises')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        GET: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {
@@ -26,12 +26,12 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           return Response.json({ error: 'Server error' }, { status: 500 });
         }
       },
-      POST: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+        POST: async ({ request, params }) => {
+          try {
+            const session = await requireAuth(request);
+            if (!session) {
+              return Response.json({ error: 'Not authenticated' }, { status: 401 });
+            }
 
           const body = await request.json();
           const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number; localId?: string };

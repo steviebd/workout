@@ -276,6 +276,152 @@ bun run db:push:dev
 ```
 
 
+## Creating New API Endpoints
+
+1. Create route file in `src/routes/api/`
+2. Add validation schema in `src/lib/validators/` (if POST/PUT)
+3. Use route helpers from `src/lib/api/`
+4. Import DB functions from appropriate repository
+
+### Example: Creating an exercise
+
+```typescript
+import { createFileRoute } from '@tanstack/react-router';
+import { env } from 'cloudflare:workers';
+import { requireAuth } from '~/lib/api/route-helpers';
+import { validateBody } from '~/lib/api/route-helpers';
+import { createExerciseSchema } from '~/lib/validators';
+import { createExercise } from '~/lib/db/exercise';
+
+export const Route = createFileRoute('/api/exercises')({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const session = await requireAuth(request);
+        if (!session) {
+          return Response.json({ error: 'Not authenticated' }, { status: 401 });
+        }
+
+        const body = validateBody(request, createExerciseSchema);
+        if (!body) {
+          return Response.json({ error: 'Invalid request body' }, { status: 400 });
+        }
+
+        const db = (env as { DB?: D1Database }).DB;
+        if (!db) {
+          return Response.json({ error: 'Database not available' }, { status: 500 });
+        }
+
+        const exercise = await createExercise(db, {
+          ...body,
+          workosId: session.sub,
+        });
+
+        return Response.json(exercise, { status: 201 });
+      },
+    },
+  },
+});
+```
+
+## Creating New Database Functions
+
+1. Identify the domain (workout, exercise, template)
+2. Add to appropriate repository in `src/lib/db/{domain}/repository.ts`
+3. Add types to `src/lib/db/{domain}/types.ts` if needed
+4. Export from `src/lib/db/{domain}/index.ts`
+5. Add unit tests in `tests/unit/`
+
+## Code Review Checklist
+
+- [ ] Auth check using `requireAuth()` helper
+- [ ] Input validated with Zod schema (for POST/PUT)
+- [ ] DB operations use repository functions from `src/lib/db/`
+- [ ] Error responses are consistent
+- [ ] Tests cover success + error cases
+- [ ] No hardcoded strings for limits - use constants from route-helpers
+
+## Import Patterns
+
+| Pattern | Usage | Example |
+|---------|-------|---------|
+| `@/` | Components | `import Button from '@/components/ui/Button'` |
+| `~/` | Lib utilities | `import { db } from '~/lib/db'` |
+| `~/api/` | API helpers | `import { requireAuth } from '~/lib/api/route-helpers'` |
+| `~/validators/` | Validation | `import { createExerciseSchema } from '~/lib/validators'` |
+| Relative | Same directory | `import { type Foo } from './types'` |
+
+## API Common Patterns
+
+### Fetching Data (Read)
+
+```typescript
+GET: async ({ request }) => {
+  const session = await requireAuth(request);
+  if (!session) {
+    return Response.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+
+  const exercise = await getExerciseById(db, id!, session.sub);
+  if (!exercise) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  return Response.json(exercise);
+}
+```
+
+### Creating Data (Write)
+
+```typescript
+POST: async ({ request }) => {
+  const session = await requireAuth(request);
+  if (!session) {
+    return Response.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const body = validateBody(request, createExerciseSchema);
+  if (!body) {
+    return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+
+  const exercise = await createExercise(db, { ...body, workosId: session.sub });
+  return Response.json(exercise, { status: 201 });
+}
+```
+
+## File Structure Reference
+
+```
+src/lib/db/
+├── schema.ts                    # Database tables
+├── exercise/
+│   ├── index.ts                # Exports
+│   ├── types.ts                # Exercise types
+│   └── repository.ts            # Exercise CRUD
+├── workout/
+│   ├── index.ts
+│   ├── types.ts
+│   └── repository.ts
+├── template/
+│   ├── index.ts
+│   ├── types.ts
+│   └── repository.ts
+
+src/lib/api/
+├── route-helpers.ts             # requireAuth, validateBody
+├── errors.ts                    # createApiError
+
+src/lib/validators/
+├── index.ts                     # All exports
+├── exercise.schema.ts
+├── template.schema.ts
+└── workout.schema.schema.ts
+```
+
 ## Resources
 
 - [TanStack Start Docs](https://tanstack.com/start)

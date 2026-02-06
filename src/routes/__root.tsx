@@ -200,7 +200,7 @@ function AppLayout() {
                   <StreakProvider>
                     <ThemeProvider>
                       <Header />
-                      <main className="flex-1 pb-20">
+                      <main className="flex-1 pb-20 md:pb-16">
                         <div className="mx-auto max-w-lg px-4">
                         <ErrorBoundary>
                           <ToastProvider>

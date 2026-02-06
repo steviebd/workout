@@ -16,7 +16,7 @@ import { createDb } from '../../lib/db';
 import { programCycleWorkouts } from '../../lib/db/schema';
 import { markWorkoutComplete, getProgramCycleById } from '../../lib/db/program';
 import { updateUserLastWorkout } from '../../lib/streaks';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 function extractTested1RMs(exercises: LoggedExercise[]): { squat: number; bench: number; deadlift: number; ohp: number } {
   const tested = { squat: 0, bench: 0, deadlift: 0, ohp: 0 };
@@ -44,12 +44,12 @@ function extractTested1RMs(exercises: LoggedExercise[]): { squat: number; bench:
 export const Route = createFileRoute('/api/workouts/$id/complete')({
   server: {
     handlers: {
-      PUT: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       PUT: async ({ request, params }) => {
+         try {
+           const session = await requireAuth(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
           const db = (env as { DB?: D1Database }).DB;
           if (!db) {

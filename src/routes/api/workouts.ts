@@ -1,19 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { asc, desc, eq } from 'drizzle-orm';
-import {
-  type CreateWorkoutData,
-  createWorkoutWithDetails,
-} from '../../lib/db/workout';
+import { createWorkoutWithDetails } from '../../lib/db/workout';
 import { workouts } from '../../lib/db/schema';
 import { createDb } from '../../lib/db';
-import { getSession } from '../../lib/session';
 import { getTemplateExercises } from '../../lib/db/template';
-
-const MAX_NAME_LENGTH = 200;
-const MAX_NOTES_LENGTH = 2000;
-const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 100;
+import { requireAuth, validateBody } from '../../lib/api/route-helpers';
+import { createWorkoutSchema } from '../../lib/validators';
 
 type WorkoutSortColumn = typeof workouts.startedAt | typeof workouts.createdAt | typeof workouts.name;
 
@@ -28,19 +21,19 @@ export const Route = createFileRoute('/api/workouts')({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
           const url = new URL(request.url);
           const limitParam = url.searchParams.get('limit');
-          const limit = limitParam ? parseInt(limitParam, 10) : DEFAULT_LIMIT;
+          const limit = limitParam ? parseInt(limitParam, 10) : 10;
           const sortBy = url.searchParams.get('sortBy') ?? 'startedAt';
           const sortOrder = url.searchParams.get('sortOrder') ?? 'DESC';
 
-          if (isNaN(limit) || limit < 1 || limit > MAX_LIMIT) {
-            return Response.json({ error: `Invalid limit (1-${MAX_LIMIT})` }, { status: 400 });
+          if (isNaN(limit) || limit < 1 || limit > 100) {
+            return Response.json({ error: 'Invalid limit (1-100)' }, { status: 400 });
           }
 
           const d1Db = (env as { DB?: D1Database }).DB;
@@ -76,8 +69,8 @@ export const Route = createFileRoute('/api/workouts')({
       },
       POST: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -86,36 +79,26 @@ export const Route = createFileRoute('/api/workouts')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const body = await request.json();
-          const { name, templateId, notes, exerciseIds, localId } = body as CreateWorkoutData & { exerciseIds?: string[]; localId?: string };
-
-          if (!name || typeof name !== 'string') {
-            return Response.json({ error: 'Name is required' }, { status: 400 });
+          const body = await validateBody(request, createWorkoutSchema);
+          if (!body) {
+            return Response.json({ error: 'Invalid request body' }, { status: 400 });
           }
 
-          if (name.length > MAX_NAME_LENGTH) {
-            return Response.json({ error: `Name too long (max ${MAX_NAME_LENGTH} characters)` }, { status: 400 });
+          let exercisesToAdd: string[] = body.exerciseIds ?? [];
+
+          if (exercisesToAdd.length === 0 && body.templateId) {
+            const templateExercises = await getTemplateExercises(d1Db, body.templateId, session.sub);
+            exercisesToAdd = templateExercises.map((te) => te.exerciseId);
           }
 
-          if (notes && typeof notes === 'string' && notes.length > MAX_NOTES_LENGTH) {
-            return Response.json({ error: `Notes too long (max ${MAX_NOTES_LENGTH} characters)` }, { status: 400 });
-          }
-
-          let exercisesToAdd: string[] = exerciseIds ?? [];
-
-          if (exercisesToAdd.length === 0 && templateId) {
-             const templateExercises = await getTemplateExercises(d1Db, templateId, session.sub);
-             exercisesToAdd = templateExercises.map((te) => te.exerciseId);
-           }
-
-           const workout = await createWorkoutWithDetails(d1Db, {
-             workosId: session.sub,
-             name: name.trim(),
-             templateId,
-             notes: notes?.trim(),
-             exerciseIds: exercisesToAdd,
-             localId,
-           });
+          const workout = await createWorkoutWithDetails(d1Db, {
+            workosId: session.sub,
+            name: body.name.trim(),
+            templateId: body.templateId,
+            notes: body.notes?.trim(),
+            exerciseIds: exercisesToAdd,
+            localId: body.localId,
+          });
 
           return Response.json(workout, { status: 201 });
         } catch (err) {

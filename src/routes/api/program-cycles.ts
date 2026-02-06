@@ -6,7 +6,7 @@ import {
   getActiveProgramCycles,
   getProgramCyclesByWorkosId,
 } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 import { stronglifts } from '~/lib/programs/stronglifts';
 import { wendler531 } from '~/lib/programs/wendler531';
 import { madcow } from '~/lib/programs/madcow';
@@ -46,8 +46,8 @@ export const Route = createFileRoute('/api/program-cycles')({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
@@ -75,8 +75,8 @@ export const Route = createFileRoute('/api/program-cycles')({
       },
       POST: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 

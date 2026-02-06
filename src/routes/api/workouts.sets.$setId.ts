@@ -1,17 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { type NewWorkoutSet, deleteWorkoutSet, updateWorkoutSet } from '../../lib/db/workout';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/workouts/sets/$setId')({
   server: {
     handlers: {
-      PUT: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       PUT: async ({ request, params }) => {
+         try {
+           const session = await requireAuth(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
           if (!params.setId || typeof params.setId !== 'string') {
             console.error('Invalid set ID:', params.setId);
@@ -92,11 +92,11 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
          }
        },
        DELETE: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+         try {
+           const session = await requireAuth(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
           if (!params.setId || typeof params.setId !== 'string') {
             console.error('Invalid set ID for delete:', params.setId);

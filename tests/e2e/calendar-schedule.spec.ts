@@ -140,6 +140,12 @@ async function startProgramWithSchedule(
 
 	await expect(page.locator('text=Review').first()).toBeVisible({ timeout: 5000 });
 
+	const howWouldYouLike = page.locator('text=How would you like to start?').first();
+	if (await howWouldYouLike.isVisible({ timeout: 2000 }).catch(() => false)) {
+		await page.click('button:has-text("Smart Start")');
+		await page.waitForTimeout(500);
+	}
+
 	const startBtn = page.locator('button:has-text("Start Program")');
 	await expect(startBtn).toBeVisible({ timeout: 5000 });
 
@@ -349,9 +355,9 @@ test.describe('Calendar Scheduling Feature', () => {
 
 			await page.click('button:has-text("Morning")');
 
-			const tomorrow = new Date();
-			tomorrow.setDate(tomorrow.getDate() + 7);
-			const dateStr = tomorrow.toISOString().split('T')[0];
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 21);
+			const dateStr = futureDate.toISOString().split('T')[0];
 			const [year, month, day] = dateStr.split('-').map(Number);
 
 			const datePickerBtn = page.locator('[class*="relative"] button[type="button"]').first();
@@ -382,7 +388,16 @@ test.describe('Calendar Scheduling Feature', () => {
 
 			await page.click('button:has-text("Review")');
 
-			await expect(page.locator('text=Review').first()).toBeVisible({ timeout: 5000 });
+			await expect(page.locator('h3:has-text("Program Details")').first()).toBeVisible({ timeout: 10000 });
+
+			const howWouldYouLike = page.locator('text=How would you like to start?').first();
+			if (await howWouldYouLike.isVisible({ timeout: 2000 }).catch(() => false)) {
+				await page.click('button:has-text("Smart Start")');
+			}
+
+			await page.waitForSelector('text=Mon', { timeout: 5000 });
+			await page.waitForSelector('text=Wed', { timeout: 5000 });
+			await page.waitForSelector('text=Fri', { timeout: 5000 });
 
 			const reviewContent = await page.content();
 			expect(reviewContent).toContain('Mon');
@@ -392,8 +407,8 @@ test.describe('Calendar Scheduling Feature', () => {
 		});
 
 		test('1.7 program creation with schedule redirects to cycle dashboard', async ({ page }) => {
-			const tomorrow = new Date();
-			tomorrow.setDate(tomorrow.getDate() + 7);
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 21);
 
 			await startProgramWithSchedule(page, PROGRAM_SLUG, {
 				squat: 100,
@@ -403,10 +418,10 @@ test.describe('Calendar Scheduling Feature', () => {
 			}, {
 				days: ['Mon', 'Wed', 'Fri'],
 				time: 'Morning',
-				startDate: tomorrow.toISOString().split('T')[0],
+				startDate: futureDate.toISOString().split('T')[0],
 			});
 
-			await expect(page).toHaveURL(/\/programs\/cycle\/[a-z0-9-]+/);
+			await page.waitForURL(/\/programs\/cycle\/[a-z0-9-]+/, { timeout: 30000 });
 			await expect(page.locator('text=Week').first()).toBeVisible({ timeout: 10000 });
 			console.log('Program created and redirected to dashboard successfully');
 		});
@@ -414,8 +429,8 @@ test.describe('Calendar Scheduling Feature', () => {
 
 	test.describe('Dashboard Calendar View', () => {
 		test.beforeEach(async ({ page }) => {
-			const tomorrow = new Date();
-			tomorrow.setDate(tomorrow.getDate() + 7);
+			const futureDate = new Date();
+			futureDate.setDate(futureDate.getDate() + 21);
 
 			await startProgramWithSchedule(page, PROGRAM_SLUG, {
 				squat: 100,
@@ -425,12 +440,14 @@ test.describe('Calendar Scheduling Feature', () => {
 			}, {
 				days: ['Mon', 'Wed', 'Fri'],
 				time: 'Morning',
-				startDate: tomorrow.toISOString().split('T')[0],
+				startDate: futureDate.toISOString().split('T')[0],
 			});
 		});
 
 		test('2.1 weekly schedule loads with 7 days', async ({ page }) => {
-			await expect(page.locator('text=Week').first()).toBeVisible({ timeout: 10000 });
+			await expect(page.locator('h2:has-text("Week")').first()).toBeVisible({ timeout: 10000 });
+
+			await page.waitForSelector('[class*="bg-card"]', { timeout: 10000 });
 
 			const dayCards = page.locator('[class*="bg-card"]');
 			await page.waitForTimeout(2000);

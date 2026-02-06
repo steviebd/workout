@@ -3,15 +3,15 @@ import { env } from 'cloudflare:workers';
 import { desc, eq } from 'drizzle-orm';
 import { exercises as exercisesTable, templates as templatesTable, workouts as workoutsTable } from '../../lib/db/schema';
 import { createDb } from '../../lib/db/index';
-import { getSession } from '../../lib/session';
+import { requireAuth } from '../../lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/sync' as const)({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.sub) {
+          const session = await requireAuth(request);
+          if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });
           }
 
