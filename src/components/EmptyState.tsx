@@ -23,30 +23,32 @@ export function EmptyState({
   return (
     <div className={`text-center py-12 ${className}`}>
       <div className="flex items-center justify-center mb-6">
-        {IconComponent ? (
-          <IconComponent size={56} className="text-muted-foreground/50" />
-        ) : (
-          <svg
-            width={56}
-            height={56}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="text-muted-foreground/50"
-          >
-            <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
-            <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
-            <path d="M5 12h14" />
-          </svg>
-        )}
+        <div className="bg-primary/8 rounded-full p-5">
+          {IconComponent ? (
+            <IconComponent size={44} className="text-muted-foreground/50" />
+          ) : (
+            <svg
+              width={44}
+              height={44}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="text-muted-foreground/50"
+            >
+              <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
+              <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
+              <path d="M5 12h14" />
+            </svg>
+          )}
+        </div>
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       {description ? (
         <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm">{description}</p>
       ) : null}
       {actionLabel && onAction ? (
-        <Button onClick={onAction} size="lg">
+        <Button onClick={onAction} size="lg" variant="cta">
           {actionLabel}
         </Button>
       ) : null}

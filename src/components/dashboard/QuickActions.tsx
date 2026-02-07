@@ -80,11 +80,11 @@ export function QuickActions({ templates }: QuickActionsProps) {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Play className="h-5 w-5 text-primary" />
-            Quick Start
+            Start Session
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="rounded-lg border border-border bg-secondary/30 p-4 text-center">
+          <div className="rounded-lg border border-border bg-surface-2 p-4 text-center">
             <p className="text-sm text-muted-foreground mb-3">
               No templates yet. Start with a program or create your first workout!
             </p>
@@ -128,17 +128,17 @@ export function QuickActions({ templates }: QuickActionsProps) {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Play className="h-5 w-5 text-primary" />
-          Quick Start
+          Start Session
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-1">
         {templates.slice(0, 3).map((template) => (
           <button
             key={template.id}
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="group flex w-full items-center justify-between rounded-lg border border-border bg-secondary/30 p-3 transition-colors hover:border-primary/50 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2.5 transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="text-left">
               <p className="font-medium group-hover:text-primary transition-colors">
@@ -149,9 +149,9 @@ export function QuickActions({ templates }: QuickActionsProps) {
               </p>
             </div>
             {loadingTemplateId === template.id ? (
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
-              <Play className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
             )}
           </button>
         ))}

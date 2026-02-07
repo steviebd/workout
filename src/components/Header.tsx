@@ -75,13 +75,13 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background backdrop-blur-md shadow-sm border-b border-border/50">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
               <Flame className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Fit Workout</span>
+            <span className="text-lg font-semibold tracking-tight text-primary">Fit Workout</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -123,7 +123,7 @@ export function Header() {
           <div className="relative" ref={settingsRef}>
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary active:scale-95 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <Settings className="h-5 w-5" />
               </button>
@@ -138,7 +138,7 @@ export function Header() {
                   <div className="flex gap-2">
                     <button
                       onClick={handleUnitToggle}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                         weightUnit === 'kg'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -148,7 +148,7 @@ export function Header() {
                     </button>
                     <button
                       onClick={handleUnitToggle}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                         weightUnit === 'lbs'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -168,7 +168,7 @@ export function Header() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDateFormatChange('dd/mm/yyyy')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                           dateFormat === 'dd/mm/yyyy'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -178,7 +178,7 @@ export function Header() {
                       </button>
                       <button
                         onClick={() => handleDateFormatChange('mm/dd/yyyy')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium active:scale-95 transition-colors ${
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                           dateFormat === 'mm/dd/yyyy'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -195,7 +195,7 @@ export function Header() {
                     <button
                       onClick={() => void handleWeeklyTargetChange(weeklyTarget - 1)}
                       disabled={weeklyTarget <= 1 || savingTarget}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-colors"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       -
                     </button>
@@ -215,7 +215,7 @@ export function Header() {
                     <button
                       onClick={() => void handleWeeklyTargetChange(weeklyTarget + 1)}
                       disabled={weeklyTarget >= 7 || savingTarget}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-colors"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       +
                     </button>
@@ -234,7 +234,7 @@ export function Header() {
             ) : user ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground active:scale-95 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               >
                 {user.name ? (
                   <span className="text-sm font-medium">
@@ -262,7 +262,7 @@ export function Header() {
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 active:scale-95 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out

@@ -30,16 +30,16 @@ export function StatCard({
     <Card
       className={cn(
         "p-4",
-        onClick && "hover:border-primary/50 hover:shadow-md cursor-pointer active:scale-95 transition-all",
+        onClick && "hover:border-primary/50 hover:shadow-md cursor-pointer transition-all",
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <Icon className={cn("h-4 w-4", variantStyles[variant])} />
+      <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{label}</span>
+        <Icon className={cn("h-4 w-4", variantStyles[variant])} />
       </div>
-      <p className="text-xl font-bold">{value}</p>
+      <p className="text-2xl font-semibold tabular-nums mt-1">{value}</p>
     </Card>
   )
 }

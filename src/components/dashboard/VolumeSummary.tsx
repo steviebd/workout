@@ -16,7 +16,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
   const volumePercentage = Math.min((totalVolume / volumeGoal) * 100, 100)
 
   return (
-    <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+    <Card variant="tinted" className="border-accent/20">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -25,10 +25,10 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Volume</p>
-              <p className="text-2xl font-bold">{formatVolume(totalVolume)}</p>
+              <p className="text-2xl font-semibold tabular-nums">{formatVolume(totalVolume)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 rounded-full bg-success/20 px-2.5 py-1 text-success">
+          <div className="flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-success">
             <TrendingUp className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">+{volumeChange}%</span>
           </div>
@@ -36,7 +36,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
         <p className="mt-3 text-xs text-muted-foreground">
           {Math.round((volumeGoal - totalVolume) / 1000)}k {formatVolume(1000)} until {formatVolume(volumeGoal)} Club badge
         </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full rounded-full bg-accent transition-all duration-500"
             style={{ width: `${volumePercentage}%` }}
