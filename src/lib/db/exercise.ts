@@ -29,6 +29,12 @@ export interface GetExercisesOptions {
   offset?: number;
 }
 
+/**
+ * Creates a new exercise for a user
+ * @param db - D1 database instance
+ * @param data - Exercise creation data including workosId
+ * @returns The created exercise with all fields populated
+ */
 export async function createExercise(
   db: D1Database,
   data: CreateExerciseData & { workosId: string }
@@ -51,6 +57,13 @@ export async function createExercise(
   return exercise;
 }
 
+/**
+ * Retrieves a single exercise by ID, validating user ownership
+ * @param db - D1 database instance
+ * @param exerciseId - The exercise ID to look up
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The exercise if found, or null
+ */
 export async function getExerciseById(
   db: D1Database,
   exerciseId: string,
@@ -67,6 +80,12 @@ export async function getExerciseById(
   return exercise ?? null;
 }
 
+/**
+ * Retrieves a single exercise by ID without ownership validation
+ * @param db - D1 database instance
+ * @param exerciseId - The exercise ID to look up
+ * @returns The exercise if found, or null
+ */
 export async function getExerciseByIdOnly(
   db: D1Database,
   exerciseId: string
@@ -82,6 +101,13 @@ export async function getExerciseByIdOnly(
   return exercise ?? null;
 }
 
+/**
+ * Retrieves all exercises for a user with optional filtering and sorting
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional filters and sorting options
+ * @returns Array of exercises matching the criteria
+ */
 export async function getExercisesByWorkosId(
   db: D1Database,
   workosId: string,
@@ -147,6 +173,14 @@ export async function getExercisesByWorkosId(
   return results as Exercise[];
 }
 
+/**
+ * Updates an existing exercise
+ * @param db - D1 database instance
+ * @param exerciseId - The exercise ID to update
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @param data - Fields to update
+ * @returns The updated exercise if found, or null
+ */
 export async function updateExercise(
   db: D1Database,
   exerciseId: string,
@@ -171,6 +205,13 @@ export async function updateExercise(
   return updated ?? null;
 }
 
+/**
+ * Soft deletes an exercise by marking it as deleted
+ * @param db - D1 database instance
+ * @param exerciseId - The exercise ID to delete
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the operation succeeded, false if not found
+ */
 export async function softDeleteExercise(
   db: D1Database,
   exerciseId: string,
@@ -196,6 +237,13 @@ export interface LibraryExercise {
   description: string;
 }
 
+/**
+ * Copies an exercise from the library to the user's personal collection
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param libraryExercise - The library exercise data to copy
+ * @returns The newly created exercise
+ */
 export async function copyExerciseFromLibrary(
   db: D1Database,
   workosId: string,

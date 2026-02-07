@@ -15,6 +15,12 @@ export interface UpdatePreferencesData {
   weeklyWorkoutTarget?: number;
 }
 
+/**
+ * Retrieves user preferences from the database
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns The user preferences if found, or null
+ */
 export async function getUserPreferences(
   db: D1Database,
   workosId: string
@@ -30,6 +36,13 @@ export async function getUserPreferences(
   return prefs ? (prefs as UserPreference) : null;
 }
 
+/**
+ * Creates or updates user preferences
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param data - Preference fields to update
+ * @returns The updated or newly created preferences
+ */
 export async function upsertUserPreferences(
   db: D1Database,
   workosId: string,
@@ -72,6 +85,13 @@ export async function upsertUserPreferences(
   return newPrefs;
 }
 
+/**
+ * Updates the weight unit preference for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param weightUnit - The new weight unit (kg or lbs)
+ * @returns The updated preferences, or null if not found
+ */
 export async function updateWeightUnit(
   db: D1Database,
   workosId: string,
@@ -80,6 +100,13 @@ export async function updateWeightUnit(
   return upsertUserPreferences(db, workosId, { weightUnit });
 }
 
+/**
+ * Updates the theme preference for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param theme - The new theme (dark or light)
+ * @returns The updated preferences, or null if not found
+ */
 export async function updateTheme(
   db: D1Database,
   workosId: string,

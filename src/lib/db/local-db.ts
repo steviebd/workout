@@ -128,6 +128,11 @@ class FitWorkoutDatabase extends DexieLib {
 
 let dbInstance: FitWorkoutDatabase | null = null;
 
+/**
+ * Initializes and returns the local IndexedDB instance
+ * @returns The FitWorkoutDatabase instance
+ * @throws Error if called in a non-browser environment
+ */
 export function getLocalDB(): FitWorkoutDatabase {
   if (typeof window === 'undefined' && !process.env.VITEST) {
     throw new Error('LocalDB is only available in the browser');

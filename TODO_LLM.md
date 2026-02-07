@@ -3,84 +3,50 @@
 This document outlines improvements to make the codebase more accessible and navigable for LLM/AI agents.
 
 ## Goal
-Reduce the time and context required for an LLM to understand, navigate, and contribute to the codebase.
+Reduce the time and context required for an LLM to understand, navigate, and contribute to the codebase by using a modular documentation architecture.
+
+## Documentation Architecture
+
+AGENTS.md serves as the **index** and **quick reference**. Detailed topics are delegated to separate docs in `docs/` that AGENTS.md references.
+
+```
+AGENTS.md (main index)
+├── references docs/OFFLINE.md
+├── references docs/COMPONENTS.md
+├── references docs/API.md
+├── references docs/PERFORMANCE.md
+└── keeps only high-level patterns & quick lookup tables
+```
+
+This reduces AGENTS.md size and keeps context windows manageable.
 
 ---
 
-## 1. JSDoc Comments for Repository Functions
+## Phase 1: Create Reference Documents
 
-**Status:** Pending  
-**Priority:** High  
-**Effort:** Medium
-
-### Problem
-Repository functions in `src/lib/db/` lack parameter and return documentation, making it hard for LLMs to understand function signatures and behavior.
-
-### Files to Update
-- `src/lib/db/exercise.ts`
-- `src/lib/db/workout.ts`
-- `src/lib/db/template.ts`
-- `src/lib/db/program.ts`
-- `src/lib/db/template/repository.ts`
-- `src/lib/db/workout/repository.ts`
-- `src/lib/db/local-db.ts`
-- `src/lib/db/local-repository.ts`
-- `src/lib/db/preferences.ts`
-- `src/lib/db/user.ts`
-
-### Template
-```typescript
-/**
- * Creates a new exercise for a user
- * @param db - D1 database instance
- * @param data - Exercise creation data including workosId
- * @returns The created exercise with all fields populated
- * @throws Will throw if database operation fails
- */
-export async function createExercise(...)
-```
-
-### Implementation
-```bash
-# Run this command to see current coverage
-grep -r "export async function" src/lib/db/*.ts src/lib/db/*/*.ts | wc -l
-```
-
----
-
-## 2. Document Offline-First Architecture
+### 1. Document Offline-First Architecture
 
 **Status:** Pending  
 **Priority:** High  
 **Effort:** Low
 
-### Problem
-The codebase has complex offline sync logic (local-db.ts, sync-engine.ts) but no centralized documentation explaining the architecture.
+**Output:** `docs/OFFLINE.md`
 
-### Files to Document
-- `src/lib/db/local-db.ts`
-- `src/lib/db/local-repository.ts`
-- `src/lib/sync/sync-engine.ts`
-
-### Recommended Location
-Add to AGENTS.md under new section OR create `docs/OFFLINE.md`
-
-### Content Structure
 ```markdown
-## Offline-First Architecture
+# Offline-First Architecture
 
-### Data Flow
+## Data Flow
 1. Client creates data → stored in IndexedDB (Dexie)
 2. Data marked as `syncStatus: 'pending'`
 3. When online → sync to remote D1
 4. Conflict resolution → uses last-write-wins with timestamp
 
-### Key Files
-- `local-db.ts` - IndexedDB wrapper and schema
-- `local-repository.ts` - Offline CRUD operations
-- `sync-engine.ts` - Sync logic and conflict resolution
+## Key Files
+- `src/lib/db/local-db.ts` - IndexedDB wrapper and schema
+- `src/lib/db/local-repository.ts` - Offline CRUD operations
+- `src/lib/sync/sync-engine.ts` - Sync logic and conflict resolution
 
-### Important Patterns
+## Important Patterns
 - Never write directly to D1 when offline
 - Always check `syncStatus` before operations
 - Use `localId` for offline records, `id` for synced records
@@ -88,19 +54,14 @@ Add to AGENTS.md under new section OR create `docs/OFFLINE.md`
 
 ---
 
-## 3. Create COMPONENTS.md
+### 2. Create Component Documentation
 
 **Status:** Pending  
 **Priority:** Medium  
 **Effort:** Low
 
-### Purpose
-Centralize UI component patterns and conventions.
+**Output:** `docs/COMPONENTS.md`
 
-### Recommended Location
-`docs/COMPONENTS.md` with reference in AGENTS.md
-
-### Content Structure
 ```markdown
 # Component Documentation
 
@@ -134,76 +95,17 @@ import { Plus, Trash, Edit } from 'lucide-react';
 
 ---
 
-## 4. Standardize Repository Structure
-
-**Status:** Pending  
-**Priority:** Low → **Recommend: SKIP**
-**Effort:** Medium
-
-### Recommendation
-**Do not migrate.** The inconsistency is minor and migration would:
-- Break many imports across the codebase
-- Risk introducing bugs
-- Provide minimal LLM benefit vs. good JSDoc on existing files
-
-Instead: Add good JSDoc to all repository files and document the two patterns in AGENTS.md.
-
----
-
-## 5. Create Constants Reference
-
-**Status:** Pending  
-**Priority:** Low  
-**Effort:** Low
-
-### Problem
-Important constants are scattered across files or hardcoded.
-
-### Solution
-Create `src/lib/constants.ts`:
-```typescript
-export const CONSTANTS = {
-  // Limits
-  MAX_EXERCISES_PER_WORKOUT: 50,
-  MAX_SETS_PER_EXERCISE: 20,
-  MAX_TEMPLATE_NAME_LENGTH: 100,
-  
-  // Defaults
-  DEFAULT_WEIGHT_UNIT: 'kg',
-  DEFAULT_REPS: 10,
-  DEFAULT_SETS: 3,
-  
-  // Sync
-  SYNC_DEBOUNCE_MS: 1000,
-  OFFLINE_QUEUE_MAX_SIZE: 1000,
-  
-  // Pagination
-  DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 100,
-} as const;
-```
-
-### Update Strategy
-1. Create file
-2. Replace inline constants with imports
-3. Document each constant with JSDoc
-
----
-
-## 6. Add Error Code Reference
+### 3. API Error Reference
 
 **Status:** Pending  
 **Priority:** Medium  
 **Effort:** Low
 
-### Purpose
-Document common error responses for API consistency.
+**Output:** `docs/API.md`
 
-### Recommended Location
-`docs/API_ERRORS.md` or add to AGENTS.md
-
-### Content
 ```markdown
+# API Reference
+
 ## Error Response Format
 All API errors follow this format:
 ```typescript
@@ -234,64 +136,14 @@ try {
 
 ---
 
-## 7. Database Index Guide
-
-**Status:** Pending  
-**Priority:** Low → **Recommend: SKIP**
-**Effort:** Low
-
-### Recommendation
-**Not needed.** The schema.ts file already defines all indexes inline (lines 168-216). An LLM can read this directly. Instead, add a comment block at the top of the index definitions section:
-
-```typescript
-// ============================================
-// DATABASE INDEXES
-// All indexes are defined below for query optimization.
-// Naming: _tableName + ColumnName(s) + Idx
-// ============================================
-```
-
----
-
-## 8. Add Route Index Document
-
-**Status:** Pending  
-**Priority:** Low → **Recommend: SKIP**
-**Effort:** Low
-
-### Recommendation
-**Not needed.** TanStack Start uses file-based routing. The route structure is self-documenting from `src/routes/` directory listing. LLMs can infer routes from filenames:
-- `exercises._index.tsx` → `/exercises`
-- `exercises.$id.tsx` → `/exercises/:id`
-
-AGENTS.md already documents the routing convention.
-
----
-
-## 9. Migration History Document
-
-**Status:** Pending  
-**Priority:** Low → **Recommend: SKIP**
-**Effort:** Low
-
-### Recommendation
-**Not needed.** Migration history belongs in git commits and the `drizzle/` migrations folder. A separate doc would become stale. LLMs can read migration files directly.
-
----
-
-## 10. Performance Guidelines
+### 4. Performance Guidelines
 
 **Status:** Pending  
 **Priority:** Low  
 **Effort:** Low
 
-### Purpose
-Help LLMs write performant code.
+**Output:** `docs/PERFORMANCE.md`
 
-### Recommended Location
-Add to AGENTS.md under "## Performance Patterns"
-
-### Content
 ```markdown
 # Performance Guidelines
 
@@ -353,16 +205,48 @@ const WorkoutSet = React.memo(({ set }) => (
 
 ---
 
-## NEW: 11. Add Schema Header Comments
+## Phase 2: Code-Level Improvements
+
+### 5. JSDoc Comments for Repository Functions
+
+**Status:** Pending  
+**Priority:** High  
+**Effort:** Medium
+
+### Files to Update
+- `src/lib/db/exercise.ts`
+- `src/lib/db/workout.ts`
+- `src/lib/db/template.ts`
+- `src/lib/db/program.ts`
+- `src/lib/db/template/repository.ts`
+- `src/lib/db/workout/repository.ts`
+- `src/lib/db/local-db.ts`
+- `src/lib/db/local-repository.ts`
+- `src/lib/db/preferences.ts`
+- `src/lib/db/user.ts`
+
+### Template
+```typescript
+/**
+ * Creates a new exercise for a user
+ * @param db - D1 database instance
+ * @param data - Exercise creation data including workosId
+ * @returns The created exercise with all fields populated
+ * @throws Will throw if database operation fails
+ */
+export async function createExercise(...)
+```
+
+---
+
+### 6. Add Schema Header Comments
 
 **Status:** Pending  
 **Priority:** High  
 **Effort:** Low
 
-### Problem
-`src/lib/db/schema.ts` has 240 lines with no section headers. Hard for LLMs to navigate.
+### Target: `src/lib/db/schema.ts`
 
-### Solution
 Add section dividers:
 
 ```typescript
@@ -405,29 +289,21 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', { ... 
 // DATABASE INDEXES
 // ============================================
 // ... existing indexes ...
-
-// ============================================
-// TYPE EXPORTS
-// ============================================
-// ... existing types ...
 ```
 
 ---
 
-## NEW: 12. Add Validators Index
+### 7. Validators Index
 
 **Status:** Pending  
 **Priority:** Medium  
 **Effort:** Low
 
-### Problem
-AGENTS.md references `src/lib/validators/` but this directory may not exist or be incomplete.
+### Target: `src/lib/validators/index.ts`
 
-### Solution
-Ensure `src/lib/validators/index.ts` exists and exports all schemas:
+Ensure this file exists and exports all schemas:
 
 ```typescript
-// src/lib/validators/index.ts
 export * from './exercise.schema';
 export * from './template.schema';
 export * from './workout.schema';
@@ -436,102 +312,50 @@ export * from './program.schema';
 
 ---
 
-## NEW: 13. Add Domain Relationship Diagram to AGENTS.md
+## Phase 3: AGENTS.md Updates
 
-**Status:** Pending  
-**Priority:** Medium  
-**Effort:** Low
+After creating reference documents, update AGENTS.md to:
 
-### Problem
-New agents struggle to understand entity relationships.
+1. **Add reference section** at top with links to docs/
+2. **Keep only quick lookup tables** (constants, error codes, type patterns)
+3. **Link to detailed docs** instead of embedding content
 
-### Solution
-Add Mermaid diagram to AGENTS.md:
+### New AGENTS.md Structure
 
 ```markdown
-## Entity Relationships
+# Development Guide
 
-```mermaid
-erDiagram
-    users ||--o{ exercises : "owns"
-    users ||--o{ templates : "owns"
-    users ||--o{ workouts : "owns"
-    users ||--o{ userProgramCycles : "runs"
-    
-    templates ||--o{ templateExercises : "contains"
-    templateExercises }o--|| exercises : "references"
-    
-    workouts ||--o{ workoutExercises : "contains"
-    workoutExercises }o--|| exercises : "references"
-    workoutExercises ||--o{ workoutSets : "has"
-    
-    userProgramCycles ||--o{ programCycleWorkouts : "schedules"
-    programCycleWorkouts }o--o| templates : "uses"
-    programCycleWorkouts }o--o| workouts : "completed_as"
-```
-```
+## Quick Reference
+- [Offline Architecture](docs/OFFLINE.md)
+- [Components](docs/COMPONENTS.md)
+- [API Errors](docs/API.md)
+- [Performance](docs/PERFORMANCE.md)
 
----
+## Database Schema
+See `src/lib/db/schema.ts` with section headers
 
-## NEW: 14. Document Type Patterns
-
-**Status:** Pending  
-**Priority:** Medium  
-**Effort:** Low
-
-### Problem
-Inconsistent type naming and location.
-
-### Solution
-Add to AGENTS.md:
-
-```markdown
 ## Type Patterns
-
-### Database Types (auto-inferred from Drizzle)
-- `Exercise` - Select type (from DB)
-- `NewExercise` - Insert type (to DB)
-- Location: `src/lib/db/schema.ts`
-
-### Input Types (for API/forms)
-- `CreateExerciseData` - What client sends to create
-- `UpdateExerciseData` - What client sends to update
-- Location: Same file as repository function OR `src/lib/db/{domain}/types.ts`
-
-### Naming Convention
 | Pattern | Example | Use |
 |---------|---------|-----|
 | `{Entity}` | `Exercise` | DB row type |
 | `New{Entity}` | `NewExercise` | DB insert type |
 | `Create{Entity}Data` | `CreateExerciseData` | API create input |
-| `Update{Entity}Data` | `UpdateExerciseData` | API update input |
-| `{Entity}WithRelations` | `TemplateWithExercises` | Joined query result |
 ```
 
 ---
 
-## Revised Implementation Order
+## Implementation Order
 
-| Order | Task | Priority | Est. Time | Notes |
-|-------|------|----------|-----------|-------|
-| 1 | Schema Header Comments (NEW #11) | High | 15 min | Quick win, high impact |
-| 2 | JSDoc Comments (#1) | High | 2-3 hours | Core improvement |
-| 3 | Entity Relationship Diagram (NEW #13) | Medium | 30 min | Add to AGENTS.md |
-| 4 | Type Patterns Docs (NEW #14) | Medium | 20 min | Add to AGENTS.md |
-| 5 | Offline-First Docs (#2) | High | 1 hour | Create docs/OFFLINE.md |
-| 6 | Error Code Reference (#6) | Medium | 30 min | Add to AGENTS.md |
-| 7 | COMPONENTS.md (#3) | Medium | 45 min | Create docs/COMPONENTS.md |
-| 8 | Validators Index (NEW #12) | Medium | 20 min | Ensure exports exist |
-| 9 | Constants Reference (#5) | Low | 1 hour | Create + refactor |
-| 10 | Performance Guidelines (#10) | Low | 30 min | Add to AGENTS.md |
-
-**Total Estimated Time: 7-9 hours** (reduced from 11-14)
-
-### Skipped Tasks (with rationale)
-- **#4 Standardize Repositories**: High effort, low value, breaking changes
-- **#7 Database Index Guide**: Already in schema.ts, just add section header
-- **#8 Route Index**: File-based routing is self-documenting
-- **#9 Migration History**: Lives in git + drizzle/ folder
+| Order | Task | Output | Priority |
+|-------|------|--------|----------|
+| 1 | Create docs/OFFLINE.md | Offline-first architecture | High |
+| 2 | Create docs/COMPONENTS.md | UI patterns | Medium |
+| 3 | Create docs/API.md | Error codes | Medium |
+| 4 | Create docs/PERFORMANCE.md | Performance patterns | Low |
+| 5 | Add schema headers | `src/lib/db/schema.ts` | High |
+| 6 | Add JSDoc to repos | `src/lib/db/*.ts` | High |
+| 7 | Validators index | `src/lib/validators/index.ts` | Medium |
+| 8 | Update AGENTS.md | Add reference section | Medium |
 
 ---
 
@@ -542,7 +366,6 @@ After implementing changes, verify with:
 ```bash
 # Check JSDoc coverage
 grep -r "@param\|@returns" src/lib/db/ | wc -l
-# Target: > 90% of exported functions
 
 # Verify imports work
 bun run typecheck
@@ -555,6 +378,10 @@ bun run lint
 
 ## Related Files
 
-- `AGENTS.md` - Main development guide (keep in sync)
+- `AGENTS.md` - Main index (keep lean)
+- `docs/OFFLINE.md` - Offline-first documentation
+- `docs/COMPONENTS.md` - Component patterns
+- `docs/API.md` - API errors and responses
+- `docs/PERFORMANCE.md` - Performance guidelines
 - `README.md` - Project overview
 - `docs/SPECSHEET.md` - Technical specifications

@@ -1,12 +1,3 @@
-export {
-  createExerciseSchema,
-  updateExerciseSchema,
-} from './exercise.schema';
-
-export {
-  createTemplateSchema,
-} from './template.schema';
-
-export {
-  createWorkoutSchema,
-} from './workout.schema';
+export * from './exercise.schema';
+export * from './template.schema';
+export * from './workout.schema';

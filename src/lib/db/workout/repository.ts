@@ -10,7 +10,6 @@ import { createDb, calculateChunkSize } from '../index';
 import type {
   DbOrTx,
   CreateWorkoutData,
-  UpdateWorkoutData,
   GetWorkoutsOptions,
   WorkoutWithExercises,
   WorkoutExerciseWithDetails,
@@ -34,6 +33,13 @@ import type {
   NewWorkoutExercise,
 } from './types';
 
+/**
+ * Creates a new workout for a user
+ * @param dbOrTx - D1 database instance or transaction
+ * @param data - Workout creation data including workosId
+ * @param startedAt - Optional start timestamp
+ * @returns The newly created workout
+ */
 export async function createWorkout(
   dbOrTx: D1Database | ReturnType<typeof createDb>,
   data: CreateWorkoutData & { workosId: string },
@@ -59,6 +65,13 @@ export async function createWorkout(
   return workout;
 }
 
+/**
+ * Retrieves the most recent workout sets for multiple exercises
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseIds - Array of exercise IDs to get sets for
+ * @returns Map of exercise ID to array of last workout set data
+ */
 export async function getLastWorkoutSetsForExercises(
   dbOrTx: DbOrTx,
   workosId: string,
@@ -135,6 +148,13 @@ export async function getLastWorkoutSetsForExercises(
   return result;
 }
 
+/**
+ * Retrieves all exercises in a workout with their sets
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workoutId - The workout ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns Array of workout exercises with details and sets
+ */
 export async function getWorkoutExercises(
   dbOrTx: DbOrTx,
   workoutId: string,
@@ -311,6 +331,13 @@ export async function createWorkoutWithDetails(
   };
 }
 
+/**
+ * Retrieves a workout by ID with ownership validation
+ * @param db - D1 database instance
+ * @param workoutId - The workout ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The workout if found, or null
+ */
 export async function getWorkoutById(
   db: D1Database,
   workoutId: string,
@@ -410,6 +437,13 @@ export async function getWorkoutWithExercises(
   } as WorkoutWithExercises;
 }
 
+/**
+ * Retrieves all completed workouts for a user with optional filtering
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional filters and pagination
+ * @returns Array of workouts with exercise counts and statistics
+ */
 export async function getWorkoutsByWorkosId(
   db: D1Database,
   workosId: string,
@@ -507,7 +541,7 @@ export async function updateWorkout(
   db: D1Database,
   workoutId: string,
   workosId: string,
-  data: UpdateWorkoutData
+  data: Partial<Workout>
 ): Promise<Workout | null> {
   const drizzleDb = createDb(db);
 
@@ -518,10 +552,17 @@ export async function updateWorkout(
     .returning()
     .get();
 
-   
+    
   return updated ?? null;
 }
 
+/**
+ * Completes a workout by setting its completion timestamp
+ * @param db - D1 database instance
+ * @param workoutId - The workout ID to complete
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The completed workout, or null if not found
+ */
 export async function completeWorkout(
   db: D1Database,
   workoutId: string,
@@ -532,6 +573,13 @@ export async function completeWorkout(
   });
 }
 
+/**
+ * Deletes a workout permanently
+ * @param db - D1 database instance
+ * @param workoutId - The workout ID to delete
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the operation succeeded, false if not found
+ */
 export async function deleteWorkout(
   db: D1Database,
   workoutId: string,
@@ -728,10 +776,17 @@ export async function updateWorkoutSet(
     .returning()
     .get();
 
-       
+        
   return updated ?? null;
 }
 
+/**
+ * Marks a workout set as complete with completion timestamp
+ * @param db - D1 database instance
+ * @param setId - The set ID to complete
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The completed set, or null if not found
+ */
 export async function completeWorkoutSet(
   db: D1Database,
   setId: string,
@@ -743,6 +798,13 @@ export async function completeWorkoutSet(
   });
 }
 
+/**
+ * Deletes a workout set permanently
+ * @param db - D1 database instance
+ * @param setId - The set ID to delete
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the operation succeeded, false if not found
+ */
 export async function deleteWorkoutSet(
   db: D1Database,
   setId: string,
@@ -775,6 +837,13 @@ export async function deleteWorkoutSet(
   return result.success;
 }
 
+/**
+ * Retrieves the most recent workout data for an exercise
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseId - The exercise ID
+ * @returns Object with weight, reps, rpe, and completion date, or null if no prior workout
+ */
 export async function getLastWorkoutForExercise(
   db: D1Database,
   workosId: string,
@@ -809,6 +878,13 @@ export async function getLastWorkoutForExercise(
   } : null;
 }
 
+/**
+ * Retrieves all sets from the most recent workout for an exercise
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseId - The exercise ID
+ * @returns Array of set data from the last workout, empty if no prior workout
+ */
 export async function getLastWorkoutSetsForExercise(
   db: D1Database,
   workosId: string,
@@ -856,6 +932,12 @@ export async function getLastWorkoutSetsForExercise(
   }));
 }
 
+/**
+ * Counts the total number of completed workouts for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns The count of completed workouts
+ */
 export async function getCompletedWorkoutsCount(
   db: D1Database,
   workosId: string
@@ -874,6 +956,13 @@ export async function getCompletedWorkoutsCount(
   return result?.count ?? 0;
 }
 
+/**
+ * Calculates the total volume (weight x reps) for a completed workout
+ * @param db - D1 database instance
+ * @param workoutId - The workout ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The total volume as a number
+ */
 export async function getTotalVolume(
   db: D1Database,
   workoutId: string,
@@ -923,6 +1012,14 @@ export function calculateE1RM(weight: number, reps: number): number {
   return Math.round(weight * (1 + reps / 30));
 }
 
+/**
+ * Retrieves the exercise history for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseId - The exercise ID
+ * @param options - Optional date range and pagination
+ * @returns Array of exercise history items with max weight, reps, and estimated 1RM
+ */
 export async function getExerciseHistory(
   db: D1Database,
   workosId: string,
@@ -1013,6 +1110,13 @@ export async function getExerciseHistory(
   return sortedHistory;
 }
 
+/**
+ * Calculates statistics for an exercise based on its history
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseId - The exercise ID
+ * @returns Object with maxWeight, est1rm, and totalWorkouts
+ */
 export async function getExerciseHistoryStats(
   db: D1Database,
   workosId: string,
@@ -1037,6 +1141,12 @@ export async function getExerciseHistoryStats(
   };
 }
 
+/**
+ * Calculates overall workout statistics for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns Object with totalWorkouts, thisWeek, thisMonth, totalVolume, and totalSets
+ */
 export async function getWorkoutHistoryStats(
   db: D1Database,
   workosId: string
@@ -1145,6 +1255,13 @@ export async function getPrCount(
   return prCount;
 }
 
+/**
+ * Retrieves weekly volume data for charts and analytics
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional date range and exercise filter
+ * @returns Array of weekly volume data with week labels and totals
+ */
 export async function getWeeklyVolume(
   db: D1Database,
   workosId: string,
@@ -1192,6 +1309,14 @@ export async function getWeeklyVolume(
   }));
 }
 
+/**
+ * Retrieves strength progression data for an exercise over time
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseId - The exercise ID
+ * @param options - Optional date range and limit
+ * @returns Array of data points with date, weight, reps, and estimated 1RM
+ */
 export async function getStrengthHistory(
   db: D1Database,
   workosId: string,
@@ -1260,6 +1385,13 @@ export async function getStrengthHistory(
   return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
+/**
+ * Retrieves the most recent personal records for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param limit - Maximum number of PRs to return
+ * @returns Array of recent personal records with exercise details
+ */
 export async function getRecentPRs(
   db: D1Database,
   workosId: string,

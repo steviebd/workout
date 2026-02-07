@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
-import { type NewTemplate, type NewTemplateExercise, type Template, exercises, templateExercises, templates } from '../schema';
-import { createDb, calculateChunkSize } from '../index';
+import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
+import { createDb } from '../index';
 import type {
   DbOrTx,
   TemplateExerciseWithDetails,
@@ -12,6 +12,13 @@ import type {
   ExerciseOrder,
 } from './types';
 
+/**
+ * Counts the number of times an exercise appears in a template
+ * @param dbOrTx - D1 database instance or transaction
+ * @param templateId - The template ID to check
+ * @param exerciseId - The exercise ID to count occurrences of
+ * @returns The number of times the exercise appears in the template
+ */
 export async function getTemplateExerciseSetCount(
   dbOrTx: D1Database | ReturnType<typeof createDb>,
   templateId: string,
@@ -31,6 +38,12 @@ export async function getTemplateExerciseSetCount(
   return result?.count ?? 0;
 }
 
+/**
+ * Creates a new workout template for a user
+ * @param db - D1 database instance
+ * @param data - Template creation data including workosId
+ * @returns The newly created template
+ */
 export async function createTemplate(
   db: D1Database,
   data: CreateTemplateData & { workosId: string }
@@ -53,6 +66,13 @@ export async function createTemplate(
   return template;
 }
 
+/**
+ * Retrieves a template by ID with ownership validation
+ * @param dbOrTx - D1 database instance or transaction
+ * @param templateId - The template ID to look up
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The template if found, or null
+ */
 export async function getTemplateById(
   dbOrTx: D1Database | ReturnType<typeof createDb>,
   templateId: string,
@@ -70,6 +90,13 @@ export async function getTemplateById(
   return template ?? null;
 }
 
+/**
+ * Retrieves all templates for a user with optional filtering and sorting
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional search and sorting options
+ * @returns Array of templates with exercise counts
+ */
 export async function getTemplatesByWorkosId(
   dbOrTx: D1Database | ReturnType<typeof createDb>,
   workosId: string,
@@ -177,97 +204,13 @@ export async function softDeleteTemplate(
 }
 
 /**
- * Creates a deep copy of a template including all exercises with their order.
- * Fetches original template and exercises, creates new template with "(Copy)" suffix,
- * then copies each exercise reference preserving the original order index.
- * Used when user wants to modify an existing template without affecting the original.
+ * Removes an exercise from a template
+ * @param db - D1 database instance
+ * @param templateId - The template to modify
+ * @param exerciseId - The exercise to remove
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the exercise was removed, false if template not found
  */
-export async function copyTemplate(
-  dbOrTx: DbOrTx,
-  templateId: string,
-  workosId: string
-): Promise<Template | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
-
-  const original = await db
-    .select()
-    .from(templates)
-    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
-    .get();
-
-  if (!original) {
-    return null;
-  }
-
-  const newTemplate = await db
-    .insert(templates)
-    .values({
-      workosId,
-      name: `${original.name} (Copy)`,
-      description: original.description,
-      notes: original.notes,
-    })
-    .returning()
-    .get();
-
-  const originalExercises = await db
-    .select()
-    .from(templateExercises)
-    .where(eq(templateExercises.templateId, templateId))
-    .orderBy(templateExercises.orderIndex)
-    .all();
-
-  if (originalExercises.length > 0) {
-    const newExercises: NewTemplateExercise[] = originalExercises.map((te) => ({
-      templateId: newTemplate.id,
-      exerciseId: te.exerciseId,
-      orderIndex: te.orderIndex,
-    }));
-
-    const CHUNK_SIZE = calculateChunkSize(5);
-    for (let i = 0; i < newExercises.length; i += CHUNK_SIZE) {
-      const batch = newExercises.slice(i, i + CHUNK_SIZE);
-      await db.insert(templateExercises).values(batch).run();
-    }
-  }
-
-  return newTemplate;
-}
-
-export async function addExerciseToTemplate(
-  db: D1Database,
-  templateId: string,
-  exerciseId: string,
-  orderIndex: number,
-  targetWeight?: number,
-  addedWeight?: number,
-  sets?: number,
-  reps?: number,
-  repsRaw?: string,
-  isAmrap?: boolean,
-  setNumber?: number,
-  isAccessory?: boolean,
-  isRequired?: boolean
-): Promise<void> {
-  const drizzleDb = createDb(db);
-
-  await drizzleDb.insert(templateExercises).values({
-    templateId,
-    exerciseId,
-    orderIndex,
-    targetWeight: targetWeight ?? null,
-    addedWeight: addedWeight ?? 0,
-    sets: sets ?? null,
-    reps: reps ?? null,
-    repsRaw: repsRaw ?? null,
-    isAmrap: isAmrap ?? false,
-    setNumber: setNumber ?? null,
-    isAccessory: isAccessory ?? false,
-    isRequired: isRequired ?? true,
-  } as any).run();
-}
-
 export async function removeExerciseFromTemplate(
   db: D1Database,
   templateId: string,
@@ -381,6 +324,13 @@ export async function reorderTemplateExercises(
   return true;
 }
 
+/**
+ * Removes all exercises from a template
+ * @param db - D1 database instance
+ * @param templateId - The template ID to clear
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if successful, false if template not found
+ */
 export async function deleteAllTemplateExercises(
   db: D1Database,
   templateId: string,
@@ -405,4 +355,80 @@ export async function deleteAllTemplateExercises(
     .run();
 
   return true;
+}
+
+export async function addExerciseToTemplate(
+  db: D1Database,
+  templateId: string,
+  exerciseId: string,
+  orderIndex: number
+): Promise<void> {
+  const drizzleDb = createDb(db);
+
+  await drizzleDb
+    .insert(templateExercises)
+    .values({
+      templateId,
+      exerciseId,
+      orderIndex,
+    })
+    .run();
+}
+
+export async function copyTemplate(
+  db: D1Database,
+  templateId: string,
+  workosId: string
+): Promise<Template | null> {
+  const drizzleDb = createDb(db);
+
+  const originalTemplate = await drizzleDb
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!originalTemplate) {
+    return null;
+  }
+
+  const newTemplate = await drizzleDb
+    .insert(templates)
+    .values({
+      workosId: originalTemplate.workosId,
+      name: `${originalTemplate.name} (Copy)`,
+      description: originalTemplate.description,
+      notes: originalTemplate.notes,
+      localId: originalTemplate.localId,
+      programCycleId: originalTemplate.programCycleId,
+    })
+    .returning()
+    .get();
+
+  const originalExercises = await drizzleDb
+    .select()
+    .from(templateExercises)
+    .where(eq(templateExercises.templateId, templateId))
+    .orderBy(templateExercises.orderIndex)
+    .all();
+
+  if (originalExercises.length > 0) {
+    await drizzleDb
+      .insert(templateExercises)
+      .values(
+        originalExercises.map((te) => ({
+          templateId: newTemplate.id,
+          exerciseId: te.exerciseId,
+          orderIndex: te.orderIndex,
+          targetWeight: te.targetWeight,
+          sets: te.sets,
+          reps: te.reps,
+          isAmrap: te.isAmrap,
+          setNumber: te.setNumber,
+        }))
+      )
+      .run();
+  }
+
+  return newTemplate;
 }

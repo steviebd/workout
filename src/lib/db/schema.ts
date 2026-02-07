@@ -5,6 +5,9 @@ export function generateId(): string {
   return crypto.randomUUID();
 }
 
+// ============================================
+// CORE ENTITIES
+// ============================================
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').notNull().unique(),
@@ -24,6 +27,9 @@ export const userPreferences = sqliteTable('user_preferences', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ============================================
+// EXERCISE LIBRARY
+// ============================================
 export const exercises = sqliteTable('exercises', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   localId: text('local_id').unique(),
@@ -37,6 +43,9 @@ export const exercises = sqliteTable('exercises', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ============================================
+// TEMPLATES
+// ============================================
 export const templates = sqliteTable('templates', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   localId: text('local_id').unique(),
@@ -66,6 +75,9 @@ export const templateExercises = sqliteTable('template_exercises', {
   setNumber: integer('set_number'),
 });
 
+// ============================================
+// WORKOUTS
+// ============================================
 export const workouts = sqliteTable('workouts', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   localId: text('local_id').unique(),
@@ -117,6 +129,9 @@ export const workoutSets = sqliteTable('workout_sets', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ============================================
+// GAMIFICATION
+// ============================================
 export const userStreaks = sqliteTable('user_streaks', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').notNull().unique().references(() => users.workosId, { onDelete: 'cascade' }),
@@ -126,6 +141,9 @@ export const userStreaks = sqliteTable('user_streaks', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ============================================
+// PROGRAMS
+// ============================================
 export const userProgramCycles = sqliteTable('user_program_cycles', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
@@ -170,6 +188,9 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
   scheduledTime: text('scheduled_time'),
 });
 
+// ============================================
+// INDEXES
+// ============================================
 export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
 export const _exercisesNameMuscleGroupIdx = index('idx_exercises_name_muscle_group').on(exercises.name, exercises.muscleGroup);
 export const _exercisesWorkosIdUpdatedAtIdx = index('idx_exercises_workos_id_updated_at').on(exercises.workosId, exercises.updatedAt);
@@ -221,6 +242,9 @@ export const _programCycleWorkoutsCycleIdScheduledDateIdx = index('idx_program_c
 export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_template_id').on(templateExercises.templateId);
 export const _templateExercisesOrderIdx = index('idx_template_exercises_order').on(templateExercises.templateId, templateExercises.orderIndex);
 
+// ============================================
+// TYPE EXPORTS
+// ============================================
 export type User = typeof users.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
 export type Template = typeof templates.$inferSelect;
