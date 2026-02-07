@@ -1,7 +1,5 @@
 /* eslint-disable import/no-unassigned-import */
-import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
@@ -16,6 +14,7 @@ import { DateFormatProvider } from '@/lib/context/DateFormatContext'
 import { StreakProvider } from '@/lib/context/StreakContext'
 import { ThemeProvider } from '@/lib/context/ThemeContext'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -217,17 +216,7 @@ function AppLayout() {
                 </DateFormatProvider>
               </UnitProvider>
             </div>
-            <TanStackDevtools
-              config={{
-                position: 'bottom-right',
-              }}
-              plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-              ]}
-            />
+
             <Scripts />
           </body>
         </html>

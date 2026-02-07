@@ -258,7 +258,7 @@ function EditWorkout() {
 
     try {
       toast.success('Workout saved successfully');
-      window.location.href = '/history';
+      window.location.href = '/progress';
     } catch (err) {
       console.error('Failed to save workout:', err);
       setError('Failed to save workout');
@@ -406,7 +406,7 @@ function EditWorkout() {
     return (
       <main className="mx-auto max-w-lg px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
-          <a href="/history" className="p-2 rounded-lg hover:bg-secondary transition-colors">
+          <a href="/progress" className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </a>
           <h1 className="text-xl font-bold">Edit Workout</h1>
@@ -415,7 +415,7 @@ function EditWorkout() {
           <h2 className="text-lg font-semibold text-foreground mb-2">Workout Not Found</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <Button asChild={true} className="w-full">
-            <a href="/history">Back to History</a>
+            <a href="/progress">Back to History</a>
           </Button>
         </div>
       </main>

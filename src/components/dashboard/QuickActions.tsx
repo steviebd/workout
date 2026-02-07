@@ -112,7 +112,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
               </Link>
             </Button>
             <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-              <Link to="/history">
+              <Link to="/progress">
 <History className="mr-2 h-5 w-5" />
                 History
               </Link>
@@ -164,7 +164,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
             </Link>
           </Button>
           <Button asChild={true} variant="outline" className="flex-1 bg-transparent">
-            <Link to="/history">
+            <Link to="/progress">
               <History className="mr-2 h-4 w-4" />
               History
             </Link>
