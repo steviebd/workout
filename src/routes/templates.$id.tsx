@@ -261,7 +261,7 @@ function TemplateDetail() {
                           <p className="font-medium text-foreground flex items-center gap-2">
                             {te.exercise?.name ?? 'Unknown Exercise'}
                             {te.isAmrap ? (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-warning/20 text-warning rounded">
                                 AMRAP
                               </span>
                             ) : null}

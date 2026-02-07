@@ -117,7 +117,7 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
                       border: '1px solid var(--border)',
                       borderRadius: '12px',
                       color: 'var(--foreground)',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      boxShadow: '0 4px 6px -1px oklch(0 0 0 / 0.15), 0 2px 4px -2px oklch(0 0 0 / 0.1)',
                     }}
                     labelFormatter={formatFullChartDate}
                     formatter={(value: number | undefined) => [formatWeight(value ?? 0), 'Weight']}

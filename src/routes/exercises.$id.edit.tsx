@@ -268,7 +268,7 @@ function EditExercise() {
 
           <form className="p-6 space-y-6" onSubmit={handleSubmit}>
             {errors.submit ? (
-              <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+              <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
                 <AlertCircle size={20} />
                 <span>{errors.submit}</span>
               </div>
@@ -277,11 +277,11 @@ function EditExercise() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
                 {'Name '}
-                <span className="text-red-500">*</span>
+                <span className="text-destructive">*</span>
               </label>
               <input
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
-                  errors.name ? 'border-red-500' : 'border-input'
+                  errors.name ? 'border-destructive' : 'border-input'
                 }`}
                 id="name"
                 onChange={handleNameChange}
@@ -289,17 +289,17 @@ function EditExercise() {
                 type="text"
                 value={formData.name}
               />
-              {errors.name ? <p className="mt-1 text-sm text-red-600">{errors.name}</p> : null}
+              {errors.name ? <p className="mt-1 text-sm text-destructive">{errors.name}</p> : null}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1" htmlFor="muscleGroup">
                 {'Muscle Group '}
-                <span className="text-red-500">*</span>
+                <span className="text-destructive">*</span>
               </label>
               <select
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow bg-background ${
-                  errors.muscleGroup ? 'border-red-500' : 'border-input'
+                  errors.muscleGroup ? 'border-destructive' : 'border-input'
                 }`}
                 id="muscleGroup"
                 onChange={handleMuscleGroupChange}
@@ -313,7 +313,7 @@ function EditExercise() {
                 ))}
                 <option value="Custom">Custom...</option>
               </select>
-              {errors.muscleGroup ? <p className="mt-1 text-sm text-red-600">{errors.muscleGroup}</p> : null}
+              {errors.muscleGroup ? <p className="mt-1 text-sm text-destructive">{errors.muscleGroup}</p> : null}
             </div>
 
             {selectedMuscleGroupValue === 'Custom' ? (

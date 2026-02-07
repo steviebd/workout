@@ -93,7 +93,7 @@ export function ExerciseLogger({
                 <CardTitle className="text-sm sm:text-base flex items-center gap-1 sm:gap-2 truncate">
                   {exercise.name}
                   {isAmrapSet ? (
-                    <span className="text-[9px] sm:text-[10px] font-bold px-1 py-0.5 bg-amber-100 text-amber-700 rounded shrink-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold px-1 py-0.5 bg-warning/20 text-warning rounded shrink-0">
                       AMRAP
                     </span>
                   ) : null}

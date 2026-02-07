@@ -65,10 +65,10 @@ export function WarningToast({
   onClose,
 }: ToastProps) {
   const colors = {
-    info: 'bg-blue-500',
-    success: 'bg-green-500',
-    warning: 'bg-amber-500',
-    error: 'bg-red-500',
+    info: 'bg-accent',
+    success: 'bg-success',
+    warning: 'bg-warning',
+    error: 'bg-destructive',
   };
 
   return (

@@ -59,19 +59,19 @@ export function EmptyStateBanner() {
 
             <div className="ml-9 flex flex-col gap-1 text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-success" />
                 <span>
                   <strong>Beginner</strong> — StrongLifts 5×5 (great for starters!)
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                <CheckCircle2 className="h-4 w-4 text-accent" />
                 <span>
                   <strong>Intermediate</strong> — 5/3/1, nSuns LP, and more
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-purple-600" />
+                <CheckCircle2 className="h-4 w-4 text-volume" />
                 <span>
                   <strong>Advanced</strong> — Sheiko and other high-volume programs
                 </span>
