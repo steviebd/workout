@@ -18,7 +18,7 @@ export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
-	workers: 1,
+	workers: process.env.CI ? 2 : 2,
 	reporter: process.env.CI ? 'github' : 'list',
 	globalSetup: path.join(__dirname, 'playwright/global-setup.ts'),
 	use: {
@@ -26,7 +26,7 @@ export default defineConfig({
 		headless: !!process.env.CI || !process.env.DEBUG,
 		baseURL: 'http://localhost:8787',
 		storageState: 'playwright/.auth/state.json',
-		actionTimeout: 15000,
+		actionTimeout: 10000,
 		navigationTimeout: 30000,
 	},
 	projects: [
