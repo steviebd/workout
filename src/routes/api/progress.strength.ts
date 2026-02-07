@@ -63,12 +63,16 @@ export const Route = createFileRoute('/api/progress/strength')({
 
            const strengthHistory = await getStrengthHistory(db, session.sub, exerciseId, { fromDate, toDate });
 
-          const strengthData = strengthHistory.map(point => ({
-            date: point.date,
-            weight: point.weight,
-          }));
+           const strengthData = strengthHistory.map(point => ({
+             date: point.date,
+             weight: point.weight,
+           }));
 
-           return Response.json({ strengthData });
+           return Response.json({ strengthData }, {
+             headers: {
+               'Cache-Control': 'no-store, no-cache, must-revalidate',
+             },
+           });
          } catch (err) {
            console.error('Get strength progress error:', err);
            return Response.json({ error: 'Server error' }, { status: 500 });

@@ -79,13 +79,17 @@ export const Route = createFileRoute('/api/progress/volume')({
             exerciseId: exerciseFilter,
           });
 
-           return Response.json({
-             weeklyVolume: weeklyVolume.map(v => ({
-               week: v.week,
-               weekStart: v.weekStart,
-               volume: v.volume,
-             })),
-           });
+            return Response.json({
+              weeklyVolume: weeklyVolume.map(v => ({
+                week: v.week,
+                weekStart: v.weekStart,
+                volume: v.volume,
+              })),
+            }, {
+              headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+              },
+            });
          } catch (err) {
            console.error('Get volume progress error:', err);
            return Response.json({ error: 'Server error' }, { status: 500 });

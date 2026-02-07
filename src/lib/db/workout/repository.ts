@@ -1389,15 +1389,30 @@ export async function getStrengthHistory(
  * Retrieves the most recent personal records for a user
  * @param db - D1 database instance
  * @param workosId - The user's WorkOS ID
- * @param limit - Maximum number of PRs to return
+ * @param options - Optional parameters including limit and date range
  * @returns Array of recent personal records with exercise details
  */
 export async function getRecentPRs(
   db: D1Database,
   workosId: string,
-  limit = 5
+  options: { limit?: number; fromDate?: string; toDate?: string } = {}
 ): Promise<PersonalRecord[]> {
   const drizzleDb = createDb(db);
+  const { limit = 5, fromDate, toDate } = options;
+
+  const conditions = [
+    eq(workouts.workosId, workosId),
+    eq(workoutSets.isComplete, true),
+    sql`${workoutSets.weight} > 0`,
+  ];
+
+  if (fromDate) {
+    conditions.push(sql`${workouts.startedAt} >= ${fromDate}`);
+  }
+
+  if (toDate) {
+    conditions.push(sql`${workouts.startedAt} <= ${toDate}`);
+  }
 
   const workoutMaxes = await drizzleDb
     .select({
@@ -1411,33 +1426,134 @@ export async function getRecentPRs(
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
     .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workouts.workosId, workosId),
-      eq(workoutSets.isComplete, true),
-      sql`${workoutSets.weight} > 0`
-    ))
+    .where(and(...conditions))
     .groupBy(workoutExercises.exerciseId, workouts.id, workouts.startedAt, exercises.name)
-    .orderBy(desc(workouts.startedAt))
-    .limit(limit)
+    .orderBy(asc(workouts.startedAt))
     .all();
 
-  if (workoutMaxes.length === 0) {
+  function isSquat(name: string): boolean {
+    const n = name.toLowerCase();
+    return n.includes('squat') && !n.includes('goblet');
+  }
+
+  function isBench(name: string): boolean {
+    const n = name.toLowerCase();
+    return n === 'bench' || n === 'bench press' || n.includes('bench');
+  }
+
+  function isDeadlift(name: string): boolean {
+    const n = name.toLowerCase();
+    return n.includes('deadlift');
+  }
+
+  function isOverheadPress(name: string): boolean {
+    const n = name.toLowerCase();
+    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
+  }
+
+  const exerciseCategories: Record<string, { id: string; name: string; isMatch: (n: string) => boolean }> = {};
+
+  for (const wm of workoutMaxes) {
+    if (isSquat(wm.exerciseName) && !exerciseCategories.squat) {
+      exerciseCategories.squat = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isSquat };
+    }
+    if (isBench(wm.exerciseName) && !exerciseCategories.bench) {
+      exerciseCategories.bench = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isBench };
+    }
+    if (isDeadlift(wm.exerciseName) && !exerciseCategories.deadlift) {
+      exerciseCategories.deadlift = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isDeadlift };
+    }
+    if (isOverheadPress(wm.exerciseName) && !exerciseCategories.ohp) {
+      exerciseCategories.ohp = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isOverheadPress };
+    }
+  }
+
+  const oneRmConditions = [
+    eq(workouts.workosId, workosId),
+    sql`(${workouts.squat1rm} IS NOT NULL OR ${workouts.bench1rm} IS NOT NULL OR ${workouts.deadlift1rm} IS NOT NULL OR ${workouts.ohp1rm} IS NOT NULL)`,
+  ];
+
+  if (fromDate) {
+    oneRmConditions.push(sql`${workouts.startedAt} >= ${fromDate}`);
+  }
+
+  if (toDate) {
+    oneRmConditions.push(sql`${workouts.startedAt} <= ${toDate}`);
+  }
+
+  const oneRmWorkouts = await drizzleDb
+    .select({
+      workoutId: workouts.id,
+      workoutDate: workouts.startedAt,
+      squat1rm: workouts.squat1rm,
+      bench1rm: workouts.bench1rm,
+      deadlift1rm: workouts.deadlift1rm,
+      ohp1rm: workouts.ohp1rm,
+    })
+    .from(workouts)
+    .where(and(...oneRmConditions))
+    .orderBy(asc(workouts.startedAt))
+    .all();
+
+  const oneRmMaxes: Array<{ exerciseId: string; exerciseName: string; workoutId: string; workoutDate: string; maxWeight: number; reps: number }> = [];
+
+  for (const ow of oneRmWorkouts) {
+    if (ow.squat1rm && exerciseCategories.squat) {
+      oneRmMaxes.push({
+        exerciseId: exerciseCategories.squat.id,
+        exerciseName: exerciseCategories.squat.name,
+        workoutId: ow.workoutId,
+        workoutDate: ow.workoutDate,
+        maxWeight: ow.squat1rm,
+        reps: 1,
+      });
+    }
+    if (ow.bench1rm && exerciseCategories.bench) {
+      oneRmMaxes.push({
+        exerciseId: exerciseCategories.bench.id,
+        exerciseName: exerciseCategories.bench.name,
+        workoutId: ow.workoutId,
+        workoutDate: ow.workoutDate,
+        maxWeight: ow.bench1rm,
+        reps: 1,
+      });
+    }
+    if (ow.deadlift1rm && exerciseCategories.deadlift) {
+      oneRmMaxes.push({
+        exerciseId: exerciseCategories.deadlift.id,
+        exerciseName: exerciseCategories.deadlift.name,
+        workoutId: ow.workoutId,
+        workoutDate: ow.workoutDate,
+        maxWeight: ow.deadlift1rm,
+        reps: 1,
+      });
+    }
+    if (ow.ohp1rm && exerciseCategories.ohp) {
+      oneRmMaxes.push({
+        exerciseId: exerciseCategories.ohp.id,
+        exerciseName: exerciseCategories.ohp.name,
+        workoutId: ow.workoutId,
+        workoutDate: ow.workoutDate,
+        maxWeight: ow.ohp1rm,
+        reps: 1,
+      });
+    }
+  }
+
+  const workoutMaxesWithReps = workoutMaxes.map(wm => ({
+    ...wm,
+    reps: 1,
+  }));
+
+  const allWorkoutMaxes = [...workoutMaxesWithReps, ...oneRmMaxes].sort(
+    (a, b) => new Date(a.workoutDate).getTime() - new Date(b.workoutDate).getTime()
+  );
+
+  if (allWorkoutMaxes.length === 0) {
     return [];
   }
 
-  const workoutExerciseIds: string[] = [];
-
-  const workoutIdToData = new Map<string, { exerciseId: string; exerciseName: string; workoutDate: string; maxWeight: number }>();
-
-  for (const wm of workoutMaxes) {
-    workoutIdToData.set(wm.workoutId, {
-      exerciseId: wm.exerciseId,
-      exerciseName: wm.exerciseName,
-      workoutDate: wm.workoutDate,
-      maxWeight: wm.maxWeight,
-    });
-    workoutExerciseIds.push(wm.workoutId);
-  }
+  const workoutIds = [...new Set(allWorkoutMaxes.map(wm => wm.workoutId))];
 
   const setsWithMaxWeight = await drizzleDb
     .select({
@@ -1452,7 +1568,7 @@ export async function getRecentPRs(
     .where(and(
       eq(workouts.workosId, workosId),
       eq(workoutSets.isComplete, true),
-      inArray(workouts.id, workoutExerciseIds)
+      inArray(workouts.id, workoutIds)
     ))
     .all();
 
@@ -1461,10 +1577,8 @@ export async function getRecentPRs(
   for (const set of setsWithMaxWeight) {
     if (set.weight === null) continue;
 
-    const data = workoutIdToData.get(set.workoutId);
-    if (!data) continue;
-
-    if (set.weight === data.maxWeight) {
+    const data = allWorkoutMaxes.find(wm => wm.workoutId === set.workoutId && wm.maxWeight === set.weight);
+    if (data) {
       const key = set.workoutId;
       const currentReps = repsAtMaxMap.get(key) ?? 0;
       if (set.reps !== null && set.reps > currentReps) {
@@ -1476,10 +1590,10 @@ export async function getRecentPRs(
   const prs: PersonalRecord[] = [];
   const previousMaxByExercise: Record<string, number> = {};
 
-  for (const workoutMax of workoutMaxes) {
+  for (const workoutMax of allWorkoutMaxes) {
     const prevMax = previousMaxByExercise[workoutMax.exerciseId] ?? 0;
     const isPR = workoutMax.maxWeight > prevMax;
-    const repsAtMax = repsAtMaxMap.get(workoutMax.workoutId) ?? 1;
+    const repsAtMax = repsAtMaxMap.get(workoutMax.workoutId) ?? workoutMax.reps;
 
     if (isPR) {
       prs.push({
@@ -1492,11 +1606,190 @@ export async function getRecentPRs(
         est1rm: calculateE1RM(workoutMax.maxWeight, repsAtMax),
         previousRecord: prevMax > 0 ? prevMax : undefined,
       });
-      previousMaxByExercise[workoutMax.exerciseId] = workoutMax.maxWeight;
     }
 
     previousMaxByExercise[workoutMax.exerciseId] = workoutMax.maxWeight;
   }
 
-  return prs.slice(0, limit);
+  return prs
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, limit);
+}
+
+export async function getAllTimeBestPRs(
+  db: D1Database,
+  workosId: string,
+  options: { limit?: number } = {}
+): Promise<PersonalRecord[]> {
+  const drizzleDb = createDb(db);
+  const { limit = 20 } = options;
+
+  const bestPerExercise = await drizzleDb
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      exerciseName: exercises.name,
+      maxWeight: sql<number>`max(${workoutSets.weight})`.mapWith(Number),
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(and(
+      eq(workouts.workosId, workosId),
+      eq(workoutSets.isComplete, true),
+      sql`${workoutSets.weight} > 0`,
+    ))
+    .groupBy(workoutExercises.exerciseId, exercises.name)
+    .all();
+
+  if (bestPerExercise.length === 0) {
+    return [];
+  }
+
+  const results: PersonalRecord[] = [];
+
+  for (const best of bestPerExercise) {
+    const setAtMax = await drizzleDb
+      .select({
+        workoutId: workouts.id,
+        workoutDate: workouts.startedAt,
+        reps: workoutSets.reps,
+      })
+      .from(workoutSets)
+      .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
+      .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+      .where(and(
+        eq(workouts.workosId, workosId),
+        eq(workoutExercises.exerciseId, best.exerciseId),
+        eq(workoutSets.isComplete, true),
+        sql`${workoutSets.weight} = ${best.maxWeight}`,
+      ))
+      .orderBy(desc(workouts.startedAt))
+      .limit(1)
+      .all();
+
+    const detail = setAtMax[0];
+    const reps = detail?.reps ?? 1;
+
+    results.push({
+      id: `best-${best.exerciseId}`,
+      exerciseId: best.exerciseId,
+      exerciseName: best.exerciseName,
+      date: detail?.workoutDate?.split('T')[0] ?? '',
+      weight: best.maxWeight,
+      reps,
+      est1rm: calculateE1RM(best.maxWeight, reps),
+    });
+  }
+
+  function isSquat(name: string): boolean {
+    const n = name.toLowerCase();
+    return n.includes('squat') && !n.includes('goblet');
+  }
+  function isBench(name: string): boolean {
+    const n = name.toLowerCase();
+    return n === 'bench' || n === 'bench press' || n.includes('bench');
+  }
+  function isDeadlift(name: string): boolean {
+    const n = name.toLowerCase();
+    return n.includes('deadlift');
+  }
+  function isOverheadPress(name: string): boolean {
+    const n = name.toLowerCase();
+    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
+  }
+
+  const exerciseCategories: Record<string, { id: string; name: string }> = {};
+  for (const r of results) {
+    if (isSquat(r.exerciseName) && !exerciseCategories.squat) {
+      exerciseCategories.squat = { id: r.exerciseId, name: r.exerciseName };
+    }
+    if (isBench(r.exerciseName) && !exerciseCategories.bench) {
+      exerciseCategories.bench = { id: r.exerciseId, name: r.exerciseName };
+    }
+    if (isDeadlift(r.exerciseName) && !exerciseCategories.deadlift) {
+      exerciseCategories.deadlift = { id: r.exerciseId, name: r.exerciseName };
+    }
+    if (isOverheadPress(r.exerciseName) && !exerciseCategories.ohp) {
+      exerciseCategories.ohp = { id: r.exerciseId, name: r.exerciseName };
+    }
+  }
+
+  const oneRmMaxes = await drizzleDb
+    .select({
+      maxSquat: sql<number>`max(${workouts.squat1rm})`.mapWith(Number),
+      maxBench: sql<number>`max(${workouts.bench1rm})`.mapWith(Number),
+      maxDeadlift: sql<number>`max(${workouts.deadlift1rm})`.mapWith(Number),
+      maxOhp: sql<number>`max(${workouts.ohp1rm})`.mapWith(Number),
+    })
+    .from(workouts)
+    .where(and(
+      eq(workouts.workosId, workosId),
+      sql`(${workouts.squat1rm} IS NOT NULL OR ${workouts.bench1rm} IS NOT NULL OR ${workouts.deadlift1rm} IS NOT NULL OR ${workouts.ohp1rm} IS NOT NULL)`,
+    ))
+    .all();
+
+  const oneRmData = oneRmMaxes[0];
+  if (oneRmData) {
+    const categoryMap: Array<{
+      category: string;
+      value: number | null;
+      column: typeof workouts.squat1rm;
+    }> = [
+      { category: 'squat', value: oneRmData.maxSquat, column: workouts.squat1rm },
+      { category: 'bench', value: oneRmData.maxBench, column: workouts.bench1rm },
+      { category: 'deadlift', value: oneRmData.maxDeadlift, column: workouts.deadlift1rm },
+      { category: 'ohp', value: oneRmData.maxOhp, column: workouts.ohp1rm },
+    ];
+
+    for (const { category, value, column } of categoryMap) {
+      if (!value || !exerciseCategories[category]) continue;
+
+      const cat = exerciseCategories[category];
+      const existing = results.find(r => r.exerciseId === cat.id);
+
+      if (existing && value > existing.weight) {
+        const dateRow = await drizzleDb
+          .select({ workoutDate: workouts.startedAt })
+          .from(workouts)
+          .where(and(
+            eq(workouts.workosId, workosId),
+            eq(column, value),
+          ))
+          .orderBy(desc(workouts.startedAt))
+          .limit(1)
+          .all();
+
+        existing.weight = value;
+        existing.reps = 1;
+        existing.est1rm = value;
+        existing.date = dateRow[0]?.workoutDate?.split('T')[0] ?? existing.date;
+      } else if (!existing) {
+        const dateRow = await drizzleDb
+          .select({ workoutDate: workouts.startedAt })
+          .from(workouts)
+          .where(and(
+            eq(workouts.workosId, workosId),
+            eq(column, value),
+          ))
+          .orderBy(desc(workouts.startedAt))
+          .limit(1)
+          .all();
+
+        results.push({
+          id: `best-1rm-${category}`,
+          exerciseId: cat.id,
+          exerciseName: cat.name,
+          date: dateRow[0]?.workoutDate?.split('T')[0] ?? '',
+          weight: value,
+          reps: 1,
+          est1rm: value,
+        });
+      }
+    }
+  }
+
+  return results
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, limit);
 }

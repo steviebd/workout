@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import { getWorkoutHistoryStats } from '../../lib/db/workout';
+import { getLocalWorkoutStats } from '../../lib/db/local-repository';
 import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/workouts/stats')({
@@ -13,14 +14,28 @@ export const Route = createFileRoute('/api/workouts/stats')({
              return Response.json({ error: 'Not authenticated' }, { status: 401 });
            }
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+           const db = (env as { DB?: D1Database }).DB;
+           if (!db) {
+             const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+             if (online) {
+               return Response.json({ error: 'Database not available' }, { status: 503 });
+             }
+             const localStats = await getLocalWorkoutStats(session.sub);
+             return Response.json(localStats, {
+               headers: {
+                 'Cache-Control': 'no-store, no-cache, must-revalidate',
+                 'X-Offline-Mode': 'local',
+               },
+             });
+           }
 
            const stats = await getWorkoutHistoryStats(db, session.sub);
 
-          return Response.json(stats);
+           return Response.json(stats, {
+             headers: {
+               'Cache-Control': 'no-store, no-cache, must-revalidate',
+             },
+           });
         } catch (err) {
           console.error('Get workout stats error:', err);
           const errorMessage = err instanceof Error ? err.message : String(err);

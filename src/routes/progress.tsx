@@ -174,7 +174,7 @@ function ProgressPage() {
         fetch('/api/exercises', { credentials: 'include' }),
         id ? fetch(`/api/progress/strength?dateRange=${dateRange}&exerciseId=${id}`, { credentials: 'include' }) : Promise.resolve(null),
         fetch(`/api/progress/volume?dateRange=${dateRange}&volumeScope=${volumeScope}${selectedExerciseId ? `&exerciseId=${selectedExerciseId}` : ''}`, { credentials: 'include' }),
-        fetch(`/api/progress/prs?dateRange=${dateRange}`, { credentials: 'include' }),
+        fetch('/api/progress/prs?mode=allTime&limit=20', { credentials: 'include' }),
       ]);
 
       if (exercisesRes.ok) {
@@ -653,7 +653,7 @@ function ProgressPage() {
                   return (
                     <Link
                       key={workout.id}
-                      to="/workouts/$id"
+                      to="/workouts/$id/summary"
                       params={{ id: workout.id }}
                       className="block"
                     >

@@ -91,6 +91,7 @@ function WorkoutSummary() {
         }
 
         const data: Workout = await res.json();
+        console.log('[Summary] Loaded workout:', { id: data.id, name: data.name, completedAt: data.completedAt });
         setWorkout(data);
 
         if (data.name === '1RM Test' && data.programCycleId && (data as unknown as { squat1rm?: number | null }).squat1rm === null) {
@@ -118,12 +119,16 @@ function WorkoutSummary() {
 
   useEffect(() => {
     const redirectIfIncomplete = async () => {
+      console.log('[Summary] redirectIfIncomplete check:', { loading, hasWorkout: !!workout, completedAt: workout?.completedAt });
       if (!loading && workout && !workout.completedAt) {
+        console.log('[Summary] Redirecting to edit page - workout not completed');
         try {
-          await router.navigate({ to: `/workouts/${params.id}`, replace: true });
+          await router.navigate({ to: '/workouts/$id', params: { id: params.id }, replace: true });
         } catch (err) {
           console.error('Navigation error:', err);
         }
+      } else if (workout?.completedAt) {
+        console.log('[Summary] Staying on summary page - workout is completed');
       }
     };
 
