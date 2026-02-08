@@ -20,22 +20,22 @@ export const Route = createFileRoute('/api/workouts/stats')({
              if (online) {
                return Response.json({ error: 'Database not available' }, { status: 503 });
              }
-             const localStats = await getLocalWorkoutStats(session.sub);
-             return Response.json(localStats, {
-               headers: {
-                 'Cache-Control': 'no-store, no-cache, must-revalidate',
-                 'X-Offline-Mode': 'local',
-               },
-             });
+              const localStats = await getLocalWorkoutStats(session.sub);
+              return Response.json(localStats, {
+                headers: {
+                  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=150',
+                  'X-Offline-Mode': 'local',
+                },
+              });
            }
 
-           const stats = await getWorkoutHistoryStats(db, session.sub);
+            const stats = await getWorkoutHistoryStats(db, session.sub);
 
-           return Response.json(stats, {
-             headers: {
-               'Cache-Control': 'no-store, no-cache, must-revalidate',
-             },
-           });
+            return Response.json(stats, {
+              headers: {
+                'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=150',
+              },
+            });
         } catch (err) {
           console.error('Get workout stats error:', err);
           const errorMessage = err instanceof Error ? err.message : String(err);

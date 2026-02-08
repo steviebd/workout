@@ -2,8 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
 import {
   type UpdateTemplateData,
-  getTemplateById,
-  getTemplateExercises,
+  getTemplateWithExercises,
   softDeleteTemplate,
   updateTemplate
 } from '../../lib/db/template';
@@ -24,15 +23,13 @@ export const Route = createFileRoute('/api/templates/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const template = await getTemplateById(db, params.id, session.sub);
+          const template = await getTemplateWithExercises(db, params.id, session.sub);
 
           if (!template) {
             return Response.json({ error: 'Template not found' }, { status: 404 });
           }
 
-          const exercises = await getTemplateExercises(db, params.id, session.sub);
-
-          return Response.json({ ...template, exercises });
+          return Response.json(template);
         } catch (err) {
           console.error('Get template error:', err);
           return Response.json({ error: 'Server error' }, { status: 500 });

@@ -284,6 +284,50 @@ export async function getTemplateExercises(
   return results as TemplateExerciseWithDetails[];
 }
 
+export async function getTemplateWithExercises(
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  templateId: string,
+  workosId: string
+): Promise<(Template & { exercises: TemplateExerciseWithDetails[] }) | null> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const template = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    return null;
+  }
+
+  const templateExercisesWithDetails = await db
+    .select({
+      id: templateExercises.id,
+      templateId: templateExercises.templateId,
+      exerciseId: templateExercises.exerciseId,
+      orderIndex: templateExercises.orderIndex,
+      targetWeight: templateExercises.targetWeight,
+      sets: templateExercises.sets,
+      reps: templateExercises.reps,
+      isAmrap: templateExercises.isAmrap,
+      setNumber: templateExercises.setNumber,
+      exercise: {
+        id: exercises.id,
+        name: exercises.name,
+        muscleGroup: exercises.muscleGroup,
+      },
+    })
+    .from(templateExercises)
+    .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
+    .where(eq(templateExercises.templateId, templateId))
+    .orderBy(templateExercises.orderIndex)
+    .all();
+
+  return { ...template, exercises: templateExercisesWithDetails as TemplateExerciseWithDetails[] };
+}
+
 /**
  * Reorders exercises within a template by updating their orderIndex values.
  * Validates template ownership first, then applies all order updates in sequence.

@@ -49,7 +49,7 @@ export function StreakProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery<StreakApiData>({
     queryKey: ['streak'],
     queryFn: fetchStreakData,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const refetch = useCallback(async () => {

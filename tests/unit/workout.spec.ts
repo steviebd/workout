@@ -1390,20 +1390,23 @@ describe('Exercise History', () => {
     vi.useRealTimers();
   });
 
-  it('returns empty array when no workouts found', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([]),
-              }),
-            }),
-          }),
-        }),
+  function createExerciseHistoryChain(workoutIds: string[] = [], setsData: unknown[] = []) {
+    const chainable = {
+      from: () => chainable,
+      innerJoin: () => chainable,
+      where: () => chainable,
+      orderBy: () => chainable,
+      limit: () => chainable,
+      offset: () => ({
+        all: vi.fn().mockResolvedValue(workoutIds),
       }),
-    });
+      all: vi.fn().mockResolvedValue(setsData),
+    };
+    mockDrizzleDb.select.mockReturnValue(chainable);
+  }
+
+  it('returns empty array when no workouts found', async () => {
+    createExerciseHistoryChain([], []);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 
@@ -1413,41 +1416,30 @@ describe('Exercise History', () => {
   });
 
   it('returns exercise history with max weight per workout', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([
-                  {
-                    workoutId: 'workout-1',
-                    workoutName: 'Push Day',
-                    workoutDate: '2024-01-15T10:00:00.000Z',
-                    weight: 100,
-                    reps: 5,
-                  },
-                  {
-                    workoutId: 'workout-1',
-                    workoutName: 'Push Day',
-                    workoutDate: '2024-01-15T10:00:00.000Z',
-                    weight: 80,
-                    reps: 8,
-                  },
-                  {
-                    workoutId: 'workout-2',
-                    workoutName: 'Chest Day',
-                    workoutDate: '2024-01-10T10:00:00.000Z',
-                    weight: 95,
-                    reps: 6,
-                  },
-                ]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    const setsData = [
+      {
+        workoutId: 'workout-1',
+        workoutName: 'Push Day',
+        workoutDate: '2024-01-15T10:00:00.000Z',
+        weight: 100,
+        reps: 5,
+      },
+      {
+        workoutId: 'workout-1',
+        workoutName: 'Push Day',
+        workoutDate: '2024-01-15T10:00:00.000Z',
+        weight: 80,
+        reps: 8,
+      },
+      {
+        workoutId: 'workout-2',
+        workoutName: 'Chest Day',
+        workoutDate: '2024-01-10T10:00:00.000Z',
+        weight: 95,
+        reps: 6,
+      },
+    ];
+    createExerciseHistoryChain(['workout-1', 'workout-2'], setsData);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 
@@ -1465,41 +1457,30 @@ describe('Exercise History', () => {
   });
 
   it('correctly identifies PRs', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([
-                  {
-                    workoutId: 'workout-1',
-                    workoutName: 'First Workout',
-                    workoutDate: '2024-01-01T10:00:00.000Z',
-                    weight: 80,
-                    reps: 8,
-                  },
-                  {
-                    workoutId: 'workout-2',
-                    workoutName: 'Second Workout',
-                    workoutDate: '2024-01-08T10:00:00.000Z',
-                    weight: 90,
-                    reps: 6,
-                  },
-                  {
-                    workoutId: 'workout-3',
-                    workoutName: 'Third Workout',
-                    workoutDate: '2024-01-15T10:00:00.000Z',
-                    weight: 85,
-                    reps: 5,
-                  },
-                ]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    const setsData = [
+      {
+        workoutId: 'workout-1',
+        workoutName: 'First Workout',
+        workoutDate: '2024-01-01T10:00:00.000Z',
+        weight: 80,
+        reps: 8,
+      },
+      {
+        workoutId: 'workout-2',
+        workoutName: 'Second Workout',
+        workoutDate: '2024-01-08T10:00:00.000Z',
+        weight: 90,
+        reps: 6,
+      },
+      {
+        workoutId: 'workout-3',
+        workoutName: 'Third Workout',
+        workoutDate: '2024-01-15T10:00:00.000Z',
+        weight: 85,
+        reps: 5,
+      },
+    ];
+    createExerciseHistoryChain(['workout-1', 'workout-2', 'workout-3'], setsData);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 
@@ -1520,19 +1501,7 @@ describe('Exercise History', () => {
   });
 
   it('filters by date range', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    createExerciseHistoryChain([], []);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 
@@ -1543,19 +1512,7 @@ describe('Exercise History', () => {
   });
 
   it('handles pagination with limit and offset', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    createExerciseHistoryChain([], []);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 
@@ -1568,34 +1525,23 @@ describe('Exercise History', () => {
   });
 
   it('ignores sets with null weight', async () => {
-    mockDrizzleDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                all: vi.fn().mockReturnValue([
-                  {
-                    workoutId: 'workout-1',
-                    workoutName: 'Test Workout',
-                    workoutDate: '2024-01-15T10:00:00.000Z',
-                    weight: null,
-                    reps: 5,
-                  },
-                  {
-                    workoutId: 'workout-1',
-                    workoutName: 'Test Workout',
-                    workoutDate: '2024-01-15T10:00:00.000Z',
-                    weight: 100,
-                    reps: 5,
-                  },
-                ]),
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+    const setsData = [
+      {
+        workoutId: 'workout-1',
+        workoutName: 'Test Workout',
+        workoutDate: '2024-01-15T10:00:00.000Z',
+        weight: null,
+        reps: 5,
+      },
+      {
+        workoutId: 'workout-1',
+        workoutName: 'Test Workout',
+        workoutDate: '2024-01-15T10:00:00.000Z',
+        weight: 100,
+        reps: 5,
+      },
+    ];
+    createExerciseHistoryChain(['workout-1'], setsData);
 
     const { getExerciseHistory } = await import('../../src/lib/db/workout');
 

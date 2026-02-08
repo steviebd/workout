@@ -1027,7 +1027,7 @@ export async function getExerciseHistory(
   options: GetExerciseHistoryOptions = {}
 ): Promise<ExerciseHistoryItem[]> {
   const drizzleDb = createDb(db);
-  const { fromDate, toDate, limit, offset } = options;
+  const { fromDate, toDate, limit = 100, offset } = options;
 
   const conditions = [
     eq(workouts.workosId, workosId),
@@ -1043,6 +1043,20 @@ export async function getExerciseHistory(
     conditions.push(sql`${workouts.startedAt} <= ${toDate}`);
   }
 
+  const workoutIdsQuery = drizzleDb
+    .select({ id: workouts.id })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .where(and(...conditions))
+    .orderBy(asc(workouts.startedAt))
+    .limit(limit)
+    .offset(offset ?? 0)
+    .all();
+
+  const workoutIds = (await workoutIdsQuery).map(w => w.id);
+
+  if (workoutIds.length === 0) return [];
+
   const workoutSetsData = await drizzleDb
     .select({
       workoutId: workouts.id,
@@ -1054,7 +1068,10 @@ export async function getExerciseHistory(
     .from(workouts)
     .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
     .innerJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
-    .where(and(...conditions))
+    .where(and(
+      ...conditions,
+      inArray(workouts.id, workoutIds)
+    ))
     .orderBy(asc(workouts.startedAt))
     .all();
 
@@ -1076,13 +1093,13 @@ export async function getExerciseHistory(
   let currentMaxWeight = 0;
 
   for (const [workoutId, data] of workoutMap) {
+    const workoutDate = workoutSetsData.find(s => s.workoutId === workoutId)?.workoutDate ?? '';
+
     const est1rm = calculateE1RM(data.maxWeight, data.repsAtMax);
     const isPR = data.maxWeight > currentMaxWeight;
     if (data.maxWeight > currentMaxWeight) {
       currentMaxWeight = data.maxWeight;
     }
-
-    const workoutDate = workoutSetsData.find(s => s.workoutId === workoutId)?.workoutDate ?? '';
 
     history.push({
       workoutId,
@@ -1095,19 +1112,9 @@ export async function getExerciseHistory(
     });
   }
 
-  let sortedHistory = history.sort((a, b) =>
+  return history.sort((a, b) =>
     new Date(b.workoutDate).getTime() - new Date(a.workoutDate).getTime()
   );
-
-  if (offset !== undefined) {
-    sortedHistory = sortedHistory.slice(offset);
-  }
-
-  if (limit !== undefined) {
-    sortedHistory = sortedHistory.slice(0, limit);
-  }
-
-  return sortedHistory;
 }
 
 /**

@@ -27,11 +27,12 @@ export const Route = createFileRoute('/api/streaks' as const)({
         const prefs = await getUserPreferences(db, workosId);
         const weeklyTarget = prefs?.weeklyWorkoutTarget ?? 3;
 
-        const weeklyCount = await getWeeklyWorkoutCount(db, workosId);
-        const totalWorkouts = await getTotalWorkouts(db, workosId);
-        const rolling30Days = await getRolling30DayWorkoutCount(db, workosId);
-        
-        const thirtyDayStreak = await calculateThirtyDayStreak(db, workosId, weeklyTarget);
+        const [weeklyCount, totalWorkouts, rolling30Days, thirtyDayStreak] = await Promise.all([
+          getWeeklyWorkoutCount(db, workosId),
+          getTotalWorkouts(db, workosId),
+          getRolling30DayWorkoutCount(db, workosId),
+          calculateThirtyDayStreak(db, workosId, weeklyTarget),
+        ]);
 
         return Response.json({
           weeklyCount,
@@ -39,6 +40,10 @@ export const Route = createFileRoute('/api/streaks' as const)({
           thirtyDayStreak,
           totalWorkouts,
           rolling30Days,
+        }, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+          },
         });
       },
     },

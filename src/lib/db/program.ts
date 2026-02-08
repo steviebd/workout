@@ -23,6 +23,34 @@ export interface ProgramCycleWithWorkouts extends UserProgramCycle {
   templates?: Template[];
 }
 
+export async function getProgramCycleWithWorkouts(
+  dbOrTx: DbOrTx,
+  cycleId: string,
+  workosId: string
+): Promise<(UserProgramCycle & { workouts: ProgramCycleWorkout[] }) | null> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const cycle = await db
+    .select()
+    .from(userProgramCycles)
+    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
+    .get();
+
+  if (!cycle) {
+    return null;
+  }
+
+  const cycleWorkouts = await db
+    .select()
+    .from(programCycleWorkouts)
+    .where(eq(programCycleWorkouts.cycleId, cycleId))
+    .orderBy(programCycleWorkouts.weekNumber, programCycleWorkouts.sessionNumber)
+    .all();
+
+  return { ...cycle, workouts: cycleWorkouts };
+}
+
 export interface CreateProgramCycleData {
   programSlug: string;
   name: string;

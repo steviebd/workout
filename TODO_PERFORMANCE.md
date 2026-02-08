@@ -98,24 +98,24 @@
 ## Recommended Implementation Order
 
 ### Week 1: Critical N+1 Fixes
-1. [ ] Fix `getWorkoutsPerWeek()` - single query with GROUP BY
-2. [ ] Fix `calculateMonthlyStreak()` - single query with GROUP BY
-3. [ ] Fix `/api/streaks` - combine queries
+1. [x] Fix `getWorkoutsPerWeek()` - single query with GROUP BY
+2. [x] Fix `calculateMonthlyStreak()` - single query with GROUP BY
+3. [x] Fix `/api/streaks` - combine queries
 
 ### Week 2: Caching Layer
-1. [ ] Add Cache-Control headers to streak endpoints
-2. [ ] Add Cache-Control headers to PR endpoints
-3. [ ] Add Cache-Control headers to workout stats endpoints
-4. [ ] Increase React Query staleTime in StreakContext
+1. [x] Add Cache-Control headers to streak endpoints
+2. [x] Add Cache-Control headers to PR endpoints
+3. [x] Add Cache-Control headers to workout stats endpoints
+4. [x] Increase React Query staleTime in StreakContext
 
 ### Week 3: Entity Loading Optimization
-1. [ ] Optimize template route with JOIN
-2. [ ] Optimize program-cycle route with JOIN
-3. [ ] Optimize `getRecentPRs()` - reduce queries
+1. [x] Optimize template route with JOIN
+2. [x] Optimize program-cycle route with JOIN
+3. [x] Optimize `getRecentPRs()` - reduce queries
 
 ### Week 4: Long-term Improvements
-1. [ ] Add pagination to exercise history
-2. [ ] Create date utility module
+1. [x] Add pagination to exercise history
+2. [x] Create date utility module
 3. [ ] Implement cursor-based pagination for history
 4. [ ] Consider pre-aggregation for analytics queries
 

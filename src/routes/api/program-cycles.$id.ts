@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getProgramCycleById, updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, getCycleWorkouts, completeProgramCycle } from '~/lib/db/program';
+import { updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getProgramCycleWithWorkouts } from '~/lib/db/program';
 import { requireAuth } from '~/lib/api/route-helpers';
 
 interface ProgramCycleUpdateBody {
@@ -28,17 +28,16 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }
 
-          const cycle = await getProgramCycleById(db, params.id, session.sub);
-          if (!cycle) {
+          const cycleWithWorkouts = await getProgramCycleWithWorkouts(db, params.id, session.sub);
+          if (!cycleWithWorkouts) {
             return Response.json({ error: 'Program cycle not found' }, { status: 404 });
           }
 
-          const workouts = await getCycleWorkouts(db, params.id, session.sub);
-          const completedCount = workouts.filter((w) => w.isComplete).length;
+          const completedCount = cycleWithWorkouts.workouts.filter((w) => w.isComplete).length;
 
           const responseData = {
-            ...cycle,
-            preferredGymDays: cycle.preferredGymDays ? cycle.preferredGymDays.split(',') : [],
+            ...cycleWithWorkouts,
+            preferredGymDays: cycleWithWorkouts.preferredGymDays ? cycleWithWorkouts.preferredGymDays.split(',') : [],
             totalSessionsCompleted: completedCount,
           };
 

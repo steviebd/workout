@@ -75,29 +75,44 @@ export async function getWorkoutsPerWeek(
   const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   
+  const earliestWeekStart = new Date(today);
+  earliestWeekStart.setDate(today.getDate() + mondayOffset - ((weeksBack - 1) * 7));
+  earliestWeekStart.setHours(0, 0, 0, 0);
+  const startDateStr = new Date(earliestWeekStart.getTime() - earliestWeekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+  const drizzleDb = createDb(db);
+  const results = await drizzleDb
+    .select({
+      weekStart: sql<string>`date(${workouts.completedAt}, 'weekday 0', '-6 days')`.mapWith(String),
+      count: sql<number>`count(distinct date(${workouts.completedAt}))`.mapWith(Number),
+    })
+    .from(workouts)
+    .where(and(
+      eq(workouts.workosId, workosId),
+      eq(workouts.isDeleted, false),
+      isNotNull(workouts.completedAt),
+      sql`date(${workouts.completedAt}) >= ${startDateStr}`
+    ))
+    .groupBy(sql`date(${workouts.completedAt}, 'weekday 0', '-6 days')`)
+    .orderBy(sql`date(${workouts.completedAt}, 'weekday 0', '-6 days')`)
+    .all();
+
+  const resultMap = new Map(results.map(r => [r.weekStart, r.count]));
+
   const weeklyDetails: WeeklyWorkoutCount[] = [];
-  
   for (let i = weeksBack - 1; i >= 0; i--) {
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() + mondayOffset - (i * 7));
     weekStart.setHours(0, 0, 0, 0);
-    
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
-    
-    const startDateStr = new Date(weekStart.getTime() - weekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    const endDateStr = new Date(weekEnd.getTime() - weekEnd.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    
-    const workoutCount = await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
-    
+    const weekStartStr = new Date(weekStart.getTime() - weekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
     weeklyDetails.push({
-      weekStart: startDateStr,
-      count: workoutCount,
-      meetsTarget: workoutCount >= targetPerWeek,
+      weekStart: weekStartStr,
+      count: resultMap.get(weekStartStr) ?? 0,
+      meetsTarget: (resultMap.get(weekStartStr) ?? 0) >= targetPerWeek,
     });
   }
-  
+
   return weeklyDetails;
 }
 
@@ -276,32 +291,40 @@ export async function calculateMonthlyStreak(
   db: D1Database,
   workosId: string
 ): Promise<number> {
-  const monthlyCounts: Array<{ month: string; hasWorkout: boolean }> = [];
   const today = new Date();
+  const twelveMonthsAgo = new Date(today);
+  twelveMonthsAgo.setMonth(today.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+  twelveMonthsAgo.setHours(0, 0, 0, 0);
   
+  const startDateStr = new Date(twelveMonthsAgo.getTime() - twelveMonthsAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  
+  const drizzleDb = createDb(db);
+  const results = await drizzleDb
+    .select({
+      month: sql<string>`strftime('%Y-%m', ${workouts.completedAt})`.mapWith(String),
+      hasWorkout: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(workouts)
+    .where(and(
+      eq(workouts.workosId, workosId),
+      eq(workouts.isDeleted, false),
+      isNotNull(workouts.completedAt),
+      sql`date(${workouts.completedAt}) >= ${startDateStr}`
+    ))
+    .groupBy(sql`strftime('%Y-%m', ${workouts.completedAt})`)
+    .orderBy(sql`strftime('%Y-%m', ${workouts.completedAt})`)
+    .all();
+
+  const monthlyHasWorkout = new Map(results.map(r => [r.month, r.hasWorkout > 0]));
+  
+  let streak = 0;
   for (let i = 11; i >= 0; i--) {
     const monthDate = new Date();
     monthDate.setMonth(today.getMonth() - i);
-    monthDate.setDate(1);
-    monthDate.setHours(0, 0, 0, 0);
+    const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
     
-    const nextMonth = new Date(monthDate);
-    nextMonth.setMonth(monthDate.getMonth() + 1);
-    
-    const startStr = new Date(monthDate.getTime() - monthDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    const endStr = new Date(nextMonth.getTime() - nextMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    
-    const workoutDates = await getWorkoutsInDateRange(db, workosId, startStr, endStr);
-    
-    monthlyCounts.push({
-      month: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`,
-      hasWorkout: workoutDates.length > 0,
-    });
-  }
-  
-  let streak = 0;
-  for (const month of monthlyCounts) {
-    if (month.hasWorkout) {
+    if (monthlyHasWorkout.get(monthKey) === true) {
       streak++;
     } else {
       break;

@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/progress/prs')({
               })),
             }, {
               headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=600',
                 'X-Offline-Mode': 'local',
               },
             });
@@ -57,7 +57,7 @@ export const Route = createFileRoute('/api/progress/prs')({
               })),
             }, {
               headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=600',
               },
             });
           }
@@ -97,7 +97,7 @@ export const Route = createFileRoute('/api/progress/prs')({
             })),
           }, {
             headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=600',
             },
           });
         } catch (err) {
