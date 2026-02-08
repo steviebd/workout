@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { asc, desc, eq } from 'drizzle-orm';
 import { createWorkoutWithDetails } from '../../lib/db/workout';
 import { workouts } from '../../lib/db/schema';
-import { createDb } from '../../lib/db';
 import { getTemplateExercises } from '../../lib/db/template';
-import { requireAuth, validateBody } from '../../lib/api/route-helpers';
+import { validateBody } from '../../lib/api/route-helpers';
 import { createWorkoutSchema } from '../../lib/validators';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 type WorkoutSortColumn = typeof workouts.startedAt | typeof workouts.createdAt | typeof workouts.name;
 
@@ -21,10 +21,7 @@ export const Route = createFileRoute('/api/workouts')({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, db } = await withApiContext(request);
 
           const url = new URL(request.url);
           const limitParam = url.searchParams.get('limit');
@@ -33,15 +30,9 @@ export const Route = createFileRoute('/api/workouts')({
           const sortOrder = url.searchParams.get('sortOrder') ?? 'DESC';
 
           if (isNaN(limit) || limit < 1 || limit > 100) {
-            return Response.json({ error: 'Invalid limit (1-100)' }, { status: 400 });
+            return createApiError('Invalid limit (1-100)', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-          const d1Db = (env as { DB?: D1Database }).DB;
-          if (!d1Db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const db = createDb(d1Db);
           const sortColumn = validSortColumns[sortBy] ?? workouts.startedAt;
           const orderFn = sortOrder === 'DESC' ? desc : asc;
 
@@ -64,24 +55,16 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json(userWorkouts);
         } catch (err) {
           console.error('Fetch workouts error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
       POST: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
-
-          const d1Db = (env as { DB?: D1Database }).DB;
-          if (!d1Db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+          const { session, db: d1Db } = await withApiContext(request);
 
           const body = await validateBody(request, createWorkoutSchema);
           if (!body) {
-            return Response.json({ error: 'Invalid request body' }, { status: 400 });
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           let exercisesToAdd: string[] = body.exerciseIds ?? [];
@@ -103,7 +86,7 @@ export const Route = createFileRoute('/api/workouts')({
           return Response.json(workout, { status: 201 });
         } catch (err) {
           console.error('Create workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

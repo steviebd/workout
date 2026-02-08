@@ -239,7 +239,7 @@ export async function updateUserLastWorkout(
       target: userStreaks.workosId,
       set: {
         lastWorkoutDate: workoutDate,
-        updatedAt: sql`CURRENT_TIMESTAMP`,
+        updatedAt: new Date().toISOString(),
       },
     });
 }
@@ -267,7 +267,7 @@ export async function checkAndResetBrokenStreaks(
     await drizzleDb
       .update(userStreaks)
       .set({
-        updatedAt: sql`CURRENT_TIMESTAMP`,
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(userStreaks.workosId, workosId));
   }

@@ -1,59 +1,50 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { createWorkoutSet } from '../../lib/db/workout';
-import { requireAuth } from '~/lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workouts/sets')({
   server: {
     handlers: {
        POST: async ({ request }) => {
-         try {
-           const session = await requireAuth(request);
-           if (!session) {
-             return Response.json({ error: 'Not authenticated' }, { status: 401 });
-           }
+          try {
+            const { d1Db, session } = await withApiContext(request);
 
-          const body = await request.json();
-          const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
-            workoutExerciseId: string;
-            setNumber: number;
-            weight?: number;
-            reps?: number;
-            rpe?: number;
-            localId?: string;
-          };
+            const body = await request.json();
+            const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
+              workoutExerciseId: string;
+              setNumber: number;
+              weight?: number;
+              reps?: number;
+              rpe?: number;
+              localId?: string;
+            };
 
-          if (!workoutExerciseId || setNumber === undefined) {
-            return Response.json({ error: 'Workout exercise ID and set number are required' }, { status: 400 });
+            if (!workoutExerciseId || setNumber === undefined) {
+              return createApiError('Workout exercise ID and set number are required', 400, 'VALIDATION_ERROR');
+            }
+
+            const workoutSet = await createWorkoutSet(
+              d1Db,
+              workoutExerciseId,
+              session.sub,
+              setNumber,
+              weight,
+              reps,
+              rpe,
+              localId
+            );
+
+            if (!workoutSet) {
+              return createApiError('Workout exercise not found or does not belong to you', 404, 'NOT_FOUND');
+            }
+
+            return Response.json(workoutSet, { status: 201 });
+          } catch (err) {
+            console.error('Create set error:', err);
+            return createApiError('Server error', 500, 'SERVER_ERROR');
           }
-
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const workoutSet = await createWorkoutSet(
-             db,
-             workoutExerciseId,
-             session.sub,
-            setNumber,
-            weight,
-            reps,
-            rpe,
-            localId
-          );
-
-          if (!workoutSet) {
-            return Response.json({ error: 'Workout exercise not found or does not belong to you' }, { status: 404 });
-          }
-
-          return Response.json(workoutSet, { status: 201 });
-        } catch (err) {
-          console.error('Create set error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
-      },
+        },
     },
   },
 });

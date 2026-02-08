@@ -1,22 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { getWeeklyVolume } from '../../lib/db/workout';
-import { requireAuth } from '../../lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, ApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/progress/volume')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
-
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+          const { session, d1Db } = await withApiContext(request);
 
           const url = new URL(request.url);
           const dateRangeParam = url.searchParams.get('dateRange');
@@ -39,7 +31,7 @@ export const Route = createFileRoute('/api/progress/volume')({
           const exerciseId = exerciseIdParam ?? undefined;
 
           if (volumeScope === 'selected' && !exerciseId) {
-            return Response.json({ error: 'exerciseId is required when volumeScope is selected' }, { status: 400 });
+            return createApiError('exerciseId is required when volumeScope is selected', 400, 'VALIDATION_ERROR');
           }
 
           let fromDate: string | undefined;
@@ -73,7 +65,7 @@ export const Route = createFileRoute('/api/progress/volume')({
             ? exerciseId
             : undefined;
 
-           const weeklyVolume = await getWeeklyVolume(db, session.sub, {
+           const weeklyVolume = await getWeeklyVolume(d1Db, session.sub, {
             fromDate,
             toDate,
             exerciseId: exerciseFilter,
@@ -91,10 +83,13 @@ export const Route = createFileRoute('/api/progress/volume')({
               },
             });
          } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
            console.error('Get volume progress error:', err);
-           return Response.json({ error: 'Server error' }, { status: 500 });
+           return createApiError('Server error', 500, 'SERVER_ERROR');
          }
-       },
+      },
     },
   },
 });

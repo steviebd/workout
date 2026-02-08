@@ -51,7 +51,7 @@ function mapLocalToActiveWorkout(
           reps: s.reps,
           rpe: s.rpe ?? undefined,
           isComplete: s.completed,
-          completedAt: s.completed ? new Date().toISOString() : undefined,
+          completedAt: s.completed ? (s.completedAt ? s.completedAt.toISOString() : new Date().toISOString()) : undefined,
         })),
       notes: we.notes,
     }));
@@ -157,8 +157,10 @@ export function useActiveWorkout() {
       needsSync: true,
     };
 
-    await localDB.workouts.add(newWorkout);
-    await queueOperation('create', 'workout', localId, newWorkout as unknown as Record<string, unknown>);
+    await localDB.transaction('rw', localDB.workouts, localDB.offlineQueue, async () => {
+      await localDB.workouts.add(newWorkout);
+      await queueOperation('create', 'workout', localId, newWorkout as unknown as Record<string, unknown>);
+    });
 
     const active: ActiveWorkout = {
       id: localId,
@@ -207,8 +209,10 @@ export function useActiveWorkout() {
       needsSync: true,
     };
 
-    await localDB.workoutExercises.add(workoutExercise);
-    await queueOperation('create', 'workout_exercise', localId, workoutExercise as unknown as Record<string, unknown>);
+    await localDB.transaction('rw', localDB.workoutExercises, localDB.offlineQueue, async () => {
+      await localDB.workoutExercises.add(workoutExercise);
+      await queueOperation('create', 'workout_exercise', localId, workoutExercise as unknown as Record<string, unknown>);
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;
@@ -227,20 +231,22 @@ export function useActiveWorkout() {
     if (!workout || !user) return;
 
     const weLocalId = await getWorkoutExerciseLocalId(workout.id, exerciseId);
-    if (weLocalId) {
-      const we = await localDB.workoutExercises.where('localId').equals(weLocalId).first();
-      const sets = await localDB.workoutSets.where('workoutExerciseId').equals(weLocalId).toArray();
-      for (const set of sets) {
-        if (set.id !== undefined) {
-          await localDB.workoutSets.update(set.id, { syncStatus: 'pending', needsSync: true });
+    await localDB.transaction('rw', localDB.workoutExercises, localDB.workoutSets, localDB.offlineQueue, async () => {
+      if (weLocalId) {
+        const we = await localDB.workoutExercises.where('localId').equals(weLocalId).first();
+        const sets = await localDB.workoutSets.where('workoutExerciseId').equals(weLocalId).toArray();
+        for (const set of sets) {
+          if (set.id !== undefined) {
+            await localDB.workoutSets.update(set.id, { syncStatus: 'pending', needsSync: true });
+          }
+          await queueOperation('delete', 'workout_set', set.localId, { localId: set.localId });
         }
-        await queueOperation('delete', 'workout_set', set.localId, { localId: set.localId });
+          if (we?.id !== undefined) {
+            await localDB.workoutExercises.update(we.id, { syncStatus: 'pending', needsSync: true });
+          }
+        await queueOperation('delete', 'workout_exercise', weLocalId, { localId: weLocalId });
       }
-        if (we?.id !== undefined) {
-          await localDB.workoutExercises.update(we.id, { syncStatus: 'pending', needsSync: true });
-        }
-      await queueOperation('delete', 'workout_exercise', weLocalId, { localId: weLocalId });
-    }
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;
@@ -275,8 +281,10 @@ export function useActiveWorkout() {
       needsSync: true,
     };
 
-    await localDB.workoutSets.add(newSet);
-    await queueOperation('create', 'workout_set', newSet.localId, newSet as unknown as Record<string, unknown>);
+    await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+      await localDB.workoutSets.add(newSet);
+      await queueOperation('create', 'workout_set', newSet.localId, newSet as unknown as Record<string, unknown>);
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;
@@ -322,10 +330,12 @@ export function useActiveWorkout() {
       needsSync: true,
     };
 
-    if (set.id !== undefined) {
-      await localDB.workoutSets.update(set.id, dbUpdate);
-    }
-    await queueOperation('update', 'workout_set', setId, { ...updates, localId: setId });
+    await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+      if (set.id !== undefined) {
+        await localDB.workoutSets.update(set.id, dbUpdate);
+      }
+      await queueOperation('update', 'workout_set', setId, { ...updates, localId: setId });
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;
@@ -362,10 +372,12 @@ export function useActiveWorkout() {
     const set = await localDB.workoutSets.where('localId').equals(setId).first();
     if (!set) return;
 
-    if (set.id !== undefined) {
-      await localDB.workoutSets.update(set.id, { syncStatus: 'pending', needsSync: true });
-    }
-    await queueOperation('delete', 'workout_set', setId, { localId: setId });
+    await localDB.transaction('rw', localDB.workoutSets, localDB.offlineQueue, async () => {
+      if (set.id !== undefined) {
+        await localDB.workoutSets.update(set.id, { syncStatus: 'pending', needsSync: true });
+      }
+      await queueOperation('delete', 'workout_set', setId, { localId: setId });
+    });
 
     setWorkout((prev) => {
       if (!prev) return prev;

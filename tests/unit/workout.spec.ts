@@ -54,8 +54,7 @@ const mockWorkoutSetData: WorkoutSet = {
   isDeleted: false,
 };
 
-const mockUserPreferenceData: UserPreference = {
-  id: 'prefs-1',
+const mockUserPreferenceData: Omit<UserPreference, 'id'> = {
   workosId: 'user-1',
   weightUnit: 'kg',
   dateFormat: 'dd/mm/yyyy',

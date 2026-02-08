@@ -1,24 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { getPrCount } from '../../lib/db/workout';
 import { getLocalPRCount } from '../../lib/db/local-repository';
-import { requireAuth } from '~/lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, ApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workouts/pr-count')({
   server: {
     handlers: {
        GET: async ({ request }) => {
          try {
-           const session = await requireAuth(request);
-           if (!session) {
-             return Response.json({ error: 'Not authenticated' }, { status: 401 });
-           }
+           const { session, d1Db } = await withApiContext(request);
 
-           const db = (env as { DB?: D1Database }).DB;
-           if (!db) {
+           if (!d1Db) {
              const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
              if (online) {
-               return Response.json({ error: 'Database not available' }, { status: 503 });
+               return createApiError('Database not available', 503, 'DATABASE_ERROR');
              }
              const count = await getLocalPRCount(session.sub);
              return Response.json({ count }, {
@@ -29,18 +25,20 @@ export const Route = createFileRoute('/api/workouts/pr-count')({
              });
            }
 
-           const count = await getPrCount(db, session.sub);
+           const count = await getPrCount(d1Db, session.sub);
 
            return Response.json({ count }, {
              headers: {
                'Cache-Control': 'no-store, no-cache, must-revalidate',
              },
            });
-        } catch (err) {
-          console.error('Get PR count error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
+         } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
+           console.error('Get PR count error:', err);
+           return createApiError('Server error', 500, 'SERVER_ERROR');
+         }
       },
     },
   },

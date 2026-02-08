@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import {
   getWeeklyWorkoutCount,
   getTotalWorkouts,
@@ -7,44 +8,40 @@ import {
   getRolling30DayWorkoutCount,
 } from '~/lib/streaks';
 import { getUserPreferences } from '~/lib/db/preferences';
-import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/streaks' as const)({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const session = await requireAuth(request);
-        if (!session) {
-          return Response.json({ error: 'Not authenticated' }, { status: 401 });
+        try {
+          const { session, d1Db } = await withApiContext(request);
+          const workosId = session.sub;
+
+          const prefs = await getUserPreferences(d1Db, workosId);
+          const weeklyTarget = prefs?.weeklyWorkoutTarget ?? 3;
+
+          const [weeklyCount, totalWorkouts, rolling30Days, thirtyDayStreak] = await Promise.all([
+            getWeeklyWorkoutCount(d1Db, workosId),
+            getTotalWorkouts(d1Db, workosId),
+            getRolling30DayWorkoutCount(d1Db, workosId),
+            calculateThirtyDayStreak(d1Db, workosId, weeklyTarget),
+          ]);
+
+          return Response.json({
+            weeklyCount,
+            weeklyTarget,
+            thirtyDayStreak,
+            totalWorkouts,
+            rolling30Days,
+          }, {
+            headers: {
+              'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+            },
+          });
+        } catch (err) {
+          console.error('Get streaks error:', err);
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
-        const workosId = session.sub;
-
-        const db = (env as { DB?: D1Database }).DB;
-        if (!db) {
-          return new Response('Database not available', { status: 500 });
-        }
-
-        const prefs = await getUserPreferences(db, workosId);
-        const weeklyTarget = prefs?.weeklyWorkoutTarget ?? 3;
-
-        const [weeklyCount, totalWorkouts, rolling30Days, thirtyDayStreak] = await Promise.all([
-          getWeeklyWorkoutCount(db, workosId),
-          getTotalWorkouts(db, workosId),
-          getRolling30DayWorkoutCount(db, workosId),
-          calculateThirtyDayStreak(db, workosId, weeklyTarget),
-        ]);
-
-        return Response.json({
-          weeklyCount,
-          weeklyTarget,
-          thirtyDayStreak,
-          totalWorkouts,
-          rolling30Days,
-        }, {
-          headers: {
-            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-          },
-        });
       },
     },
   },

@@ -9,7 +9,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 const config = defineConfig({
   define: {
     'process.env.WORKOS_CLIENT_ID': JSON.stringify(process.env.WORKOS_CLIENT_ID),
-    'process.env.WORKOS_API_KEY': JSON.stringify(process.env.WORKOS_API_KEY),
     'process.env.ENVIRONMENT': JSON.stringify(process.env.ENVIRONMENT),
     'global': 'globalThis',
   },

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { type CreateTemplateData, createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
-import { requireAuth } from '~/lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -12,12 +12,9 @@ const MAX_LIMIT = 100;
 export const Route = createFileRoute('/api/templates')({
   server: {
     handlers: {
-        GET: async ({ request }) => {
-          try {
-            const session = await requireAuth(request);
-            if (!session) {
-              return Response.json({ error: 'Not authenticated' }, { status: 401 });
-            }
+      GET: async ({ request }) => {
+        try {
+          const { session, db } = await withApiContext(request);
 
           const url = new URL(request.url);
           const search = url.searchParams.get('search') ?? undefined;
@@ -29,77 +26,64 @@ export const Route = createFileRoute('/api/templates')({
           const offset = (page - 1) * limit;
 
           if (search && search.length > 100) {
-            return Response.json({ error: 'Search term too long' }, { status: 400 });
+            return createApiError('Search term too long', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           if (isNaN(limit) || limit < 1 || limit > MAX_LIMIT) {
-            return Response.json({ error: `Invalid limit (1-${MAX_LIMIT})` }, { status: 400 });
+            return createApiError(`Invalid limit (1-${MAX_LIMIT})`, 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
+          const templates = await getTemplatesByWorkosId(db, session.sub, {
+            search,
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          });
+
+          return Response.json(templates);
+        } catch (err) {
+          console.error('Get templates error:', err);
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
+        }
+      },
+      POST: async ({ request }) => {
+        try {
+          const { session, d1Db } = await withApiContext(request);
+
+          const body = await request.json();
+          const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };
+
+          if (!name || typeof name !== 'string') {
+            return createApiError('Name is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-           const templates = await getTemplatesByWorkosId(db, session.sub, {
-             search,
-             sortBy,
-             sortOrder,
-             limit,
-             offset,
-           });
-
-            return Response.json(templates);
-         } catch (err) {
-            console.error('Get templates error:', err);
-            return Response.json({ error: 'Server error' }, { status: 500 });
-         }
-       },
-        POST: async ({ request }) => {
-          try {
-            const session = await requireAuth(request);
-            if (!session) {
-              return Response.json({ error: 'Not authenticated' }, { status: 401 });
-            }
-
-           const body = await request.json();
-           const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };
-
-           if (!name || typeof name !== 'string') {
-             return Response.json({ error: 'Name is required' }, { status: 400 });
-           }
-
-           if (name.length > MAX_NAME_LENGTH) {
-             return Response.json({ error: `Name too long (max ${MAX_NAME_LENGTH} characters)` }, { status: 400 });
-           }
-
-           if (description && typeof description === 'string' && description.length > MAX_DESCRIPTION_LENGTH) {
-             return Response.json({ error: `Description too long (max ${MAX_DESCRIPTION_LENGTH} characters)` }, { status: 400 });
-           }
-
-           if (notes && typeof notes === 'string' && notes.length > MAX_NOTES_LENGTH) {
-             return Response.json({ error: `Notes too long (max ${MAX_NOTES_LENGTH} characters)` }, { status: 400 });
-           }
-
-           const db = (env as { DB?: D1Database }).DB;
-           if (!db) {
-             return Response.json({ error: 'Database not available' }, { status: 500 });
+          if (name.length > MAX_NAME_LENGTH) {
+            return createApiError(`Name too long (max ${MAX_NAME_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-            const template = await createTemplate(db, {
-              workosId: session.sub,
-             name: name.trim(),
-             description: description?.trim(),
-             notes: notes?.trim(),
-             localId,
-           });
+          if (description && typeof description === 'string' && description.length > MAX_DESCRIPTION_LENGTH) {
+            return createApiError(`Description too long (max ${MAX_DESCRIPTION_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
 
-            return Response.json(template, { status: 201 });
-         } catch (err) {
-            console.error('Create template error:', err);
-            return Response.json({ error: 'Server error' }, { status: 500 });
-         }
-       },
+          if (notes && typeof notes === 'string' && notes.length > MAX_NOTES_LENGTH) {
+            return createApiError(`Notes too long (max ${MAX_NOTES_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
+
+          const template = await createTemplate(d1Db, {
+            workosId: session.sub,
+            name: name.trim(),
+            description: description?.trim(),
+            notes: notes?.trim(),
+            localId,
+          });
+
+          return Response.json(template, { status: 201 });
+        } catch (err) {
+          console.error('Create template error:', err);
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
+        }
+      },
     },
   },
 });

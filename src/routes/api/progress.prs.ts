@@ -1,29 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { getRecentPRs, getAllTimeBestPRs } from '../../lib/db/workout';
 import { getLocalPersonalRecords, getAllTimeLocalBestPRs } from '../../lib/db/local-repository';
-import { requireAuth } from '../../lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, ApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/progress/prs')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, d1Db } = await withApiContext(request);
 
           const url = new URL(request.url);
           const limitParam = url.searchParams.get('limit');
           const limit = limitParam ? parseInt(limitParam, 10) : 5;
           const mode = url.searchParams.get('mode') ?? 'recent';
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
+          if (!d1Db) {
             const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
             if (online) {
-              return Response.json({ error: 'Database not available' }, { status: 503 });
+              return createApiError('Database not available', 503, 'DATABASE_ERROR');
             }
             const localPRs = mode === 'allTime'
               ? await getAllTimeLocalBestPRs(session.sub, limit)
@@ -46,7 +42,7 @@ export const Route = createFileRoute('/api/progress/prs')({
           }
 
           if (mode === 'allTime') {
-            const bestPRs = await getAllTimeBestPRs(db, session.sub, { limit });
+            const bestPRs = await getAllTimeBestPRs(d1Db, session.sub, { limit });
             return Response.json({
               recentPRs: bestPRs.map(pr => ({
                 id: pr.id,
@@ -84,7 +80,7 @@ export const Route = createFileRoute('/api/progress/prs')({
             fromDate = baseDate.toISOString();
           }
 
-          const recentPRs = await getRecentPRs(db, session.sub, { limit, fromDate });
+          const recentPRs = await getRecentPRs(d1Db, session.sub, { limit, fromDate });
 
           return Response.json({
             recentPRs: recentPRs.map(pr => ({
@@ -101,9 +97,11 @@ export const Route = createFileRoute('/api/progress/prs')({
             },
           });
         } catch (err) {
+          if (err instanceof ApiError) {
+            return createApiError(err.message, err.status, err.code);
+          }
           console.error('Get recent PRs error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
     },

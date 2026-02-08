@@ -14,8 +14,17 @@ function getJwtSecret(): Uint8Array {
 }
 
 export type SessionPayload = JWTPayload & {
+  /**
+   * The WorkOS user ID (from WorkOS `user.id` field).
+   * This is the canonical identifier for the user's identity in WorkOS.
+   * Maps to `users.workosId` in the database.
+   */
   sub: string;
   email: string;
+  /**
+   * The local surrogate primary key (`users.id`).
+   * Optional, populated during initial auth for convenience.
+   */
   workosId?: string;
 }
 
@@ -30,6 +39,11 @@ export const TOKEN_EXPIRY_SECONDS = 4 * 24 * 60 * 60; // 4 days in seconds
 export const REFRESH_THRESHOLD_SECONDS = 24 * 60 * 60; // Refresh if < 24 hours remaining
 
 export async function createToken(user: UserFromWorkOS, workosId?: string): Promise<string> {
+  /**
+   * The JWT `sub` claim is set to WorkOS user ID (`user.id`), NOT the local `users.id`.
+   * WorkOS user IDs are stable, immutable identifiers from WorkOS (format: "wos_...").
+   * All data tables (exercises, workouts, etc.) use `workosId` column for ownership.
+   */
   const token = await new SignJWT({
     sub: user.id,
     email: user.email,

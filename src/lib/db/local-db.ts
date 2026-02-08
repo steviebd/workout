@@ -87,6 +87,7 @@ export interface LocalWorkoutSet {
   reps: number;
   rpe?: number;
   completed: boolean;
+  completedAt?: Date;
   setNumber: number;
   serverId?: string;
   syncStatus: 'synced' | 'pending' | 'failed';

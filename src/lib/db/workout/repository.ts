@@ -32,6 +32,7 @@ import type {
   NewWorkoutSet,
   NewWorkoutExercise,
 } from './types';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/exercise-categories';
 
 /**
  * Creates a new workout for a user
@@ -1438,26 +1439,6 @@ export async function getRecentPRs(
     .orderBy(asc(workouts.startedAt))
     .all();
 
-  function isSquat(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('squat') && !n.includes('goblet');
-  }
-
-  function isBench(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'bench' || n === 'bench press' || n.includes('bench');
-  }
-
-  function isDeadlift(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('deadlift');
-  }
-
-  function isOverheadPress(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
-  }
-
   const exerciseCategories: Record<string, { id: string; name: string; isMatch: (n: string) => boolean }> = {};
 
   for (const wm of workoutMaxes) {
@@ -1687,23 +1668,6 @@ export async function getAllTimeBestPRs(
       reps,
       est1rm: calculateE1RM(best.maxWeight, reps),
     });
-  }
-
-  function isSquat(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('squat') && !n.includes('goblet');
-  }
-  function isBench(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'bench' || n === 'bench press' || n.includes('bench');
-  }
-  function isDeadlift(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('deadlift');
-  }
-  function isOverheadPress(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
   }
 
   const exerciseCategories: Record<string, { id: string; name: string }> = {};

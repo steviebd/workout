@@ -1,24 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { getWorkoutHistoryStats } from '../../lib/db/workout';
 import { getLocalWorkoutStats } from '../../lib/db/local-repository';
-import { requireAuth } from '~/lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, ApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workouts/stats')({
   server: {
     handlers: {
        GET: async ({ request }) => {
          try {
-           const session = await requireAuth(request);
-           if (!session) {
-             return Response.json({ error: 'Not authenticated' }, { status: 401 });
-           }
+           const { session, d1Db } = await withApiContext(request);
 
-           const db = (env as { DB?: D1Database }).DB;
-           if (!db) {
+           if (!d1Db) {
              const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
              if (online) {
-               return Response.json({ error: 'Database not available' }, { status: 503 });
+               return createApiError('Database not available', 503, 'DATABASE_ERROR');
              }
               const localStats = await getLocalWorkoutStats(session.sub);
               return Response.json(localStats, {
@@ -29,18 +25,20 @@ export const Route = createFileRoute('/api/workouts/stats')({
               });
            }
 
-            const stats = await getWorkoutHistoryStats(db, session.sub);
+            const stats = await getWorkoutHistoryStats(d1Db, session.sub);
 
             return Response.json(stats, {
               headers: {
                 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=150',
               },
             });
-        } catch (err) {
-          console.error('Get workout stats error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
-        }
+         } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
+           console.error('Get workout stats error:', err);
+           return createApiError('Server error', 500, 'SERVER_ERROR');
+         }
       },
     },
   },

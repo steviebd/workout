@@ -1,4 +1,5 @@
 import { localDB, type LocalExercise, type LocalTemplate, type LocalWorkout, type LocalWorkoutExercise, type LocalWorkoutSet, type OfflineOperation } from './local-db';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/exercise-categories';
 
 /**
  * Generates a new local UUID for offline identifiers
@@ -622,26 +623,6 @@ export async function getLocalPersonalRecords(workosId: string, limit = 5): Prom
 
   const workoutMaxes: WorkoutMax[] = [];
 
-  function isSquat(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('squat') && !n.includes('goblet');
-  }
-
-  function isBench(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'bench' || n === 'bench press' || n.includes('bench');
-  }
-
-  function isDeadlift(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('deadlift');
-  }
-
-  function isOverheadPress(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
-  }
-
   const exerciseCategories: Record<string, { id: string; name: string }> = {};
 
   for (const workout of workouts) {
@@ -798,23 +779,6 @@ export async function getAllTimeLocalBestPRs(workosId: string, limit = 20): Prom
   const exercises = await localDB.exercises.where('workosId').equals(workosId).toArray();
   for (const ex of exercises) {
     exerciseMap.set(ex.localId, { name: ex.name, id: String(ex.id ?? ex.localId) });
-  }
-
-  function isSquat(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('squat') && !n.includes('goblet');
-  }
-  function isBench(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'bench' || n === 'bench press' || n.includes('bench');
-  }
-  function isDeadlift(name: string): boolean {
-    const n = name.toLowerCase();
-    return n.includes('deadlift');
-  }
-  function isOverheadPress(name: string): boolean {
-    const n = name.toLowerCase();
-    return n === 'ohp' || n.includes('overhead') || n.includes('over head');
   }
 
   const bestByExercise = new Map<string, { exerciseId: string; exerciseName: string; maxWeight: number; repsAtMax: number; date: Date }>();

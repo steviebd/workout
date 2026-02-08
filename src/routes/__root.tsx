@@ -16,19 +16,39 @@ import { ThemeProvider } from '@/lib/context/ThemeContext'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 1000,
-      gcTime: 5 * 60 * 1000,
-      retry: 2,
-      refetchOnWindowFocus: true,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
+let browserQueryClient: QueryClient | undefined
+
+function getQueryClient() {
+  if (typeof window === 'undefined') {
+    return new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 30 * 1000,
+          gcTime: 5 * 60 * 1000,
+          retry: 2,
+          refetchOnWindowFocus: true,
+        },
+        mutations: {
+          retry: 1,
+        },
+      },
+    })
+  }
+  browserQueryClient ??= new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 30 * 1000,
+          gcTime: 5 * 60 * 1000,
+          retry: 2,
+          refetchOnWindowFocus: true,
+        },
+        mutations: {
+          retry: 1,
+        },
+      },
+    })
+  return browserQueryClient
+}
 
 interface AuthUserData {
   id: string;
@@ -61,6 +81,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext)
 
 function AppLayout() {
+  const queryClient = getQueryClient()
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

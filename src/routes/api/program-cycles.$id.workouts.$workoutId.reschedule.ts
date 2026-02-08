@@ -1,17 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 import { updateProgramCycleWorkout, getProgramCycleWorkoutById } from '~/lib/db/program';
-import { requireAuth } from '~/lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutId/reschedule')({
   server: {
     handlers: {
       PUT: async ({ request, params }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { d1Db } = await withApiContext(request);
 
           const body = await request.json();
           const { scheduledDate, scheduledTime } = body as {
@@ -20,31 +17,26 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
           };
 
           if (!scheduledDate) {
-            return Response.json({ error: 'scheduledDate is required' }, { status: 400 });
+            return createApiError('scheduledDate is required', 400, 'VALIDATION_ERROR');
           }
 
           const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
           if (!dateRegex.test(scheduledDate)) {
-            return Response.json({ error: 'scheduledDate must be in YYYY-MM-DD format' }, { status: 400 });
+            return createApiError('scheduledDate must be in YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
           }
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const existingWorkout = await getProgramCycleWorkoutById(db, params.workoutId);
+          const existingWorkout = await getProgramCycleWorkoutById(d1Db, params.workoutId);
           if (!existingWorkout) {
-            return Response.json({ error: 'Workout not found' }, { status: 404 });
+            return createApiError('Workout not found', 404, 'NOT_FOUND');
           }
 
-          const updated = await updateProgramCycleWorkout(db, params.workoutId, {
+          const updated = await updateProgramCycleWorkout(d1Db, params.workoutId, {
             scheduledDate,
             scheduledTime,
           });
 
           if (!updated) {
-            return Response.json({ error: 'Failed to reschedule workout' }, { status: 500 });
+            return createApiError('Failed to reschedule workout', 500, 'SERVER_ERROR');
           }
 
           return Response.json({
@@ -64,7 +56,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
           });
         } catch (err) {
           console.error('Reschedule workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
     },

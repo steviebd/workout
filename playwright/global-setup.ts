@@ -160,7 +160,7 @@ async function attemptTokenRefresh(
 
 		console.log('Current session token is invalid, checking WorkOS session...');
 
-		await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30000 });
+		await page.goto(baseUrl, { waitUntil: 'load', timeout: 30000 });
 
 		await page.waitForTimeout(3000);
 
@@ -383,7 +383,7 @@ async function performLogin(
 	}
 
 	await page.waitForTimeout(5000);
-	await page.waitForLoadState('networkidle');
+	await page.waitForLoadState('domcontentloaded');
 	
 	console.log('Final URL after login:', page.url());
 	

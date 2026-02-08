@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, ApiError } from '../../lib/api/errors';
 import { updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getProgramCycleWithWorkouts } from '~/lib/db/program';
-import { requireAuth } from '~/lib/api/route-helpers';
 
 interface ProgramCycleUpdateBody {
   squat1rm?: number;
@@ -16,100 +16,85 @@ interface ProgramCycleUpdateBody {
 export const Route = createFileRoute('/api/program-cycles/$id')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       GET: async ({ request, params }) => {
+         try {
+           const { session, d1Db } = await withApiContext(request);
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const cycleWithWorkouts = await getProgramCycleWithWorkouts(db, params.id, session.sub);
-          if (!cycleWithWorkouts) {
-            return Response.json({ error: 'Program cycle not found' }, { status: 404 });
-          }
-
-          const completedCount = cycleWithWorkouts.workouts.filter((w) => w.isComplete).length;
-
-          const responseData = {
-            ...cycleWithWorkouts,
-            preferredGymDays: cycleWithWorkouts.preferredGymDays ? cycleWithWorkouts.preferredGymDays.split(',') : [],
-            totalSessionsCompleted: completedCount,
-          };
-
-          return Response.json(responseData);
-        } catch (err) {
-          console.error('Get program cycle error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
-        }
-      },
-      PUT: async ({ request, params }) => {
-        try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
-
-          const body = await request.json() as ProgramCycleUpdateBody;
-          const { squat1rm, bench1rm, deadlift1rm, ohp1rm, currentWeek, currentSession, isComplete } = body;
-
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const workosId = session.sub;
-          let updated;
-          const has1RMUpdate = squat1rm !== undefined || bench1rm !== undefined || deadlift1rm !== undefined || ohp1rm !== undefined;
-          const hasProgressUpdate = currentWeek !== undefined || currentSession !== undefined;
-          
-           if (has1RMUpdate) {
-             updated = await updateProgramCycle1RM(db, params.id, workosId, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
-           }
-           if (hasProgressUpdate) {
-             updated = await updateProgramCycleProgress(db, params.id, workosId, { currentWeek, currentSession });
-           }
-           if (isComplete) {
-             updated = await completeProgramCycle(db, params.id, workosId);
+           const cycleWithWorkouts = await getProgramCycleWithWorkouts(d1Db, params.id, session.sub);
+           if (!cycleWithWorkouts) {
+             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
            }
 
-          if (!updated) {
-            return Response.json({ error: 'Program cycle not found' }, { status: 404 });
-          }
+           const completedCount = cycleWithWorkouts.workouts.filter((w) => w.isComplete).length;
 
-          return Response.json(updated);
-        } catch (err) {
-          console.error('Update program cycle error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
-        }
-      },
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+           const responseData = {
+             ...cycleWithWorkouts,
+             preferredGymDays: cycleWithWorkouts.preferredGymDays ? cycleWithWorkouts.preferredGymDays.split(',') : [],
+             totalSessionsCompleted: completedCount,
+           };
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
+           return Response.json(responseData);
+         } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
+           console.error('Get program cycle error:', err);
+           return createApiError('Server error', 500, 'SERVER_ERROR');
+         }
+       },
+       PUT: async ({ request, params }) => {
+         try {
+           const { session, d1Db } = await withApiContext(request);
 
-           const success = await softDeleteProgramCycle(db, params.id, session.sub);
-          if (!success) {
-            return Response.json({ error: 'Program cycle not found' }, { status: 404 });
-          }
+           const body = await request.json() as ProgramCycleUpdateBody;
+           const { squat1rm, bench1rm, deadlift1rm, ohp1rm, currentWeek, currentSession, isComplete } = body;
 
-          return Response.json({ success: true });
-        } catch (err) {
-          console.error('Delete program cycle error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
-        }
-      },
+           const workosId = session.sub;
+           let updated;
+           const has1RMUpdate = squat1rm !== undefined || bench1rm !== undefined || deadlift1rm !== undefined || ohp1rm !== undefined;
+           const hasProgressUpdate = currentWeek !== undefined || currentSession !== undefined;
+           
+            if (has1RMUpdate) {
+              updated = await updateProgramCycle1RM(d1Db, params.id, workosId, { squat1rm, bench1rm, deadlift1rm, ohp1rm });
+            }
+            if (hasProgressUpdate) {
+              updated = await updateProgramCycleProgress(d1Db, params.id, workosId, { currentWeek, currentSession });
+            }
+            if (isComplete) {
+              updated = await completeProgramCycle(d1Db, params.id, workosId);
+            }
+
+           if (!updated) {
+             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+           }
+
+           return Response.json(updated);
+         } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
+           console.error('Update program cycle error:', err);
+           return createApiError('Server error', 500, 'SERVER_ERROR');
+         }
+       },
+       DELETE: async ({ request, params }) => {
+         try {
+           const { session, d1Db } = await withApiContext(request);
+
+            const success = await softDeleteProgramCycle(d1Db, params.id, session.sub);
+           if (!success) {
+             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+           }
+
+           return Response.json({ success: true });
+         } catch (err) {
+           if (err instanceof ApiError) {
+             return createApiError(err.message, err.status, err.code);
+           }
+           console.error('Delete program cycle error:', err);
+           return createApiError('Server error', 500, 'SERVER_ERROR');
+         }
+       },
     },
   },
 });

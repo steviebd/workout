@@ -1,19 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { eq, and } from 'drizzle-orm';
 import { workoutSets, workoutExercises, workouts } from '../../lib/db/schema';
-import { createDb } from '../../lib/db';
-import { requireAuth } from '~/lib/api/route-helpers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workout-sets')({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, db } = await withApiContext(request);
 
           const body = await request.json();
           const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
@@ -26,17 +22,10 @@ export const Route = createFileRoute('/api/workout-sets')({
           };
 
           if (!workoutExerciseId || setNumber === undefined) {
-            return Response.json({ error: 'Workout exercise ID and set number are required' }, { status: 400 });
+            return createApiError('Workout exercise ID and set number are required', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const drizzleDb = createDb(db);
-
-          const exerciseWithOwnership = await drizzleDb
+          const exerciseWithOwnership = await db
             .select({
               exerciseId: workoutExercises.id,
             })
@@ -49,11 +38,11 @@ export const Route = createFileRoute('/api/workout-sets')({
             .get();
 
           if (!exerciseWithOwnership) {
-            return Response.json({ error: 'Workout exercise not found or does not belong to you' }, { status: 404 });
+            return createApiError('Workout exercise not found or does not belong to you', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const now = new Date().toISOString();
-          const workoutSet = await drizzleDb
+          const workoutSet = await db
             .insert(workoutSets)
             .values({
               workoutExerciseId,
@@ -73,16 +62,12 @@ export const Route = createFileRoute('/api/workout-sets')({
           }, { status: 201 });
         } catch (err) {
           console.error('Create set error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
       PUT: async ({ request }) => {
         try {
-          const session = await requireAuth(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, db } = await withApiContext(request);
 
           const body = await request.json();
           const { localId, workoutExerciseId, setNumber, weight, reps, rpe, isComplete } = body as {
@@ -96,17 +81,10 @@ export const Route = createFileRoute('/api/workout-sets')({
           };
 
           if (!localId) {
-            return Response.json({ error: 'Local ID is required' }, { status: 400 });
+            return createApiError('Local ID is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const drizzleDb = createDb(db);
-
-          const setWithOwnership = await drizzleDb
+          const setWithOwnership = await db
             .select({
               setId: workoutSets.id,
             })
@@ -120,7 +98,7 @@ export const Route = createFileRoute('/api/workout-sets')({
             .get();
 
           if (!setWithOwnership) {
-            return Response.json({ error: 'Workout set not found or does not belong to you' }, { status: 404 });
+            return createApiError('Workout set not found or does not belong to you', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const now = new Date().toISOString();
@@ -140,7 +118,7 @@ export const Route = createFileRoute('/api/workout-sets')({
             }
           }
 
-          const updated = await drizzleDb
+          const updated = await db
             .update(workoutSets)
             .set(updateData)
             .where(eq(workoutSets.id, setWithOwnership.setId))
@@ -153,8 +131,7 @@ export const Route = createFileRoute('/api/workout-sets')({
           });
         } catch (err) {
           console.error('Update set error:', err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return Response.json({ error: 'Server error', details: errorMessage }, { status: 500 });
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

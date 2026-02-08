@@ -1,30 +1,46 @@
-import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export function generateId(): string {
   return crypto.randomUUID();
 }
 
+export function nowISO(): string {
+  return new Date().toISOString();
+}
+
 // ============================================
 // CORE ENTITIES
 // ============================================
+/**
+ * Users table stores both:
+ * - `id`: Local surrogate primary key (UUID, auto-generated). Used for foreign key relationships.
+ * - `workosId`: The WorkOS user ID (immutable, from WorkOS auth). Used for ownership queries.
+ *
+ * IMPORTANT: All entity tables (exercises, workouts, templates, etc.) reference `workosId`
+ * for row ownership, NOT `id`. This is because:
+ * 1. WorkOS IDs are stable across auth provider changes
+ * 2. They match the `session.sub` claim from JWT tokens
+ *
+ * When querying user data, filter by `workosId = session.sub`, not `users.id`.
+ */
 export const users = sqliteTable('users', {
+  /** Local surrogate primary key (UUID). Rarely used for queries. */
   id: text('id').primaryKey().$defaultFn(() => generateId()),
+  /** The WorkOS user ID from auth. Use this for ownership filtering. */
   workosId: text('workos_id').notNull().unique(),
   name: text('name').notNull(),
   email: text('email').notNull(),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
 });
 
 export const userPreferences = sqliteTable('user_preferences', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
   workosId: text('workos_id').primaryKey().references(() => users.workosId, { onDelete: 'cascade' }),
   weightUnit: text('weight_unit').default('kg'),
   dateFormat: text('date_format').default('dd/mm/yyyy'),
   theme: text('theme').default('light'),
   weeklyWorkoutTarget: integer('weekly_workout_target').default(3),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
 
 // ============================================
@@ -39,8 +55,8 @@ export const exercises = sqliteTable('exercises', {
   description: text('description'),
   libraryId: text('library_id'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
 
 // ============================================
@@ -55,8 +71,8 @@ export const templates = sqliteTable('templates', {
   notes: text('notes'),
   programCycleId: text('program_cycle_id'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').notNull().$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').notNull().$defaultFn(() => nowISO()),
 });
 
 export const templateExercises = sqliteTable('template_exercises', {
@@ -89,8 +105,8 @@ export const workouts = sqliteTable('workouts', {
   completedAt: text('completed_at'),
   notes: text('notes'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
   squat1rm: real('squat_1rm'),
   bench1rm: real('bench_1rm'),
   deadlift1rm: real('deadlift_1rm'),
@@ -111,7 +127,7 @@ export const workoutExercises = sqliteTable('workout_exercises', {
   isAmrap: integer('is_amrap', { mode: 'boolean' }).default(false),
   setNumber: integer('set_number'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
 
 export const workoutSets = sqliteTable('workout_sets', {
@@ -124,9 +140,9 @@ export const workoutSets = sqliteTable('workout_sets', {
   rpe: real('rpe'),
   isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
   completedAt: text('completed_at'),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
 
 // ============================================
@@ -138,7 +154,7 @@ export const userStreaks = sqliteTable('user_streaks', {
   currentStreak: integer('current_streak').default(0),
   longestStreak: integer('longest_streak').default(0),
   lastWorkoutDate: text('last_workout_date'),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
 
 // ============================================
@@ -163,9 +179,9 @@ export const userProgramCycles = sqliteTable('user_program_cycles', {
   totalSessionsPlanned: integer('total_sessions_planned').notNull(),
   status: text('status').default('active'),
   isComplete: integer('is_complete', { mode: 'boolean' }).default(false),
-  startedAt: text('started_at').default(sql`CURRENT_TIMESTAMP`),
+  startedAt: text('started_at').$defaultFn(() => nowISO()),
   completedAt: text('completed_at'),
-  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
   preferredGymDays: text('preferred_gym_days'),
   preferredTimeOfDay: text('preferred_time_of_day'),
   programStartDate: text('program_start_date'),
