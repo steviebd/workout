@@ -4,7 +4,7 @@ import { eq, and, asc } from 'drizzle-orm';
 import type { LiftType } from '~/lib/programs/types';
 import { createDb } from '~/lib/db';
 import { programCycleWorkouts, templateExercises, exercises, templates, userProgramCycles } from '~/lib/db/schema';
-import { getSession } from '~/lib/session';
+import { requireAuth } from '~/lib/api/route-helpers';
 import { stronglifts } from '~/lib/programs/stronglifts';
 import { wendler531 } from '~/lib/programs/wendler531';
 import { madcow } from '~/lib/programs/madcow';
@@ -47,14 +47,14 @@ function calculateRecalculatedWeight(
 export const Route = createFileRoute('/api/program-cycles/$id/current-workout')({
   server: {
     handlers: {
-      GET: async ({ params, request }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+       GET: async ({ params, request }) => {
+         try {
+           const session = await requireAuth(request);
+           if (!session) {
+             return Response.json({ error: 'Not authenticated' }, { status: 401 });
+           }
 
-          const db = (env as { DB?: D1Database }).DB;
+           const db = (env as { DB?: D1Database }).DB;
           if (!db) {
             return Response.json({ error: 'Database not available' }, { status: 500 });
           }

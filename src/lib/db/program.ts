@@ -23,6 +23,34 @@ export interface ProgramCycleWithWorkouts extends UserProgramCycle {
   templates?: Template[];
 }
 
+export async function getProgramCycleWithWorkouts(
+  dbOrTx: DbOrTx,
+  cycleId: string,
+  workosId: string
+): Promise<(UserProgramCycle & { workouts: ProgramCycleWorkout[] }) | null> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const cycle = await db
+    .select()
+    .from(userProgramCycles)
+    .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
+    .get();
+
+  if (!cycle) {
+    return null;
+  }
+
+  const cycleWorkouts = await db
+    .select()
+    .from(programCycleWorkouts)
+    .where(eq(programCycleWorkouts.cycleId, cycleId))
+    .orderBy(programCycleWorkouts.weekNumber, programCycleWorkouts.sessionNumber)
+    .all();
+
+  return { ...cycle, workouts: cycleWorkouts };
+}
+
 export interface CreateProgramCycleData {
   programSlug: string;
   name: string;
@@ -53,6 +81,13 @@ export interface ProgramWorkoutData {
   targetLifts: string;
 }
 
+/**
+ * Creates a new program cycle with optional workouts for a user
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param data - Program cycle creation data including workout schedule
+ * @returns The newly created program cycle
+ */
 export async function createProgramCycle(
   dbOrTx: DbOrTx,
   workosId: string,
@@ -104,6 +139,13 @@ export async function createProgramCycle(
   return cycle;
 }
 
+/**
+ * Retrieves a program cycle by ID with ownership validation
+ * @param dbOrTx - D1 database instance or transaction
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The program cycle if found, or null
+ */
 export async function getProgramCycleById(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -121,6 +163,12 @@ export async function getProgramCycleById(
   return cycle as UserProgramCycle | null;
 }
 
+/**
+ * Retrieves the most recent active program cycles for a user
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns Array of up to 3 active program cycles, ordered by start date
+ */
 export async function getActiveProgramCycles(
   db: D1Database,
   workosId: string
@@ -138,6 +186,13 @@ export async function getActiveProgramCycles(
   return cycles as UserProgramCycle[];
 }
 
+/**
+ * Retrieves all program cycles for a user, optionally filtered by status
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional status filter
+ * @returns Array of program cycles ordered by start date
+ */
 export async function getProgramCyclesByWorkosId(
   db: D1Database,
   workosId: string,
@@ -159,6 +214,14 @@ export async function getProgramCyclesByWorkosId(
   return cycles as UserProgramCycle[];
 }
 
+/**
+ * Updates the 1RM values for a program cycle
+ * @param db - D1 database instance
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @param data - One or more 1RM values to update
+ * @returns The updated program cycle, or null if not found
+ */
 export async function updateProgramCycle1RM(
   db: D1Database,
   cycleId: string,
@@ -196,6 +259,14 @@ export async function updateProgramCycle1RM(
   return updated as UserProgramCycle | null;
 }
 
+/**
+ * Updates the current week and session progress for a program cycle
+ * @param dbOrTx - D1 database instance or transaction
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @param data - Progress updates for current week and/or session
+ * @returns The updated program cycle, or null if not found
+ */
 export async function updateProgramCycleProgress(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -222,6 +293,13 @@ export async function updateProgramCycleProgress(
   return updated as UserProgramCycle | null;
 }
 
+/**
+ * Marks a program cycle as completed
+ * @param dbOrTx - D1 database instance or transaction
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The completed program cycle, or null if not found
+ */
 export async function completeProgramCycle(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -245,6 +323,13 @@ export async function completeProgramCycle(
   return updated as UserProgramCycle | null;
 }
 
+/**
+ * Soft deletes a program cycle by marking it as deleted
+ * @param db - D1 database instance
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the operation succeeded, false if not found
+ */
 export async function softDeleteProgramCycle(
   db: D1Database,
   cycleId: string,
@@ -264,6 +349,13 @@ export async function softDeleteProgramCycle(
   return deleted.success;
 }
 
+/**
+ * Retrieves all workouts associated with a program cycle
+ * @param dbOrTx - D1 database instance or transaction
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns Array of program cycle workouts ordered by week and session number
+ */
 export async function getCycleWorkouts(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -292,6 +384,13 @@ export async function getCycleWorkouts(
   return cycleWorkouts;
 }
 
+/**
+ * Retrieves the next incomplete workout in a program cycle
+ * @param dbOrTx - D1 database instance or transaction
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The first incomplete workout, or null if all are complete
+ */
 export async function getCurrentWorkout(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -325,6 +424,15 @@ export async function getCurrentWorkout(
   return workout as ProgramCycleWorkout | null;
 }
 
+/**
+ * Marks a program cycle workout as complete by linking it to an actual workout
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workoutId - The program cycle workout ID
+ * @param cycleId - The program cycle ID
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @param actualWorkoutId - The ID of the completed workout
+ * @throws Will throw if the cycle is not found
+ */
 export async function markWorkoutComplete(
   dbOrTx: DbOrTx,
   workoutId: string,
@@ -398,6 +506,12 @@ export async function markWorkoutComplete(
   }
 }
 
+/**
+ * Retrieves the latest 1RM values from completed workouts or current program cycle
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns Object containing squat, bench, deadlift, and OHP 1RM values, or null if none found
+ */
 export async function getLatestOneRMs(
   db: D1Database,
   workosId: string
@@ -480,6 +594,13 @@ export interface TargetLiftWorkout {
   accessories?: Array<{ name: string; accessoryId?: string; targetWeight?: number; addedWeight?: number; sets?: number; reps?: number | string; isAccessory?: boolean; isRequired?: boolean }>;
 }
 
+/**
+ * Creates new workouts for a program cycle with target lift data
+ * @param db - D1 database instance
+ * @param cycleId - The program cycle ID
+ * @param cycleWorkouts - Array of workout definitions with target lifts
+ * @param defaultScheduledDate - Optional default date for scheduled workouts
+ */
 export async function createProgramCycleWorkouts(
   db: D1Database,
   cycleId: string,
@@ -525,6 +646,14 @@ export async function createProgramCycleWorkouts(
   }
 }
 
+/**
+ * Finds an existing exercise or creates a new one for a workout
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param exerciseName - The name of the exercise
+ * @param lift - Optional lift type to determine muscle group
+ * @returns The exercise ID (existing or newly created)
+ */
 export async function getOrCreateExerciseForWorkout(
   dbOrTx: DbOrTx,
   workosId: string,
@@ -567,6 +696,15 @@ function getBaseExerciseName(name: string): string {
   return name.replace(/\s+\d+$/, '').replace(/\s+\d+\+$/, '');
 }
 
+/**
+ * Generates a template from a program cycle workout
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param cycleWorkout - The program cycle workout to generate a template from
+ * @param cycle - The program cycle containing the workout
+ * @returns The ID of the newly created template
+ * @throws Will throw if no target lifts are found for the workout
+ */
 export async function generateTemplateFromWorkout(
   dbOrTx: DbOrTx,
   workosId: string,
@@ -662,6 +800,13 @@ export async function generateTemplateFromWorkout(
   return template.id;
 }
 
+/**
+ * Updates scheduled date and/or time for a program cycle workout
+ * @param db - D1 database instance
+ * @param workoutId - The program cycle workout ID
+ * @param data - Updates for scheduled date and/or time
+ * @returns The updated workout, or null if not found
+ */
 export async function updateProgramCycleWorkout(
   db: D1Database,
   workoutId: string,
@@ -686,6 +831,13 @@ export async function updateProgramCycleWorkout(
   return updated as ProgramCycleWorkout | null;
 }
 
+/**
+ * Retrieves a program cycle workout by ID with optional ownership validation
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workoutId - The program cycle workout ID
+ * @param workosId - Optional WorkOS ID for ownership validation
+ * @returns The workout if found, or null
+ */
 export async function getProgramCycleWorkoutById(
   dbOrTx: DbOrTx,
   workoutId: string,

@@ -17,6 +17,12 @@ export interface LocalUser {
   createdAt: string;
 }
 
+/**
+ * Retrieves or creates a user from WorkOS profile data
+ * @param db - D1 database instance
+ * @param profile - WorkOS user profile data
+ * @returns The local user record
+ */
 export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): Promise<LocalUser> {
   const drizzleDb = createDb(db);
 
@@ -43,6 +49,12 @@ export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): 
   return newUser as LocalUser;
 }
 
+/**
+ * Retrieves a user by their WorkOS ID
+ * @param db - D1 database instance
+ * @param workosId - The user's WorkOS ID
+ * @returns The user if found, or null
+ */
 export async function getUserByWorkosId(db: D1Database, workosId: string): Promise<LocalUser | null> {
   const drizzleDb = createDb(db);
 

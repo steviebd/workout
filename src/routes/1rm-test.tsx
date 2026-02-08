@@ -166,7 +166,7 @@ function OneRMTest() {
             <p className="text-sm text-muted-foreground mb-4">
               Your One-Rep Max (1RM) is the maximum weight you can lift for a single repetition with proper form.
             </p>
-            <div className="flex items-start gap-3 rounded-lg bg-amber-50 p-3 text-amber-800">
+            <div className="flex items-start gap-3 rounded-lg bg-warning/10 p-3 text-warning">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium">Safety First!</p>

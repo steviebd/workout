@@ -1,0 +1,478 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
+import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
+import { createDb } from '../index';
+import type {
+  DbOrTx,
+  TemplateExerciseWithDetails,
+  CreateTemplateData,
+  UpdateTemplateData,
+  GetTemplatesOptions,
+  TemplateWithExerciseCount,
+  ExerciseOrder,
+} from './types';
+
+/**
+ * Counts the number of times an exercise appears in a template
+ * @param dbOrTx - D1 database instance or transaction
+ * @param templateId - The template ID to check
+ * @param exerciseId - The exercise ID to count occurrences of
+ * @returns The number of times the exercise appears in the template
+ */
+export async function getTemplateExerciseSetCount(
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  templateId: string,
+  exerciseId: string
+): Promise<number> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const result = await db
+    .select({ count: db.$count(templateExercises, and(
+      eq(templateExercises.templateId, templateId),
+      eq(templateExercises.exerciseId, exerciseId)
+    ))})
+    .from(templateExercises)
+    .get();
+
+  return result?.count ?? 0;
+}
+
+/**
+ * Creates a new workout template for a user
+ * @param db - D1 database instance
+ * @param data - Template creation data including workosId
+ * @returns The newly created template
+ */
+export async function createTemplate(
+  db: D1Database,
+  data: CreateTemplateData & { workosId: string }
+): Promise<Template> {
+  const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .insert(templates)
+    .values({
+      workosId: data.workosId,
+      name: data.name,
+      description: data.description,
+      notes: data.notes,
+      localId: data.localId,
+      programCycleId: data.programCycleId,
+    })
+    .returning()
+    .get();
+
+  return template;
+}
+
+/**
+ * Retrieves a template by ID with ownership validation
+ * @param dbOrTx - D1 database instance or transaction
+ * @param templateId - The template ID to look up
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns The template if found, or null
+ */
+export async function getTemplateById(
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  templateId: string,
+  workosId: string
+): Promise<Template | null> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const template = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  return template ?? null;
+}
+
+/**
+ * Retrieves all templates for a user with optional filtering and sorting
+ * @param dbOrTx - D1 database instance or transaction
+ * @param workosId - The user's WorkOS ID
+ * @param options - Optional search and sorting options
+ * @returns Array of templates with exercise counts
+ */
+export async function getTemplatesByWorkosId(
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  workosId: string,
+  options: GetTemplatesOptions = {}
+): Promise<TemplateWithExerciseCount[]> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const {
+    search,
+    sortBy = 'createdAt',
+    sortOrder = 'DESC',
+    limit,
+    offset,
+  } = options;
+
+  const conditions = [eq(templates.workosId, workosId), eq(templates.isDeleted, false), isNull(templates.programCycleId)];
+
+  if (search) {
+    conditions.push(like(templates.name, `%${search}%`));
+  }
+
+  let query = db
+    .select({
+      id: templates.id,
+      workosId: templates.workosId,
+      name: templates.name,
+      description: templates.description,
+      notes: templates.notes,
+      isDeleted: templates.isDeleted,
+      createdAt: templates.createdAt,
+      updatedAt: templates.updatedAt,
+      exerciseCount: db.$count(
+        templateExercises,
+        and(eq(templateExercises.templateId, templates.id))
+      ),
+    })
+    .from(templates)
+    .where(and(...conditions));
+
+  if (sortBy === 'name') {
+    query = sortOrder === 'DESC'
+      ? (query as any).orderBy(desc(templates.name))
+      : (query as any).orderBy(asc(templates.name));
+  } else {
+    query = sortOrder === 'DESC'
+      ? (query as any).orderBy(desc(templates.createdAt))
+      : (query as any).orderBy(asc(templates.createdAt));
+  }
+
+  if (offset !== undefined) {
+    query = (query as any).offset(offset);
+  }
+
+  if (limit !== undefined) {
+    query = (query as any).limit(limit);
+  }
+
+  const results = await query;
+
+  return results as TemplateWithExerciseCount[];
+}
+
+export async function updateTemplate(
+  db: D1Database,
+  templateId: string,
+  workosId: string,
+  data: UpdateTemplateData
+): Promise<Template | null> {
+  const drizzleDb = createDb(db);
+
+  const updateData: Partial<NewTemplate> = {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updated = await drizzleDb
+    .update(templates)
+    .set(updateData)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .returning()
+    .get();
+
+   
+  return updated ?? null;
+}
+
+export async function softDeleteTemplate(
+  db: D1Database,
+  templateId: string,
+  workosId: string
+): Promise<boolean> {
+  const drizzleDb = createDb(db);
+
+  const result = await drizzleDb
+    .update(templates)
+    .set({
+      isDeleted: true,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .run();
+
+  return result.success;
+}
+
+/**
+ * Removes an exercise from a template
+ * @param db - D1 database instance
+ * @param templateId - The template to modify
+ * @param exerciseId - The exercise to remove
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if the exercise was removed, false if template not found
+ */
+export async function removeExerciseFromTemplate(
+  db: D1Database,
+  templateId: string,
+  exerciseId: string,
+  workosId: string
+): Promise<boolean> {
+  const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    return false;
+  }
+
+  const result = await drizzleDb
+    .delete(templateExercises)
+    .where(and(
+      eq(templateExercises.templateId, templateId),
+      eq(templateExercises.exerciseId, exerciseId)
+    ))
+    .run();
+
+  return result.success;
+}
+
+export async function getTemplateExercises(
+  dbOrTx: DbOrTx,
+  templateId: string,
+  workosId: string
+): Promise<TemplateExerciseWithDetails[]> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const template = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    return [];
+  }
+
+  const results = await db
+    .select({
+      id: templateExercises.id,
+      templateId: templateExercises.templateId,
+      exerciseId: templateExercises.exerciseId,
+      orderIndex: templateExercises.orderIndex,
+      targetWeight: templateExercises.targetWeight,
+      sets: templateExercises.sets,
+      reps: templateExercises.reps,
+      isAmrap: templateExercises.isAmrap,
+      setNumber: templateExercises.setNumber,
+      exercise: {
+        id: exercises.id,
+        name: exercises.name,
+        muscleGroup: exercises.muscleGroup,
+      },
+    })
+    .from(templateExercises)
+    .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
+    .where(eq(templateExercises.templateId, templateId))
+    .orderBy(templateExercises.orderIndex)
+    .all();
+
+  return results as TemplateExerciseWithDetails[];
+}
+
+export async function getTemplateWithExercises(
+  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  templateId: string,
+  workosId: string
+): Promise<(Template & { exercises: TemplateExerciseWithDetails[] }) | null> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const template = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    return null;
+  }
+
+  const templateExercisesWithDetails = await db
+    .select({
+      id: templateExercises.id,
+      templateId: templateExercises.templateId,
+      exerciseId: templateExercises.exerciseId,
+      orderIndex: templateExercises.orderIndex,
+      targetWeight: templateExercises.targetWeight,
+      sets: templateExercises.sets,
+      reps: templateExercises.reps,
+      isAmrap: templateExercises.isAmrap,
+      setNumber: templateExercises.setNumber,
+      exercise: {
+        id: exercises.id,
+        name: exercises.name,
+        muscleGroup: exercises.muscleGroup,
+      },
+    })
+    .from(templateExercises)
+    .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
+    .where(eq(templateExercises.templateId, templateId))
+    .orderBy(templateExercises.orderIndex)
+    .all();
+
+  return { ...template, exercises: templateExercisesWithDetails as TemplateExerciseWithDetails[] };
+}
+
+/**
+ * Reorders exercises within a template by updating their orderIndex values.
+ * Validates template ownership first, then applies all order updates in sequence.
+ * Batch update ensures atomic reordering - either all succeed or none do.
+ */
+export async function reorderTemplateExercises(
+  dbOrTx: DbOrTx,
+  templateId: string,
+  exerciseOrders: ExerciseOrder[],
+  workosId: string
+): Promise<boolean> {
+  const isTransaction = 'transaction' in dbOrTx;
+  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+
+  const template = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    return false;
+  }
+
+  const updates = exerciseOrders.map(order =>
+    db
+      .update(templateExercises)
+      .set({ orderIndex: order.orderIndex })
+      .where(and(
+        eq(templateExercises.templateId, templateId),
+        eq(templateExercises.exerciseId, order.exerciseId)
+      ))
+      .run()
+  );
+
+  await Promise.all(updates);
+
+  return true;
+}
+
+/**
+ * Removes all exercises from a template
+ * @param db - D1 database instance
+ * @param templateId - The template ID to clear
+ * @param workosId - The user's WorkOS ID for ownership validation
+ * @returns True if successful, false if template not found
+ */
+export async function deleteAllTemplateExercises(
+  db: D1Database,
+  templateId: string,
+  workosId: string
+): Promise<boolean> {
+  const drizzleDb = createDb(db);
+
+  const template = await drizzleDb
+    .select({ id: templates.id })
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!template) {
+    console.log('deleteAllTemplateExercises: Template not found or does not belong to user');
+    return false;
+  }
+
+  await drizzleDb
+    .delete(templateExercises)
+    .where(eq(templateExercises.templateId, templateId))
+    .run();
+
+  return true;
+}
+
+export async function addExerciseToTemplate(
+  db: D1Database,
+  templateId: string,
+  exerciseId: string,
+  orderIndex: number
+): Promise<void> {
+  const drizzleDb = createDb(db);
+
+  await drizzleDb
+    .insert(templateExercises)
+    .values({
+      templateId,
+      exerciseId,
+      orderIndex,
+    })
+    .run();
+}
+
+export async function copyTemplate(
+  db: D1Database,
+  templateId: string,
+  workosId: string
+): Promise<Template | null> {
+  const drizzleDb = createDb(db);
+
+  const originalTemplate = await drizzleDb
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
+    .get();
+
+  if (!originalTemplate) {
+    return null;
+  }
+
+  const newTemplate = await drizzleDb
+    .insert(templates)
+    .values({
+      workosId: originalTemplate.workosId,
+      name: `${originalTemplate.name} (Copy)`,
+      description: originalTemplate.description,
+      notes: originalTemplate.notes,
+      localId: originalTemplate.localId,
+      programCycleId: originalTemplate.programCycleId,
+    })
+    .returning()
+    .get();
+
+  const originalExercises = await drizzleDb
+    .select()
+    .from(templateExercises)
+    .where(eq(templateExercises.templateId, templateId))
+    .orderBy(templateExercises.orderIndex)
+    .all();
+
+  if (originalExercises.length > 0) {
+    await drizzleDb
+      .insert(templateExercises)
+      .values(
+        originalExercises.map((te) => ({
+          templateId: newTemplate.id,
+          exerciseId: te.exerciseId,
+          orderIndex: te.orderIndex,
+          targetWeight: te.targetWeight,
+          sets: te.sets,
+          reps: te.reps,
+          isAmrap: te.isAmrap,
+          setNumber: te.setNumber,
+        }))
+      )
+      .run();
+  }
+
+  return newTemplate;
+}

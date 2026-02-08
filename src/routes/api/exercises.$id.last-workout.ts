@@ -1,35 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { getLastWorkoutForExercise } from '../../lib/db/workout';
-import { getSession } from '../../lib/session';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/exercises/$id/last-workout')({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
+        GET: async ({ request, params }) => {
+          try {
+            const { d1Db, session } = await withApiContext(request);
+
+            const lastWorkout = await getLastWorkoutForExercise(d1Db, session.sub, params.id);
+
+            if (!lastWorkout) {
+              return Response.json(null);
+            }
+
+            return Response.json(lastWorkout);
+          } catch (err) {
+            console.error('Get last workout error:', err);
+            return createApiError('Server error', 500, 'SERVER_ERROR');
           }
-
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const lastWorkout = await getLastWorkoutForExercise(db, session.sub, params.id);
-
-          if (!lastWorkout) {
-            return Response.json(null);
-          }
-
-          return Response.json(lastWorkout);
-        } catch (err) {
-          console.error('Get last workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
-        }
-      },
+        },
     },
   },
 });

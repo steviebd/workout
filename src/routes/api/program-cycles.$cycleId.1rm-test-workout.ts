@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
-import { eq, desc } from 'drizzle-orm';
-import { getSession } from '../../lib/session';
+import { eq, desc, and } from 'drizzle-orm';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 import { workouts } from '../../lib/db/schema';
-import { createDb } from '../../lib/db';
 
 interface OneRmTestUpdateBody {
   squat1rm?: number;
@@ -21,63 +20,43 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
     handlers: {
       GET: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { db, session } = await withApiContext(request);
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const drizzleDb = createDb(db);
-
-          const workout = await drizzleDb
+          const workout = await db
             .select()
             .from(workouts)
-            .where(eq(workouts.programCycleId, params.cycleId))
+            .where(and(eq(workouts.programCycleId, params.cycleId), eq(workouts.workosId, session.sub)))
             .orderBy(desc(workouts.completedAt))
             .get();
 
           if (!workout) {
-            return Response.json({ error: '1RM test workout not found' }, { status: 404 });
+            return createApiError('1RM test workout not found', 404, 'NOT_FOUND');
           }
 
           return Response.json(workout);
         } catch (err) {
           console.error('Get 1RM test workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { db, session } = await withApiContext(request);
 
           const body = (await request.json()) as OneRmTestUpdateBody;
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const drizzleDb = createDb(db);
-
-          const workout = await drizzleDb
+          const workout = await db
             .select()
             .from(workouts)
-            .where(eq(workouts.programCycleId, params.cycleId))
+            .where(and(eq(workouts.programCycleId, params.cycleId), eq(workouts.workosId, session.sub)))
             .orderBy(desc(workouts.completedAt))
             .get();
 
           if (!workout) {
-            return Response.json({ error: '1RM test workout not found' }, { status: 404 });
+            return createApiError('1RM test workout not found', 404, 'NOT_FOUND');
           }
 
-          const updated = await drizzleDb
+          const updated = await db
             .update(workouts)
             .set({
               squat1rm: body.squat1rm,
@@ -96,7 +75,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
           return Response.json(updated);
         } catch (err) {
           console.error('Update 1RM test workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
     },

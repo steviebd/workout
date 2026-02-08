@@ -212,8 +212,8 @@ export function ExerciseList({
         >
           <div
             className={cn(
-              'absolute inset-y-0 right-0 flex items-center pr-3 transition-opacity duration-200',
-              swipeState.id === exercise.id && swipeState.offset > 20 ? 'opacity-100' : 'opacity-0'
+              'absolute inset-y-0 right-0 flex items-center pr-3 invisible opacity-0 transition-all duration-200',
+              swipeState.id === exercise.id && swipeState.offset > 20 ? 'visible opacity-100' : ''
             )}
           >
             <Button
@@ -243,7 +243,7 @@ export function ExerciseList({
                 onClick={() => onMoveUp?.(index)}
                 disabled={index === 0}
                 aria-label={`Move ${exercise.name} up`}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 invisible group-hover:visible focus:visible transition-opacity duration-150"
               >
                 <ChevronUp size={20} />
               </Button>
@@ -255,7 +255,7 @@ export function ExerciseList({
                 onClick={() => onMoveDown?.(index)}
                 disabled={index === exercises.length - 1}
                 aria-label={`Move ${exercise.name} down`}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 invisible group-hover:visible focus:visible transition-opacity duration-150"
               >
                 <ChevronDown size={20} />
               </Button>

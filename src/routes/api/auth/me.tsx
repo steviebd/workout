@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { getSession } from '../../../lib/session';
+import { requireAuth } from '../../../lib/api/route-helpers';
 
 export const Route = createFileRoute('/api/auth/me')({
   server: {
@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/auth/me')({
           const cookieHeader = request.headers.get('Cookie');
           console.log('[/api/auth/me] Cookie header:', cookieHeader);
           
-          const session = await getSession(request);
+          const session = await requireAuth(request);
           console.log('[/api/auth/me] Session result:', session);
           
           if (!session) {

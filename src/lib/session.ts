@@ -1,6 +1,18 @@
+/**
+ * Session payload representing an authenticated user.
+ *
+ * IMPORTANT: Identity field distinction:
+ * - `sub`: The WorkOS user ID (e.g., "wos_abc123"). Used for DB queries via `workosId` column.
+ * - `workosId`: The local `users.id` surrogate key (UUID). Rarely needed; prefer `sub`.
+ *
+ * All entity tables (exercises, workouts, templates, etc.) store the WorkOS user ID
+ * in their `workosId` column. Query like: `db.select().from(exercises).where(eq(exercises.workosId, session.sub))`
+ */
 export interface SessionPayload {
+  /** The WorkOS user ID - use this for all DB queries filtering by user */
   sub: string;
   email: string;
+  /** The local users.id (surrogate PK) - usually not needed for queries */
   workosId?: string;
   exp?: number;
 }

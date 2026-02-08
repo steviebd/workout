@@ -52,13 +52,14 @@ export function ListCard({
                 }
               }}
               className={cn(
-                "flex-shrink-0 mt-0.5 h-5 w-5 rounded border-2 transition-colors",
+                "flex-shrink-0 mt-0.5 h-5 w-5 rounded ring-1 ring-border transition-colors",
                 selected
-                  ? "bg-primary border-primary text-primary-foreground"
-                  : "border-muted-foreground/30 hover:border-primary"
+                  ? "bg-surface-2 ring-border"
+                  : "bg-surface-2 ring-border hover:ring-primary"
               )}
               role="checkbox"
               aria-checked={selected}
+              data-selected={selected}
             >
               {selected ? <Check className="h-3 w-3 m-auto" /> : null}
             </button>

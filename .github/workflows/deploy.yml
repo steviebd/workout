@@ -94,7 +94,7 @@ jobs:
           export-type: "env"
 
       - name: Generate Wrangler Config
-        run: $GITHUB_WORKSPACE/scripts/generate-wrangler-config.sh --env staging
+        run: bun run scripts/generate-wrangler-config.ts --env staging
 
       - name: Deploy to Staging
         run: cd $GITHUB_WORKSPACE && bun run build && bun run wrangler deploy
@@ -133,7 +133,7 @@ jobs:
           export-type: "env"
 
       - name: Generate Wrangler Config
-        run: $GITHUB_WORKSPACE/scripts/generate-wrangler-config.sh --env prod
+        run: bun run scripts/generate-wrangler-config.ts --env prod
 
       - name: Deploy to Production
         run: cd $GITHUB_WORKSPACE && bun run build && bun run wrangler deploy

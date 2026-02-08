@@ -47,11 +47,20 @@ export interface LocalWorkout {
   serverId?: string;
   workosId: string;
   templateId?: string;
+  programCycleId?: string;
   name: string;
   startedAt: Date;
   completedAt?: Date;
   status: 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
+  squat1rm?: number;
+  bench1rm?: number;
+  deadlift1rm?: number;
+  ohp1rm?: number;
+  startingSquat1rm?: number;
+  startingBench1rm?: number;
+  startingDeadlift1rm?: number;
+  startingOhp1rm?: number;
   serverUpdatedAt?: Date;
   syncStatus: 'synced' | 'pending' | 'failed';
   needsSync: boolean;
@@ -78,6 +87,7 @@ export interface LocalWorkoutSet {
   reps: number;
   rpe?: number;
   completed: boolean;
+  completedAt?: Date;
   setNumber: number;
   serverId?: string;
   syncStatus: 'synced' | 'pending' | 'failed';
@@ -128,6 +138,11 @@ class FitWorkoutDatabase extends DexieLib {
 
 let dbInstance: FitWorkoutDatabase | null = null;
 
+/**
+ * Initializes and returns the local IndexedDB instance
+ * @returns The FitWorkoutDatabase instance
+ * @throws Error if called in a non-browser environment
+ */
 export function getLocalDB(): FitWorkoutDatabase {
   if (typeof window === 'undefined' && !process.env.VITEST) {
     throw new Error('LocalDB is only available in the browser');

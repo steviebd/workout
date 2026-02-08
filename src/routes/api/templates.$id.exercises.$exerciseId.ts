@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import { removeExerciseFromTemplate } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 
 interface Params {
   id: string;
@@ -11,37 +11,29 @@ interface Params {
 export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
+        DELETE: async ({ request, params }) => {
+          try {
+            const { d1Db, session } = await withApiContext(request);
+
+            const { id, exerciseId } = params as Params;
+
+            const removed = await removeExerciseFromTemplate(
+              d1Db,
+              id,
+              exerciseId,
+              session.sub
+            );
+
+            if (!removed) {
+              return createApiError('Template or exercise not found', 404, 'NOT_FOUND');
+            }
+
+            return new Response(null, { status: 204 });
+          } catch (err) {
+            console.error('Remove exercise from template error:', err);
+            return createApiError('Server error', 500, 'SERVER_ERROR');
           }
-
-          const { id, exerciseId } = params as Params;
-
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const removed = await removeExerciseFromTemplate(
-             db,
-             id,
-             exerciseId,
-             session.sub
-           );
-
-          if (!removed) {
-            return Response.json({ error: 'Template or exercise not found' }, { status: 404 });
-          }
-
-          return new Response(null, { status: 204 });
-        } catch (err) {
-          console.error('Remove exercise from template error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
-        }
-      },
+        },
     },
   },
 });

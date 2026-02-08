@@ -254,7 +254,7 @@ describe('Conflict Resolution - Last Write Wins', () => {
 
       const updatedExercise = await localDB.exercises.where('localId').equals(localId).first();
       expect(updatedExercise?.syncStatus).toBe('synced');
-      expect(updatedExercise?.name).toBe('Local Name');
+      expect(updatedExercise?.name).toBe('Server Name');
       expect(updatedExercise?.serverId).toBe('server-create-response');
       expect(updatedExercise?.serverUpdatedAt?.toISOString()).toBe(new Date('2024-01-15').toISOString());
     });
@@ -366,7 +366,7 @@ describe('Conflict Resolution - Last Write Wins', () => {
 
       const syncedExercise = await localDB.exercises.where('localId').equals(exerciseLocalId).first();
       expect(syncedExercise?.syncStatus).toBe('synced');
-      expect(syncedExercise?.name).toBe('Local Exercise');
+      expect(syncedExercise?.name).toBe('Server Exercise');
 
       const syncedTemplate = await localDB.templates.where('localId').equals(templateLocalId).first();
       expect(syncedTemplate?.syncStatus).toBe('synced');

@@ -20,16 +20,16 @@ export function FilterPills<T extends string>({
   className
 }: FilterPillsProps<T>) {
   return (
-    <div className={cn("flex gap-2 overflow-x-auto scrollbar-hide pb-1", className)}>
+    <div className={cn("flex gap-1 p-1 bg-surface-2 ring-1 ring-border rounded-lg scrollbar-hide", className)}>
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            "whitespace-nowrap flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all active:scale-95",
+            "whitespace-nowrap flex-shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
             value === option.value
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-muted-foreground hover:text-foreground"
+              ? "bg-surface-3 shadow-xs text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           {option.label}

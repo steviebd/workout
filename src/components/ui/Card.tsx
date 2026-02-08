@@ -2,12 +2,19 @@ import * as React from 'react'
 
 import { cn } from '~/lib/cn'
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+function Card({ className, variant = 'surface', ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted' }) {
+  const variantStyles = {
+    surface: 'border border-border/60 bg-card shadow-xs',
+    elevated: 'border border-border/40 bg-card shadow-md',
+    tinted: 'border border-primary/20 bg-gradient-to-br from-primary/8 to-transparent shadow-xs',
+  }
+
   return (
     <div
       data-slot="card"
       className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-2xl border-0 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md',
+        'flex flex-col gap-6 rounded-xl py-5 transition-shadow duration-200',
+        variantStyles[variant],
         className,
       )}
       {...props}

@@ -15,7 +15,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
   const weeklyComplete = weeklyCount >= weeklyTarget;
 
   return (
-    <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5">
+    <Card variant="tinted" className="overflow-hidden">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -25,7 +25,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
             <div>
               <p className="text-sm text-muted-foreground">Times this week</p>
               <div className="flex items-baseline gap-2">
-                <p className={`text-2xl font-bold ${weeklyComplete ? 'text-success' : 'text-foreground'}`}>
+                <p className={`text-2xl font-semibold tabular-nums ${weeklyComplete ? 'text-success' : 'text-foreground'}`}>
                   {weeklyCount}
                 </p>
                 <p className="text-sm text-muted-foreground">/ {weeklyTarget}</p>
@@ -35,7 +35,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
           </div>
         </div>
 
-        <div className="border-t border-primary/10 pt-4">
+        <div className="border-t border-border/50 pt-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -46,7 +46,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
             </p>
           </div>
 
-          <div className="h-3 overflow-hidden rounded-full bg-secondary mb-3">
+          <div className="h-3 overflow-hidden rounded-full bg-surface-2 mb-3">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${thirtyDayStreak.progress}%` }}
@@ -61,11 +61,11 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
                   week.meetsTarget
                     ? 'bg-success/20 text-success'
                     : week.count > 0
-                    ? 'bg-primary/10 text-muted-foreground'
-                    : 'bg-secondary/50 text-muted-foreground/50'
+                    ? 'bg-surface-2 text-muted-foreground'
+                    : 'bg-surface-3 text-muted-foreground/50'
                 }`}
               >
-                <div className="font-medium">{week.count}</div>
+                <div className="font-medium tabular-nums">{week.count}</div>
                 <div className="text-[10px] mt-0.5">
                   {index === 0 ? 'This week' : `Week ${4 - index}`}
                 </div>
@@ -74,13 +74,13 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
           </div>
         </div>
 
-        <div className="border-t border-primary/10 pt-4">
+        <div className="border-t border-border/50 pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-achievement" />
               <p className="text-sm text-muted-foreground">Total Workouts</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{totalWorkouts}</p>
+            <p className="text-xl font-semibold tabular-nums text-foreground">{totalWorkouts}</p>
           </div>
         </div>
       </CardContent>

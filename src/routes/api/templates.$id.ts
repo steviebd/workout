@@ -1,96 +1,69 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
 import {
   type UpdateTemplateData,
-  getTemplateById,
-  getTemplateExercises,
+  getTemplateWithExercises,
   softDeleteTemplate,
   updateTemplate
 } from '../../lib/db/template';
-import { getSession } from '../../lib/session';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, db } = await withApiContext(request);
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const template = await getTemplateById(db, params.id, session.sub);
+          const template = await getTemplateWithExercises(db, params.id, session.sub);
 
           if (!template) {
-            return Response.json({ error: 'Template not found' }, { status: 404 });
+            return createApiError('Template not found', 404, 'NOT_FOUND');
           }
 
-           const exercises = await getTemplateExercises(db, params.id, session.sub);
-
-          return Response.json({ ...template, exercises });
+          return Response.json(template);
         } catch (err) {
           console.error('Get template error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
       PUT: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, d1Db } = await withApiContext(request);
 
           const body = await request.json();
           const { name, description, notes } = body as UpdateTemplateData & { localId?: string };
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const template = await updateTemplate(db, params.id, session.sub, {
+          const template = await updateTemplate(d1Db, params.id, session.sub, {
             name,
             description,
             notes,
           });
 
           if (!template) {
-            return Response.json({ error: 'Template not found' }, { status: 404 });
+            return createApiError('Template not found', 404, 'NOT_FOUND');
           }
 
           return Response.json(template);
         } catch (err) {
           console.error('Update template error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
       DELETE: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { session, d1Db } = await withApiContext(request);
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-           const deleted = await softDeleteTemplate(db, params.id, session.sub);
+          const deleted = await softDeleteTemplate(d1Db, params.id, session.sub);
 
           if (!deleted) {
-            return Response.json({ error: 'Template not found' }, { status: 404 });
+            return createApiError('Template not found', 404, 'NOT_FOUND');
           }
 
           return new Response(null, { status: 204 });
         } catch (err) {
           console.error('Delete template error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
     },

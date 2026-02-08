@@ -87,7 +87,7 @@ function Dashboard() {
 
         let personalRecords: PersonalRecord[] = []
         try {
-          const prsRes = await fetch('/api/progress/prs?limit=3', { credentials: 'include' })
+          const prsRes = await fetch('/api/progress/prs?mode=allTime&limit=3', { credentials: 'include' })
           if (prsRes.ok) {
             const prsData: { recentPRs: Array<{ id: string; exerciseName: string; date: string; weight: number; previousRecord?: number }> } = await prsRes.json()
             personalRecords = prsData.recentPRs.map((pr) => ({

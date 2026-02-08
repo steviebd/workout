@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
+import { withApiContext } from '../../lib/api/context';
+import { createApiError } from '../../lib/api/errors';
 import { getProgramCycleById } from '~/lib/db/program';
-import { getSession } from '~/lib/session';
 import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
 import { getExercisesByWorkosId, createExercise } from '~/lib/db/exercise';
 
@@ -10,22 +10,14 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          const session = await getSession(request);
-          if (!session?.workosId) {
-            return Response.json({ error: 'Not authenticated' }, { status: 401 });
-          }
+          const { d1Db, session } = await withApiContext(request);
 
-          const db = (env as { DB?: D1Database }).DB;
-          if (!db) {
-            return Response.json({ error: 'Database not available' }, { status: 500 });
-          }
-
-          const cycle = await getProgramCycleById(db, params.id, session.sub);
+          const cycle = await getProgramCycleById(d1Db, params.id, session.sub);
           if (!cycle) {
-            return Response.json({ error: 'Program cycle not found' }, { status: 404 });
+            return createApiError('Program cycle not found', 404, 'NOT_FOUND');
           }
 
-          const workout = await createWorkout(db, {
+          const workout = await createWorkout(d1Db, {
             workosId: session.sub,
             name: '1RM Test',
             programCycleId: params.id,
@@ -40,17 +32,17 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
 
           let orderIndex = 0;
           for (const lift of mainLifts) {
-            const exercises = await getExercisesByWorkosId(db, session.sub, { search: lift.name, limit: 1 });
+            const exercises = await getExercisesByWorkosId(d1Db, session.sub, { search: lift.name, limit: 1 });
             let exercise = exercises.find(e => e.name.toLowerCase() === lift.name.toLowerCase());
             
-            exercise ??= await createExercise(db, {
+            exercise ??= await createExercise(d1Db, {
               workosId: session.sub,
               name: lift.name,
               muscleGroup: lift.muscleGroup,
             });
 
             const workoutExercise = await createWorkoutExercise(
-              db,
+              d1Db,
               workout.id,
               session.sub,
               exercise.id,
@@ -59,7 +51,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
 
             if (workoutExercise) {
               await createWorkoutSet(
-                db,
+                d1Db,
                 workoutExercise.id,
                 session.sub,
                 1,
@@ -74,7 +66,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
         } catch (err) {
           console.error('Create 1RM test workout error:', err);
-          return Response.json({ error: 'Server error' }, { status: 500 });
+          return createApiError('Server error', 500, 'SERVER_ERROR');
         }
       },
     },

@@ -35,7 +35,7 @@ export function VideoTutorialModal({
             href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-6 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-6 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold rounded-lg transition-colors"
 >
             <Play className="h-6 w-6" />
             Watch on YouTube

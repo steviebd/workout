@@ -342,7 +342,7 @@ function ProgramStart() {
                 className={prefilled.squat1rm ? 'pr-20' : ''}
               />
               {!!prefilled.squat1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
                   Previous
                 </span>
               )}
@@ -373,7 +373,7 @@ function ProgramStart() {
                 className={prefilled.bench1rm ? 'pr-20' : ''}
               />
               {!!prefilled.bench1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
                   Previous
                 </span>
               )}
@@ -404,7 +404,7 @@ function ProgramStart() {
                 className={prefilled.deadlift1rm ? 'pr-20' : ''}
               />
               {!!prefilled.deadlift1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
                   Previous
                 </span>
               )}
@@ -435,7 +435,7 @@ function ProgramStart() {
                 className={prefilled.ohp1rm ? 'pr-20' : ''}
               />
               {!!prefilled.ohp1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
                   Previous
                 </span>
               )}
@@ -508,7 +508,7 @@ function ProgramStart() {
                 );
               })}
             </div>
-            <p className={`text-sm ${preferredGymDays.length === program.daysPerWeek ? 'text-green-600' : 'text-muted-foreground'}`}>
+            <p className={`text-sm ${preferredGymDays.length === program.daysPerWeek ? 'text-success' : 'text-muted-foreground'}`}>
               {preferredGymDays.length}/{program.daysPerWeek} days selected
             </p>
           </div>

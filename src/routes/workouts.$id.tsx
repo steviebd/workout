@@ -603,7 +603,7 @@ function WorkoutSession() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDiscardWorkout}
             >
               Discard Workout
@@ -625,7 +625,7 @@ function WorkoutSession() {
               Go Back
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-green-600 text-white hover:bg-green-700"
+              className="bg-success text-success-foreground hover:bg-success/90"
               onClick={handleIncompleteSetsContinue}
             >
               Continue

@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
@@ -10,7 +9,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 const config = defineConfig({
   define: {
     'process.env.WORKOS_CLIENT_ID': JSON.stringify(process.env.WORKOS_CLIENT_ID),
-    'process.env.WORKOS_API_KEY': JSON.stringify(process.env.WORKOS_API_KEY),
     'process.env.ENVIRONMENT': JSON.stringify(process.env.ENVIRONMENT),
     'global': 'globalThis',
   },
@@ -18,7 +16,6 @@ const config = defineConfig({
     noExternal: true,
   },
   plugins: [
-    devtools(),
     cloudflare({
       viteEnvironment: { name: 'ssr' },
     }),
