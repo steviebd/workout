@@ -7,6 +7,7 @@ import { useAuth } from './__root';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useUnit } from '@/lib/context/UnitContext';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card';
 
 interface WorkoutSet {
   id: string;
@@ -70,6 +71,13 @@ function WorkoutSummary() {
   const [programCycle, setProgramCycle] = useState<ProgramCycle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allTimePRs, setAllTimePRs] = useState<Array<{
+    id: string;
+    exerciseName: string;
+    date: string;
+    weight: number;
+    reps: number;
+  }>>([]);
 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
@@ -134,6 +142,29 @@ function WorkoutSummary() {
 
     redirectIfIncomplete().catch(console.error);
   }, [workout, params.id, router, loading]);
+
+  useEffect(() => {
+    const fetchPRs = async () => {
+      try {
+        const res = await fetch('/api/progress/prs?mode=allTime&limit=100', {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json() as { recentPRs: Array<{
+            id: string;
+            exerciseName: string;
+            date: string;
+            weight: number;
+            reps: number;
+          }> };
+          setAllTimePRs(data.recentPRs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch PRs:', err);
+      }
+    };
+    void fetchPRs();
+  }, []);
 
   if (auth.loading || loading) {
     return (
@@ -220,40 +251,64 @@ function WorkoutSummary() {
     return tested;
   };
 
-  const getPersonalRecords = () => {
-    try {
-      const prs: Array<{ exerciseName: string; weight: number; reps: number }> = [];
-      const exerciseMaxes = new Map<string, { weight: number; reps: number }>();
-
-      for (const exercise of workout.exercises) {
-        for (const set of exercise.sets) {
-          if (set.isComplete && set.weight) {
-            const current = exerciseMaxes.get(exercise.name);
-            if (!current || set.weight > current.weight) {
-              exerciseMaxes.set(exercise.name, { weight: set.weight, reps: set.reps ?? 0 });
-            }
-          }
-        }
-      }
-
-      exerciseMaxes.forEach((value, key) => {
-        if (value.weight > 0) {
-          prs.push({ exerciseName: key, weight: value.weight, reps: value.reps });
-        }
-      });
-
-      return prs;
-    } catch {
-      return [];
-    }
-  };
-
   const totalSetsCount = workout.exercises.reduce((acc, e) => {
     return acc + e.sets.length;
   }, 0);
 
   const totalVolume = calculateTotalVolume();
-  const personalRecords = getPersonalRecords();
+
+  const calculateE1RM = (weight: number, reps: number): number => {
+    if (reps === 1) return weight;
+    return Math.round(weight * (1 + reps / 30));
+  };
+
+  const getWorkoutMaxes = () => {
+    const maxes = new Map<string, { weight: number; reps: number }>();
+
+    for (const exercise of workout.exercises) {
+      for (const set of exercise.sets) {
+        if (set.isComplete && set.weight) {
+          const current = maxes.get(exercise.name);
+          if (!current || set.weight > current.weight) {
+            maxes.set(exercise.name, {
+              weight: set.weight,
+              reps: set.reps ?? 0
+            });
+          }
+        }
+      }
+    }
+
+    return Array.from(maxes.entries()).map(([name, data]) => ({
+      exerciseName: name,
+      weight: data.weight,
+      reps: data.reps,
+      estimatedE1RM: calculateE1RM(data.weight, data.reps),
+    }));
+  };
+
+  const getComparisonData = () => {
+    const workoutMaxes = getWorkoutMaxes();
+
+    return workoutMaxes.map(exercise => {
+      const historicalPR = allTimePRs.find(pr =>
+        pr.exerciseName.toLowerCase() === exercise.exerciseName.toLowerCase()
+      );
+      const historicalE1RM = historicalPR ? calculateE1RM(historicalPR.weight, historicalPR.reps) : 0;
+      return {
+        ...exercise,
+        historicalPR: historicalPR ? {
+          weight: historicalPR.weight,
+          reps: historicalPR.reps,
+          e1rm: historicalE1RM,
+          date: historicalPR.date,
+        } : null,
+        isNewRecord: historicalPR && exercise.estimatedE1RM > historicalE1RM,
+      };
+    }).sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
+  };
+
+  const comparisonData = getComparisonData();
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
@@ -391,27 +446,6 @@ function WorkoutSummary() {
           );
         })() : null}
 
-        {personalRecords.length > 0 ? <div className="bg-card border border-border rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Trophy className="text-yellow-500" size={20} />
-            Personal Records
-          </h2>
-          <div className="grid gap-3">
-            {personalRecords.map((pr) => (
-              <div
-                className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
-                key={pr.exerciseName}
-              >
-                <span className="font-medium text-foreground">{pr.exerciseName}</span>
-                <span className="text-amber-400 font-medium">
-                  {formatWeight(pr.weight)} ×
-                  {pr.reps}
-                </span>
-              </div>
-            ))}
-          </div>
-                                      </div> : null}
-
         <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Summary</h2>
           <div className="space-y-4">
@@ -458,6 +492,60 @@ function WorkoutSummary() {
             })}
           </div>
         </div>
+
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-5 w-5 text-achievement" />
+              Personal Records
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              We are working on providing more accurate estimated 1RM calculations.
+            </p>
+            {comparisonData.map((item) => (
+              <div key={item.exerciseName}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold">{item.exerciseName}</span>
+                  {item.isNewRecord ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-success/20 px-2.5 py-0.5 text-xs font-semibold text-success">
+                      <Trophy className="h-3 w-3" />
+                      New Record!
+                    </span>
+                  ) : null}
+                </div>
+                <div className="grid grid-cols-2 gap-4 p-3 bg-secondary/30 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Historical 1RM</p>
+                    <p className="font-semibold text-lg">
+                      {item.historicalPR ? `${item.historicalPR.e1rm} kg` : '—'}
+                    </p>
+                    {item.historicalPR ? (
+                      <p className="text-xs text-muted-foreground">
+                        {formatWeight(item.historicalPR.weight)} × {item.historicalPR.reps}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground mb-1">Today's 1RM</p>
+                    <p className={cn("font-semibold text-lg", item.isNewRecord ? "text-achievement" : "")}>
+                      {item.estimatedE1RM} kg
+                    </p>
+                    <p className={cn("text-xs", item.isNewRecord ? "text-achievement" : "text-muted-foreground")}>
+                      {formatWeight(item.weight)} × {item.reps}
+                    </p>
+                    {item.isNewRecord && item.historicalPR ? (
+                      <p className="text-xs text-success font-medium">
+                        +{item.estimatedE1RM - item.historicalPR.e1rm} kg
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
         {workout.notes ? <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-2">Notes</h2>
