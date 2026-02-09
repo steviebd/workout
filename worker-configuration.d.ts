@@ -3,6 +3,11 @@
 // Runtime types generated with workerd@1.20260114.0 2025-09-02 nodejs_compat
 declare namespace Cloudflare {
 	interface Env {
+		WHOOP_CLIENT_ID?: string;
+		WHOOP_CLIENT_SECRET?: string;
+		WHOOP_API_URL?: string;
+		WHOOP_WEBHOOK_SECRET?: string;
+		WHOOP_TOKEN_ENCRYPTION_KEY?: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

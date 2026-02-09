@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as R1rmTestRouteImport } from './routes/1rm-test'
 import { Route as IndexRouteImport } from './routes/index'
@@ -53,12 +54,14 @@ import { Route as ApiProgressVolumeRouteImport } from './routes/api/progress.vol
 import { Route as ApiProgressStrengthRouteImport } from './routes/api/progress.strength'
 import { Route as ApiProgressPrsRouteImport } from './routes/api/progress.prs'
 import { Route as ApiProgramCyclesIdRouteImport } from './routes/api/program-cycles.$id'
+import { Route as ApiHealthDataRouteImport } from './routes/api/health.data'
 import { Route as ApiExercisesCopyFromLibraryRouteImport } from './routes/api/exercises.copy-from-library'
 import { Route as ApiExercisesIdRouteImport } from './routes/api/exercises.$id'
 import { Route as ApiAuthSignoutRouteImport } from './routes/api/auth/signout'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAnalyticsTrackRouteImport } from './routes/api/analytics/track'
+import { Route as ApiWebhooksWhoopIndexRouteImport } from './routes/api/webhooks.whoop/index'
 import { Route as ProgramsCycleCycleIdCompleteRouteImport } from './routes/programs.cycle.$cycleId.complete'
 import { Route as ProgramsCycleCycleId1rmUpdateRouteImport } from './routes/programs.cycle.$cycleId.1rm-update'
 import { Route as ProgramsCycleCycleId1rmTestRouteImport } from './routes/programs.cycle.$cycleId.1rm-test'
@@ -72,6 +75,9 @@ import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api
 import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
 import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
 import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
+import { Route as ApiIntegrationsWhoopStatusRouteImport } from './routes/api/integrations.whoop.status'
+import { Route as ApiIntegrationsWhoopConnectRouteImport } from './routes/api/integrations.whoop.connect'
+import { Route as ApiIntegrationsWhoopCallbackRouteImport } from './routes/api/integrations.whoop.callback'
 import { Route as ApiExercisesIdLastWorkoutSetsRouteImport } from './routes/api/exercises.$id.last-workout-sets'
 import { Route as ApiExercisesIdLastWorkoutRouteImport } from './routes/api/exercises.$id.last-workout'
 import { Route as ApiWorkoutsIdExercisesReorderRouteImport } from './routes/api/workouts.$id.exercises.reorder'
@@ -82,6 +88,11 @@ import { Route as ApiProgramCyclesIdWorkoutsWorkoutIdRescheduleRouteImport } fro
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AchievementsRoute = AchievementsRouteImport.update({
@@ -299,6 +310,11 @@ const ApiProgramCyclesIdRoute = ApiProgramCyclesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiProgramCyclesRoute,
 } as any)
+const ApiHealthDataRoute = ApiHealthDataRouteImport.update({
+  id: '/api/health/data',
+  path: '/api/health/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiExercisesCopyFromLibraryRoute =
   ApiExercisesCopyFromLibraryRouteImport.update({
     id: '/copy-from-library',
@@ -328,6 +344,11 @@ const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
 const ApiAnalyticsTrackRoute = ApiAnalyticsTrackRouteImport.update({
   id: '/api/analytics/track',
   path: '/api/analytics/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksWhoopIndexRoute = ApiWebhooksWhoopIndexRouteImport.update({
+  id: '/api/webhooks/whoop/',
+  path: '/api/webhooks/whoop/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgramsCycleCycleIdCompleteRoute =
@@ -403,6 +424,24 @@ const ApiProgramCyclesCycleId1rmTestWorkoutRoute =
     path: '/$cycleId/1rm-test-workout',
     getParentRoute: () => ApiProgramCyclesRoute,
   } as any)
+const ApiIntegrationsWhoopStatusRoute =
+  ApiIntegrationsWhoopStatusRouteImport.update({
+    id: '/api/integrations/whoop/status',
+    path: '/api/integrations/whoop/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsWhoopConnectRoute =
+  ApiIntegrationsWhoopConnectRouteImport.update({
+    id: '/api/integrations/whoop/connect',
+    path: '/api/integrations/whoop/connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsWhoopCallbackRoute =
+  ApiIntegrationsWhoopCallbackRouteImport.update({
+    id: '/api/integrations/whoop/callback',
+    path: '/api/integrations/whoop/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiExercisesIdLastWorkoutSetsRoute =
   ApiExercisesIdLastWorkoutSetsRouteImport.update({
     id: '/last-workout-sets',
@@ -444,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
+  '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
@@ -473,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/health/data': typeof ApiHealthDataRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -493,6 +534,9 @@ export interface FileRoutesByFullPath {
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
+  '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -506,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/programs/cycle/$cycleId/1rm-test': typeof ProgramsCycleCycleId1rmTestRoute
   '/programs/cycle/$cycleId/1rm-update': typeof ProgramsCycleCycleId1rmUpdateRoute
   '/programs/cycle/$cycleId/complete': typeof ProgramsCycleCycleIdCompleteRoute
+  '/api/webhooks/whoop/': typeof ApiWebhooksWhoopIndexRoute
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
@@ -515,6 +560,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
+  '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
@@ -544,6 +590,7 @@ export interface FileRoutesByTo {
   '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/health/data': typeof ApiHealthDataRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -564,6 +611,9 @@ export interface FileRoutesByTo {
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
+  '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -577,6 +627,7 @@ export interface FileRoutesByTo {
   '/programs/cycle/$cycleId/1rm-test': typeof ProgramsCycleCycleId1rmTestRoute
   '/programs/cycle/$cycleId/1rm-update': typeof ProgramsCycleCycleId1rmUpdateRoute
   '/programs/cycle/$cycleId/complete': typeof ProgramsCycleCycleIdCompleteRoute
+  '/api/webhooks/whoop': typeof ApiWebhooksWhoopIndexRoute
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
@@ -587,6 +638,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
+  '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
@@ -616,6 +668,7 @@ export interface FileRoutesById {
   '/api/auth/signout': typeof ApiAuthSignoutRoute
   '/api/exercises/$id': typeof ApiExercisesIdRouteWithChildren
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
+  '/api/health/data': typeof ApiHealthDataRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -636,6 +689,9 @@ export interface FileRoutesById {
   '/workouts/start/$templateId': typeof WorkoutsStartTemplateIdRoute
   '/api/exercises/$id/last-workout': typeof ApiExercisesIdLastWorkoutRoute
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
+  '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
+  '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -649,6 +705,7 @@ export interface FileRoutesById {
   '/programs/cycle/$cycleId/1rm-test': typeof ProgramsCycleCycleId1rmTestRoute
   '/programs/cycle/$cycleId/1rm-update': typeof ProgramsCycleCycleId1rmUpdateRoute
   '/programs/cycle/$cycleId/complete': typeof ProgramsCycleCycleIdCompleteRoute
+  '/api/webhooks/whoop/': typeof ApiWebhooksWhoopIndexRoute
   '/api/templates/$id/exercises/$exerciseId': typeof ApiTemplatesIdExercisesExerciseIdRoute
   '/api/templates/$id/exercises/reorder': typeof ApiTemplatesIdExercisesReorderRoute
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
@@ -660,6 +717,7 @@ export interface FileRouteTypes {
     | '/'
     | '/1rm-test'
     | '/achievements'
+    | '/health'
     | '/progress'
     | '/api/badges'
     | '/api/exercises'
@@ -689,6 +747,7 @@ export interface FileRouteTypes {
     | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/health/data'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -709,6 +768,9 @@ export interface FileRouteTypes {
     | '/workouts/start/$templateId'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/integrations/whoop/callback'
+    | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/status'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -722,6 +784,7 @@ export interface FileRouteTypes {
     | '/programs/cycle/$cycleId/1rm-test'
     | '/programs/cycle/$cycleId/1rm-update'
     | '/programs/cycle/$cycleId/complete'
+    | '/api/webhooks/whoop/'
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
@@ -731,6 +794,7 @@ export interface FileRouteTypes {
     | '/'
     | '/1rm-test'
     | '/achievements'
+    | '/health'
     | '/progress'
     | '/api/badges'
     | '/api/exercises'
@@ -760,6 +824,7 @@ export interface FileRouteTypes {
     | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/health/data'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -780,6 +845,9 @@ export interface FileRouteTypes {
     | '/workouts/start/$templateId'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/integrations/whoop/callback'
+    | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/status'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -793,6 +861,7 @@ export interface FileRouteTypes {
     | '/programs/cycle/$cycleId/1rm-test'
     | '/programs/cycle/$cycleId/1rm-update'
     | '/programs/cycle/$cycleId/complete'
+    | '/api/webhooks/whoop'
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
@@ -802,6 +871,7 @@ export interface FileRouteTypes {
     | '/'
     | '/1rm-test'
     | '/achievements'
+    | '/health'
     | '/progress'
     | '/api/badges'
     | '/api/exercises'
@@ -831,6 +901,7 @@ export interface FileRouteTypes {
     | '/api/auth/signout'
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
+    | '/api/health/data'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -851,6 +922,9 @@ export interface FileRouteTypes {
     | '/workouts/start/$templateId'
     | '/api/exercises/$id/last-workout'
     | '/api/exercises/$id/last-workout-sets'
+    | '/api/integrations/whoop/callback'
+    | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/status'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -864,6 +938,7 @@ export interface FileRouteTypes {
     | '/programs/cycle/$cycleId/1rm-test'
     | '/programs/cycle/$cycleId/1rm-update'
     | '/programs/cycle/$cycleId/complete'
+    | '/api/webhooks/whoop/'
     | '/api/templates/$id/exercises/$exerciseId'
     | '/api/templates/$id/exercises/reorder'
     | '/api/workouts/$id/exercises/reorder'
@@ -874,6 +949,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R1rmTestRoute: typeof R1rmTestRoute
   AchievementsRoute: typeof AchievementsRoute
+  HealthRoute: typeof HealthRoute
   ProgressRoute: typeof ProgressRoute
   ApiBadgesRoute: typeof ApiBadgesRoute
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
@@ -901,6 +977,7 @@ export interface RootRouteChildren {
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthSignoutRoute: typeof ApiAuthSignoutRoute
+  ApiHealthDataRoute: typeof ApiHealthDataRoute
   ApiProgressPrsRoute: typeof ApiProgressPrsRoute
   ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
@@ -911,9 +988,13 @@ export interface RootRouteChildren {
   WorkoutsIdEditRoute: typeof WorkoutsIdEditRoute
   WorkoutsIdSummaryRoute: typeof WorkoutsIdSummaryRoute
   WorkoutsStartTemplateIdRoute: typeof WorkoutsStartTemplateIdRoute
+  ApiIntegrationsWhoopCallbackRoute: typeof ApiIntegrationsWhoopCallbackRoute
+  ApiIntegrationsWhoopConnectRoute: typeof ApiIntegrationsWhoopConnectRoute
+  ApiIntegrationsWhoopStatusRoute: typeof ApiIntegrationsWhoopStatusRoute
   ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
   ProgramsCycleCycleId1rmUpdateRoute: typeof ProgramsCycleCycleId1rmUpdateRoute
   ProgramsCycleCycleIdCompleteRoute: typeof ProgramsCycleCycleIdCompleteRoute
+  ApiWebhooksWhoopIndexRoute: typeof ApiWebhooksWhoopIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -923,6 +1004,13 @@ declare module '@tanstack/react-router' {
       path: '/progress'
       fullPath: '/progress'
       preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/achievements': {
@@ -1226,6 +1314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesIdRouteImport
       parentRoute: typeof ApiProgramCyclesRoute
     }
+    '/api/health/data': {
+      id: '/api/health/data'
+      path: '/api/health/data'
+      fullPath: '/api/health/data'
+      preLoaderRoute: typeof ApiHealthDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/exercises/copy-from-library': {
       id: '/api/exercises/copy-from-library'
       path: '/copy-from-library'
@@ -1266,6 +1361,13 @@ declare module '@tanstack/react-router' {
       path: '/api/analytics/track'
       fullPath: '/api/analytics/track'
       preLoaderRoute: typeof ApiAnalyticsTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/whoop/': {
+      id: '/api/webhooks/whoop/'
+      path: '/api/webhooks/whoop'
+      fullPath: '/api/webhooks/whoop/'
+      preLoaderRoute: typeof ApiWebhooksWhoopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programs/cycle/$cycleId/complete': {
@@ -1358,6 +1460,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/program-cycles/$cycleId/1rm-test-workout'
       preLoaderRoute: typeof ApiProgramCyclesCycleId1rmTestWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesRoute
+    }
+    '/api/integrations/whoop/status': {
+      id: '/api/integrations/whoop/status'
+      path: '/api/integrations/whoop/status'
+      fullPath: '/api/integrations/whoop/status'
+      preLoaderRoute: typeof ApiIntegrationsWhoopStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/whoop/connect': {
+      id: '/api/integrations/whoop/connect'
+      path: '/api/integrations/whoop/connect'
+      fullPath: '/api/integrations/whoop/connect'
+      preLoaderRoute: typeof ApiIntegrationsWhoopConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/whoop/callback': {
+      id: '/api/integrations/whoop/callback'
+      path: '/api/integrations/whoop/callback'
+      fullPath: '/api/integrations/whoop/callback'
+      preLoaderRoute: typeof ApiIntegrationsWhoopCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/exercises/$id/last-workout-sets': {
       id: '/api/exercises/$id/last-workout-sets'
@@ -1608,6 +1731,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R1rmTestRoute: R1rmTestRoute,
   AchievementsRoute: AchievementsRoute,
+  HealthRoute: HealthRoute,
   ProgressRoute: ProgressRoute,
   ApiBadgesRoute: ApiBadgesRoute,
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
@@ -1635,6 +1759,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthSignoutRoute: ApiAuthSignoutRoute,
+  ApiHealthDataRoute: ApiHealthDataRoute,
   ApiProgressPrsRoute: ApiProgressPrsRoute,
   ApiProgressStrengthRoute: ApiProgressStrengthRoute,
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,
@@ -1645,9 +1770,13 @@ const rootRouteChildren: RootRouteChildren = {
   WorkoutsIdEditRoute: WorkoutsIdEditRoute,
   WorkoutsIdSummaryRoute: WorkoutsIdSummaryRoute,
   WorkoutsStartTemplateIdRoute: WorkoutsStartTemplateIdRoute,
+  ApiIntegrationsWhoopCallbackRoute: ApiIntegrationsWhoopCallbackRoute,
+  ApiIntegrationsWhoopConnectRoute: ApiIntegrationsWhoopConnectRoute,
+  ApiIntegrationsWhoopStatusRoute: ApiIntegrationsWhoopStatusRoute,
   ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,
   ProgramsCycleCycleId1rmUpdateRoute: ProgramsCycleCycleId1rmUpdateRoute,
   ProgramsCycleCycleIdCompleteRoute: ProgramsCycleCycleIdCompleteRoute,
+  ApiWebhooksWhoopIndexRoute: ApiWebhooksWhoopIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -259,6 +259,144 @@ export const _templateExercisesTemplateIdIdx = index('idx_template_exercises_tem
 export const _templateExercisesOrderIdx = index('idx_template_exercises_order').on(templateExercises.templateId, templateExercises.orderIndex);
 
 // ============================================
+// WHOOP INTEGRATION
+// ============================================
+export const whoopConnections = sqliteTable('whoop_connections', {
+  workosId: text('workos_id').primaryKey().references(() => users.workosId, { onDelete: 'cascade' }),
+  accessTokenEncrypted: text('access_token_encrypted').notNull(),
+  refreshTokenEncrypted: text('refresh_token_encrypted').notNull(),
+  tokenExpiresAt: text('token_expires_at').notNull(),
+  whoopUserId: text('whoop_user_id').notNull(),
+  scopesGranted: text('scopes_granted').notNull(),
+  syncStatus: text('sync_status').default('active'),
+  syncInProgress: integer('sync_in_progress', { mode: 'boolean' }).default(false),
+  syncStartedAt: text('sync_started_at'),
+  lastSyncAt: text('last_sync_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const whoopSleeps = sqliteTable('whoop_sleeps', {
+  id: text('id').primaryKey(),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  sleepDate: text('sleep_date').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  timezoneOffset: text('timezone_offset'),
+  isNap: integer('is_nap', { mode: 'boolean' }).default(false),
+  cycleId: text('cycle_id'),
+  qualityScore: real('quality_score'),
+  needBase: real('need_base'),
+  needStrain: real('need_strain'),
+  needDebt: real('need_debt'),
+  inBedDurationMs: integer('in_bed_duration_ms'),
+  awakeDurationMs: integer('awake_duration_ms'),
+  asleepDurationMs: integer('asleep_duration_ms'),
+  lightSleepDurationMs: integer('light_sleep_duration_ms'),
+  remSleepDurationMs: integer('rem_sleep_duration_ms'),
+  slowWaveSleepDurationMs: integer('slow_wave_sleep_duration_ms'),
+  disruptions: integer('disruptions'),
+  efficiency: real('efficiency'),
+  respiratoryRate: real('respiratory_rate'),
+  rawJson: text('raw_json'),
+  whoopCreatedAt: text('whoop_created_at'),
+  whoopUpdatedAt: text('whoop_updated_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const whoopRecoveries = sqliteTable('whoop_recoveries', {
+  id: text('id').primaryKey(),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  cycleId: text('cycle_id'),
+  date: text('date').notNull(),
+  score: integer('score'),
+  status: text('status'),
+  restingHeartRate: integer('resting_heart_rate'),
+  hrv: real('hrv'),
+  spo2: real('spo2'),
+  skinTemp: real('skin_temp'),
+  cardiovascularLoad: real('cardiovascular_load'),
+  musculoskeletalLoad: real('musculoskeletal_load'),
+  rawJson: text('raw_json'),
+  whoopCreatedAt: text('whoop_created_at'),
+  whoopUpdatedAt: text('whoop_updated_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const whoopCycles = sqliteTable('whoop_cycles', {
+  id: text('id').primaryKey(),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  date: text('date').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  score: integer('score'),
+  effort: real('effort'),
+  totalStrain: real('total_strain'),
+  averageHeartRate: integer('average_heart_rate'),
+  maxHeartRate: integer('max_heart_rate'),
+  caloriesBurned: integer('calories_burned'),
+  distance: real('distance'),
+  steps: integer('steps'),
+  timeAwakeMs: integer('time_awake_ms'),
+  zone1Ms: integer('zone1_ms'),
+  zone2Ms: integer('zone2_ms'),
+  zone3Ms: integer('zone3_ms'),
+  zone4Ms: integer('zone4_ms'),
+  zone5Ms: integer('zone5_ms'),
+  rawJson: text('raw_json'),
+  whoopCreatedAt: text('whoop_created_at'),
+  whoopUpdatedAt: text('whoop_updated_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const whoopWorkouts = sqliteTable('whoop_workouts', {
+  id: text('id').primaryKey(),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  name: text('name'),
+  sportId: integer('sport_id'),
+  sportName: text('sport_name'),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  durationMs: integer('duration_ms'),
+  strain: real('strain'),
+  averageHeartRate: integer('average_heart_rate'),
+  maxHeartRate: integer('max_heart_rate'),
+  calories: integer('calories'),
+  distance: real('distance'),
+  zone1Ms: integer('zone1_ms'),
+  zone2Ms: integer('zone2_ms'),
+  zone3Ms: integer('zone3_ms'),
+  zone4Ms: integer('zone4_ms'),
+  zone5Ms: integer('zone5_ms'),
+  rawJson: text('raw_json'),
+  whoopCreatedAt: text('whoop_created_at'),
+  whoopUpdatedAt: text('whoop_updated_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const whoopWebhookEvents = sqliteTable('whoop_webhook_events', {
+  id: text('id').primaryKey(),
+  workosId: text('workos_id'),
+  eventType: text('event_type').notNull(),
+  payloadRaw: text('payload_raw'),
+  receivedAt: text('received_at').$defaultFn(() => nowISO()),
+  processedAt: text('processed_at'),
+  processingError: text('processing_error'),
+});
+
+export const _whoopSleepsWorkosDateIdx = index('idx_whoop_sleeps_workos_date').on(whoopSleeps.workosId, whoopSleeps.sleepDate);
+export const _whoopSleepsWorkosStartIdx = index('idx_whoop_sleeps_workos_start').on(whoopSleeps.workosId, whoopSleeps.startTime);
+export const _whoopRecoveriesWorkosDateIdx = index('idx_whoop_recoveries_workos_date').on(whoopRecoveries.workosId, whoopRecoveries.date);
+export const _whoopCyclesWorkosDateIdx = index('idx_whoop_cycles_workos_date').on(whoopCycles.workosId, whoopCycles.date);
+export const _whoopCyclesWorkosStartIdx = index('idx_whoop_cycles_workos_start').on(whoopCycles.workosId, whoopCycles.startTime);
+export const _whoopWorkoutsWorkosStartIdx = index('idx_whoop_workouts_workos_start').on(whoopWorkouts.workosId, whoopWorkouts.startTime);
+export const _whoopWebhookEventsTypeIdx = index('idx_whoop_webhook_events_type').on(whoopWebhookEvents.eventType);
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 export type User = typeof users.$inferSelect;
@@ -272,6 +410,12 @@ export type UserPreference = typeof userPreferences.$inferSelect;
 export type UserStreak = typeof userStreaks.$inferSelect;
 export type UserProgramCycle = typeof userProgramCycles.$inferSelect;
 export type ProgramCycleWorkout = typeof programCycleWorkouts.$inferSelect;
+export type WhoopConnection = typeof whoopConnections.$inferSelect;
+export type WhoopSleep = typeof whoopSleeps.$inferSelect;
+export type WhoopRecovery = typeof whoopRecoveries.$inferSelect;
+export type WhoopCycle = typeof whoopCycles.$inferSelect;
+export type WhoopWorkout = typeof whoopWorkouts.$inferSelect;
+export type WhoopWebhookEvent = typeof whoopWebhookEvents.$inferSelect;
 
 export type NewUser = typeof users.$inferInsert;
 export type NewExercise = typeof exercises.$inferInsert;
@@ -284,6 +428,12 @@ export type NewUserPreference = typeof userPreferences.$inferInsert;
 export type NewUserStreak = typeof userStreaks.$inferInsert;
 export type NewUserProgramCycle = typeof userProgramCycles.$inferInsert;
 export type NewProgramCycleWorkout = typeof programCycleWorkouts.$inferInsert;
+export type NewWhoopConnection = typeof whoopConnections.$inferInsert;
+export type NewWhoopSleep = typeof whoopSleeps.$inferInsert;
+export type NewWhoopRecovery = typeof whoopRecoveries.$inferInsert;
+export type NewWhoopCycle = typeof whoopCycles.$inferInsert;
+export type NewWhoopWorkout = typeof whoopWorkouts.$inferInsert;
+export type NewWhoopWebhookEvent = typeof whoopWebhookEvents.$inferInsert;
 
 export default {
   generateId,
@@ -298,4 +448,10 @@ export default {
   userStreaks,
   userProgramCycles,
   programCycleWorkouts,
+  whoopConnections,
+  whoopSleeps,
+  whoopRecoveries,
+  whoopCycles,
+  whoopWorkouts,
+  whoopWebhookEvents,
 };
