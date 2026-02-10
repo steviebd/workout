@@ -44,20 +44,12 @@ interface WhoopData {
   }>
 }
 
-export const Route = createFileRoute('/health')({
-  component: HealthPage,
-})
-
 function HealthPage() {
   const [status, setStatus] = useState<WhoopStatus | null>(null)
   const [data, setData] = useState<WhoopData | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'strain' | 'workouts'>('overview')
-
-  useEffect(() => {
-    fetchWhoopData()
-  }, [])
 
   async function fetchWhoopData() {
     try {
@@ -79,7 +71,11 @@ function HealthPage() {
     }
   }
 
-  async function handleSync() {
+  useEffect(() => {
+    void fetchWhoopData()
+  }, [])
+
+  const handleSync = async () => {
     setSyncing(true)
     try {
       const response = await fetch('/api/integrations/whoop/sync', { method: 'POST' })
@@ -93,11 +89,12 @@ function HealthPage() {
     }
   }
 
-  async function handleConnect() {
+  const handleConnect = () => {
     window.location.href = '/api/integrations/whoop/connect'
   }
 
-  async function handleDisconnect() {
+  const handleDisconnect = async () => {
+    // eslint-disable-next-line no-alert
     if (!confirm('Are you sure you want to disconnect Whoop?')) return
 
     try {
@@ -143,7 +140,7 @@ function HealthPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Health</h1>
         <Button
-          onClick={handleSync}
+          onClick={() => void handleSync()}
           disabled={syncing}
           variant="outline"
           size="sm"
@@ -190,7 +187,7 @@ function HealthPage() {
                 {todayRecovery?.score ?? '--'}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {todayRecovery?.status || 'No data'}
+                {todayRecovery?.status ?? 'No data'}
               </div>
             </div>
 
@@ -240,7 +237,7 @@ function HealthPage() {
             </div>
           </div>
 
-          <Button onClick={handleDisconnect} variant="outline" className="w-full" size="lg">
+          <Button onClick={() => void handleDisconnect()} variant="outline" className="w-full" size="lg">
             <Link2Off className="h-4 w-4 mr-2" />
             Disconnect Whoop
           </Button>
@@ -259,7 +256,7 @@ function HealthPage() {
                   recovery.status === 'red' ? 'bg-red-500/20 text-red-500' : 'bg-muted text-muted-foreground'
                 }`}
                 >
-                  {recovery.status || 'N/A'}
+                  {recovery.status ?? 'N/A'}
                 </span>
               </div>
               <div className="text-2xl font-bold mb-2">{recovery.score ?? '--'}</div>
@@ -332,7 +329,7 @@ function HealthPage() {
             <div key={workout.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">
-                  {workout.name || 'Workout'}
+                  {workout.name ?? 'Workout'}
                 </span>
                 <span className="text-lg font-bold text-primary">{workout.strain ?? '--'}</span>
               </div>
@@ -351,3 +348,7 @@ function HealthPage() {
     </div>
   )
 }
+
+export const Route = createFileRoute('/health')({
+  component: HealthPage,
+})

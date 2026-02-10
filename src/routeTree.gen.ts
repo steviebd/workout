@@ -75,7 +75,9 @@ import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api
 import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
 import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
 import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
+import { Route as ApiIntegrationsWhoopSyncRouteImport } from './routes/api/integrations.whoop.sync'
 import { Route as ApiIntegrationsWhoopStatusRouteImport } from './routes/api/integrations.whoop.status'
+import { Route as ApiIntegrationsWhoopDisconnectRouteImport } from './routes/api/integrations.whoop.disconnect'
 import { Route as ApiIntegrationsWhoopConnectRouteImport } from './routes/api/integrations.whoop.connect'
 import { Route as ApiIntegrationsWhoopCallbackRouteImport } from './routes/api/integrations.whoop.callback'
 import { Route as ApiExercisesIdLastWorkoutSetsRouteImport } from './routes/api/exercises.$id.last-workout-sets'
@@ -424,10 +426,22 @@ const ApiProgramCyclesCycleId1rmTestWorkoutRoute =
     path: '/$cycleId/1rm-test-workout',
     getParentRoute: () => ApiProgramCyclesRoute,
   } as any)
+const ApiIntegrationsWhoopSyncRoute =
+  ApiIntegrationsWhoopSyncRouteImport.update({
+    id: '/api/integrations/whoop/sync',
+    path: '/api/integrations/whoop/sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsWhoopStatusRoute =
   ApiIntegrationsWhoopStatusRouteImport.update({
     id: '/api/integrations/whoop/status',
     path: '/api/integrations/whoop/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsWhoopDisconnectRoute =
+  ApiIntegrationsWhoopDisconnectRouteImport.update({
+    id: '/api/integrations/whoop/disconnect',
+    path: '/api/integrations/whoop/disconnect',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiIntegrationsWhoopConnectRoute =
@@ -536,7 +550,9 @@ export interface FileRoutesByFullPath {
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
   '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
+  '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -613,7 +629,9 @@ export interface FileRoutesByTo {
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
   '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
+  '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -691,7 +709,9 @@ export interface FileRoutesById {
   '/api/exercises/$id/last-workout-sets': typeof ApiExercisesIdLastWorkoutSetsRoute
   '/api/integrations/whoop/callback': typeof ApiIntegrationsWhoopCallbackRoute
   '/api/integrations/whoop/connect': typeof ApiIntegrationsWhoopConnectRoute
+  '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
+  '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -770,7 +790,9 @@ export interface FileRouteTypes {
     | '/api/exercises/$id/last-workout-sets'
     | '/api/integrations/whoop/callback'
     | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
+    | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -847,7 +869,9 @@ export interface FileRouteTypes {
     | '/api/exercises/$id/last-workout-sets'
     | '/api/integrations/whoop/callback'
     | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
+    | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -924,7 +948,9 @@ export interface FileRouteTypes {
     | '/api/exercises/$id/last-workout-sets'
     | '/api/integrations/whoop/callback'
     | '/api/integrations/whoop/connect'
+    | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
+    | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -990,7 +1016,9 @@ export interface RootRouteChildren {
   WorkoutsStartTemplateIdRoute: typeof WorkoutsStartTemplateIdRoute
   ApiIntegrationsWhoopCallbackRoute: typeof ApiIntegrationsWhoopCallbackRoute
   ApiIntegrationsWhoopConnectRoute: typeof ApiIntegrationsWhoopConnectRoute
+  ApiIntegrationsWhoopDisconnectRoute: typeof ApiIntegrationsWhoopDisconnectRoute
   ApiIntegrationsWhoopStatusRoute: typeof ApiIntegrationsWhoopStatusRoute
+  ApiIntegrationsWhoopSyncRoute: typeof ApiIntegrationsWhoopSyncRoute
   ProgramsCycleCycleId1rmTestRoute: typeof ProgramsCycleCycleId1rmTestRoute
   ProgramsCycleCycleId1rmUpdateRoute: typeof ProgramsCycleCycleId1rmUpdateRoute
   ProgramsCycleCycleIdCompleteRoute: typeof ProgramsCycleCycleIdCompleteRoute
@@ -1461,11 +1489,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesCycleId1rmTestWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesRoute
     }
+    '/api/integrations/whoop/sync': {
+      id: '/api/integrations/whoop/sync'
+      path: '/api/integrations/whoop/sync'
+      fullPath: '/api/integrations/whoop/sync'
+      preLoaderRoute: typeof ApiIntegrationsWhoopSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/whoop/status': {
       id: '/api/integrations/whoop/status'
       path: '/api/integrations/whoop/status'
       fullPath: '/api/integrations/whoop/status'
       preLoaderRoute: typeof ApiIntegrationsWhoopStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/whoop/disconnect': {
+      id: '/api/integrations/whoop/disconnect'
+      path: '/api/integrations/whoop/disconnect'
+      fullPath: '/api/integrations/whoop/disconnect'
+      preLoaderRoute: typeof ApiIntegrationsWhoopDisconnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/whoop/connect': {
@@ -1772,7 +1814,9 @@ const rootRouteChildren: RootRouteChildren = {
   WorkoutsStartTemplateIdRoute: WorkoutsStartTemplateIdRoute,
   ApiIntegrationsWhoopCallbackRoute: ApiIntegrationsWhoopCallbackRoute,
   ApiIntegrationsWhoopConnectRoute: ApiIntegrationsWhoopConnectRoute,
+  ApiIntegrationsWhoopDisconnectRoute: ApiIntegrationsWhoopDisconnectRoute,
   ApiIntegrationsWhoopStatusRoute: ApiIntegrationsWhoopStatusRoute,
+  ApiIntegrationsWhoopSyncRoute: ApiIntegrationsWhoopSyncRoute,
   ProgramsCycleCycleId1rmTestRoute: ProgramsCycleCycleId1rmTestRoute,
   ProgramsCycleCycleId1rmUpdateRoute: ProgramsCycleCycleId1rmUpdateRoute,
   ProgramsCycleCycleIdCompleteRoute: ProgramsCycleCycleIdCompleteRoute,

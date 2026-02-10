@@ -13,7 +13,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString();
 }
 
 async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {
@@ -35,51 +35,6 @@ async function verifyWebhookSignature(body: string, signature: string): Promise<
 
   return crypto.subtle.verify('HMAC', key, signatureBuffer, bodyBuffer);
 }
-
-export const Route = createFileRoute('/api/webhooks/whoop/')({
-  server: {
-    handlers: {
-      POST: async ({ request }) => {
-        const body = await request.text();
-        const signature = request.headers.get('X-Whoop-Signature') || '';
-
-        const isValid = await verifyWebhookSignature(body, signature);
-        if (!isValid) {
-          return new Response('Invalid signature', { status: 401 });
-        }
-
-        let payload: { event_id: string; event_type: string; user_id: number; payload: unknown };
-        try {
-          payload = JSON.parse(body) as { event_id: string; event_type: string; user_id: number; payload: unknown };
-        } catch {
-          return new Response('Invalid JSON', { status: 400 });
-        }
-
-        const d1Db = (env as { DB?: D1Database }).DB;
-        if (!d1Db) {
-          return new Response('Database not available', { status: 500 });
-        }
-
-        const webhookEvent = {
-          id: payload.event_id,
-          eventType: payload.event_type,
-          payloadRaw: body,
-        };
-
-        const inserted = await whoopRepository.insertWebhookEvent(d1Db, webhookEvent);
-        if (!inserted) {
-          return Response.json({ status: 'duplicate' });
-        }
-
-        await trackEvent('whoop_webhook_received', { eventType: payload.event_type });
-
-        processWebhookEvent(d1Db, payload).catch(console.error);
-
-        return Response.json({ status: 'received' });
-      },
-    },
-  },
-});
 
 async function processWebhookEvent(d1Db: D1Database, payload: { event_id: string; event_type: string; user_id: number; payload: unknown }) {
   try {
@@ -134,6 +89,51 @@ async function processWebhookEvent(d1Db: D1Database, payload: { event_id: string
     await whoopRepository.markWebhookProcessed(d1Db, payload.event_id, errorMessage);
   }
 }
+
+export const Route = createFileRoute('/api/webhooks/whoop/')({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const body = await request.text();
+        const signature = request.headers.get('X-Whoop-Signature') ?? '';
+
+        const isValid = await verifyWebhookSignature(body, signature);
+        if (!isValid) {
+          return new Response('Invalid signature', { status: 401 });
+        }
+
+        let payload: { event_id: string; event_type: string; user_id: number; payload: unknown };
+        try {
+          payload = JSON.parse(body) as { event_id: string; event_type: string; user_id: number; payload: unknown };
+        } catch {
+          return new Response('Invalid JSON', { status: 400 });
+        }
+
+        const d1Db = (env as { DB?: D1Database }).DB;
+        if (!d1Db) {
+          return new Response('Database not available', { status: 500 });
+        }
+
+        const webhookEvent = {
+          id: payload.event_id,
+          eventType: payload.event_type,
+          payloadRaw: body,
+        };
+
+        const inserted = await whoopRepository.insertWebhookEvent(d1Db, webhookEvent);
+        if (!inserted) {
+          return Response.json({ status: 'duplicate' });
+        }
+
+        await trackEvent('whoop_webhook_received', { eventType: payload.event_type });
+
+        void processWebhookEvent(d1Db, payload);
+
+        return Response.json({ status: 'received' });
+      },
+    },
+  },
+});
 
 export default function ApiWebhooksWhoop() {
   return null;

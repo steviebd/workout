@@ -13,7 +13,9 @@ import {
   type WhoopWorkout,
 } from './types';
 
-const WHOOP_API_URL = process.env.WHOOP_API_URL || 'https://api.prod.whoop.com';
+const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
+const WHOOP_REDIRECT_URI =
+  process.env.WHOOP_REDIRECT_URI ?? 'http://localhost:8787/api/integrations/whoop/callback';
 const TOKEN_REFRESH_THRESHOLD_MINUTES = 5;
 
 interface TokenData {
@@ -23,13 +25,10 @@ interface TokenData {
 }
 
 export class WhoopApiClient {
-  private workosId: string;
-  private db: D1Database;
-
-  constructor(workosId: string, db: D1Database) {
-    this.workosId = workosId;
-    this.db = db;
-  }
+  constructor(
+    private workosId: string,
+    private db: D1Database
+  ) {}
 
   private async getDecryptedTokens(): Promise<TokenData> {
     const connection = await whoopRepository.getConnection(this.db, this.workosId);
@@ -59,11 +58,19 @@ export class WhoopApiClient {
   }
 
   private async refreshAccessToken(refreshToken: string): Promise<TokenData> {
+    const clientId = process.env.WHOOP_CLIENT_ID ?? '';
+    const clientSecret = process.env.WHOOP_CLIENT_SECRET ?? '';
+
+    if (!clientId || !clientSecret) {
+      throw new Error('Whoop OAuth misconfigured: missing WHOOP_CLIENT_ID or WHOOP_CLIENT_SECRET');
+    }
+
     const body = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: process.env.WHOOP_CLIENT_ID || '',
-      client_secret: process.env.WHOOP_CLIENT_SECRET || '',
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: WHOOP_REDIRECT_URI,
     });
 
     const response = await fetch(`${WHOOP_API_URL}/oauth/oauth2/token`, {
@@ -75,11 +82,13 @@ export class WhoopApiClient {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Whoop token refresh failed (${response.status}):`, errorText);
       if (response.status === 401) {
         await whoopRepository.markConnectionRevoked(this.db, this.workosId);
         throw new Error('Whoop refresh token invalid - connection revoked');
       }
-      throw new Error(`Whoop token refresh failed: ${response.status}`);
+      throw new Error(`Whoop token refresh failed: ${response.status}: ${errorText}`);
     }
 
     const data = whoopTokenResponseSchema.parse(await response.json());
@@ -114,7 +123,9 @@ export class WhoopApiClient {
     let tokens = await this.getDecryptedTokens();
     tokens = await this.refreshTokensIfNeeded(tokens);
 
-    const response = await fetch(`${WHOOP_API_URL}${endpoint}`, {
+    const url = `${WHOOP_API_URL}${endpoint}`;
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
@@ -131,7 +142,9 @@ export class WhoopApiClient {
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After');
       const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000;
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => {
+        setTimeout(resolve, waitTime);
+      });
       return this.fetchWithAuth(endpoint, options);
     }
 
@@ -252,7 +265,7 @@ export function mapWhoopSleepToDb(sleep: WhoopSleep, workosId?: string) {
     rawJson: JSON.stringify(sleep),
     whoopCreatedAt: sleep.created_at,
     whoopUpdatedAt: sleep.updated_at,
-    workosId: workosId || '',
+    workosId: workosId ?? '',
   };
 }
 
@@ -273,7 +286,7 @@ export function mapWhoopRecoveryToDb(recovery: WhoopRecovery, workosId?: string)
     rawJson: JSON.stringify(recovery),
     whoopCreatedAt: recovery.created_at,
     whoopUpdatedAt: recovery.updated_at,
-    workosId: workosId || '',
+    workosId: workosId ?? '',
   };
 }
 
@@ -289,7 +302,7 @@ export function mapWhoopCycleToDb(cycle: WhoopCycle, workosId?: string) {
     totalStrain: score?.strain ?? null,
     averageHeartRate: score?.average_heart_rate ?? null,
     maxHeartRate: score?.max_heart_rate ?? null,
-    caloriesBurned: score?.kilojoule != null ? Math.round(score.kilojoule / 4.184) : null,
+    caloriesBurned: score?.kilojoule !== null ? Math.round((score?.kilojoule ?? 0) / 4.184) : null,
     distance: null,
     steps: null,
     timeAwakeMs: null,
@@ -301,7 +314,7 @@ export function mapWhoopCycleToDb(cycle: WhoopCycle, workosId?: string) {
     rawJson: JSON.stringify(cycle),
     whoopCreatedAt: cycle.created_at,
     whoopUpdatedAt: cycle.updated_at,
-    workosId: workosId || '',
+    workosId: workosId ?? '',
   };
 }
 
@@ -320,7 +333,7 @@ export function mapWhoopWorkoutToDb(workout: WhoopWorkout, workosId?: string) {
     strain: score?.strain ?? null,
     averageHeartRate: score?.average_heart_rate ?? null,
     maxHeartRate: score?.max_heart_rate ?? null,
-    calories: score?.kilojoule != null ? Math.round(score.kilojoule / 4.184) : null,
+    calories: score?.kilojoule !== null ? Math.round((score?.kilojoule ?? 0) / 4.184) : null,
     distance: score?.distance_meter ?? null,
     zone1Ms: score?.zone_durations?.zone_one_milli ?? null,
     zone2Ms: score?.zone_durations?.zone_two_milli ?? null,
@@ -330,6 +343,6 @@ export function mapWhoopWorkoutToDb(workout: WhoopWorkout, workosId?: string) {
     rawJson: JSON.stringify(workout),
     whoopCreatedAt: workout.created_at,
     whoopUpdatedAt: workout.updated_at,
-    workosId: workosId || '',
+    workosId: workosId ?? '',
   };
 }

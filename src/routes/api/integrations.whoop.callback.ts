@@ -12,10 +12,10 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
   return cookie.split('=')[1];
 }
 
-const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID || '';
-const WHOOP_CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET || '';
-const WHOOP_API_URL = process.env.WHOOP_API_URL || 'https://api.prod.whoop.com';
-const WHOOP_REDIRECT_URI = process.env.WHOOP_REDIRECT_URI || 'http://localhost:8787/api/integrations/whoop/callback';
+const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID ?? '';
+const WHOOP_CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET ?? '';
+const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
+const WHOOP_REDIRECT_URI = process.env.WHOOP_REDIRECT_URI ?? 'http://localhost:8787/api/integrations/whoop/callback';
 
 interface TokenResponse {
   access_token: string;

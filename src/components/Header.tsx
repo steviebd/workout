@@ -41,7 +41,7 @@ export function Header() {
         setWhoopLoading(false)
       }
     }
-    checkWhoopStatus()
+    void checkWhoopStatus()
   }, [user])
 
   useEffect(() => {

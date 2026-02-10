@@ -6,7 +6,10 @@ export const whoopTokenResponseSchema = z.object({
   access_token: z.string(),
   refresh_token: z.string(),
   expires_in: z.number(),
-  token_type: z.literal('Bearer'),
+  token_type: z.string().refine(
+    (s) => s.toLowerCase() === 'bearer',
+    { message: 'token_type must be Bearer' }
+  ),
   scope: z.string().optional(),
 });
 

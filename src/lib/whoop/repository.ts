@@ -313,7 +313,7 @@ export const whoopRepository = {
       .from(whoopConnections)
       .where(eq(whoopConnections.workosId, workosId));
 
-    return connection?.lastSyncAt || null;
+    return connection?.lastSyncAt ?? null;
   },
 
   async insertWebhookEvent(
@@ -344,7 +344,7 @@ export const whoopRepository = {
       .update(whoopWebhookEvents)
       .set({
         processedAt: new Date().toISOString(),
-        processingError: error || null,
+        processingError: error ?? null,
       })
       .where(eq(whoopWebhookEvents.id, eventId));
   },
