@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/health/data')({
 
         const now = new Date();
         const endDate = formatDate(now);
-        const startDate = url.searchParams.get('startDate') || formatDate(addDays(now, -days));
+        const startDate = url.searchParams.get('startDate') ?? formatDate(addDays(now, -days));
 
         const [recoveries, sleeps, cycles, workouts] = await Promise.all([
           whoopRepository.getRecoveries(d1Db, workosId, startDate, endDate),

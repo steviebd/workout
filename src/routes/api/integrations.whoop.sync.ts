@@ -44,7 +44,8 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
             if (forceFullSync || isFirstSync) {
               startDate = formatDate(addDays(now, -200));
             } else {
-              startDate = formatDate(addDays(new Date(connection.lastSyncAt!), -1));
+              const lastSyncAt = connection.lastSyncAt ? new Date(connection.lastSyncAt) : new Date();
+              startDate = formatDate(addDays(lastSyncAt, -1));
             }
 
             const debugInfo = {
