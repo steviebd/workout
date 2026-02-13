@@ -3,12 +3,21 @@ import { createDb } from '../../src/lib/db/index';
 import type { D1Database } from '@cloudflare/workers-types';
 import type { Workout } from '../../src/lib/db/schema';
 
+/* eslint-disable @typescript-eslint/no-use-before-define */
 vi.mock('../../src/lib/db/index', () => ({
-  createDb: vi.fn(),
+  createDb: vi.fn(() => mockDrizzleDb),
+  getDb: vi.fn((dbOrTx) => {
+    if (dbOrTx && typeof dbOrTx === 'object' && 'transaction' in dbOrTx) {
+      return dbOrTx;
+    }
+    return mockDrizzleDb;
+  }),
 }));
 
+/* eslint-disable @typescript-eslint/no-use-before-define */
 const mockDb = vi.fn() as unknown as D1Database;
 
+/* eslint-disable @typescript-eslint/no-use-before-define */
 const mockDrizzleDb = {
   select: vi.fn(),
 };

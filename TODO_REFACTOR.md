@@ -1,7 +1,7 @@
 # Refactoring Plan
 
 > **Goal:** Improve performance and maintainability (especially for LLM/Agent workflows).  
-> **Status:** Draft — pending review.
+> **Status:** ✅ Completed - All phases implemented
 
 ---
 
@@ -38,6 +38,12 @@ const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
 3. Update route handlers to pass `db` (already Drizzle) from `withApiContext()` instead of `d1Db`
 4. Remove all inline `isTransaction` / `createDb()` boilerplate
 
+### ✅ Completed
+
+- Added `getDb` helper in `src/lib/db/index.ts`
+- Updated all 8 files to use `DbOrTx` and `getDb()`
+- Removed inline boilerplate from 94 calls
+
 ---
 
 ## Phase 2: Fix N+1 Queries
@@ -52,6 +58,8 @@ The function queries all exercises' best weight via `GROUP BY`, then **loops thr
 
 **Fix:** Single query returning candidate max sets per exercise using `GROUP BY exerciseId` with `MAX(weight)`, then join back for reps/date in one pass. Alternatively, fetch all relevant sets ordered by `(exerciseId, weight DESC, reps DESC)` and take first per exercise in JS.
 
+**✅ Completed** - Single query with Map-based deduplication in JS (lines 1619-1673)
+
 ### 2b. Server: `getExerciseHistory` — O(n²) find loop
 
 **File:** `src/lib/db/workout/repository.ts` (~line 475)
@@ -59,6 +67,8 @@ The function queries all exercises' best weight via `GROUP BY`, then **loops thr
 Uses `workoutSetsData.find(...)` inside a loop instead of pre-building a `Map<workoutId, data>`.
 
 **Fix:** Pre-compute a `workoutId → {name, date}` map once before the loop.
+
+**✅ Completed** - Pre-computed workoutInfoMap (lines 1074, 1088-1095, 1105, 1114)
 
 ### 2c. Local: `getLocalPersonalRecords` — nested workout→exercise→set loops
 
@@ -73,6 +83,8 @@ Iterates through each completed workout, then queries `workoutExercises` per wor
 
 Then group and compute PRs in pure JS.
 
+**✅ Completed** - 3 bulk queries + JS grouping (lines 602-764)
+
 ### 2d. Local: `getAllTimeLocalBestPRs` — same nested loop pattern
 
 **File:** `src/lib/db/local-repository.ts` (lines 771–881)
@@ -80,6 +92,8 @@ Then group and compute PRs in pure JS.
 Same N+1 pattern as 2c.
 
 **Fix:** Same bulk-fetch approach.
+
+**✅ Completed** - 3 bulk queries + JS grouping (lines 795-910)
 
 ### 2e. Sync: `applyServerChanges` — sequential await per entity
 
@@ -96,6 +110,8 @@ for (const { table, items } of allData) {
 Each merge does an IndexedDB lookup + conditional write. With hundreds of entities this serializes badly.
 
 **Fix:** Batch operations per table — collect all items, do bulk lookups with `.where('localId').anyOf([...])`, then `bulkPut`/`bulkAdd` in a single transaction.
+
+**✅ Completed** - Bulk lookups + batch apply in single transaction (lines 323-393)
 
 ---
 
@@ -126,6 +142,13 @@ Functions like PR calculation, volume aggregation, strength history, and 1RM est
 
 Write snapshot/unit tests for the pure computation functions using fixture data. Run against both implementations during transition to ensure behavior parity.
 
+### ✅ Completed
+
+- Created `src/lib/domain/stats/types.ts` with shared types
+- Created `src/lib/domain/stats/calculations.ts` with pure functions (calculateE1RM, calculateVolume, isPR, etc.)
+- Created `src/lib/domain/stats/index.ts` for exports
+- Updated workout/repository.ts to import from domain module
+
 ---
 
 ## Phase 4: Split `workout/repository.ts`
@@ -152,6 +175,12 @@ src/lib/db/workout/
 ```
 
 Keep the public API in `workout/index.ts` re-exporting the same function names — no downstream churn.
+
+### ✅ Completed
+
+- Split into: workouts.ts (425 lines), exercises.ts (330 lines), sets.ts (110 lines), history.ts (450 lines), stats.ts (410 lines)
+- `repository.ts` now re-exports for backward compatibility
+- All functions maintain same public API
 
 ---
 
@@ -180,6 +209,12 @@ Currently only the root `AGENTS.md` exists. LLM agents working in subdirectories
 - **`src/lib/db/AGENTS.md`** — `DbOrTx` conventions, transaction patterns, "no N+1" rule, where domain logic vs query logic lives, soft-delete pattern
 - **`src/routes/api/AGENTS.md`** — `withApiContext()` usage, Zod validation requirement, error response conventions (`createApiError` + `API_ERROR_CODES`), empty component export pattern
 - **`src/components/AGENTS.md`** — component conventions, Radix UI usage, Tailwind patterns, `@/` import alias
+
+### ✅ Completed
+
+- **5a:** Converted `exercise.ts` to folder pattern (`src/lib/db/exercise/`)
+- **5b:** Templates POST now uses `validateBody()` with `createTemplateSchema`
+- **5c:** Created all 3 AGENTS.md files with domain-specific guidance
 
 ---
 

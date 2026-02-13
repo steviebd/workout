@@ -23,6 +23,12 @@ describe('Template DB Operations', () => {
     createDbMock = vi.fn(() => mockDrizzleDb);
     vi.doMock('../../src/lib/db/index', () => ({
       createDb: createDbMock,
+      getDb: vi.fn((dbOrTx) => {
+        if (dbOrTx && typeof dbOrTx === 'object' && 'transaction' in dbOrTx) {
+          return dbOrTx;
+        }
+        return mockDrizzleDb;
+      }),
       calculateChunkSize: vi.fn((rowVariableCount: number) => Math.floor(900 / rowVariableCount)),
     }));
   });

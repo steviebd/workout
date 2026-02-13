@@ -622,8 +622,39 @@ export async function getLocalPersonalRecords(workosId: string, limit = 5): Prom
   }
 
   const workoutMaxes: WorkoutMax[] = [];
-
   const exerciseCategories: Record<string, { id: string; name: string }> = {};
+
+  const workoutIds = workouts.map(w => w.localId);
+  const allWorkoutExercises = workoutIds.length > 0
+    ? await localDB.workoutExercises.where('workoutId').anyOf(workoutIds).toArray()
+    : [];
+
+  const exerciseIds = allWorkoutExercises.map(e => e.localId);
+  const allWorkoutSets = exerciseIds.length > 0
+    ? await localDB.workoutSets.where('workoutExerciseId').anyOf(exerciseIds).toArray()
+    : [];
+
+  const setsByExercise = new Map<string, LocalWorkoutSet[]>();
+  for (const set of allWorkoutSets) {
+    if (set.completed && set.weight > 0) {
+      const existing = setsByExercise.get(set.workoutExerciseId);
+      if (existing) {
+        existing.push(set);
+      } else {
+        setsByExercise.set(set.workoutExerciseId, [set]);
+      }
+    }
+  }
+
+  const exercisesByWorkout = new Map<string, LocalWorkoutExercise[]>();
+  for (const exercise of allWorkoutExercises) {
+    const existing = exercisesByWorkout.get(exercise.workoutId);
+    if (existing) {
+      existing.push(exercise);
+    } else {
+      exercisesByWorkout.set(exercise.workoutId, [exercise]);
+    }
+  }
 
   for (const workout of workouts) {
     const oneRmMaxes: WorkoutMax[] = [];
@@ -669,17 +700,10 @@ export async function getLocalPersonalRecords(workosId: string, limit = 5): Prom
       });
     }
 
-    const exercisesData = await localDB.workoutExercises
-      .where('workoutId')
-      .equals(workout.localId)
-      .toArray();
+    const exercisesData = exercisesByWorkout.get(workout.localId) ?? [];
 
     for (const exercise of exercisesData) {
-      const sets = await localDB.workoutSets
-        .where('workoutExerciseId')
-        .equals(exercise.localId)
-        .and(s => s.completed && s.weight > 0)
-        .toArray();
+      const sets = setsByExercise.get(exercise.localId) ?? [];
 
       if (sets.length === 0) continue;
 
@@ -775,71 +799,102 @@ export async function getAllTimeLocalBestPRs(workosId: string, limit = 20): Prom
     .and(w => w.status === 'completed')
     .toArray();
 
-  const exerciseMap = new Map<string, { name: string; id: string }>();
+  const workoutIds = workouts.map(w => w.localId);
+
   const exercises = await localDB.exercises.where('workosId').equals(workosId).toArray();
+  const exerciseMap = new Map<string, { name: string; id: string }>();
   for (const ex of exercises) {
     exerciseMap.set(ex.localId, { name: ex.name, id: String(ex.id ?? ex.localId) });
+  }
+
+  let workoutExercises: LocalWorkoutExercise[] = [];
+  if (workoutIds.length > 0) {
+    workoutExercises = await localDB.workoutExercises
+      .where('workoutId')
+      .anyOf(workoutIds)
+      .toArray();
+  }
+
+  const workoutExerciseIds = workoutExercises.map(e => e.localId);
+
+  let workoutSets: LocalWorkoutSet[] = [];
+  if (workoutExerciseIds.length > 0) {
+    workoutSets = await localDB.workoutSets
+      .where('workoutExerciseId')
+      .anyOf(workoutExerciseIds)
+      .and(s => s.completed && s.weight > 0)
+      .toArray();
+  }
+
+  const workoutExerciseMap = new Map<string, LocalWorkoutExercise>();
+  for (const we of workoutExercises) {
+    workoutExerciseMap.set(we.localId, we);
+  }
+
+  const setsByWorkoutExercise = new Map<string, LocalWorkoutSet[]>();
+  for (const set of workoutSets) {
+    const existing = setsByWorkoutExercise.get(set.workoutExerciseId) ?? [];
+    existing.push(set);
+    setsByWorkoutExercise.set(set.workoutExerciseId, existing);
+  }
+
+  const workoutMap = new Map<string, LocalWorkout>();
+  for (const w of workouts) {
+    workoutMap.set(w.localId, w);
   }
 
   const bestByExercise = new Map<string, { exerciseId: string; exerciseName: string; maxWeight: number; repsAtMax: number; date: Date }>();
   const exerciseCategories: Record<string, { id: string; name: string }> = {};
 
-  for (const workout of workouts) {
-    const exercisesData = await localDB.workoutExercises
-      .where('workoutId')
-      .equals(workout.localId)
-      .toArray();
+  for (const exercise of workoutExercises) {
+    const sets = setsByWorkoutExercise.get(exercise.localId) ?? [];
+    if (sets.length === 0) continue;
 
-    for (const exercise of exercisesData) {
-      const sets = await localDB.workoutSets
-        .where('workoutExerciseId')
-        .equals(exercise.localId)
-        .and(s => s.completed && s.weight > 0)
-        .toArray();
+    const exerciseInfo = exerciseMap.get(exercise.exerciseId);
+    if (!exerciseInfo) continue;
 
-      if (sets.length === 0) continue;
+    const exerciseName = exerciseInfo.name;
+    if (isSquat(exerciseName) && !exerciseCategories.squat) {
+      exerciseCategories.squat = { id: exerciseInfo.id, name: exerciseName };
+    }
+    if (isBench(exerciseName) && !exerciseCategories.bench) {
+      exerciseCategories.bench = { id: exerciseInfo.id, name: exerciseName };
+    }
+    if (isDeadlift(exerciseName) && !exerciseCategories.deadlift) {
+      exerciseCategories.deadlift = { id: exerciseInfo.id, name: exerciseName };
+    }
+    if (isOverheadPress(exerciseName) && !exerciseCategories.ohp) {
+      exerciseCategories.ohp = { id: exerciseInfo.id, name: exerciseName };
+    }
 
-      const exerciseInfo = exerciseMap.get(exercise.exerciseId);
-      if (!exerciseInfo) continue;
-
-      const exerciseName = exerciseInfo.name;
-      if (isSquat(exerciseName) && !exerciseCategories.squat) {
-        exerciseCategories.squat = { id: exerciseInfo.id, name: exerciseName };
-      }
-      if (isBench(exerciseName) && !exerciseCategories.bench) {
-        exerciseCategories.bench = { id: exerciseInfo.id, name: exerciseName };
-      }
-      if (isDeadlift(exerciseName) && !exerciseCategories.deadlift) {
-        exerciseCategories.deadlift = { id: exerciseInfo.id, name: exerciseName };
-      }
-      if (isOverheadPress(exerciseName) && !exerciseCategories.ohp) {
-        exerciseCategories.ohp = { id: exerciseInfo.id, name: exerciseName };
-      }
-
-      let maxWeight = 0;
-      let repsAtMax = 1;
-      for (const set of sets) {
-        if (set.weight > maxWeight) {
-          maxWeight = set.weight;
-          repsAtMax = set.reps;
-        } else if (set.weight === maxWeight && set.reps > repsAtMax) {
-          repsAtMax = set.reps;
-        }
-      }
-
-      const exerciseId = exerciseInfo.id?.toString() || exercise.exerciseId;
-      const current = bestByExercise.get(exerciseId);
-      if (!current || maxWeight > current.maxWeight) {
-        bestByExercise.set(exerciseId, {
-          exerciseId,
-          exerciseName,
-          maxWeight,
-          repsAtMax,
-          date: workout.startedAt,
-        });
+    let maxWeight = 0;
+    let repsAtMax = 1;
+    for (const set of sets) {
+      if (set.weight > maxWeight) {
+        maxWeight = set.weight;
+        repsAtMax = set.reps;
+      } else if (set.weight === maxWeight && set.reps > repsAtMax) {
+        repsAtMax = set.reps;
       }
     }
 
+    const workout = workoutMap.get(exercise.workoutId);
+    if (!workout) continue;
+
+    const exerciseId = exerciseInfo.id?.toString() || exercise.exerciseId;
+    const current = bestByExercise.get(exerciseId);
+    if (!current || maxWeight > current.maxWeight) {
+      bestByExercise.set(exerciseId, {
+        exerciseId,
+        exerciseName,
+        maxWeight,
+        repsAtMax,
+        date: workout.startedAt,
+      });
+    }
+  }
+
+  for (const workout of workouts) {
     const oneRmEntries: Array<{ category: string; value: number | undefined | null }> = [
       { category: 'squat', value: workout.squat1rm },
       { category: 'bench', value: workout.bench1rm },

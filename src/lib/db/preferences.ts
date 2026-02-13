@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { type NewUserPreference, type UserPreference, userPreferences } from './schema';
-import { createDb } from './index';
+import { getDb, type DbOrTx } from './index';
 
 export type { UserPreference, NewUserPreference };
 
@@ -22,12 +22,12 @@ export interface UpdatePreferencesData {
  * @returns The user preferences if found, or null
  */
 export async function getUserPreferences(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<UserPreference | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const prefs = await drizzleDb
+  const prefs = await db
     .select()
     .from(userPreferences)
     .where(eq(userPreferences.workosId, workosId))
@@ -44,20 +44,20 @@ export async function getUserPreferences(
  * @returns The updated or newly created preferences
  */
 export async function upsertUserPreferences(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   data: UpdatePreferencesData
 ): Promise<UserPreference> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const existing = await drizzleDb
+  const existing = await db
     .select()
     .from(userPreferences)
     .where(eq(userPreferences.workosId, workosId))
     .get();
 
   if (existing) {
-    const updated = await drizzleDb
+    const updated = await db
       .update(userPreferences)
       .set({
         ...data,
@@ -70,7 +70,7 @@ export async function upsertUserPreferences(
     return updated;
   }
 
-  const newPrefs = await drizzleDb
+  const newPrefs = await db
     .insert(userPreferences)
     .values({
       workosId,
@@ -93,11 +93,11 @@ export async function upsertUserPreferences(
  * @returns The updated preferences, or null if not found
  */
 export async function updateWeightUnit(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   weightUnit: WeightUnit
 ): Promise<UserPreference | null> {
-  return upsertUserPreferences(db, workosId, { weightUnit });
+  return upsertUserPreferences(dbOrTx, workosId, { weightUnit });
 }
 
 /**
@@ -108,9 +108,9 @@ export async function updateWeightUnit(
  * @returns The updated preferences, or null if not found
  */
 export async function updateTheme(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   theme: Theme
 ): Promise<UserPreference | null> {
-  return upsertUserPreferences(db, workosId, { theme });
+  return upsertUserPreferences(dbOrTx, workosId, { theme });
 }

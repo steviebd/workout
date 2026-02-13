@@ -1,5 +1,5 @@
 import { eq, isNotNull, sql, and } from 'drizzle-orm';
-import { createDb } from './db/index';
+import { getDb, type DbOrTx } from './db/index';
 import { workouts, userStreaks } from './db/schema';
 
 export interface WeeklyWorkoutCount {
@@ -17,13 +17,13 @@ export interface ThirtyDayStreakResult {
 }
 
 export async function getWorkoutsInDateRange(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   startDate: string,
   endDate: string
 ): Promise<string[]> {
-  const drizzleDb = createDb(db);
-  const results = await drizzleDb
+  const db = getDb(dbOrTx);
+  const results = await db
     .select({ completedAt: workouts.completedAt })
     .from(workouts)
     .where(and(
@@ -45,13 +45,13 @@ export async function getWorkoutsInDateRange(
 }
 
 export async function countWorkoutsInRange(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   startDate: string,
   endDate: string
 ): Promise<number> {
-  const drizzleDb = createDb(db);
-  const result = await drizzleDb
+  const db = getDb(dbOrTx);
+  const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(workouts)
     .where(and(
@@ -66,11 +66,12 @@ export async function countWorkoutsInRange(
 }
 
 export async function getWorkoutsPerWeek(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   weeksBack = 8,
   targetPerWeek = 3
 ): Promise<WeeklyWorkoutCount[]> {
+  const db = getDb(dbOrTx);
   const today = new Date();
   const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -80,8 +81,7 @@ export async function getWorkoutsPerWeek(
   earliestWeekStart.setHours(0, 0, 0, 0);
   const startDateStr = new Date(earliestWeekStart.getTime() - earliestWeekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
-  const drizzleDb = createDb(db);
-  const results = await drizzleDb
+  const results = await db
     .select({
       weekStart: sql<string>`date(${workouts.completedAt}, 'weekday 0', '-6 days')`.mapWith(String),
       count: sql<number>`count(distinct date(${workouts.completedAt}))`.mapWith(Number),
@@ -117,11 +117,12 @@ export async function getWorkoutsPerWeek(
 }
 
 export async function calculateThirtyDayStreak(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   targetPerWeek = 3,
   weeksBack = 8
 ): Promise<ThirtyDayStreakResult> {
+  const db = getDb(dbOrTx);
   const weeklyDetails = await getWorkoutsPerWeek(db, workosId, weeksBack, targetPerWeek);
   
   let currentStreak = 0;
@@ -151,7 +152,7 @@ export async function calculateThirtyDayStreak(
 }
 
 export async function getWeeklyWorkoutCount(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<number> {
   const today = new Date();
@@ -168,11 +169,11 @@ export async function getWeeklyWorkoutCount(
     const startDateStr = new Date(weekStart.getTime() - weekStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     const endDateStr = new Date(weekEnd.getTime() - weekEnd.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
-  return await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
+  return await countWorkoutsInRange(dbOrTx, workosId, startDateStr, endDateStr);
 }
 
 export async function getRolling30DayWorkoutCount(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<number> {
   const today = new Date();
@@ -183,15 +184,15 @@ export async function getRolling30DayWorkoutCount(
     const startDateStr = new Date(thirtyDaysAgo.getTime() - thirtyDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
-  return await countWorkoutsInRange(db, workosId, startDateStr, endDateStr);
+  return await countWorkoutsInRange(dbOrTx, workosId, startDateStr, endDateStr);
 }
 
 export async function getTotalWorkouts(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<number> {
-  const drizzleDb = createDb(db);
-  const result = await drizzleDb
+  const db = getDb(dbOrTx);
+  const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(workouts)
     .where(and(
@@ -204,11 +205,11 @@ export async function getTotalWorkouts(
 }
 
 export async function getLastWorkoutDate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<string | null> {
-  const drizzleDb = createDb(db);
-  const result = await drizzleDb
+  const db = getDb(dbOrTx);
+  const result = await db
     .select({ completedAt: workouts.completedAt })
     .from(workouts)
     .where(and(
@@ -223,13 +224,13 @@ export async function getLastWorkoutDate(
 }
 
 export async function updateUserLastWorkout(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   workoutDate: string
 ): Promise<void> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
   
-  await drizzleDb
+  await db
     .insert(userStreaks)
     .values({
       workosId,
@@ -245,10 +246,11 @@ export async function updateUserLastWorkout(
 }
 
 export async function checkAndResetBrokenStreaks(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   targetPerWeek = 3
 ): Promise<void> {
+  const db = getDb(dbOrTx);
   const weeklyDetails = await getWorkoutsPerWeek(db, workosId, 2, targetPerWeek);
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -263,8 +265,7 @@ export async function checkAndResetBrokenStreaks(
   }
   
   if (shouldReset) {
-    const drizzleDb = createDb(db);
-    await drizzleDb
+    await db
       .update(userStreaks)
       .set({
         updatedAt: new Date().toISOString(),
@@ -274,7 +275,7 @@ export async function checkAndResetBrokenStreaks(
 }
 
 export async function getCurrentMonthStreak(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<number> {
   const today = new Date();
@@ -282,15 +283,16 @@ export async function getCurrentMonthStreak(
   const startDateStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const endDateStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
-  const workoutsThisMonth = await getWorkoutsInDateRange(db, workosId, startDateStr, endDateStr);
+  const workoutsThisMonth = await getWorkoutsInDateRange(dbOrTx, workosId, startDateStr, endDateStr);
   
   return workoutsThisMonth.length > 0 ? 1 : 0;
 }
 
 export async function calculateMonthlyStreak(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<number> {
+  const db = getDb(dbOrTx);
   const today = new Date();
   const twelveMonthsAgo = new Date(today);
   twelveMonthsAgo.setMonth(today.getMonth() - 11);
@@ -299,8 +301,7 @@ export async function calculateMonthlyStreak(
   
   const startDateStr = new Date(twelveMonthsAgo.getTime() - twelveMonthsAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
-  const drizzleDb = createDb(db);
-  const results = await drizzleDb
+  const results = await db
     .select({
       month: sql<string>`strftime('%Y-%m', ${workouts.completedAt})`.mapWith(String),
       hasWorkout: sql<number>`count(*)`.mapWith(Number),
