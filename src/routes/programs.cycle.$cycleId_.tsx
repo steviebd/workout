@@ -355,8 +355,8 @@ function ProgramDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 pb-20">
-        <div className="px-4">
+      <div className="flex flex-col gap-6 mx-auto max-w-lg px-4 py-6 pb-20">
+        <div>
           <LoadingStats />
         </div>
         <div className="px-4 space-y-4">
@@ -370,7 +370,7 @@ function ProgramDashboard() {
 
   if (!cycle) {
     return (
-      <div className="p-4">
+      <div className="p-4 mx-auto max-w-lg">
         <p>Program cycle not found</p>
         <Link to="/programs">
           <Button variant="outline" className="mt-4">Back to Programs</Button>
@@ -385,10 +385,10 @@ function ProgramDashboard() {
     : 0;
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
+    <div className="flex flex-col gap-6 mx-auto max-w-lg px-4 py-6 pb-24">
       <PageHeader title={cycle.name} />
 
-      <div className="px-4 space-y-4">
+      <div className="space-y-4">
         <Card className="p-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">

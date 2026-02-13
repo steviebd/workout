@@ -40,7 +40,21 @@ export const whoopRepository = {
         scopesGranted,
         syncStatus: 'active',
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: whoopConnections.workosId,
+        set: {
+          accessTokenEncrypted: encryptedAccessToken,
+          refreshTokenEncrypted: encryptedRefreshToken,
+          tokenExpiresAt: expiresAt,
+          whoopUserId,
+          scopesGranted,
+          syncStatus: 'active',
+          lastSyncAt: null,
+          syncInProgress: false,
+          syncStartedAt: null,
+          updatedAt: new Date().toISOString(),
+        },
+      })
       .returning();
 
     return connection || null;
@@ -100,7 +114,8 @@ export const whoopRepository = {
       )
       .run();
 
-    return result.success;
+    const changes = result.meta?.changes ?? 0;
+    return changes > 0;
   },
 
   async releaseSyncLock(db: D1Database, workosId: string): Promise<void> {

@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
 
           const connection = await whoopRepository.getConnection(d1Db, workosId);
           if (!connection) {
-            return Response.json({ error: 'Whoop not connected' }, { status: 400 });
+            return Response.json({ error: 'Whoop not connected', debug: { workosId } }, { status: 400 });
           }
 
           const lockAcquired = await whoopRepository.acquireSyncLock(d1Db, workosId);
@@ -35,16 +35,40 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
             const whoopClient = new WhoopApiClient(workosId, d1Db);
             const now = new Date();
             const endDate = formatDate(now);
-            const startDate = formatDate(addDays(now, -30));
+
+            const url = new URL(request.url);
+            const forceFullSync = url.searchParams.get('forceFullSync') === 'true';
+            const isFirstSync = !connection.lastSyncAt;
+
+            let startDate: string;
+            if (forceFullSync || isFirstSync) {
+              startDate = formatDate(addDays(now, -200));
+            } else {
+              startDate = formatDate(addDays(new Date(connection.lastSyncAt!), -1));
+            }
+
+            const debugInfo = {
+              workosId,
+              forceFullSync,
+              isFirstSync,
+              lastSyncAt: connection.lastSyncAt,
+              syncStatus: connection.syncStatus,
+              tokenExpiresAt: connection.tokenExpiresAt,
+              startDate,
+              endDate,
+            };
+
+            console.log('[whoop-sync] starting:', debugInfo);
 
             const [cyclesResult, sleepsResult, recoveriesResult, workoutsResult] = await Promise.allSettled([
-              whoopClient.getCycles(startDate, endDate),
-              whoopClient.getSleeps(startDate, endDate),
-              whoopClient.getRecoveries(startDate, endDate),
-              whoopClient.getWorkouts(startDate, endDate),
+              whoopClient.getCyclesWithPagination(startDate, endDate),
+              whoopClient.getSleepsWithPagination(startDate, endDate),
+              whoopClient.getRecoveriesWithPagination(startDate, endDate),
+              whoopClient.getWorkoutsWithPagination(startDate, endDate),
             ]);
 
             const errors: string[] = [];
+            const errorDetails: Record<string, string> = {};
             const settled = [
               { name: 'cycles', result: cyclesResult },
               { name: 'sleeps', result: sleepsResult },
@@ -53,49 +77,62 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
             ];
             for (const { name, result } of settled) {
               if (result.status === 'rejected') {
-                console.warn(`Whoop ${name} sync failed:`, result.reason);
+                const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+                console.warn(`Whoop ${name} sync failed:`, reason);
                 errors.push(name);
+                errorDetails[name] = reason;
               }
             }
 
             const synced = { cycles: 0, sleeps: 0, recoveries: 0, workouts: 0 };
 
             if (cyclesResult.status === 'fulfilled') {
-              for (const cycle of cyclesResult.value.records) {
+              for (const cycle of cyclesResult.value) {
                 await whoopRepository.upsertCycle(d1Db, workosId, mapWhoopCycleToDb(cycle, workosId));
               }
-              synced.cycles = cyclesResult.value.records.length;
+              synced.cycles = cyclesResult.value.length;
             }
 
             if (sleepsResult.status === 'fulfilled') {
-              for (const sleep of sleepsResult.value.records) {
+              for (const sleep of sleepsResult.value) {
                 await whoopRepository.upsertSleep(d1Db, workosId, mapWhoopSleepToDb(sleep, workosId));
               }
-              synced.sleeps = sleepsResult.value.records.length;
+              synced.sleeps = sleepsResult.value.length;
             }
 
             if (recoveriesResult.status === 'fulfilled') {
-              for (const recovery of recoveriesResult.value.records) {
+              for (const recovery of recoveriesResult.value) {
                 await whoopRepository.upsertRecovery(d1Db, workosId, mapWhoopRecoveryToDb(recovery, workosId));
               }
-              synced.recoveries = recoveriesResult.value.records.length;
+              synced.recoveries = recoveriesResult.value.length;
             }
 
             if (workoutsResult.status === 'fulfilled') {
-              for (const workout of workoutsResult.value.records) {
+              for (const workout of workoutsResult.value) {
                 await whoopRepository.upsertWorkout(d1Db, workosId, mapWhoopWorkoutToDb(workout, workosId));
               }
-              synced.workouts = workoutsResult.value.records.length;
+              synced.workouts = workoutsResult.value.length;
             }
 
-            await whoopRepository.updateLastSyncAt(d1Db, workosId);
+            const hadAnySuccess =
+              cyclesResult.status === 'fulfilled' ||
+              sleepsResult.status === 'fulfilled' ||
+              recoveriesResult.status === 'fulfilled' ||
+              workoutsResult.status === 'fulfilled';
 
-            return Response.json({
+            if (hadAnySuccess && errors.length === 0) {
+              await whoopRepository.updateLastSyncAt(d1Db, workosId);
+            }
+
+            const result = {
               success: errors.length === 0,
-              partialSync: errors.length > 0,
+              partialSync: errors.length > 0 && hadAnySuccess,
               synced,
-              ...(errors.length > 0 && { failedEndpoints: errors }),
-            });
+              debug: debugInfo,
+              ...(errors.length > 0 && { failedEndpoints: errors, errorDetails }),
+            };
+            console.log('[whoop-sync] result:', result);
+            return Response.json(result);
           } finally {
             await whoopRepository.releaseSyncLock(d1Db, workosId);
           }

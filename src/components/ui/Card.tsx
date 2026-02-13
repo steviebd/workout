@@ -13,7 +13,7 @@ function Card({ className, variant = 'surface', ...props }: React.ComponentProps
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col gap-6 rounded-xl py-5 transition-shadow duration-200',
+        'flex flex-col gap-6 rounded-xl py-5 transition-shadow duration-200 overflow-hidden',
         variantStyles[variant],
         className,
       )}

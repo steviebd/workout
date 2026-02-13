@@ -33,9 +33,13 @@ export const Route = createFileRoute('/api/health/data')({
           return Response.json({ error: 'Whoop not connected' }, { status: 400 });
         }
 
+        const url = new URL(request.url);
+        const daysParam = url.searchParams.get('days');
+        const days = daysParam ? Math.min(Math.max(parseInt(daysParam, 10) || 30, 1), 365) : 30;
+
         const now = new Date();
         const endDate = formatDate(now);
-        const startDate = formatDate(addDays(now, -30));
+        const startDate = url.searchParams.get('startDate') || formatDate(addDays(now, -days));
 
         const [recoveries, sleeps, cycles, workouts] = await Promise.all([
           whoopRepository.getRecoveries(d1Db, workosId, startDate, endDate),
@@ -43,6 +47,11 @@ export const Route = createFileRoute('/api/health/data')({
           whoopRepository.getCycles(d1Db, workosId, startDate, endDate),
           whoopRepository.getWorkouts(d1Db, workosId, startDate, endDate),
         ]);
+
+        console.log('[health-data] query:', { workosId, startDate, endDate, sleepCount: sleeps.length, cycleCount: cycles.length });
+        if (sleeps.length > 0) {
+          console.log('[health-data] sleep date range:', sleeps[0].sleepDate, 'to', sleeps[sleeps.length - 1].sleepDate);
+        }
 
         return Response.json({
           recoveries: recoveries.map(r => ({

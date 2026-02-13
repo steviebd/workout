@@ -32,7 +32,7 @@ function ProgramsIndex() {
     <PageLayout title="Programs" subtitle="Train with proven programs">
       <div className="px-4">
         <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as ProgramCategory | 'all')}>
-          <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsList className="w-full justify-start">
             {categories.map((cat) => (
               <TabsTrigger key={cat.value} value={cat.value}>
                 {cat.label}
@@ -45,7 +45,7 @@ function ProgramsIndex() {
       <div className="grid gap-4 px-4">
         {filteredPrograms.map((program) => (
           <Link key={program.slug} to="/programs/$slug/start" params={{ slug: program.slug }}>
-            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer min-w-0">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-semibold text-lg truncate">{program.name}</h3>

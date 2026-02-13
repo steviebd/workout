@@ -18,7 +18,7 @@ interface WhoopData {
     id: string
     date: string
     score: number | null
-    status: string | null
+    status: 'red' | 'yellow' | 'green' | null
     restingHeartRate: number | null
     hrv: number | null
   }>
