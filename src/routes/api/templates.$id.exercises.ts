@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { addExerciseToTemplate, getTemplateExercises } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/templates/$id/exercises')({
   server: {
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             return Response.json(exercises);
           } catch (err) {
             console.error('Get template exercises error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
         POST: async ({ request, params }) => {
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number; localId?: string };
 
             if (!exerciseId) {
-              return createApiError('Exercise ID is required', 400, 'VALIDATION_ERROR');
+              return createApiError('Exercise ID is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
 
             await addExerciseToTemplate(
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
             return Response.json({ success: true }, { status: 201 });
           } catch (err) {
             console.error('Add exercise to template error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

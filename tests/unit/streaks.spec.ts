@@ -3,7 +3,6 @@ import type { D1Database } from '@cloudflare/workers-types'
 import { calculateThirtyDayStreak, countWorkoutsInRange, getWeeklyWorkoutCount, getTotalWorkouts } from '~/lib/streaks'
 import { createDb } from '~/lib/db'
 
-/* eslint-disable @typescript-eslint/no-shadow */
 vi.mock('~/lib/db', () => {
   let mockDbInstance: ReturnType<typeof makeChainableMock> | null = null;
 

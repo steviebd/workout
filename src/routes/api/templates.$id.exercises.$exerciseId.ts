@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { removeExerciseFromTemplate } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 interface Params {
   id: string;
@@ -25,13 +25,13 @@ export const Route = createFileRoute('/api/templates/$id/exercises/$exerciseId')
             );
 
             if (!removed) {
-              return createApiError('Template or exercise not found', 404, 'NOT_FOUND');
+              return createApiError('Template or exercise not found', 404, API_ERROR_CODES.NOT_FOUND);
             }
 
             return new Response(null, { status: 204 });
           } catch (err) {
             console.error('Remove exercise from template error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

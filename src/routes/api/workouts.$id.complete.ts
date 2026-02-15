@@ -6,7 +6,7 @@ import { programCycleWorkouts } from '../../lib/db/schema';
 import { markWorkoutComplete, getProgramCycleById } from '../../lib/db/program';
 import { updateUserLastWorkout } from '../../lib/streaks';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/exercise-categories';
 
 interface LoggedExercise {
@@ -50,13 +50,13 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
           const completed = await completeWorkout(d1Db, params.id, session.sub);
 
           if (!completed) {
-            return createApiError('Workout not found', 404, 'NOT_FOUND');
+            return createApiError('Workout not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const workout = await getWorkoutWithExercises(d1Db, params.id, session.sub);
 
           if (!workout) {
-            return createApiError('Workout not found', 404, 'NOT_FOUND');
+            return createApiError('Workout not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           let cycleWorkoutId: string | null = null;
@@ -165,7 +165,7 @@ export const Route = createFileRoute('/api/workouts/$id/complete')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Complete workout error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
       },
     },

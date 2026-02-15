@@ -118,6 +118,33 @@ Add redirect URLs to your WorkOS OAuth application:
 - Staging: `https://staging.fit.stevenduong.com/auth/callback`
 - Production: `https://fit.stevenduong.com/auth/callback`
 
+#### 5. WHOOP Developer Dashboard Setup
+
+To receive webhooks from WHOOP:
+
+1. **Create a WHOOP Developer Account** at https://developer.whoop.com
+
+2. **Configure your application:**
+   - Add redirect URI: `https://fit.stevenduong.com/api/integrations/whoop/callback`
+   - Add staging redirect URI: `https://staging.fit.stevenduong.com/api/integrations/whoop/callback`
+
+3. **Create a Webhook:**
+   - Navigate to Webhooks in the dashboard
+   - Set URL to: `https://fit.stevenduong.com/api/webhooks/whoop`
+   - Select **v2** as the model version
+   - Copy the **Client Secret** (used for signature verification)
+
+4. **Add secrets to Infisical:**
+   | Secret | Value |
+   |--------|-------|
+   | `WHOOP_CLIENT_ID` | From WHOOP Developer Dashboard |
+   | `WHOOP_CLIENT_SECRET` | From WHOOP Developer Dashboard (NOT a separate webhook secret) |
+   | `WHOOP_API_URL` | `https://api.prod.whoop.com` |
+   | `WHOOP_TOKEN_ENCRYPTION_KEY` | 32-byte key for encrypting tokens (generate: `openssl rand -base64 32`) |
+
+5. **Remove old secret:**
+   - Delete `WHOOP_WEBHOOK_SECRET` if it exists (no longer used - signature verification now uses `WHOOP_CLIENT_SECRET`)
+
 ### Manual Deployment
 
 ```bash

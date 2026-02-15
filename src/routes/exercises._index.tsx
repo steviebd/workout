@@ -238,10 +238,7 @@ function Exercises() {
           {loading ? (
             <SkeletonList count={6} />
           ) : exercises.length === 0 ? (
-            <EmptyExercises
-              searchActive={!!search}
-              onCreate={handleCreateClick}
-            />
+            <EmptyExercises onCreate={handleCreateClick} />
           ) : (
             <div className="space-y-3">
               {exercises.map((exercise) => (

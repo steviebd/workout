@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { getProgramCycleById } from '~/lib/db/program';
 import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
 import { getExercisesByWorkosId, createExercise } from '~/lib/db/exercise';
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
 
           const cycle = await getProgramCycleById(d1Db, params.id, session.sub);
           if (!cycle) {
-            return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+            return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const workout = await createWorkout(d1Db, {
@@ -66,7 +66,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
           return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
         } catch (err) {
           console.error('Create 1RM test workout error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

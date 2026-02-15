@@ -301,6 +301,7 @@ export const whoopSleeps = sqliteTable('whoop_sleeps', {
   rawJson: text('raw_json'),
   whoopCreatedAt: text('whoop_created_at'),
   whoopUpdatedAt: text('whoop_updated_at'),
+  deletedAt: text('deleted_at'),
   createdAt: text('created_at').$defaultFn(() => nowISO()),
   updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
@@ -308,6 +309,7 @@ export const whoopSleeps = sqliteTable('whoop_sleeps', {
 export const whoopRecoveries = sqliteTable('whoop_recoveries', {
   id: text('id').primaryKey(),
   workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  sleepId: text('sleep_id'),
   cycleId: text('cycle_id'),
   date: text('date').notNull(),
   score: integer('score'),
@@ -321,6 +323,7 @@ export const whoopRecoveries = sqliteTable('whoop_recoveries', {
   rawJson: text('raw_json'),
   whoopCreatedAt: text('whoop_created_at'),
   whoopUpdatedAt: text('whoop_updated_at'),
+  deletedAt: text('deleted_at'),
   createdAt: text('created_at').$defaultFn(() => nowISO()),
   updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
@@ -374,6 +377,7 @@ export const whoopWorkouts = sqliteTable('whoop_workouts', {
   rawJson: text('raw_json'),
   whoopCreatedAt: text('whoop_created_at'),
   whoopUpdatedAt: text('whoop_updated_at'),
+  deletedAt: text('deleted_at'),
   createdAt: text('created_at').$defaultFn(() => nowISO()),
   updatedAt: text('updated_at').$defaultFn(() => nowISO()),
 });
@@ -381,6 +385,7 @@ export const whoopWorkouts = sqliteTable('whoop_workouts', {
 export const whoopWebhookEvents = sqliteTable('whoop_webhook_events', {
   id: text('id').primaryKey(),
   workosId: text('workos_id'),
+  traceId: text('trace_id'),
   eventType: text('event_type').notNull(),
   payloadRaw: text('payload_raw'),
   receivedAt: text('received_at').$defaultFn(() => nowISO()),

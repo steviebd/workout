@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { type ExerciseOrder, reorderTemplateExercises } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
   server: {
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
             const { exerciseOrders } = body as { exerciseOrders: ExerciseOrder[] };
 
             if (!exerciseOrders || !Array.isArray(exerciseOrders)) {
-              return createApiError('exerciseOrders array is required', 400, 'VALIDATION_ERROR');
+              return createApiError('exerciseOrders array is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
 
             const reordered = await reorderTemplateExercises(
@@ -25,13 +25,13 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
             );
 
             if (!reordered) {
-              return createApiError('Template not found', 404, 'NOT_FOUND');
+              return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
             }
 
             return new Response(null, { status: 204 });
           } catch (err) {
             console.error('Reorder template exercises error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

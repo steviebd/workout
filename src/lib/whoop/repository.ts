@@ -1,4 +1,4 @@
-import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, sql, isNull } from 'drizzle-orm';
 import { createDb } from '~/lib/db';
 import {
   whoopConnections,
@@ -233,6 +233,57 @@ export const whoopRepository = {
       });
   },
 
+  async updateWorkoutDeletedAt(
+    db: D1Database,
+    workosId: string,
+    id: string,
+    deletedAt: string | null
+  ): Promise<void> {
+    const drizzleDb = createDb(db);
+
+    await drizzleDb
+      .update(whoopWorkouts)
+      .set({
+        deletedAt,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(eq(whoopWorkouts.workosId, workosId), eq(whoopWorkouts.id, id)));
+  },
+
+  async updateSleepDeletedAt(
+    db: D1Database,
+    workosId: string,
+    id: string,
+    deletedAt: string | null
+  ): Promise<void> {
+    const drizzleDb = createDb(db);
+
+    await drizzleDb
+      .update(whoopSleeps)
+      .set({
+        deletedAt,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(eq(whoopSleeps.workosId, workosId), eq(whoopSleeps.id, id)));
+  },
+
+  async updateRecoveryDeletedAt(
+    db: D1Database,
+    workosId: string,
+    id: string,
+    deletedAt: string | null
+  ): Promise<void> {
+    const drizzleDb = createDb(db);
+
+    await drizzleDb
+      .update(whoopRecoveries)
+      .set({
+        deletedAt,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(eq(whoopRecoveries.workosId, workosId), eq(whoopRecoveries.id, id)));
+  },
+
   async getSleeps(
     db: D1Database,
     workosId: string,
@@ -248,7 +299,8 @@ export const whoopRepository = {
         and(
           eq(whoopSleeps.workosId, workosId),
           gte(whoopSleeps.sleepDate, startDate),
-          lte(whoopSleeps.sleepDate, endDate)
+          lte(whoopSleeps.sleepDate, endDate),
+          isNull(whoopSleeps.deletedAt)
         )
       )
       .orderBy(desc(whoopSleeps.startTime));
@@ -269,7 +321,8 @@ export const whoopRepository = {
         and(
           eq(whoopRecoveries.workosId, workosId),
           gte(whoopRecoveries.date, startDate),
-          lte(whoopRecoveries.date, endDate)
+          lte(whoopRecoveries.date, endDate),
+          isNull(whoopRecoveries.deletedAt)
         )
       )
       .orderBy(desc(whoopRecoveries.date));
@@ -311,7 +364,8 @@ export const whoopRepository = {
         and(
           eq(whoopWorkouts.workosId, workosId),
           gte(whoopWorkouts.startTime, startDate),
-          lte(whoopWorkouts.startTime, endDate)
+          lte(whoopWorkouts.startTime, endDate),
+          isNull(whoopWorkouts.deletedAt)
         )
       )
       .orderBy(desc(whoopWorkouts.startTime));

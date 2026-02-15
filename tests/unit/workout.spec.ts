@@ -14,10 +14,8 @@ vi.mock('../../src/lib/db/index', () => ({
   }),
 }));
 
-/* eslint-disable @typescript-eslint/no-use-before-define */
 const mockDb = vi.fn() as unknown as D1Database;
 
-/* eslint-disable @typescript-eslint/no-use-before-define */
 const mockDrizzleDb = {
   insert: vi.fn(),
   update: vi.fn(),

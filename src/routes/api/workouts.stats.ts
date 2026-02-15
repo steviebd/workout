@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getWorkoutHistoryStats } from '../../lib/db/workout';
 import { getLocalWorkoutStats } from '../../lib/db/local-repository';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workouts/stats')({
   server: {
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/api/workouts/stats')({
            if (!d1Db) {
              const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
              if (online) {
-               return createApiError('Database not available', 503, 'DATABASE_ERROR');
+               return createApiError('Database not available', 503, API_ERROR_CODES.DATABASE_ERROR);
              }
               const localStats = await getLocalWorkoutStats(session.sub);
               return Response.json(localStats, {
@@ -37,7 +37,7 @@ export const Route = createFileRoute('/api/workouts/stats')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get workout stats error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
       },
     },

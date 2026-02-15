@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { copyTemplate } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/templates/$id/copy')({
   server: {
@@ -13,13 +13,13 @@ export const Route = createFileRoute('/api/templates/$id/copy')({
             const template = await copyTemplate(d1Db, params.id, session.sub);
 
             if (!template) {
-              return createApiError('Template not found', 404, 'NOT_FOUND');
+              return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
             }
 
             return Response.json(template, { status: 201 });
           } catch (err) {
             console.error('Copy template error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

@@ -6,7 +6,7 @@ import {
   updateTemplate
 } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {
@@ -18,13 +18,13 @@ export const Route = createFileRoute('/api/templates/$id')({
           const template = await getTemplateWithExercises(db, params.id, session.sub);
 
           if (!template) {
-            return createApiError('Template not found', 404, 'NOT_FOUND');
+            return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           return Response.json(template);
         } catch (err) {
           console.error('Get template error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
       PUT: async ({ request, params }) => {
@@ -41,13 +41,13 @@ export const Route = createFileRoute('/api/templates/$id')({
           });
 
           if (!template) {
-            return createApiError('Template not found', 404, 'NOT_FOUND');
+            return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           return Response.json(template);
         } catch (err) {
           console.error('Update template error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
       DELETE: async ({ request, params }) => {
@@ -57,13 +57,13 @@ export const Route = createFileRoute('/api/templates/$id')({
           const deleted = await softDeleteTemplate(d1Db, params.id, session.sub);
 
           if (!deleted) {
-            return createApiError('Template not found', 404, 'NOT_FOUND');
+            return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           return new Response(null, { status: 204 });
         } catch (err) {
           console.error('Delete template error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

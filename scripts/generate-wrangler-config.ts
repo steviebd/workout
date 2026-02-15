@@ -84,7 +84,6 @@ function generateConfig(
     WHOOP_CLIENT_ID: env.WHOOP_CLIENT_ID ?? "",
     WHOOP_CLIENT_SECRET: env.WHOOP_CLIENT_SECRET ?? "",
     WHOOP_API_URL: env.WHOOP_API_URL ?? "https://api.prod.whoop.com",
-    WHOOP_WEBHOOK_SECRET: env.WHOOP_WEBHOOK_SECRET ?? "",
     WHOOP_TOKEN_ENCRYPTION_KEY: env.WHOOP_TOKEN_ENCRYPTION_KEY ?? "",
   };
 

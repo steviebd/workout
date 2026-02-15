@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getStrengthHistory } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/progress/strength')({
   server: {
@@ -15,15 +15,15 @@ export const Route = createFileRoute('/api/progress/strength')({
           const dateRange = url.searchParams.get('dateRange') as '1m' | '3m' | '6m' | '1y' | 'all' | undefined;
 
           if (!exerciseId) {
-            return createApiError('exerciseId is required', 400, 'VALIDATION_ERROR');
+            return createApiError('exerciseId is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           if (!exerciseId.trim()) {
-            return createApiError('exerciseId cannot be empty', 400, 'VALIDATION_ERROR');
+            return createApiError('exerciseId cannot be empty', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           if (dateRange && !['1m', '3m', '6m', '1y', 'all'].includes(dateRange)) {
-            return createApiError('dateRange must be one of: 1m, 3m, 6m, 1y, all', 400, 'VALIDATION_ERROR');
+            return createApiError('dateRange must be one of: 1m, 3m, 6m, 1y, all', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           let fromDate: string | undefined;
@@ -70,7 +70,7 @@ export const Route = createFileRoute('/api/progress/strength')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get strength progress error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
       },
     },

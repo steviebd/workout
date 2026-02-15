@@ -169,10 +169,7 @@ function Templates() {
           {loading ? (
             <SkeletonList count={4} />
           ) : templates.length === 0 ? (
-            <EmptyTemplates
-              searchActive={!!search}
-              onCreate={handleCreateTemplate}
-            />
+            <EmptyTemplates onCreate={handleCreateTemplate} />
           ) : (
             <div className="space-y-3">
               {templates.map((template) => (

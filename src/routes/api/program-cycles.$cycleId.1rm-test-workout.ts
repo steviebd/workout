@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { eq, desc, and } from 'drizzle-orm';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { workouts } from '../../lib/db/schema';
 
 interface OneRmTestUpdateBody {
@@ -30,13 +30,13 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
             .get();
 
           if (!workout) {
-            return createApiError('1RM test workout not found', 404, 'NOT_FOUND');
+            return createApiError('1RM test workout not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           return Response.json(workout);
         } catch (err) {
           console.error('Get 1RM test workout error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
       PUT: async ({ request, params }) => {
@@ -53,7 +53,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
             .get();
 
           if (!workout) {
-            return createApiError('1RM test workout not found', 404, 'NOT_FOUND');
+            return createApiError('1RM test workout not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const updated = await db
@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
           return Response.json(updated);
         } catch (err) {
           console.error('Update 1RM test workout error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

@@ -19,30 +19,6 @@ export function Header() {
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
   const { weeklyCount, weeklyTarget, loading: streakLoading, refetch: refetchStreak } = useStreak()
   const [savingTarget, setSavingTarget] = useState(false)
-  const [whoopConnected, setWhoopConnected] = useState(false)
-  const [whoopLoading, setWhoopLoading] = useState(true)
-
-  useEffect(() => {
-    async function checkWhoopStatus() {
-      if (!user) {
-        setWhoopConnected(false)
-        setWhoopLoading(false)
-        return
-      }
-      try {
-        const response = await fetch('/api/integrations/whoop/status')
-        if (response.ok) {
-          const data = await response.json() as { connected: boolean }
-          setWhoopConnected(data.connected)
-        }
-      } catch {
-        setWhoopConnected(false)
-      } finally {
-        setWhoopLoading(false)
-      }
-    }
-    void checkWhoopStatus()
-  }, [user])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -144,13 +120,13 @@ export function Header() {
 
           <ThemeToggleCompact />
 
-          {!whoopLoading && whoopConnected ? <a
+          <a
               href="/health"
               className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Health</span>
-                                             </a> : null}
+                                             </a>
 
           <div className="relative" ref={settingsRef}>
               <button

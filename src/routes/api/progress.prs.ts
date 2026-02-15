@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getRecentPRs, getAllTimeBestPRs } from '../../lib/db/workout';
 import { getLocalPersonalRecords, getAllTimeLocalBestPRs } from '../../lib/db/local-repository';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/progress/prs')({
   server: {
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/progress/prs')({
           if (!d1Db) {
             const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
             if (online) {
-              return createApiError('Database not available', 503, 'DATABASE_ERROR');
+              return createApiError('Database not available', 503, API_ERROR_CODES.DATABASE_ERROR);
             }
             const localPRs = mode === 'allTime'
               ? await getAllTimeLocalBestPRs(session.sub, limit)
@@ -101,7 +101,7 @@ export const Route = createFileRoute('/api/progress/prs')({
             return createApiError(err.message, err.status, err.code);
           }
           console.error('Get recent PRs error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

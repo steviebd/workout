@@ -6,7 +6,6 @@ declare namespace Cloudflare {
 		WHOOP_CLIENT_ID?: string;
 		WHOOP_CLIENT_SECRET?: string;
 		WHOOP_API_URL?: string;
-		WHOOP_WEBHOOK_SECRET?: string;
 		WHOOP_TOKEN_ENCRYPTION_KEY?: string;
 	}
 }

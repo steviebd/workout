@@ -6,6 +6,9 @@ import {
   whoopRecoveriesResponseSchema,
   whoopCyclesResponseSchema,
   whoopWorkoutsResponseSchema,
+  whoopWorkoutSchema,
+  whoopSleepSchema,
+  whoopRecoverySchema,
   type WhoopUser,
   type WhoopSleep,
   type WhoopRecovery,
@@ -368,6 +371,27 @@ export class WhoopApiClient {
       records: response.records,
     };
   }
+
+  async getWorkoutById(uuid: string): Promise<WhoopWorkout> {
+    const response = await this.fetchWithAuth<WhoopWorkout>(
+      `/developer/v2/activity/workout/${uuid}`
+    );
+    return whoopWorkoutSchema.parse(response);
+  }
+
+  async getSleepById(uuid: string): Promise<WhoopSleep> {
+    const response = await this.fetchWithAuth<WhoopSleep>(
+      `/developer/v2/activity/sleep/${uuid}`
+    );
+    return whoopSleepSchema.parse(response);
+  }
+
+  async getRecoveryBySleepId(sleepUuid: string): Promise<WhoopRecovery> {
+    const response = await this.fetchWithAuth<WhoopRecovery>(
+      `/developer/v2/recovery/${sleepUuid}`
+    );
+    return whoopRecoverySchema.parse(response);
+  }
 }
 
 export function mapWhoopSleepToDb(sleep: WhoopSleep, workosId?: string) {
@@ -417,7 +441,8 @@ export function mapWhoopRecoveryToDb(recovery: WhoopRecovery, workosId?: string)
   const score = recovery.score;
   const recoveryScore = score?.recovery_score ?? null;
   return {
-    id: recovery.cycle_id.toString(),
+    id: recovery.sleep_id,
+    sleepId: recovery.sleep_id,
     cycleId: recovery.cycle_id.toString(),
     date: recovery.created_at.split('T')[0],
     score: recoveryScore,

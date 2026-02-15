@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { getCycleWorkouts } from '~/lib/db/program';
 
 export const Route = createFileRoute('/api/program-cycles/$id/workouts')({
@@ -32,7 +32,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get cycle workouts error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
       },
     },
