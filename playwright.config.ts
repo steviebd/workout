@@ -7,10 +7,10 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
 	webServer: {
-		command: 'curl -s --connect-timeout 5 --max-time 10 http://localhost:8787 > /dev/null 2>&1 || exit 1',
+		command: 'infisical run --env dev -- sh -c "bun x tsx scripts/generate-wrangler-config.ts --env dev && vite dev --port 8787"',
 		url: 'http://localhost:8787',
-		reuseExistingServer: true,
-		timeout: 30000,
+		reuseExistingServer: !process.env.CI,
+		timeout: 60000,
 	},
 	testDir: './tests/e2e',
 	outputDir: './test-results/',

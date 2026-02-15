@@ -87,7 +87,3 @@ export const Route = createFileRoute('/api/health/data')({
     },
   },
 });
-
-export default function ApiHealthData() {
-  return null;
-}

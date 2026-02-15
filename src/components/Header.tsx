@@ -126,7 +126,7 @@ export function Header() {
           >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Health</span>
-                                             </a>
+          </a>
 
           <div className="relative" ref={settingsRef}>
               <button

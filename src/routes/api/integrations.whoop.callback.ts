@@ -15,7 +15,16 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
 const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID ?? '';
 const WHOOP_CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET ?? '';
 const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
-const WHOOP_REDIRECT_URI = process.env.WHOOP_REDIRECT_URI ?? 'http://localhost:8787/api/integrations/whoop/callback';
+
+function getWhoopRedirectUri(): string {
+  const environment = process.env.ENVIRONMENT ?? 'dev';
+  const baseUrl = environment === 'production'
+    ? 'https://fit.stevenduong.com'
+    : environment === 'staging'
+      ? 'https://staging.fit.stevenduong.com'
+      : 'http://localhost:8787';
+  return process.env.WHOOP_REDIRECT_URI ?? `${baseUrl}/api/integrations/whoop/callback`;
+}
 
 interface TokenResponse {
   access_token: string;
@@ -30,7 +39,7 @@ async function exchangeCodeForTokens(code: string, codeVerifier: string): Promis
     code_verifier: codeVerifier,
     client_id: WHOOP_CLIENT_ID,
     client_secret: WHOOP_CLIENT_SECRET,
-    redirect_uri: WHOOP_REDIRECT_URI,
+    redirect_uri: getWhoopRedirectUri(),
   });
 
   const response = await fetch(`${WHOOP_API_URL}/oauth/oauth2/token`, {

@@ -5,6 +5,8 @@ import type { SessionPayload } from '../session';
 import { createDb } from '~/lib/db';
 
 export { withApiContext } from './context';
+export { apiRoute, type ApiCtx } from './api-route';
+export { parseBody, parseQuery } from './parse';
 
 export function handleApiError(err: unknown, operation: string): Response {
   if (err instanceof ApiError) {

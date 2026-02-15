@@ -158,7 +158,3 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
     },
   },
 });
-
-export default function ApiProgramCycleStartWorkout() {
-  return null;
-}

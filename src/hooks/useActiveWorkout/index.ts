@@ -1,111 +1,11 @@
+export * from './types';
+
 import { useCallback, useEffect, useState, useRef } from 'react';
+import { getActiveWorkoutWithDetails, getWorkoutExerciseLocalId } from './queries';
+import type { ActiveWorkout, ActiveWorkoutExercise, ActiveWorkoutSet } from './types';
 import { localDB, type LocalWorkout, type LocalWorkoutExercise, type LocalWorkoutSet } from '~/lib/db/local-db';
 import { generateLocalId, now, queueOperation } from '~/lib/db/local-repository';
 import { useAuth } from '@/routes/__root';
-
-export interface ActiveWorkoutExercise {
-  exerciseId: string;
-  name: string;
-  muscleGroup: string | null;
-  orderIndex: number;
-  sets: ActiveWorkoutSet[];
-  notes?: string;
-}
-
-export interface ActiveWorkoutSet {
-  id: string;
-  setNumber: number;
-  weight?: number;
-  reps?: number;
-  rpe?: number;
-  isComplete: boolean;
-  completedAt?: string;
-}
-
-export interface ActiveWorkout {
-  id: string;
-  name: string;
-  templateId?: string;
-  startedAt: string;
-  notes?: string;
-  exercises: ActiveWorkoutExercise[];
-}
-
-function mapLocalToActiveWorkout(
-  localWorkout: LocalWorkout,
-  exercises: Array<LocalWorkoutExercise & { sets: LocalWorkoutSet[] }>
-): ActiveWorkout {
-  const mappedExercises: ActiveWorkoutExercise[] = exercises
-    .sort((a, b) => a.order - b.order)
-    .map((we) => ({
-      exerciseId: we.exerciseId,
-      name: '',
-      muscleGroup: null,
-      orderIndex: we.order,
-      sets: we.sets
-        .sort((a, b) => a.order - b.order)
-        .map((s) => ({
-          id: s.localId,
-          setNumber: s.setNumber,
-          weight: s.weight,
-          reps: s.reps,
-          rpe: s.rpe ?? undefined,
-          isComplete: s.completed,
-          completedAt: s.completed ? (s.completedAt ? s.completedAt.toISOString() : new Date().toISOString()) : undefined,
-        })),
-      notes: we.notes,
-    }));
-
-  return {
-    id: localWorkout.localId,
-    name: localWorkout.name,
-    templateId: localWorkout.templateId,
-    startedAt: localWorkout.startedAt.toISOString(),
-    notes: localWorkout.notes,
-    exercises: mappedExercises,
-  };
-}
-
-async function getActiveWorkoutWithDetails(userId: string): Promise<ActiveWorkout | null> {
-  const localWorkout = await localDB.workouts
-    .where('workosId').equals(userId)
-    .and((w) => w.status === 'in_progress')
-    .first();
-
-  if (!localWorkout) return null;
-
-  const workoutExercises = await localDB.workoutExercises
-    .where('workoutId')
-    .equals(localWorkout.localId)
-    .toArray();
-
-  const weLocalIds = workoutExercises.map(we => we.localId);
-  const allSets = weLocalIds.length > 0
-    ? await localDB.workoutSets.where('workoutExerciseId').anyOf(weLocalIds).toArray()
-    : [];
-
-  const setsByExercise = new Map<string, LocalWorkoutSet[]>();
-  for (const set of allSets) {
-    const existing = setsByExercise.get(set.workoutExerciseId) ?? [];
-    existing.push(set);
-    setsByExercise.set(set.workoutExerciseId, existing);
-  }
-
-  const exercisesWithSets = workoutExercises.map(we => ({
-    ...we,
-    sets: setsByExercise.get(we.localId) ?? [],
-  }));
-
-  return mapLocalToActiveWorkout(localWorkout, exercisesWithSets);
-}
-
-async function getWorkoutExerciseLocalId(workoutLocalId: string, exerciseId: string): Promise<string | null> {
-  const we = await localDB.workoutExercises
-    .where('workoutId').equals(workoutLocalId)
-    .and((e) => e.exerciseId === exerciseId)
-    .first();
-  return we?.localId ?? null;
-}
 
 export function useActiveWorkout() {
   const { user } = useAuth();

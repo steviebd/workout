@@ -94,15 +94,19 @@ function EditTemplate() {
         return;
       }
 
-      if (templateRes.ok) {
-        const templateData: Template = await templateRes.json();
-        setTemplate(templateData);
-          setFormData({
-            name: templateData.name,
-            description: templateData.description ?? '',
-            notes: templateData.notes ?? '',
-          });
+      if (!templateRes.ok) {
+        console.error('Failed to fetch template:', templateRes.status);
+        setErrors({ submit: 'Failed to load template' });
+        return;
       }
+
+      const templateData: Template = await templateRes.json();
+      setTemplate(templateData);
+      setFormData({
+        name: templateData.name,
+        description: templateData.description ?? '',
+        notes: templateData.notes ?? '',
+      });
 
       if (exercisesRes.ok) {
         const exercisesData: TemplateExerciseWithDetails[] = await exercisesRes.json();
@@ -123,6 +127,7 @@ function EditTemplate() {
       }
     } catch (error) {
       console.error('Failed to fetch template:', error);
+      setErrors({ submit: 'Failed to load template' });
     } finally {
       setLoading(false);
     }

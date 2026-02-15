@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, Loader2, Save, Undo, Redo, Plus } from 'lucide-react';
-import { useAuth } from '@/routes/__root';
+import { useTemplateEditorState } from './useTemplateEditorState';
+import { useTemplateApi } from './useTemplateApi';
+import { type TemplateEditorProps, type SelectedExercise, type Exercise } from './types';
 import { useToast } from '@/components/ToastProvider';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -10,52 +12,7 @@ import { ExerciseSearch } from '@/components/ExerciseSearch';
 import { ExerciseList } from '@/components/ExerciseList';
 import { InlineEditExercise } from '@/components/InlineEditExercise';
 import { AccessorySection } from '@/components/AccessorySection';
-import { useUndo } from '@/hooks/useUndo';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { type Template, type Exercise, type TemplateExercise } from '@/lib/db/schema';
 import { Drawer, DrawerContent, DrawerClose, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
-
-interface TemplateEditorProps {
-  mode: 'create' | 'edit';
-  templateId?: string;
-  initialData?: {
-    name: string;
-    description: string;
-    notes: string;
-    exercises: Array<{
-      id: string;
-      exerciseId: string;
-      name: string;
-      muscleGroup: string | null;
-      description: string | null;
-    }>;
-  };
-  onSaved?: (template: Template) => void;
-}
-
-interface SelectedExercise {
-  id: string;
-  exerciseId: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  libraryId?: string | null;
-  isAmrap?: boolean;
-  isAccessory?: boolean;
-  isRequired?: boolean;
-  sets?: number;
-  reps?: number;
-  repsRaw?: string;
-  targetWeight?: number;
-  addedWeight?: number;
-}
-
-interface FormData {
-  name: string;
-  description: string;
-  notes: string;
-  exercises?: SelectedExercise[];
-}
 
 export function TemplateEditor({
   mode,
@@ -63,314 +20,53 @@ export function TemplateEditor({
   initialData,
   onSaved,
 }: TemplateEditorProps) {
-  const auth = useAuth();
   const toast = useToast();
-  const [redirecting, setRedirecting] = useState(false);
-  const [loading, setLoading] = useState(mode === 'edit');
-  const [saving, setSaving] = useState(false);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [createdTemplate, setCreatedTemplate] = useState<Template | null>(null);
-  const [accessoryAddedWeights, setAccessoryAddedWeights] = useState<Record<string, number>>({});
-
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    description: '',
-    notes: '',
-  });
-
-  const [errors, setErrors] = useState<{ name?: string; exercises?: string }>({});
-  const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null);
 
   const {
-    push: pushUndo,
-    undo,
-    redo,
+    formData,
+    selectedExercises,
+    accessoryAddedWeights,
+    redirecting,
+    loading,
+    setLoading,
+    handleFormChange,
+    handleUndo,
+    handleRedo,
     canUndo,
     canRedo,
-  } = useUndo<FormData>();
+    validateForm,
+    setSelectedExercises,
+    setAccessoryAddedWeights,
+    pushUndo,
+    errors,
+    setErrors,
+  } = useTemplateEditorState({ mode, initialData });
 
-  const handleUndo = useCallback(() => {
-    const previousState = undo();
-    if (previousState) {
-      if (previousState.name !== undefined) {
-        setFormData(prev => ({ ...prev, ...previousState }));
-      }
-      if (previousState.exercises) {
-        setSelectedExercises(previousState.exercises);
-      }
-    }
-  }, [undo]);
-
-  const handleRedo = useCallback(() => {
-    const nextState = redo();
-    if (nextState) {
-      if (nextState.name !== undefined) {
-        setFormData(prev => ({ ...prev, ...nextState }));
-      }
-      if (nextState.exercises) {
-        setSelectedExercises(nextState.exercises);
-      }
-    }
-  }, [redo]);
-
-  const fetchExercises = useCallback(async () => {
-    try {
-      const response = await fetch('/api/exercises', {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data: Exercise[] = await response.json();
-        setExercises(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch exercises:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchTemplateExercises = useCallback(async (currentTemplateId: string) => {
-    try {
-      const response = await fetch(`/api/templates/${currentTemplateId}/exercises`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data: TemplateExercise[] = await response.json();
-        const accessoryWeights: Record<string, number> = {};
-        data.forEach((te) => {
-          if (te.isAccessory && te.exerciseId && te.addedWeight) {
-            accessoryWeights[te.exerciseId] = te.addedWeight;
-          }
-        });
-        setAccessoryAddedWeights(accessoryWeights);
-      }
-    } catch (err) {
-      console.error('Failed to fetch template exercises:', err);
-    }
-  }, []);
-
-  const saveTemplate = useCallback(async (): Promise<Template | null> => {
-    try {
-      const url = mode === 'create' ? '/api/templates' : `/api/templates/${templateId}`;
-      const method = mode === 'create' ? 'POST' : 'PUT';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description ?? undefined,
-          notes: formData.notes ?? undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const data: { message?: string } = await response.json();
-        throw new Error(data.message ?? 'Failed to save template');
-      }
-
-      return await response.json();
-    } catch (err) {
-      console.error('Save template error:', err);
-      return null;
-    }
-  }, [formData.name, formData.description, formData.notes, mode, templateId]);
-
-  const syncExercises = useCallback(async (currentTemplateId: string) => {
-    const newExerciseIds = new Set(selectedExercises.map(se => se.exerciseId));
-
-    const existingRes = await fetch(`/api/templates/${currentTemplateId}/exercises`, {
-      credentials: 'include',
-    });
-    const existingExercises: Array<{ exerciseId: string; orderIndex: number }> = await existingRes.json();
-
-    for (const existing of existingExercises) {
-      if (!newExerciseIds.has(existing.exerciseId)) {
-        await fetch(`/api/templates/${currentTemplateId}/exercises/${existing.exerciseId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-      }
-    }
-
-    for (let i = 0; i < selectedExercises.length; i++) {
-      const se = selectedExercises[i];
-      const existing = existingExercises.find((ee: { exerciseId: string }) => ee.exerciseId === se.exerciseId);
-
-      if (existing) {
-        if (existing.orderIndex !== i) {
-          await fetch(`/api/templates/${currentTemplateId}/exercises/reorder`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              exerciseOrders: selectedExercises.map((se2, idx) => ({
-                exerciseId: se2.exerciseId,
-                orderIndex: idx,
-              })),
-            }),
-          });
-        }
-      } else {
-        await fetch(`/api/templates/${currentTemplateId}/exercises`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            exerciseId: se.exerciseId,
-            orderIndex: i,
-            isAccessory: se.isAccessory ?? false,
-            isRequired: se.isRequired ?? true,
-            sets: se.sets,
-            reps: se.reps,
-            repsRaw: se.repsRaw,
-            targetWeight: se.targetWeight,
-            addedWeight: se.isAccessory 
-              ? (accessoryAddedWeights[se.exerciseId] ?? se.addedWeight ?? 0)
-              : 0,
-          }),
-        });
-      }
-    }
-  }, [selectedExercises, accessoryAddedWeights]);
-
-  const autoSave = useAutoSave({
-    data: {
-      ...formData,
-      exerciseCount: selectedExercises.length,
-      exerciseIds: selectedExercises.map(e => e.exerciseId).join(','),
-    },
-    onSave: async () => {
-      if (mode === 'edit' && templateId) {
-        void saveTemplate();
-        void syncExercises(templateId);
-      }
-    },
-    enabled: mode === 'edit',
-    delay: 1500,
-    onSuccess: () => {
-      setError(null);
-      console.log('Auto-saved');
-    },
-    onError: (saveError) => {
-      console.error('Auto-save failed:', saveError);
-      setError({ message: 'Failed to auto-save changes', retry: () => void autoSave.save() });
-      toast.error('Failed to auto-save');
-    },
+  const {
+    exercises,
+    saving,
+    createdTemplate,
+    error,
+    autoSave,
+    fetchExercises,
+    handleSubmit,
+  } = useTemplateApi({
+    mode,
+    templateId,
+    formData,
+    selectedExercises,
+    accessoryAddedWeights,
   });
 
   useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      setRedirecting(true);
-      window.location.href = '/auth/signin';
+    if (!loading && initialData && mode === 'edit' && templateId) {
+      void fetchExercises().then(() => setLoading(false));
+    } else if (!loading && !initialData) {
+      void fetchExercises().then(() => setLoading(false));
     }
-  }, [auth.loading, auth.user]);
-
-  useEffect(() => {
-    if (!auth.loading && auth.user) {
-      void fetchExercises();
-      if (initialData) {
-        setFormData({
-          name: initialData.name,
-          description: initialData.description || '',
-          notes: initialData.notes || '',
-        });
-        setSelectedExercises(
-          initialData.exercises.map((ex) => ({
-            id: ex.id,
-            exerciseId: ex.exerciseId,
-            name: ex.name,
-            muscleGroup: ex.muscleGroup,
-            description: ex.description,
-            isAccessory: (ex as unknown as TemplateExercise).isAccessory ?? false,
-            isRequired: (ex as unknown as TemplateExercise).isRequired ?? true,
-            sets: (ex as unknown as TemplateExercise).sets ?? undefined,
-            reps: (ex as unknown as TemplateExercise).reps ?? undefined,
-            repsRaw: (ex as unknown as TemplateExercise).repsRaw ?? undefined,
-            targetWeight: (ex as unknown as TemplateExercise).targetWeight ?? undefined,
-            addedWeight: (ex as unknown as TemplateExercise).addedWeight ?? undefined,
-          }))
-        );
-        if (mode === 'edit' && templateId) {
-          void fetchTemplateExercises(templateId);
-        }
-      }
-    }
-  }, [auth.loading, auth.user, initialData, fetchExercises, fetchTemplateExercises, mode, templateId]);
-
-  const validateForm = useCallback(() => {
-    const newErrors: { name?: string; exercises?: string } = {};
-    if (!formData.name.trim()) {
-      newErrors.name = 'Template name is required';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData.name]);
-
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    if (!validateForm()) return;
-
-    if (selectedExercises.length === 0) {
-      setErrors({ exercises: 'Add at least one exercise to the template' });
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const template = await saveTemplate();
-      if (!template) {
-        throw new Error('Failed to save template');
-      }
-
-      if (mode === 'create') {
-        await Promise.all(
-          selectedExercises.map((exercise, index) =>
-            fetch(`/api/templates/${template.id}/exercises`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                exerciseId: exercise.exerciseId,
-                orderIndex: index,
-                isAccessory: exercise.isAccessory ?? false,
-                isRequired: exercise.isRequired ?? true,
-                sets: exercise.sets,
-                reps: exercise.reps,
-                repsRaw: exercise.repsRaw,
-                targetWeight: exercise.targetWeight,
-                addedWeight: exercise.isAccessory 
-                  ? (accessoryAddedWeights[exercise.exerciseId] ?? exercise.addedWeight ?? 0)
-                  : 0,
-              }),
-            })
-          )
-        );
-
-        toast.success('Template created successfully!');
-        setCreatedTemplate(template);
-      } else {
-        await syncExercises(template.id);
-        toast.success('Template saved!');
-        onSaved?.(template);
-      }
-      } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError({ message: errorMessage });
-      toast.error(errorMessage);
-    } finally {
-      setSaving(false);
-    }
-  }, [selectedExercises, validateForm, mode, toast, onSaved, saveTemplate, syncExercises, accessoryAddedWeights]);
+  }, [initialData, mode, templateId, fetchExercises, loading, setLoading]);
 
   const handleAddExercise = useCallback(async (exercise: Exercise | { id: string; name: string; muscleGroup: string | null; description: string | null; isLibrary?: boolean }) => {
     if (selectedExercises.some(se => se.name === exercise.name)) {
@@ -422,29 +118,29 @@ export function TemplateEditor({
       libraryId,
     };
 
-    pushUndo({
-      description: 'Add exercise',
-      before: { exercises: [...selectedExercises] },
-      after: { exercises: [...selectedExercises, newExercise] },
-    }, { ...formData, exercises: [...selectedExercises] });
+    pushUndo(
+      'Add exercise',
+      { exercises: [...selectedExercises] },
+      { exercises: [...selectedExercises, newExercise] }
+    );
 
     setSelectedExercises(prev => [...prev, newExercise]);
     autoSave.scheduleSave();
-  }, [selectedExercises, exercises, pushUndo, formData, toast, autoSave, fetchExercises]);
+  }, [selectedExercises, exercises, pushUndo, setSelectedExercises, toast, autoSave, fetchExercises]);
 
   const handleRemoveExercise = useCallback((id: string) => {
     const exercise = selectedExercises.find(se => se.id === id || se.exerciseId === id);
     if (!exercise) return;
 
-    pushUndo({
-      description: `Remove ${exercise.name}`,
-      before: { exercises: [...selectedExercises] },
-      after: { exercises: selectedExercises.filter(se => se.id !== id && se.exerciseId !== id) },
-    }, { ...formData, exercises: [...selectedExercises] });
+    pushUndo(
+      `Remove ${exercise.name}`,
+      { exercises: [...selectedExercises] },
+      { exercises: selectedExercises.filter(se => se.id !== id && se.exerciseId !== id) }
+    );
 
     setSelectedExercises(prev => prev.filter(se => se.id !== id && se.exerciseId !== id));
     autoSave.scheduleSave();
-  }, [selectedExercises, pushUndo, formData, autoSave]);
+  }, [selectedExercises, pushUndo, setSelectedExercises, autoSave]);
 
   const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
     const newExercises = [...selectedExercises];
@@ -453,15 +149,15 @@ export function TemplateEditor({
       newExercises[fromIndex],
     ];
 
-    pushUndo({
-      description: 'Reorder exercises',
-      before: { exercises: [...selectedExercises] },
-      after: { exercises: newExercises },
-    }, { ...formData, exercises: [...selectedExercises] });
+    pushUndo(
+      'Reorder exercises',
+      { exercises: [...selectedExercises] },
+      { exercises: newExercises }
+    );
 
     setSelectedExercises(newExercises);
     autoSave.scheduleSave();
-  }, [selectedExercises, pushUndo, formData, autoSave]);
+  }, [selectedExercises, pushUndo, setSelectedExercises, autoSave]);
 
   const handleMoveUp = useCallback((index: number) => {
     if (index === 0) return;
@@ -480,17 +176,17 @@ export function TemplateEditor({
   const handleSaveExercise = useCallback((updates: Partial<Exercise>) => {
     if (!editingExerciseId) return;
 
-    pushUndo({
-      description: `Edit ${updates.name ?? 'exercise'}`,
-      before: { exercises: [...selectedExercises] },
-      after: {
+    pushUndo(
+      `Edit ${updates.name ?? 'exercise'}`,
+      { exercises: [...selectedExercises] },
+      {
         exercises: selectedExercises.map(se =>
           se.id === editingExerciseId
             ? { ...se, ...updates }
             : se
         )
       },
-    }, { ...formData, exercises: [...selectedExercises] });
+    );
 
     setSelectedExercises(prev =>
       prev.map(se =>
@@ -500,23 +196,31 @@ export function TemplateEditor({
       )
     );
     setEditingExerciseId(null);
-  }, [editingExerciseId, selectedExercises, pushUndo, formData]);
+  }, [editingExerciseId, selectedExercises, pushUndo, setSelectedExercises]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingExerciseId(null);
   }, []);
 
-  const handleFormChange = useCallback((field: keyof FormData, value: string) => {
-    pushUndo({
-      description: `Change ${field}`,
-      before: { [field]: formData[field] },
-      after: { [field]: value },
-    }, { ...formData, [field]: value });
+  const onSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
 
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, [formData, pushUndo]);
+    if (!validateForm()) return;
 
-  if (auth.loading || redirecting) {
+    if (selectedExercises.length === 0) {
+      setErrors({ exercises: 'Add at least one exercise to the template' });
+      return;
+    }
+
+    void handleSubmit().then(() => {
+      if (mode === 'edit' && createdTemplate) {
+        onSaved?.(createdTemplate);
+      }
+    });
+  }, [validateForm, selectedExercises.length, handleSubmit, mode, createdTemplate, onSaved, setErrors]);
+
+  if (redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Redirecting to sign in...</p>
@@ -556,15 +260,15 @@ export function TemplateEditor({
             {mode === 'create' ? 'Create Template' : 'Edit Template'}
           </h1>
           <div className="flex items-center gap-1">
-<Button
+            <Button
               variant="ghost"
               size="icon"
               onClick={handleUndo}
               disabled={!canUndo}
               title="Undo"
->
+            >
               <Undo size={20} />
-</Button>
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -577,23 +281,31 @@ export function TemplateEditor({
           </div>
         </div>
 
-        {autoSave.saving ? <div className="mb-4 p-2 bg-primary/10 text-primary text-sm rounded flex items-center gap-2">
+        {autoSave.saving ? (
+          <div className="mb-4 p-2 bg-primary/10 text-primary text-sm rounded flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" />
             Saving...
-                           </div> : null}
+          </div>
+        ) : null}
 
-        {autoSave.saved ? <div className="mb-4 p-2 bg-success/20 text-success/80 text-sm rounded">
+        {autoSave.saved ? (
+          <div className="mb-4 p-2 bg-success/20 text-success/80 text-sm rounded">
             Saved
-                          </div> : null}
+          </div>
+        ) : null}
 
-        {error ? <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between gap-3">
+        {error ? (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between gap-3">
             <span>{error.message}</span>
-            {error.retry ? <Button variant="outline" size="sm" onClick={error.retry}>
+            {error.retry ? (
+              <Button variant="outline" size="sm" onClick={error.retry}>
                 Retry
-                           </Button> : null}
-                 </div> : null}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
-         <form className="space-y-6" onSubmit={(e) => void handleSubmit(e)}>
+        <form className="space-y-6" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5" htmlFor="name">
               Template Name <span className="text-destructive">*</span>
@@ -649,13 +361,15 @@ export function TemplateEditor({
               onMoveDown={handleMoveDown}
             />
 
-            {editingExerciseId ? <div className="mt-4">
+            {editingExerciseId ? (
+              <div className="mt-4">
                 <InlineEditExercise
                   exercise={selectedExercises.find(se => se.id === editingExerciseId) ?? selectedExercises[0]}
                   onSave={handleSaveExercise}
                   onCancel={handleCancelEdit}
                 />
-                                 </div> : null}
+              </div>
+            ) : null}
 
             {selectedExercises.some(se => se.isAccessory) && (
               <div className="border-t pt-6 mt-6">
@@ -720,25 +434,28 @@ export function TemplateEditor({
               )}
             </Button>
           </div>
-         </form>
+        </form>
 
-        {createdTemplate ? <div className="mt-6 p-4 bg-success/20 border border-success/30 rounded-lg">
+        {createdTemplate ? (
+          <div className="mt-6 p-4 bg-success/20 border border-success/30 rounded-lg">
             <h3 className="font-semibold mb-2 text-success">Template Created!</h3>
             <p className="text-sm mb-4 text-success/80">Your template "{createdTemplate.name}" is ready.</p>
             <div className="flex gap-3">
               <Button asChild={true}>
                 <a href={`/workouts/start/${createdTemplate.id}`}>Start Workout</a>
               </Button>
-<Button variant="outline" asChild={true}>
+              <Button variant="outline" asChild={true}>
                 <a href={`/templates/${createdTemplate.id}`} className="px-6 py-3 text-center rounded-lg border border-border hover:border-primary hover:bg-primary/10 transition-colors">
                   View Template
                 </a>
-</Button>
+              </Button>
             </div>
-                           </div> : null}
+          </div>
+        ) : null}
       </Card>
 
-      {showExerciseSelector ? <Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
+      {showExerciseSelector ? (
+        <Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
           <DrawerContent className="max-w-2xl mx-auto">
             <DrawerHeader>
               <DrawerTitle>Add Exercise</DrawerTitle>
@@ -781,7 +498,10 @@ export function TemplateEditor({
               <Button variant="outline" className="mx-4 mb-4">Done</Button>
             </DrawerClose>
           </DrawerContent>
-                              </Drawer> : null}
+        </Drawer>
+      ) : null}
     </main>
   );
 }
+
+export { type TemplateEditorProps, type SelectedExercise, type FormData } from './types';
