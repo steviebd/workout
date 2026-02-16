@@ -14,6 +14,7 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as R1rmTestRouteImport } from './routes/1rm-test'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
 import { Route as WorkoutsIndexRouteImport } from './routes/workouts._index'
 import { Route as WorkoutsIdRouteImport } from './routes/workouts.$id'
 import { Route as TemplatesNewRouteImport } from './routes/templates.new'
@@ -110,6 +111,11 @@ const R1rmTestRoute = R1rmTestRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkoutsNewRoute = WorkoutsNewRouteImport.update({
+  id: '/workouts/new',
+  path: '/workouts/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkoutsIndexRoute = WorkoutsIndexRouteImport.update({
@@ -521,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
+  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -600,6 +607,7 @@ export interface FileRoutesByTo {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
+  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -680,6 +688,7 @@ export interface FileRoutesById {
   '/templates/new': typeof TemplatesNewRoute
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/_index': typeof WorkoutsIndexRoute
+  '/workouts/new': typeof WorkoutsNewRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -761,6 +770,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts'
+    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -840,6 +850,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts'
+    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -919,6 +930,7 @@ export interface FileRouteTypes {
     | '/templates/new'
     | '/workouts/$id'
     | '/workouts/_index'
+    | '/workouts/new'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -999,6 +1011,7 @@ export interface RootRouteChildren {
   TemplatesNewRoute: typeof TemplatesNewRoute
   WorkoutsIdRoute: typeof WorkoutsIdRoute
   WorkoutsIndexRoute: typeof WorkoutsIndexRoute
+  WorkoutsNewRoute: typeof WorkoutsNewRoute
   ApiAnalyticsTrackRoute: typeof ApiAnalyticsTrackRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -1060,6 +1073,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workouts/new': {
+      id: '/workouts/new'
+      path: '/workouts/new'
+      fullPath: '/workouts/new'
+      preLoaderRoute: typeof WorkoutsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workouts/_index': {
@@ -1797,6 +1817,7 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesNewRoute: TemplatesNewRoute,
   WorkoutsIdRoute: WorkoutsIdRoute,
   WorkoutsIndexRoute: WorkoutsIndexRoute,
+  WorkoutsNewRoute: WorkoutsNewRoute,
   ApiAnalyticsTrackRoute: ApiAnalyticsTrackRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,

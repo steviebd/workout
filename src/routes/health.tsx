@@ -136,7 +136,7 @@ function HealthPage() {
   const todayCycle = data?.cycles[0]
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24 max-w-md">
+    <div className="container mx-auto px-4 py-6 pb-32 max-w-md">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Health</h1>
         <Button
