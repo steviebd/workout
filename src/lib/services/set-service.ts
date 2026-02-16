@@ -1,8 +1,8 @@
-import { eq, and } from 'drizzle-orm';
-import { workoutSets, workoutExercises, workouts } from '../db/schema';
-import { createDb } from '../db';
-
-type DrizzleDb = ReturnType<typeof createDb>;
+import {
+  validateWorkoutExerciseOwnership as checkExerciseOwnership,
+  validateWorkoutSetOwnershipByLocalId as checkSetOwnership,
+} from '../db/ownership';
+import type { DbOrTx } from '../db';
 
 export interface SetOwnershipCheckResult {
   isValid: boolean;
@@ -11,65 +11,26 @@ export interface SetOwnershipCheckResult {
 }
 
 export async function validateWorkoutExerciseOwnership(
-  dbOrTx: DrizzleDb,
+  dbOrTx: DbOrTx,
   workoutExerciseId: string,
   workosId: string
 ): Promise<SetOwnershipCheckResult> {
-  const db = dbOrTx;
-
-  const exerciseWithOwnership = await db
-    .select({
-      exerciseId: workoutExercises.id,
-    })
-    .from(workoutExercises)
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workoutExercises.id, workoutExerciseId),
-      eq(workouts.workosId, workosId)
-    ))
-    .get();
-
-  if (!exerciseWithOwnership) {
-    return {
-      isValid: false,
-      error: 'Workout exercise not found or does not belong to you',
-    };
-  }
-
+  const result = await checkExerciseOwnership(dbOrTx, workoutExerciseId, workosId);
   return {
-    isValid: true,
+    isValid: result.isValid,
+    error: result.error,
   };
 }
 
 export async function validateWorkoutSetOwnership(
-  dbOrTx: DrizzleDb,
+  dbOrTx: DbOrTx,
   localId: string,
   workosId: string
 ): Promise<SetOwnershipCheckResult> {
-  const db = dbOrTx;
-
-  const setWithOwnership = await db
-    .select({
-      setId: workoutSets.id,
-    })
-    .from(workoutSets)
-    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workoutSets.localId, localId),
-      eq(workouts.workosId, workosId)
-    ))
-    .get();
-
-  if (!setWithOwnership) {
-    return {
-      isValid: false,
-      error: 'Workout set not found or does not belong to you',
-    };
-  }
-
+  const result = await checkSetOwnership(dbOrTx, localId, workosId);
   return {
-    isValid: true,
-    setId: setWithOwnership.setId,
+    isValid: result.isValid,
+    setId: result.entityId,
+    error: result.error,
   };
 }

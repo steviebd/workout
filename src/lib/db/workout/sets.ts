@@ -1,10 +1,10 @@
-import { and, eq } from 'drizzle-orm';
-import {
-  workoutExercises,
-  workoutSets,
-  workouts,
-} from '../schema';
+import { eq } from 'drizzle-orm';
+import { workoutSets } from '../schema';
 import { getDb } from '../index';
+import {
+  validateWorkoutExerciseOwnership,
+  validateDoublyNestedOwnership,
+} from '../ownership';
 import type {
   DbOrTx,
   WorkoutSet,
@@ -23,19 +23,13 @@ export async function createWorkoutSet(
 ): Promise<WorkoutSet | null> {
   const db = getDb(dbOrTx);
 
-  const exerciseWithOwnership = await db
-    .select({
-      exerciseId: workoutExercises.id,
-    })
-    .from(workoutExercises)
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workoutExercises.id, workoutExerciseId),
-      eq(workouts.workosId, workosId)
-    ))
-    .get();
+  const ownershipCheck = await validateWorkoutExerciseOwnership(
+    dbOrTx,
+    workoutExerciseId,
+    workosId
+  );
 
-  if (!exerciseWithOwnership) {
+  if (!ownershipCheck.isValid) {
     return null;
   }
 
@@ -64,20 +58,13 @@ export async function updateWorkoutSet(
 ): Promise<WorkoutSet | null> {
   const db = getDb(dbOrTx);
 
-  const setWithOwnership = await db
-    .select({
-      setId: workoutSets.id,
-    })
-    .from(workoutSets)
-    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workoutSets.id, setId),
-      eq(workouts.workosId, workosId)
-    ))
-    .get();
+  const ownershipCheck = await validateDoublyNestedOwnership(
+    dbOrTx,
+    setId,
+    workosId
+  );
 
-  if (!setWithOwnership) {
+  if (!ownershipCheck.isValid) {
     return null;
   }
 
@@ -88,7 +75,6 @@ export async function updateWorkoutSet(
     .returning()
     .get();
 
-        
   return updated ?? null;
 }
 
@@ -124,20 +110,13 @@ export async function deleteWorkoutSet(
 ): Promise<boolean> {
   const db = getDb(dbOrTx);
 
-  const setWithOwnership = await db
-    .select({
-      setId: workoutSets.id,
-    })
-    .from(workoutSets)
-    .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(and(
-      eq(workoutSets.id, setId),
-      eq(workouts.workosId, workosId)
-    ))
-    .get();
+  const ownershipCheck = await validateDoublyNestedOwnership(
+    dbOrTx,
+    setId,
+    workosId
+  );
 
-  if (!setWithOwnership) {
+  if (!ownershipCheck.isValid) {
     return false;
   }
 
