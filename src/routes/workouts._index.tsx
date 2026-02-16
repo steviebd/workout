@@ -183,7 +183,7 @@ function WorkoutsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-4">Create Your Own Workout</h2>
+            <SectionHeader title="Create Your Own Workout" />
             <Button 
               className="w-full"
               onClick={() => { window.location.href = '/workouts/new'; }}
@@ -228,7 +228,7 @@ function WorkoutsPage() {
                     params={{ id: exercise.id }}
                   >
                     <Card className="hover:border-primary/50 transition-colors cursor-pointer touch-manipulation">
-                      <CardContent className="p-3">
+                      <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">{exercise.name}</h3>

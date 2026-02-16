@@ -20,6 +20,7 @@ import { Input } from '~/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyWorkouts } from '@/components/ui/EmptyState';
+import { SectionHeader } from '~/components/ui/SectionHeader';
 
 interface Exercise {
   id: string;
@@ -475,7 +476,7 @@ function ProgressPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-muted-foreground">Weekly Volume</h2>
+                <h2 className="text-lg font-semibold">Weekly Volume</h2>
                 <VolumeScopeToggle
                   value={volumeScope}
                   onChange={handleVolumeScopeChange}
@@ -504,8 +505,8 @@ function ProgressPage() {
             )}
           </div>
 
-          <div className="mt-12 mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Workout History</h2>
+          <div className="mt-8">
+            <SectionHeader title="Workout History" />
           </div>
 
           <div className="space-y-6">

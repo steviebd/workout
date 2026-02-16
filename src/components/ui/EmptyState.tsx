@@ -1,5 +1,6 @@
 import { Button } from './Button';
 import type { ReactNode } from 'react';
+import { cn } from '~/lib/cn';
 
 interface EmptyStateProps {
   icon?: (props: { readonly size?: number; readonly className?: string }) => ReactNode;
@@ -21,7 +22,7 @@ export function EmptyState({
   const IconComponent = icon;
 
   return (
-    <div className={`text-center py-12 ${className}`}>
+    <div className={cn("text-center py-12", className)}>
       <div className="flex items-center justify-center mb-6">
         <div className="bg-primary/8 rounded-full p-5">
           {IconComponent ? (

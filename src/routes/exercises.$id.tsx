@@ -2,6 +2,7 @@ import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button, Card, CardContent } from '~/components/ui';
+import { PageLayout } from '~/components/ui/PageLayout';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useToast } from '@/components/ToastProvider';
 
@@ -118,60 +119,47 @@ function ExerciseDetail() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <PageLayout title="Error">
         <Card>
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>
         </Card>
-      </main>
+      </PageLayout>
     );
   }
 
   if (!exercise) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <PageLayout title="Exercise Not Found">
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <h1 className="text-2xl font-bold text-foreground">Exercise Not Found</h1>
             <p className="text-muted-foreground">The exercise you're looking for doesn't exist or has been deleted.</p>
             <a className="text-primary hover:text-primary/80 inline-block" href="/exercises">
               ← Back to Exercises
             </a>
           </CardContent>
         </Card>
-      </main>
+      </PageLayout>
     );
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-      <div className="mb-6">
-        <a className="text-primary hover:text-primary/80 text-sm" href="/exercises">
-          ← Back to Exercises
-        </a>
-      </div>
-
+    <PageLayout
+      title={exercise.name}
+      action={
+        <div className="flex gap-3">
+          <Button variant="outline" asChild={true}>
+            <a href={`/exercises/${exercise.id}/edit`}>Edit</a>
+          </Button>
+          <Button variant="destructive" disabled={deleting} onClick={handleDeleteClick}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      }
+    >
       <Card>
         <CardContent className="pt-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-foreground">{exercise.name}</h1>
-            <div className="flex space-x-3">
-              <Button variant="outline" asChild={true}>
-                <a href={`/exercises/${exercise.id}/edit`}>
-                  Edit
-                </a>
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={deleting}
-                onClick={handleDeleteClick}
-              >
-                {deleting ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-
           {exercise.muscleGroup ? (
             <div>
               <span className="block text-sm font-medium text-muted-foreground">Muscle Group</span>
@@ -202,7 +190,7 @@ function ExerciseDetail() {
           </div>
         </CardContent>
       </Card>
-    </main>
+    </PageLayout>
   );
 }
 

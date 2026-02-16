@@ -1,11 +1,13 @@
 /* eslint-disable no-alert */
 import { createFileRoute, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
+import { Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Template, TemplateExerciseWithDetails as TemplateExercise } from '@/lib/db/template';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
+import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 
 function TemplateDetail() {
@@ -131,36 +133,38 @@ function TemplateDetail() {
 
    if (auth.loading || !auth.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <PageLayout title="Loading">
+        <PageLoading message="Loading..." />
+      </PageLayout>
     );
   }
 
    if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading template...</p>
-      </div>
+      <PageLayout title="Template">
+        <PageLoading message="Loading template..." />
+      </PageLayout>
     );
   }
 
    if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-          <p className="text-destructive">{error}</p>
-        </div>
-      </div>
+      <PageLayout title="Error">
+        <ErrorState
+          title="Failed to Load Template"
+          description={error}
+          onRetry={() => window.location.reload()}
+          onGoHome={() => { window.location.href = '/templates' }}
+        />
+      </PageLayout>
     );
   }
 
    if (!template) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <PageLayout title="Template Not Found">
         <Card>
           <CardContent className="pt-6">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Template Not Found</h1>
             <p className="text-muted-foreground mb-4">
               The template you're looking for doesn't exist or has been deleted.
             </p>
@@ -169,128 +173,104 @@ function TemplateDetail() {
             </a>
           </CardContent>
         </Card>
-      </main>
+      </PageLayout>
     );
   }
 
    return (
-     <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="mb-6">
-          <a
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            href="/templates"
-          >
-            <ArrowLeft size={20} />
-            Back to Templates
-          </a>
-        </div>
+     <PageLayout
+       title={template.name}
+       action={
+         <div className="flex gap-3">
+           <Button variant="outline" size="sm" disabled={copying} onClick={handleCopyClick}>
+             <Copy size={18} />
+             {copying ? 'Copying...' : 'Copy'}
+           </Button>
+           <Button variant="outline" size="sm" asChild={true}>
+             <a href={`/templates/${template.id}/edit`}>
+               <Edit size={18} />
+               Edit
+             </a>
+           </Button>
+           <Button variant="destructive" size="sm" disabled={deleting} onClick={handleDeleteClick}>
+             <Trash2 size={18} />
+             {deleting ? 'Deleting...' : 'Delete'}
+           </Button>
+         </div>
+       }
+     >
+       <Card className="overflow-hidden">
+         <CardContent className="pt-4 space-y-4">
+           {template.description ? (
+             <div>
+               <span className="block text-sm font-medium text-muted-foreground">Description</span>
+               <p className="mt-1 text-foreground whitespace-pre-wrap">{template.description}</p>
+             </div>
+           ) : null}
 
-        <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground">{template.name}</h1>
-            <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={copying}
-                onClick={handleCopyClick}
-              >
-                <Copy size={18} />
-                {copying ? 'Copying...' : 'Copy'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                asChild={true}
-              >
-                <a href={`/templates/${template.id}/edit`}>
-                  <Edit size={18} />
-                  Edit
-                </a>
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={deleting}
-                onClick={handleDeleteClick}
-              >
-                <Trash2 size={18} />
-                {deleting ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
+           {template.notes ? (
+             <div>
+               <span className="block text-sm font-medium text-muted-foreground">Notes</span>
+               <p className="mt-1 text-foreground whitespace-pre-wrap">{template.notes}</p>
+             </div>
+           ) : null}
 
-          <CardContent className="pt-4 space-y-4">
-            {template.description ? (
-              <div>
-                <span className="block text-sm font-medium text-muted-foreground">Description</span>
-                <p className="mt-1 text-foreground whitespace-pre-wrap">{template.description}</p>
-              </div>
-            ) : null}
+           <div>
+             <span className="block text-sm font-medium text-muted-foreground mb-3">
+               Exercises (
+               {exercises.length}
+               )
+             </span>
+             {exercises.length === 0 ? (
+               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                 <Dumbbell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                 <p className="text-muted-foreground">No exercises in this template</p>
+               </div>
+             ) : (
+               <div className="space-y-2">
+                 {exercises.map((te, index) => (
+                   <div
+                     className="flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border"
+                     key={te.id}
+                   >
+                     <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
+                       {index + 1}
+                     </span>
+                     <Dumbbell className="text-muted-foreground" size={18} />
+                     <div className="flex-1">
+                         <p className="font-medium text-foreground flex items-center gap-2">
+                           {te.exercise?.name ?? 'Unknown Exercise'}
+                           {te.isAmrap ? (
+                             <span className="text-[10px] font-bold px-1.5 py-0.5 bg-warning/20 text-warning rounded">
+                               AMRAP
+                             </span>
+                           ) : null}
+                         </p>
+                         {te.exercise?.muscleGroup ? <p className="text-sm text-muted-foreground">{te.exercise.muscleGroup}</p> : null}
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             )}
+           </div>
 
-            {template.notes ? (
-              <div>
-                <span className="block text-sm font-medium text-muted-foreground">Notes</span>
-                <p className="mt-1 text-foreground whitespace-pre-wrap">{template.notes}</p>
-              </div>
-            ) : null}
-
-            <div>
-              <span className="block text-sm font-medium text-muted-foreground mb-3">
-                Exercises (
-                {exercises.length}
-                )
-              </span>
-              {exercises.length === 0 ? (
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                  <Dumbbell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">No exercises in this template</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {exercises.map((te, index) => (
-                    <div
-                      className="flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border"
-                      key={te.id}
-                    >
-                      <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-sm font-medium rounded">
-                        {index + 1}
-                      </span>
-                      <Dumbbell className="text-muted-foreground" size={18} />
-                      <div className="flex-1">
-                          <p className="font-medium text-foreground flex items-center gap-2">
-                            {te.exercise?.name ?? 'Unknown Exercise'}
-                            {te.isAmrap ? (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-warning/20 text-warning rounded">
-                                AMRAP
-                              </span>
-                            ) : null}
-                          </p>
-                          {te.exercise?.muscleGroup ? <p className="text-sm text-muted-foreground">{te.exercise.muscleGroup}</p> : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div>
-                <span className="block text-sm font-medium text-muted-foreground">Created</span>
-                <p className="mt-1 text-foreground text-sm">
-                  {formatDateLong(template.createdAt)}
-                </p>
-              </div>
-              <div>
-                <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
-                <p className="mt-1 text-foreground text-sm">
-                  {formatDateLong(template.updatedAt)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-     </main>
+           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+             <div>
+               <span className="block text-sm font-medium text-muted-foreground">Created</span>
+               <p className="mt-1 text-foreground text-sm">
+                 {formatDateLong(template.createdAt)}
+               </p>
+             </div>
+             <div>
+               <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
+               <p className="mt-1 text-foreground text-sm">
+                 {formatDateLong(template.updatedAt)}
+               </p>
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+     </PageLayout>
     );
   }
 

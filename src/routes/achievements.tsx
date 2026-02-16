@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { StreakDisplay } from '~/components/achievements/StreakDisplay'
 import { BadgeCard } from '~/components/achievements/BadgeCard'
-import { PageLayout } from '~/components/ui/PageLayout'
+import { PageLayout, PageLoading } from '~/components/ui/PageLayout'
 import { FilterPills } from '~/components/ui/FilterPills'
 
 interface Badge {
@@ -86,7 +86,7 @@ function AchievementsPage() {
   if (loading) {
     return (
       <PageLayout title="Achievements">
-        <p className="text-muted-foreground">Loading...</p>
+        <PageLoading message="Loading achievements..." />
       </PageLayout>
     )
   }
