@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { updateProgramCycleWorkout, getProgramCycleWorkoutById } from '~/lib/db/program';
 
 export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutId/reschedule')({
@@ -17,17 +17,17 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
           };
 
           if (!scheduledDate) {
-            return createApiError('scheduledDate is required', 400, 'VALIDATION_ERROR');
+            return createApiError('scheduledDate is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
           if (!dateRegex.test(scheduledDate)) {
-            return createApiError('scheduledDate must be in YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
+            return createApiError('scheduledDate must be in YYYY-MM-DD format', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           const existingWorkout = await getProgramCycleWorkoutById(d1Db, params.workoutId);
           if (!existingWorkout) {
-            return createApiError('Workout not found', 404, 'NOT_FOUND');
+            return createApiError('Workout not found', 404, API_ERROR_CODES.NOT_FOUND);
           }
 
           const updated = await updateProgramCycleWorkout(d1Db, params.workoutId, {
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
           });
 
           if (!updated) {
-            return createApiError('Failed to reschedule workout', 500, 'SERVER_ERROR');
+            return createApiError('Failed to reschedule workout', 500, API_ERROR_CODES.SERVER_ERROR);
           }
 
           return Response.json({
@@ -56,7 +56,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
           });
         } catch (err) {
           console.error('Reschedule workout error:', err);
-          return createApiError('Server error', 500, 'SERVER_ERROR');
+          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
         }
       },
     },

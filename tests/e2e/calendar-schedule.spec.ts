@@ -69,10 +69,19 @@ async function loginUser(page: Page) {
 }
 
 async function fill1RMsAndContinue(page: Page) {
-	await page.fill('input[name="squat1rm"]', '100');
-	await page.fill('input[name="bench1rm"]', '80');
-	await page.fill('input[name="deadlift1rm"]', '120');
-	await page.fill('input[name="ohp1rm"]', '60');
+	const squatInput = page.locator('input[name="squat1rm"]');
+	const benchInput = page.locator('input[name="bench1rm"]');
+	const deadliftInput = page.locator('input[name="deadlift1rm"]');
+	const ohpInput = page.locator('input[name="ohp1rm"]');
+
+	await squatInput.click();
+	await squatInput.fill('100');
+	await benchInput.click();
+	await benchInput.fill('80');
+	await deadliftInput.click();
+	await deadliftInput.fill('120');
+	await ohpInput.click();
+	await ohpInput.fill('60');
 
 	await page.waitForTimeout(500);
 
@@ -89,11 +98,12 @@ async function startProgramWithSchedule(
 ) {
 	await page.goto(`${BASE_URL}/programs/${programSlug}/start`, { waitUntil: 'load', timeout: 60000 });
 	await expect(page.locator('h1:has-text("Start StrongLifts 5×5")').first()).toBeVisible({ timeout: 15000 });
+	await page.waitForTimeout(2000);
 
-	await page.fill('input[name="squat1rm"]', oneRMs.squat.toString());
-	await page.fill('input[name="bench1rm"]', oneRMs.bench.toString());
-	await page.fill('input[name="deadlift1rm"]', oneRMs.deadlift.toString());
-	await page.fill('input[name="ohp1rm"]', oneRMs.ohp.toString());
+	await page.locator('input[name="squat1rm"]').fill(oneRMs.squat.toString());
+	await page.locator('input[name="bench1rm"]').fill(oneRMs.bench.toString());
+	await page.locator('input[name="deadlift1rm"]').fill(oneRMs.deadlift.toString());
+	await page.locator('input[name="ohp1rm"]').fill(oneRMs.ohp.toString());
 
 	await page.waitForTimeout(500);
 
@@ -224,6 +234,7 @@ async function completeProgramWorkout(page: Page, workoutUrl: string) {
 			await loginUser(page);
 			await page.goto(`${BASE_URL}/programs/${PROGRAM_SLUG}/start`, { waitUntil: 'load', timeout: 60000 });
 			await expect(page.locator('h1:has-text("Start StrongLifts 5×5")').first()).toBeVisible({ timeout: 15000 });
+			await page.waitForTimeout(2000);
 		});
 
 	test.describe('Program Start Wizard - Schedule Configuration', () => {

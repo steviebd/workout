@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { users } from './schema';
-import { createDb } from './index';
+import { getDb, type DbOrTx } from './index';
 
 export interface UserFromWorkOS {
   id: string;
@@ -23,10 +23,10 @@ export interface LocalUser {
  * @param profile - WorkOS user profile data
  * @returns The local user record
  */
-export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): Promise<LocalUser> {
-  const drizzleDb = createDb(db);
+export async function getOrCreateUser(dbOrTx: DbOrTx, profile: UserFromWorkOS): Promise<LocalUser> {
+  const db = getDb(dbOrTx);
 
-  const existing = await drizzleDb
+  const existing = await db
     .select()
     .from(users)
     .where(eq(users.workosId, profile.id))
@@ -36,7 +36,7 @@ export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): 
     return existing as LocalUser;
   }
 
-  const newUser = await drizzleDb
+  const newUser = await db
     .insert(users)
     .values({
       workosId: profile.id,
@@ -55,10 +55,10 @@ export async function getOrCreateUser(db: D1Database, profile: UserFromWorkOS): 
  * @param workosId - The user's WorkOS ID
  * @returns The user if found, or null
  */
-export async function getUserByWorkosId(db: D1Database, workosId: string): Promise<LocalUser | null> {
-  const drizzleDb = createDb(db);
+export async function getUserByWorkosId(dbOrTx: DbOrTx, workosId: string): Promise<LocalUser | null> {
+  const db = getDb(dbOrTx);
 
-  const user = await drizzleDb
+  const user = await db
     .select()
     .from(users)
     .where(eq(users.workosId, workosId))

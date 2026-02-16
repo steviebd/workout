@@ -179,7 +179,3 @@ export const Route = createFileRoute('/api/program-cycles/$id/current-workout')(
     },
   },
 });
-
-export default function ApiProgramCyclesCurrentWorkout() {
-  return null;
-}

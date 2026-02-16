@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getLastWorkoutForExercise } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/exercises/$id/last-workout')({
   server: {
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/exercises/$id/last-workout')({
             return Response.json(lastWorkout);
           } catch (err) {
             console.error('Get last workout error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

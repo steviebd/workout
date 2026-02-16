@@ -1,5 +1,5 @@
 import DexieLib from 'dexie';
-import { localDB, type OfflineOperation, type LocalExercise, type LocalTemplate, type LocalWorkout, type LocalWorkoutExercise, type LocalWorkoutSet } from '../db/local-db';
+import { localDB, getLocalDB, type OfflineOperation, type LocalExercise, type LocalTemplate, type LocalWorkout, type LocalWorkoutExercise, type LocalWorkoutSet } from '../db/local-db';
 import { getPendingOperations, removeOperation, incrementRetry, setLastSyncTime, getLastSyncTime } from '../db/local-repository';
 
 export interface SyncResult {
@@ -321,18 +321,74 @@ class SyncEngine {
   }
 
   private async applyServerChanges(data: ServerSyncResponse): Promise<void> {
-    const allData = [
-      { table: 'exercises' as TableType, items: data.exercises ?? [] },
-      { table: 'templates' as TableType, items: data.templates ?? [] },
-      { table: 'workouts' as TableType, items: data.workouts ?? [] },
-      { table: 'workoutExercises' as TableType, items: data.workoutExercises ?? [] },
-      { table: 'workoutSets' as TableType, items: data.workoutSets ?? [] },
+    const allData: Array<{ table: TableType; items: ServerEntity[] }> = [
+      { table: 'exercises', items: data.exercises ?? [] },
+      { table: 'templates', items: data.templates ?? [] },
+      { table: 'workouts', items: data.workouts ?? [] },
+      { table: 'workoutExercises', items: data.workoutExercises ?? [] },
+      { table: 'workoutSets', items: data.workoutSets ?? [] },
     ];
 
     for (const { table, items } of allData) {
+      if (items.length === 0) continue;
+
+      const tableInstance = this.getTable(table);
+      const localIds = items.map((item) => item.localId ?? item.id);
+      const existingItems = await tableInstance.where('localId').anyOf(localIds).toArray();
+      const existingByLocalId = new Map(existingItems.map((item) => [item.localId, item]));
+
+      const toAdd: unknown[] = [];
+      const toUpdate: Array<{ id: number; fields: Record<string, unknown> }> = [];
+      const toDelete: number[] = [];
+
       for (const serverData of items) {
-        await this.mergeLocalAndServer(table, serverData);
+        const searchId = serverData.localId ?? serverData.id;
+        const localItem = existingByLocalId.get(searchId);
+
+        if (serverData.isDeleted === true) {
+          if (localItem?.id !== undefined) {
+            toDelete.push(localItem.id);
+          }
+          continue;
+        }
+
+        if (!localItem) {
+          const newItem = this.createEntityItem(table, serverData, searchId);
+          if (newItem) {
+            toAdd.push(newItem);
+          }
+          continue;
+        }
+
+        const serverUpdatedAt = new Date(serverData.updatedAt).getTime();
+        let localUpdatedAt: number;
+        if ('updatedAt' in localItem && localItem.updatedAt instanceof Date) {
+          localUpdatedAt = localItem.updatedAt.getTime();
+        } else if ('startedAt' in localItem && localItem.startedAt instanceof Date) {
+          localUpdatedAt = localItem.startedAt.getTime();
+        } else {
+          localUpdatedAt = 0;
+        }
+
+        if (serverUpdatedAt > localUpdatedAt && localItem.id !== undefined) {
+          const updateFields = this.createUpdateFields(table, serverData);
+          if (Object.keys(updateFields).length > 0) {
+            toUpdate.push({ id: localItem.id, fields: updateFields });
+          }
+        }
       }
+
+      await getLocalDB().transaction('rw', tableInstance, async () => {
+        if (toDelete.length > 0) {
+          await tableInstance.bulkDelete(toDelete);
+        }
+        if (toAdd.length > 0) {
+          await tableInstance.bulkAdd(toAdd as never[]);
+        }
+        for (const { id, fields } of toUpdate) {
+          await tableInstance.update(id, fields);
+        }
+      });
     }
   }
 

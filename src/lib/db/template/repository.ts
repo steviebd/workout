@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
 import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
-import { createDb } from '../index';
+import { getDb } from '../index';
 import type {
   DbOrTx,
   TemplateExerciseWithDetails,
@@ -20,12 +20,11 @@ import type {
  * @returns The number of times the exercise appears in the template
  */
 export async function getTemplateExerciseSetCount(
-  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  dbOrTx: DbOrTx,
   templateId: string,
   exerciseId: string
 ): Promise<number> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const result = await db
     .select({ count: db.$count(templateExercises, and(
@@ -45,12 +44,12 @@ export async function getTemplateExerciseSetCount(
  * @returns The newly created template
  */
 export async function createTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   data: CreateTemplateData & { workosId: string }
 ): Promise<Template> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const template = await drizzleDb
+  const template = await db
     .insert(templates)
     .values({
       workosId: data.workosId,
@@ -74,12 +73,11 @@ export async function createTemplate(
  * @returns The template if found, or null
  */
 export async function getTemplateById(
-  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<Template | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const template = await db
     .select()
@@ -98,12 +96,11 @@ export async function getTemplateById(
  * @returns Array of templates with exercise counts
  */
 export async function getTemplatesByWorkosId(
-  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  dbOrTx: DbOrTx,
   workosId: string,
   options: GetTemplatesOptions = {}
 ): Promise<TemplateWithExerciseCount[]> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const {
     search,
@@ -161,19 +158,19 @@ export async function getTemplatesByWorkosId(
 }
 
 export async function updateTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string,
   data: UpdateTemplateData
 ): Promise<Template | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const updateData: Partial<NewTemplate> = {
     ...data,
     updatedAt: new Date().toISOString(),
   };
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(templates)
     .set(updateData)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -185,13 +182,13 @@ export async function updateTemplate(
 }
 
 export async function softDeleteTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const result = await drizzleDb
+  const result = await db
     .update(templates)
     .set({
       isDeleted: true,
@@ -212,14 +209,14 @@ export async function softDeleteTemplate(
  * @returns True if the exercise was removed, false if template not found
  */
 export async function removeExerciseFromTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   exerciseId: string,
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const template = await drizzleDb
+  const template = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -229,7 +226,7 @@ export async function removeExerciseFromTemplate(
     return false;
   }
 
-  const result = await drizzleDb
+  const result = await db
     .delete(templateExercises)
     .where(and(
       eq(templateExercises.templateId, templateId),
@@ -245,8 +242,7 @@ export async function getTemplateExercises(
   templateId: string,
   workosId: string
 ): Promise<TemplateExerciseWithDetails[]> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const template = await db
     .select()
@@ -285,12 +281,11 @@ export async function getTemplateExercises(
 }
 
 export async function getTemplateWithExercises(
-  dbOrTx: D1Database | ReturnType<typeof createDb>,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<(Template & { exercises: TemplateExerciseWithDetails[] }) | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const template = await db
     .select()
@@ -339,8 +334,7 @@ export async function reorderTemplateExercises(
   exerciseOrders: ExerciseOrder[],
   workosId: string
 ): Promise<boolean> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const template = await db
     .select()
@@ -376,13 +370,13 @@ export async function reorderTemplateExercises(
  * @returns True if successful, false if template not found
  */
 export async function deleteAllTemplateExercises(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const template = await drizzleDb
+  const template = await db
     .select({ id: templates.id })
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -393,7 +387,7 @@ export async function deleteAllTemplateExercises(
     return false;
   }
 
-  await drizzleDb
+  await db
     .delete(templateExercises)
     .where(eq(templateExercises.templateId, templateId))
     .run();
@@ -402,14 +396,14 @@ export async function deleteAllTemplateExercises(
 }
 
 export async function addExerciseToTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   exerciseId: string,
   orderIndex: number
 ): Promise<void> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  await drizzleDb
+  await db
     .insert(templateExercises)
     .values({
       templateId,
@@ -420,13 +414,13 @@ export async function addExerciseToTemplate(
 }
 
 export async function copyTemplate(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   templateId: string,
   workosId: string
 ): Promise<Template | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const originalTemplate = await drizzleDb
+  const originalTemplate = await db
     .select()
     .from(templates)
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
@@ -436,7 +430,7 @@ export async function copyTemplate(
     return null;
   }
 
-  const newTemplate = await drizzleDb
+  const newTemplate = await db
     .insert(templates)
     .values({
       workosId: originalTemplate.workosId,
@@ -449,7 +443,7 @@ export async function copyTemplate(
     .returning()
     .get();
 
-  const originalExercises = await drizzleDb
+  const originalExercises = await db
     .select()
     .from(templateExercises)
     .where(eq(templateExercises.templateId, templateId))
@@ -457,7 +451,7 @@ export async function copyTemplate(
     .all();
 
   if (originalExercises.length > 0) {
-    await drizzleDb
+    await db
       .insert(templateExercises)
       .values(
         originalExercises.map((te) => ({

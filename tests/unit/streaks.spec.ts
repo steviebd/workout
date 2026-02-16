@@ -3,9 +3,43 @@ import type { D1Database } from '@cloudflare/workers-types'
 import { calculateThirtyDayStreak, countWorkoutsInRange, getWeeklyWorkoutCount, getTotalWorkouts } from '~/lib/streaks'
 import { createDb } from '~/lib/db'
 
-vi.mock('~/lib/db', () => ({
-  createDb: vi.fn(),
-}))
+vi.mock('~/lib/db', () => {
+  let mockDbInstance: ReturnType<typeof makeChainableMock> | null = null;
+
+  function makeChainableMock(returnValue: unknown) {
+    const resolvedValue = returnValue;
+    const groupChain = {
+      groupBy: () => groupChain,
+      orderBy: () => groupChain,
+      all: vi.fn().mockResolvedValue(resolvedValue),
+    };
+    return {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            all: vi.fn().mockResolvedValue(resolvedValue),
+            get: vi.fn().mockResolvedValue(resolvedValue),
+          }),
+          groupBy: vi.fn().mockReturnValue(groupChain),
+        }),
+      }),
+    };
+  }
+
+  const makeDb = vi.fn(() => {
+    mockDbInstance ??= makeChainableMock([]);
+    return mockDbInstance;
+  });
+
+  const getDb = vi.fn((dbOrTx) => {
+    if (dbOrTx && typeof dbOrTx === 'object' && 'transaction' in dbOrTx) {
+      return dbOrTx;
+    }
+    return makeDb();
+  });
+
+  return { createDb: makeDb, getDb };
+})
 
 function createChainableMock<T>(returnValue: T, hasGroupBy = false) {
   const resolvedValue = returnValue as unknown;

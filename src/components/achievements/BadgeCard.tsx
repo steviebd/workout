@@ -81,7 +81,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold truncate">{badge.name}</p>
+              <p className="text-base font-semibold truncate">{badge.name}</p>
               {badge.unlocked ? <span className="flex-shrink-0 text-xs bg-success/20 text-success px-2 py-0.5 rounded-full font-medium">Unlocked</span> : null}
             </div>
             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">

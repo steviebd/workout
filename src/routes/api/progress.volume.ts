@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getWeeklyVolume } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/progress/volume')({
   server: {
@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/progress/volume')({
           const exerciseId = exerciseIdParam ?? undefined;
 
           if (volumeScope === 'selected' && !exerciseId) {
-            return createApiError('exerciseId is required when volumeScope is selected', 400, 'VALIDATION_ERROR');
+            return createApiError('exerciseId is required when volumeScope is selected', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           let fromDate: string | undefined;
@@ -87,7 +87,7 @@ export const Route = createFileRoute('/api/progress/volume')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get volume progress error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
       },
     },

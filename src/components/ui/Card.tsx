@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { cn } from '~/lib/cn'
 
-function Card({ className, variant = 'surface', ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted' }) {
+function Card({ className, variant = 'surface', overflow = 'hidden', ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted'; overflow?: 'visible' | 'hidden' | 'auto' | 'clip' | 'scroll' }) {
   const variantStyles = {
     surface: 'border border-border/60 bg-card shadow-xs',
     elevated: 'border border-border/40 bg-card shadow-md',
@@ -17,6 +17,7 @@ function Card({ className, variant = 'surface', ...props }: React.ComponentProps
         variantStyles[variant],
         className,
       )}
+      style={{ overflow }}
       {...props}
     />
   )
@@ -39,7 +40,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('leading-tight font-semibold text-lg', className)}
+      className={cn('leading-tight font-semibold text-base', className)}
       {...props}
     />
   )

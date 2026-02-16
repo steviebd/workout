@@ -5,8 +5,8 @@ import { workouts } from '../../lib/db/schema';
 import { getTemplateExercises } from '../../lib/db/template';
 import { validateBody } from '../../lib/api/route-helpers';
 import { createWorkoutSchema } from '../../lib/validators';
-import { withApiContext } from '../../lib/api/context';
-import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { withApiContext, parseQueryParams, handleApiError } from '~/lib/api/handler';
+import { createApiError, API_ERROR_CODES } from '~/lib/api/errors';
 
 type WorkoutSortColumn = typeof workouts.startedAt | typeof workouts.createdAt | typeof workouts.name;
 
@@ -24,17 +24,20 @@ export const Route = createFileRoute('/api/workouts')({
           const { session, db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const limitParam = url.searchParams.get('limit');
+          const { limit: limitParam, sortBy, sortOrder } = parseQueryParams<{
+            limit?: string;
+            sortBy?: string;
+            sortOrder?: string;
+          }>(url);
+          
           const limit = limitParam ? parseInt(limitParam, 10) : 10;
-          const sortBy = url.searchParams.get('sortBy') ?? 'startedAt';
-          const sortOrder = url.searchParams.get('sortOrder') ?? 'DESC';
 
           if (isNaN(limit) || limit < 1 || limit > 100) {
             return createApiError('Invalid limit (1-100)', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
-          const sortColumn = validSortColumns[sortBy] ?? workouts.startedAt;
-          const orderFn = sortOrder === 'DESC' ? desc : asc;
+          const sortColumn = validSortColumns[sortBy ?? 'startedAt'] ?? workouts.startedAt;
+          const orderFn = (sortOrder ?? 'DESC') === 'DESC' ? desc : asc;
 
           const userWorkouts = await db
             .select({
@@ -54,8 +57,7 @@ export const Route = createFileRoute('/api/workouts')({
 
           return Response.json(userWorkouts);
         } catch (err) {
-          console.error('Fetch workouts error:', err);
-          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
+          return handleApiError(err, 'Fetch workouts');
         }
       },
       POST: async ({ request }) => {
@@ -85,8 +87,7 @@ export const Route = createFileRoute('/api/workouts')({
 
           return Response.json(workout, { status: 201 });
         } catch (err) {
-          console.error('Create workout error:', err);
-          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
+          return handleApiError(err, 'Create workout');
         }
       },
     },

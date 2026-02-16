@@ -169,10 +169,7 @@ function Templates() {
           {loading ? (
             <SkeletonList count={4} />
           ) : templates.length === 0 ? (
-            <EmptyTemplates
-              searchActive={!!search}
-              onCreate={handleCreateTemplate}
-            />
+            <EmptyTemplates onCreate={handleCreateTemplate} />
           ) : (
             <div className="space-y-3">
               {templates.map((template) => (
@@ -180,7 +177,7 @@ function Templates() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <Link
-                        className="font-semibold hover:text-primary"
+                        className="text-base font-semibold hover:text-primary"
                         to="/templates/$id"
                         params={{ id: template.id }}
                       >

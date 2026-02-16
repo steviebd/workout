@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { type CreateTemplateData, createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
+import { createTemplate, getTemplatesByWorkosId } from '../../lib/db/template';
+import { validateBody } from '../../lib/api/route-helpers';
+import { createTemplateSchema } from '../../lib/validators';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
-const MAX_NAME_LENGTH = 200;
-const MAX_DESCRIPTION_LENGTH = 1000;
-const MAX_NOTES_LENGTH = 2000;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
@@ -51,31 +50,17 @@ export const Route = createFileRoute('/api/templates')({
         try {
           const { session, d1Db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { name, description, notes, localId } = body as CreateTemplateData & { localId?: string };
-
-          if (!name || typeof name !== 'string') {
-            return createApiError('Name is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
-          }
-
-          if (name.length > MAX_NAME_LENGTH) {
-            return createApiError(`Name too long (max ${MAX_NAME_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
-          }
-
-          if (description && typeof description === 'string' && description.length > MAX_DESCRIPTION_LENGTH) {
-            return createApiError(`Description too long (max ${MAX_DESCRIPTION_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
-          }
-
-          if (notes && typeof notes === 'string' && notes.length > MAX_NOTES_LENGTH) {
-            return createApiError(`Notes too long (max ${MAX_NOTES_LENGTH} characters)`, 400, API_ERROR_CODES.VALIDATION_ERROR);
+          const body = await validateBody(request, createTemplateSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
 
           const template = await createTemplate(d1Db, {
             workosId: session.sub,
-            name: name.trim(),
-            description: description?.trim(),
-            notes: notes?.trim(),
-            localId,
+            name: body.name.trim(),
+            description: body.description?.trim(),
+            notes: body.notes?.trim(),
+            localId: body.localId,
           });
 
           return Response.json(template, { status: 201 });

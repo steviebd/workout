@@ -102,8 +102,8 @@ function WorkoutsPage() {
           {activePrograms.length > 0 ? (
             <section className="mb-8">
               <SectionHeader title="Active Programs" />
-              <div className="space-y-3">
-                {activePrograms.map((program) => (
+              <div className="space-y-3 max-h-[220px] overflow-y-auto -mx-2 px-2">
+                {activePrograms.slice(0, 2).map((program) => (
                   <Link
                     key={program.id}
                     to="/programs/cycle/$cycleId"
@@ -152,8 +152,8 @@ function WorkoutsPage() {
                 onCreate={() => { window.location.href = '/templates/new'; }}
               />
             ) : (
-              <div className="space-y-3">
-                {templates.map((template) => (
+              <div className="space-y-3 max-h-[440px] overflow-y-auto -mx-2 px-2">
+                {templates.slice(0, 5).map((template) => (
                   <Link
                     key={template.id}
                     to="/workouts/start/$templateId"
@@ -182,7 +182,18 @@ function WorkoutsPage() {
             )}
           </section>
 
-          <section className="mb-8">
+          <section>
+            <SectionHeader title="Create Your Own Workout" />
+            <Button 
+              className="w-full"
+              onClick={() => { window.location.href = '/workouts/new'; }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Build Custom Workout
+            </Button>
+          </section>
+
+          <section className="mt-8">
             <SectionHeader
               title="Your Exercises"
               action={
@@ -209,15 +220,15 @@ function WorkoutsPage() {
             {exercises.length === 0 ? (
               <EmptyExercises onCreate={() => { window.location.href = '/exercises/new'; }} />
             ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {exercises.slice(0, 6).map((exercise) => (
+              <div className="grid grid-cols-1 gap-2 max-h-[380px] overflow-y-auto -mx-2 px-2">
+                {exercises.slice(0, 5).map((exercise) => (
                   <Link
                     key={exercise.id}
                     to="/exercises/$id"
                     params={{ id: exercise.id }}
                   >
                     <Card className="hover:border-primary/50 transition-colors cursor-pointer touch-manipulation">
-                      <CardContent className="p-3">
+                      <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">{exercise.name}</h3>
@@ -231,7 +242,7 @@ function WorkoutsPage() {
                     </Card>
                   </Link>
                 ))}
-                {exercises.length > 6 && (
+                {exercises.length > 5 && (
                   <Button asChild={true} variant="ghost" className="w-full">
                     <Link to="/exercises">
                       View all {exercises.length} exercises
@@ -240,16 +251,6 @@ function WorkoutsPage() {
                 )}
               </div>
             )}
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold mb-4">Create Your Own Workout</h2>
-            <Button asChild={true} className="w-full">
-              <Link to="/workouts">
-                <Plus className="h-4 w-4 mr-2" />
-                Build Custom Workout
-              </Link>
-            </Button>
           </section>
       </PullToRefresh>
     </PageLayout>

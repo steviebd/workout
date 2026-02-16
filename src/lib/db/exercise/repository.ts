@@ -1,47 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { and, asc, desc, eq, like } from 'drizzle-orm';
-import { type Exercise, type NewExercise, exercises } from './schema';
-import { createDb } from './index';
+import { exercises, type Exercise, type NewExercise } from '../schema';
+import { getDb, type DbOrTx } from '../index';
+import type { CreateExerciseData, UpdateExerciseData, GetExercisesOptions, LibraryExercise } from './types';
 
-export type { Exercise, NewExercise };
-
-export interface CreateExerciseData {
-  name: string;
-  muscleGroup?: string;
-  description?: string;
-  localId?: string;
-  libraryId?: string;
-}
-
-export interface UpdateExerciseData {
-  name?: string;
-  muscleGroup?: string;
-  description?: string;
-}
-
-export interface GetExercisesOptions {
-  search?: string;
-  muscleGroup?: string;
-  excludeDeleted?: boolean;
-  sortBy?: 'createdAt' | 'muscleGroup' | 'name';
-  sortOrder?: 'ASC' | 'DESC';
-  limit?: number;
-  offset?: number;
-}
-
-/**
- * Creates a new exercise for a user
- * @param db - D1 database instance
- * @param data - Exercise creation data including workosId
- * @returns The created exercise with all fields populated
- */
 export async function createExercise(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   data: CreateExerciseData & { workosId: string }
 ): Promise<Exercise> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const exercise = await drizzleDb
+  const exercise = await db
     .insert(exercises)
     .values({
       workosId: data.workosId,
@@ -57,21 +26,14 @@ export async function createExercise(
   return exercise;
 }
 
-/**
- * Retrieves a single exercise by ID, validating user ownership
- * @param db - D1 database instance
- * @param exerciseId - The exercise ID to look up
- * @param workosId - The user's WorkOS ID for ownership validation
- * @returns The exercise if found, or null
- */
 export async function getExerciseById(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   exerciseId: string,
   workosId: string
 ): Promise<Exercise | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const exercise = await drizzleDb
+  const exercise = await db
     .select()
     .from(exercises)
     .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
@@ -80,19 +42,13 @@ export async function getExerciseById(
   return exercise ?? null;
 }
 
-/**
- * Retrieves a single exercise by ID without ownership validation
- * @param db - D1 database instance
- * @param exerciseId - The exercise ID to look up
- * @returns The exercise if found, or null
- */
 export async function getExerciseByIdOnly(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   exerciseId: string
 ): Promise<Exercise | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const exercise = await drizzleDb
+  const exercise = await db
     .select()
     .from(exercises)
     .where(eq(exercises.id, exerciseId))
@@ -101,19 +57,12 @@ export async function getExerciseByIdOnly(
   return exercise ?? null;
 }
 
-/**
- * Retrieves all exercises for a user with optional filtering and sorting
- * @param db - D1 database instance
- * @param workosId - The user's WorkOS ID
- * @param options - Optional filters and sorting options
- * @returns Array of exercises matching the criteria
- */
 export async function getExercisesByWorkosId(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   options: GetExercisesOptions = {}
 ): Promise<Exercise[]> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const {
     search,
@@ -143,7 +92,7 @@ export async function getExercisesByWorkosId(
     ? desc(exercises.createdAt)
     : asc(exercises.createdAt);
 
-  let query = drizzleDb
+  let query = db
     .select()
     .from(exercises)
     .where(and(...conditions));
@@ -173,28 +122,20 @@ export async function getExercisesByWorkosId(
   return results as Exercise[];
 }
 
-/**
- * Updates an existing exercise
- * @param db - D1 database instance
- * @param exerciseId - The exercise ID to update
- * @param workosId - The user's WorkOS ID for ownership validation
- * @param data - Fields to update
- * @returns The updated exercise if found, or null
- */
 export async function updateExercise(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   exerciseId: string,
   workosId: string,
   data: UpdateExerciseData
 ): Promise<Exercise | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const updateData: Partial<NewExercise> = {
     ...data,
     updatedAt: new Date().toISOString(),
   };
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(exercises)
     .set(updateData)
     .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
@@ -205,21 +146,14 @@ export async function updateExercise(
   return updated ?? null;
 }
 
-/**
- * Soft deletes an exercise by marking it as deleted
- * @param db - D1 database instance
- * @param exerciseId - The exercise ID to delete
- * @param workosId - The user's WorkOS ID for ownership validation
- * @returns True if the operation succeeded, false if not found
- */
 export async function softDeleteExercise(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   exerciseId: string,
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const result = await drizzleDb
+  const result = await db
     .update(exercises)
     .set({
       isDeleted: true,
@@ -231,27 +165,14 @@ export async function softDeleteExercise(
   return result.success;
 }
 
-export interface LibraryExercise {
-  name: string;
-  muscleGroup: string;
-  description: string;
-}
-
-/**
- * Copies an exercise from the library to the user's personal collection
- * @param db - D1 database instance
- * @param workosId - The user's WorkOS ID
- * @param libraryExercise - The library exercise data to copy
- * @returns The newly created exercise
- */
 export async function copyExerciseFromLibrary(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   libraryExercise: LibraryExercise
 ): Promise<Exercise> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const newExercise = await drizzleDb
+  const newExercise = await db
     .insert(exercises)
     .values({
       workosId,

@@ -1,6 +1,6 @@
 'use client';
 
-import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import {
   Calendar,
   Check,
@@ -11,14 +11,12 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { useCallback, useState, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { useAuth } from './__root';
-import { type Workout } from '@/lib/db/schema';
-import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
-import { trackEvent } from '@/lib/posthog';
+import { useState, useMemo } from 'react';
+import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getVideoTutorialByName, type VideoTutorial } from '@/lib/exercise-library';
-import { useToast } from '@/components/ToastProvider';
+import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '~/components/ui/Skeleton';
 import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
 import { VideoTutorialModal } from '@/components/VideoTutorialModal';
 import { Button } from '@/components/ui/Button';
@@ -26,47 +24,11 @@ import { Card } from '@/components/ui/Card';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 import { Input } from '@/components/ui/Input';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
-import { ErrorState } from '@/components/ui/ErrorState';
-import { Skeleton } from '~/components/ui/Skeleton';
-
-interface WorkoutExercise {
-  id: string;
-  exerciseId: string;
-  name: string;
-  muscleGroup: string | null;
-  orderIndex: number;
-  sets: WorkoutSet[];
-  notes: string | null;
-  isAmrap: boolean;
-}
-
-interface WorkoutSet {
-  id: string;
-  workoutExerciseId: string;
-  setNumber: number;
-  weight: number | null;
-  reps: number | null;
-  rpe: number | null;
-  isComplete: boolean;
-  completedAt: string | null;
-  createdAt: string | null;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-}
 
 function WorkoutSession() {
-  const auth = useAuth();
-  const router = useRouter();
   const params = useParams({ from: '/workouts/$id' });
   const workoutId = params.id;
-  const toast = useToast();
   const { formatDate } = useDateFormat();
-  const queryClient = useQueryClient();
 
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
@@ -76,170 +38,24 @@ function WorkoutSession() {
   const [showIncompleteSetsConfirm, setShowIncompleteSetsConfirm] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
 
-  const { data: workout, isLoading: workoutLoading, error: workoutError } = useQuery<Workout>({
-    throwOnError: false,
-    queryKey: ['workout', workoutId],
-    queryFn: async () => {
-      if (!workoutId) throw new Error('No workout ID');
-      const res = await fetch(`/api/workouts/${workoutId}`, { credentials: 'include' });
-      if (!res.ok) {
-        let errorData: { error?: string } = { error: 'Workout not found' };
-        try {
-          errorData = await res.json();
-        } catch {
-          // Use default error message
-        }
-        throw new Error(errorData.error ?? 'Workout not found');
-      }
-      return res.json();
-    },
-    enabled: !!workoutId && !!auth.user,
-    retry: false,
-  });
-
-  const { data: exercises = [] } = useQuery<WorkoutExercise[]>({
-    queryKey: ['workout-exercises', workoutId],
-    queryFn: async () => {
-      if (!workoutId) return [];
-      const res = await fetch(`/api/workouts/${workoutId}/exercises`, { credentials: 'include' });
-      if (!res.ok) return [];
-      const data: WorkoutExerciseWithDetails[] = await res.json();
-      return data.map((e) => ({
-        id: e.id,
-        exerciseId: e.exerciseId,
-        orderIndex: e.orderIndex,
-        notes: e.notes,
-        name: e.exercise?.name ?? '',
-        muscleGroup: e.exercise?.muscleGroup ?? null,
-        sets: e.sets as WorkoutSet[],
-        isAmrap: e.isAmrap,
-      }));
-    },
-    enabled: !!workoutId && !!auth.user,
-  });
-
-  const { data: availableExercises = [], isLoading: availableExercisesLoading } = useQuery<Exercise[]>({
-    queryKey: ['exercises'],
-    queryFn: async () => {
-      const res = await fetch('/api/exercises', { credentials: 'include' });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!auth.user,
-    staleTime: 30 * 1000,
-  });
-
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
-
-  useEffect(() => {
-    if (workout?.completedAt && workoutId) {
-      void router.navigate({ to: `/workouts/${workoutId}/summary`, replace: true });
-    }
-  }, [workout?.completedAt, workoutId, router]);
-
-  const updateSetMutation = useMutation({
-    mutationFn: async ({ setId, updates }: { setId: string; updates: Partial<WorkoutSet> }) => {
-      const res = await fetch(`/api/workouts/sets/${setId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updates),
-      });
-      if (!res.ok) throw new Error('Failed to update set');
-      return res.json();
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
-    },
-  });
-
-  const addSetMutation = useMutation({
-    mutationFn: async ({ workoutExerciseId, setNumber, weight, reps, rpe }: { workoutExerciseId: string; setNumber: number; weight?: number | null; reps?: number | null; rpe?: number | null }) => {
-      const res = await fetch('/api/workouts/sets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ workoutExerciseId, setNumber, weight, reps, rpe }),
-      });
-      if (!res.ok) throw new Error('Failed to add set');
-      return res.json();
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
-    },
-  });
-
-  const addExerciseMutation = useMutation({
-    mutationFn: async ({ exerciseId, orderIndex }: { exerciseId: string; orderIndex: number }) => {
-      const res = await fetch(`/api/workouts/${workoutId}/exercises`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ exerciseId, orderIndex }),
-      });
-      if (!res.ok) throw new Error('Failed to add exercise');
-      return res.json();
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
-    },
-  });
-
-  const completeWorkoutMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/workouts/${workoutId}/complete`, {
-        method: 'PUT',
-        credentials: 'include',
-      });
-       if (!res.ok) {
-         let errorData: { message?: string } = { message: 'Failed to complete workout' };
-         try {
-           errorData = await res.json();
-         } catch {
-           // Use default error message
-         }
-         throw new Error(errorData.message ?? 'Failed to complete workout');
-       }
-      return res.json();
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
-      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
-      void queryClient.invalidateQueries({ queryKey: ['streak'] });
-    },
-  });
-
-  const deleteWorkoutMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/workouts/${workoutId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to delete workout');
-    },
-    onSuccess: () => {
-      void router.navigate({ to: '/workouts', replace: true });
-    },
-  });
-
-  const saveNotesMutation = useMutation({
-    mutationFn: async (notesValue: string) => {
-      const res = await fetch(`/api/workouts/${workoutId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ notes: notesValue }),
-      });
-      if (!res.ok) throw new Error('Failed to save notes');
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
-    },
-  });
+  const {
+    workout,
+    workoutLoading,
+    workoutError,
+    exercises,
+    availableExercises,
+    availableExercisesLoading,
+    totalSetsCount,
+    formatDuration,
+    updateSetMutation,
+    completeWorkoutMutation,
+    handleUpdateSet,
+    handleAddSet,
+    handleAddExercise,
+    handleCompleteWorkout,
+    handleDiscardWorkout,
+    handleSaveNotes,
+  } = useWorkoutSession({ workoutId });
 
   const filteredExercises = useMemo(() =>
     availableExercises.filter((exercise) =>
@@ -247,71 +63,37 @@ function WorkoutSession() {
       !exercises.some((e) => e.exerciseId === exercise.id)
     ), [availableExercises, exerciseSearch, exercises]);
 
-  const handleUpdateSet = useCallback((_exerciseId: string, setId: string, updates: Partial<WorkoutSet>) => {
-    updateSetMutation.mutate({ setId, updates });
-  }, [updateSetMutation]);
-
-  const handleAddSet = useCallback((_exerciseId: string, _currentSets: Array<{ id: string; reps: number; weight: number; completed: boolean }>) => {
-    const exercise = exercises.find(e => e.exerciseId === _exerciseId);
-    if (!exercise) return;
-    const setNumber = exercise.sets.length + 1;
-    const lastSet = exercise.sets[exercise.sets.length - 1];
-    addSetMutation.mutate({
-      workoutExerciseId: exercise.id,
-      setNumber,
-      weight: lastSet?.weight ?? null,
-      reps: lastSet?.reps ?? null,
-      rpe: null,
-    });
-  }, [exercises, addSetMutation]);
-
-  const handleAddExercise = useCallback((exercise: Exercise) => {
-    const orderIndex = exercises.length;
-    addExerciseMutation.mutate({ exerciseId: exercise.id, orderIndex });
-    setShowExerciseSelector(false);
-    setExerciseSearch('');
-  }, [exercises, addExerciseMutation]);
-
-  const handleAddExerciseClick = useCallback(() => {
+  const handleAddExerciseClick = () => {
     setShowExerciseSelector(true);
-  }, []);
+  };
 
-  const handleAddExerciseClickShared = useCallback((e: React.MouseEvent) => {
+  const handleAddExerciseClickShared = (e: React.MouseEvent) => {
     const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
     const exercise = filteredExercises.find(ex => ex.id === id);
     if (exercise) {
       handleAddExercise(exercise);
+      setShowExerciseSelector(false);
+      setExerciseSearch('');
     }
-  }, [filteredExercises, handleAddExercise]);
+  };
 
-  const handleSaveNotes = useCallback(() => {
-    saveNotesMutation.mutate(notes);
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(e.target.value);
+  };
+
+  const handleExerciseSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setExerciseSearch(e.target.value);
+  };
+
+  const handleNotesSave = () => {
+    handleSaveNotes(notes);
     setEditingNotes(false);
-  }, [saveNotesMutation, notes]);
+  };
 
-  const handleCompleteWorkout = useCallback(() => {
-    const incompleteSetsCount = exercises.reduce((acc, e) => {
-      return acc + e.sets.filter((s) => !s.isComplete).length;
-    }, 0);
-
-    if (incompleteSetsCount > 0) {
-      setShowIncompleteSetsConfirm(true);
-      return;
-    }
-
+  const handleIncompleteSetsContinue = () => {
+    setShowIncompleteSetsConfirm(false);
     completeWorkoutMutation.mutate(undefined, {
       onSuccess: () => {
-        const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);
-        const completedSets = exercises.reduce((acc, e) => acc + e.sets.filter((s) => s.isComplete).length, 0);
-        void trackEvent('workout_completed', {
-          workout_id: workoutId,
-          workout_name: workout?.name ?? '',
-          total_sets: totalSets,
-          completed_sets: completedSets,
-          exercise_count: exercises.length,
-        });
-        toast.success('Workout completed successfully!');
-
         const is1RMTest = workout?.name === '1RM Test' && workout?.programCycleId;
         const redirectUrl = is1RMTest
           ? `/programs/cycle/${workout?.programCycleId}/1rm-test`
@@ -321,46 +103,10 @@ function WorkoutSession() {
           window.location.href = redirectUrl;
         }, 1000);
       },
-      onError: (error) => {
-        toast.error(error instanceof Error ? error.message : 'Failed to complete workout');
-      },
     });
-  }, [exercises, completeWorkoutMutation, workout, workoutId, toast]);
-
-  const handleDiscardWorkout = useCallback(() => {
-    deleteWorkoutMutation.mutate();
-  }, [deleteWorkoutMutation]);
-
-  const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNotes(e.target.value);
-  }, []);
-
-  const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseSearch(e.target.value);
-  }, []);
-
-  const handleIncompleteSetsContinue = useCallback(() => {
-    setShowIncompleteSetsConfirm(false);
-    handleCompleteWorkout();
-  }, [handleCompleteWorkout]);
-
-  const totalSetsCount = exercises.reduce((acc, e) => acc + e.sets.length, 0);
-
-  const formatDuration = (startTime: string) => {
-    const start = new Date(startTime);
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
   };
 
-  if (auth.loading || workoutLoading) {
+  if (workoutLoading) {
     return (
       <main className="mx-auto max-w-lg px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
@@ -407,7 +153,7 @@ function WorkoutSession() {
     <>
       <header className="bg-card border-b border-border py-4 px-4">
         <div className="max-w-lg mx-auto text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{workout.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{workout.name}</h1>
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
             <span className="flex items-center gap-1.5">
               <Calendar size={14} />
@@ -505,7 +251,7 @@ function WorkoutSession() {
                   </button>
                   <button
                     className="text-sm text-primary hover:text-primary"
-                    onClick={handleSaveNotes}
+                    onClick={handleNotesSave}
                   >
                     Save
                   </button>
@@ -521,7 +267,7 @@ function WorkoutSession() {
             </div>
             {editingNotes ? (
               <textarea
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
                 onChange={handleNotesChange}
                 placeholder="Add notes about this workout..."
                 rows={3}
@@ -543,7 +289,7 @@ function WorkoutSession() {
           </DrawerHeader>
           <div className="p-4 border-b">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 autoFocus={true}
                 className="pl-10"
@@ -656,7 +402,18 @@ function WorkoutSession() {
           <Button
             className="flex-1"
             disabled={completeWorkoutMutation.isPending || totalSetsCount === 0}
-            onClick={handleCompleteWorkout}
+            onClick={() => {
+              const incompleteSetsCount = exercises.reduce((acc, e) => {
+                return acc + e.sets.filter((s) => !s.isComplete).length;
+              }, 0);
+
+              if (incompleteSetsCount > 0) {
+                setShowIncompleteSetsConfirm(true);
+                return;
+              }
+
+              handleCompleteWorkout();
+            }}
           >
             {completeWorkoutMutation.isPending ? (
               <>

@@ -12,9 +12,7 @@ import {
   workouts,
   generateId,
 } from './schema';
-import { createDb, calculateChunkSize } from './index';
-
-type DbOrTx = D1Database | ReturnType<typeof createDb>;
+import { getDb, calculateChunkSize, type DbOrTx } from './index';
 
 export type { UserProgramCycle, ProgramCycleWorkout };
 
@@ -28,8 +26,7 @@ export async function getProgramCycleWithWorkouts(
   cycleId: string,
   workosId: string
 ): Promise<(UserProgramCycle & { workouts: ProgramCycleWorkout[] }) | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const cycle = await db
     .select()
@@ -93,8 +90,7 @@ export async function createProgramCycle(
   workosId: string,
   data: CreateProgramCycleData
 ): Promise<UserProgramCycle> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const cycle = await db
     .insert(userProgramCycles)
@@ -151,8 +147,7 @@ export async function getProgramCycleById(
   cycleId: string,
   workosId: string
 ): Promise<UserProgramCycle | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const cycle = await db
     .select()
@@ -170,12 +165,12 @@ export async function getProgramCycleById(
  * @returns Array of up to 3 active program cycles, ordered by start date
  */
 export async function getActiveProgramCycles(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<UserProgramCycle[]> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const cycles = await drizzleDb
+  const cycles = await db
     .select()
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, 'active')))
@@ -194,17 +189,17 @@ export async function getActiveProgramCycles(
  * @returns Array of program cycles ordered by start date
  */
 export async function getProgramCyclesByWorkosId(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   options?: { status?: string }
 ): Promise<UserProgramCycle[]> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const conditions = options?.status
     ? and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, options.status))
     : eq(userProgramCycles.workosId, workosId);
 
-  const cycles = await drizzleDb
+  const cycles = await db
     .select()
     .from(userProgramCycles)
     .where(conditions as any)
@@ -223,14 +218,14 @@ export async function getProgramCyclesByWorkosId(
  * @returns The updated program cycle, or null if not found
  */
 export async function updateProgramCycle1RM(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string,
   data: { squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number }
 ): Promise<UserProgramCycle | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const existing = await drizzleDb
+  const existing = await db
     .select()
     .from(userProgramCycles)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -249,7 +244,7 @@ export async function updateProgramCycle1RM(
     updatedAt: new Date().toISOString(),
   };
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(userProgramCycles)
     .set(updateData)
     .where(and(eq(userProgramCycles.id, cycleId), eq(userProgramCycles.workosId, workosId)))
@@ -273,8 +268,7 @@ export async function updateProgramCycleProgress(
   workosId: string,
   data: { currentWeek?: number; currentSession?: number }
 ): Promise<UserProgramCycle | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const updates: Partial<UserProgramCycle> = {
     updatedAt: new Date().toISOString(),
@@ -305,8 +299,7 @@ export async function completeProgramCycle(
   cycleId: string,
   workosId: string
 ): Promise<UserProgramCycle | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const updated = await db
     .update(userProgramCycles)
@@ -331,13 +324,13 @@ export async function completeProgramCycle(
  * @returns True if the operation succeeded, false if not found
  */
 export async function softDeleteProgramCycle(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   workosId: string
 ): Promise<boolean> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const deleted = await drizzleDb
+  const deleted = await db
     .update(userProgramCycles)
     .set({
       status: 'deleted',
@@ -361,8 +354,7 @@ export async function getCycleWorkouts(
   cycleId: string,
   workosId: string
 ): Promise<ProgramCycleWorkout[]> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const cycle = await db
     .select({ id: userProgramCycles.id })
@@ -396,8 +388,7 @@ export async function getCurrentWorkout(
   cycleId: string,
   workosId: string
 ): Promise<ProgramCycleWorkout | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const cycle = await db
     .select()
@@ -440,8 +431,7 @@ export async function markWorkoutComplete(
   workosId: string,
   actualWorkoutId: string
 ): Promise<void> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const workout = await db
     .select()
@@ -513,12 +503,12 @@ export async function markWorkoutComplete(
  * @returns Object containing squat, bench, deadlift, and OHP 1RM values, or null if none found
  */
 export async function getLatestOneRMs(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string
 ): Promise<{ squat1rm: number | null; bench1rm: number | null; deadlift1rm: number | null; ohp1rm: number | null } | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
-  const latestOneRMs = await drizzleDb
+  const latestOneRMs = await db
     .select({
       squat1rm: workouts.squat1rm,
       bench1rm: workouts.bench1rm,
@@ -547,7 +537,7 @@ export async function getLatestOneRMs(
     };
   }
 
-  const latestCycle = await drizzleDb
+  const latestCycle = await db
     .select({
       squat1rm: userProgramCycles.squat1rm,
       bench1rm: userProgramCycles.bench1rm,
@@ -602,12 +592,12 @@ export interface TargetLiftWorkout {
  * @param defaultScheduledDate - Optional default date for scheduled workouts
  */
 export async function createProgramCycleWorkouts(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   cycleId: string,
   cycleWorkouts: TargetLiftWorkout[],
   defaultScheduledDate?: string
 ): Promise<void> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const workoutData = cycleWorkouts.map((workout) => {
     const targetLifts = JSON.stringify([
@@ -642,7 +632,7 @@ export async function createProgramCycleWorkouts(
 
   for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
     const batch = workoutData.slice(i, i + BATCH_SIZE);
-    await drizzleDb.insert(programCycleWorkouts).values(batch as any).run();
+    await db.insert(programCycleWorkouts).values(batch as any).run();
   }
 }
 
@@ -660,8 +650,7 @@ export async function getOrCreateExerciseForWorkout(
   exerciseName: string,
   lift: string | undefined
 ): Promise<string> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   const existing = await db
     .select()
@@ -711,8 +700,7 @@ export async function generateTemplateFromWorkout(
   cycleWorkout: ProgramCycleWorkout,
   cycle: UserProgramCycle
 ): Promise<string> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   console.log('generateTemplateFromWorkout - cycleWorkout.targetLifts:', cycleWorkout.targetLifts, 'type:', typeof cycleWorkout.targetLifts);
   
@@ -808,11 +796,11 @@ export async function generateTemplateFromWorkout(
  * @returns The updated workout, or null if not found
  */
 export async function updateProgramCycleWorkout(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workoutId: string,
   data: { scheduledDate?: string; scheduledTime?: string }
 ): Promise<ProgramCycleWorkout | null> {
-  const drizzleDb = createDb(db);
+  const db = getDb(dbOrTx);
 
   const updates: Partial<ProgramCycleWorkout> = {
     updatedAt: new Date().toISOString(),
@@ -821,7 +809,7 @@ export async function updateProgramCycleWorkout(
   if (data.scheduledDate !== undefined) updates.scheduledDate = data.scheduledDate;
   if (data.scheduledTime !== undefined) updates.scheduledTime = data.scheduledTime;
 
-  const updated = await drizzleDb
+  const updated = await db
     .update(programCycleWorkouts)
     .set(updates)
     .where(eq(programCycleWorkouts.id, workoutId))
@@ -843,8 +831,7 @@ export async function getProgramCycleWorkoutById(
   workoutId: string,
   workosId?: string
 ): Promise<ProgramCycleWorkout | null> {
-  const isTransaction = 'transaction' in dbOrTx;
-  const db = isTransaction ? dbOrTx : createDb(dbOrTx as D1Database);
+  const db = getDb(dbOrTx);
 
   if (workosId) {
     const result = await db

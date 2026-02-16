@@ -94,15 +94,19 @@ function EditTemplate() {
         return;
       }
 
-      if (templateRes.ok) {
-        const templateData: Template = await templateRes.json();
-        setTemplate(templateData);
-          setFormData({
-            name: templateData.name,
-            description: templateData.description ?? '',
-            notes: templateData.notes ?? '',
-          });
+      if (!templateRes.ok) {
+        console.error('Failed to fetch template:', templateRes.status);
+        setErrors({ submit: 'Failed to load template' });
+        return;
       }
+
+      const templateData: Template = await templateRes.json();
+      setTemplate(templateData);
+      setFormData({
+        name: templateData.name,
+        description: templateData.description ?? '',
+        notes: templateData.notes ?? '',
+      });
 
       if (exercisesRes.ok) {
         const exercisesData: TemplateExerciseWithDetails[] = await exercisesRes.json();
@@ -123,6 +127,7 @@ function EditTemplate() {
       }
     } catch (error) {
       console.error('Failed to fetch template:', error);
+      setErrors({ submit: 'Failed to load template' });
     } finally {
       setLoading(false);
     }
@@ -365,7 +370,7 @@ function EditTemplate() {
 
       <div className="rounded-lg border border-border shadow-sm">
         <div className="px-6 py-4 border-b border-border">
-          <h1 className="text-xl font-semibold text-foreground">Edit Template</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Edit Template</h1>
         </div>
 
         <form className="p-6 space-y-6" onSubmit={handleFormSubmit}>

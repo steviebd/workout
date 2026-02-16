@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createWorkoutSet } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError } from '../../lib/api/errors';
+import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 
 export const Route = createFileRoute('/api/workouts/sets')({
   server: {
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/workouts/sets')({
             };
 
             if (!workoutExerciseId || setNumber === undefined) {
-              return createApiError('Workout exercise ID and set number are required', 400, 'VALIDATION_ERROR');
+              return createApiError('Workout exercise ID and set number are required', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
 
             const workoutSet = await createWorkoutSet(
@@ -36,13 +36,13 @@ export const Route = createFileRoute('/api/workouts/sets')({
             );
 
             if (!workoutSet) {
-              return createApiError('Workout exercise not found or does not belong to you', 404, 'NOT_FOUND');
+              return createApiError('Workout exercise not found or does not belong to you', 404, API_ERROR_CODES.NOT_FOUND);
             }
 
             return Response.json(workoutSet, { status: 201 });
           } catch (err) {
             console.error('Create set error:', err);
-            return createApiError('Server error', 500, 'SERVER_ERROR');
+            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
           }
         },
     },

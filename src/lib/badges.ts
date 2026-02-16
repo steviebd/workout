@@ -1,5 +1,5 @@
 import { eq, and, sql } from 'drizzle-orm';
-import { createDb } from './db/index';
+import { getDb, type DbOrTx } from './db/index';
 import { workouts, workoutSets, workoutExercises, userStreaks } from './db/schema';
 import { calculateThirtyDayStreak, getTotalWorkouts } from './streaks';
 
@@ -25,14 +25,15 @@ interface BadgeResult {
 }
 
 async function calculateStreakBadgeProgress(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   requirement: number
 ): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
+  const db = getDb(dbOrTx);
   const thirtyDayStreak = await calculateThirtyDayStreak(db, workosId, 3, 12);
   const progress = thirtyDayStreak.maxConsecutive;
 
-  const [streakRecord] = await createDb(db)
+  const [streakRecord] = await db
     .select()
     .from(userStreaks)
     .where(eq(userStreaks.workosId, workosId));
@@ -45,10 +46,11 @@ async function calculateStreakBadgeProgress(
 }
 
 async function calculateWeeklyBadgeProgress(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   requirement: number
 ): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
+  const db = getDb(dbOrTx);
   const { getWeeklyWorkoutCount } = await import('./streaks');
   const weeklyCount = await getWeeklyWorkoutCount(db, workosId);
 
@@ -59,10 +61,10 @@ async function calculateWeeklyBadgeProgress(
   };
 }
 
-async function calculateVolumeBadgeProgress(db: D1Database, workosId: string, requirement: number): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
-  const drizzleDb = createDb(db);
+async function calculateVolumeBadgeProgress(dbOrTx: DbOrTx, workosId: string, requirement: number): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
+  const db = getDb(dbOrTx);
 
-  const result = await drizzleDb
+  const result = await db
     .select({
       total: sql<number>`coalesce(sum(${workoutSets.weight} * ${workoutSets.reps}), 0)`
     })
@@ -82,10 +84,10 @@ async function calculateVolumeBadgeProgress(db: D1Database, workosId: string, re
   };
 }
 
-async function calculatePRBadgeProgress(db: D1Database, workosId: string, requirement: number): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
-  const drizzleDb = createDb(db);
+async function calculatePRBadgeProgress(dbOrTx: DbOrTx, workosId: string, requirement: number): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
+  const db = getDb(dbOrTx);
 
-  const result = await drizzleDb
+  const result = await db
     .select({
       count: sql<number>`count(distinct ${workoutExercises.exerciseId})`
     })
@@ -109,13 +111,14 @@ async function calculatePRBadgeProgress(db: D1Database, workosId: string, requir
 }
 
 async function calculateTotalWorkoutsBadgeProgress(
-  db: D1Database,
+  dbOrTx: DbOrTx,
   workosId: string,
   requirement: number
 ): Promise<{ progress: number; unlocked: boolean; unlockedAt?: string }> {
+  const db = getDb(dbOrTx);
   const totalWorkouts = await getTotalWorkouts(db, workosId);
 
-  const [streakRecord] = await createDb(db)
+  const [streakRecord] = await db
     .select()
     .from(userStreaks)
     .where(eq(userStreaks.workosId, workosId));
@@ -143,29 +146,29 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'pr-5', name: '5 Exercises', description: 'Complete workouts with 5 different exercises', icon: 'trophy', category: 'pr', requirement: 5 },
 ];
 
-export async function calculateAllBadges(db: D1Database, workosId: string): Promise<BadgeResult[]> {
+export async function calculateAllBadges(dbOrTx: DbOrTx, workosId: string): Promise<BadgeResult[]> {
   const badges = await Promise.all(
     BADGE_DEFINITIONS.map(async (def) => {
       let result: { progress: number; unlocked: boolean; unlockedAt?: string };
 
       switch (def.category) {
         case 'streak':
-          result = await calculateStreakBadgeProgress(db, workosId, def.requirement);
+          result = await calculateStreakBadgeProgress(dbOrTx, workosId, def.requirement);
           break;
         case 'consistency':
           if (def.id.startsWith('weekly-')) {
-            result = await calculateWeeklyBadgeProgress(db, workosId, def.requirement);
+            result = await calculateWeeklyBadgeProgress(dbOrTx, workosId, def.requirement);
           } else if (def.id.startsWith('workouts-')) {
-            result = await calculateTotalWorkoutsBadgeProgress(db, workosId, def.requirement);
+            result = await calculateTotalWorkoutsBadgeProgress(dbOrTx, workosId, def.requirement);
           } else {
             result = { progress: 0, unlocked: false };
           }
           break;
         case 'volume':
-          result = await calculateVolumeBadgeProgress(db, workosId, def.requirement);
+          result = await calculateVolumeBadgeProgress(dbOrTx, workosId, def.requirement);
           break;
         case 'pr':
-          result = await calculatePRBadgeProgress(db, workosId, def.requirement);
+          result = await calculatePRBadgeProgress(dbOrTx, workosId, def.requirement);
           break;
         default:
           result = { progress: 0, unlocked: false };

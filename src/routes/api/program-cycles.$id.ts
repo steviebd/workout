@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getProgramCycleWithWorkouts } from '~/lib/db/program';
 
 interface ProgramCycleUpdateBody {
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
 
            const cycleWithWorkouts = await getProgramCycleWithWorkouts(d1Db, params.id, session.sub);
            if (!cycleWithWorkouts) {
-             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+             return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
            }
 
            const completedCount = cycleWithWorkouts.workouts.filter((w) => w.isComplete).length;
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get program cycle error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
        },
        PUT: async ({ request, params }) => {
@@ -65,7 +65,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
             }
 
            if (!updated) {
-             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+             return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
            }
 
            return Response.json(updated);
@@ -74,7 +74,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Update program cycle error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
        },
        DELETE: async ({ request, params }) => {
@@ -83,7 +83,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
 
             const success = await softDeleteProgramCycle(d1Db, params.id, session.sub);
            if (!success) {
-             return createApiError('Program cycle not found', 404, 'NOT_FOUND');
+             return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
            }
 
            return Response.json({ success: true });
@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Delete program cycle error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
        },
     },

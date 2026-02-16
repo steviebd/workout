@@ -81,6 +81,10 @@ function generateConfig(
     TEST_USERNAME: env.TEST_USERNAME ?? "",
     WORKOS_API_KEY: env.WORKOS_API_KEY ?? "",
     WORKOS_CLIENT_ID: env.WORKOS_CLIENT_ID ?? "",
+    WHOOP_CLIENT_ID: env.WHOOP_CLIENT_ID ?? "",
+    WHOOP_CLIENT_SECRET: env.WHOOP_CLIENT_SECRET ?? "",
+    WHOOP_API_URL: env.WHOOP_API_URL ?? "https://api.prod.whoop.com",
+    WHOOP_TOKEN_ENCRYPTION_KEY: env.WHOOP_TOKEN_ENCRYPTION_KEY ?? "",
   };
 
   const sortedKeys = Object.keys(envVars).sort();

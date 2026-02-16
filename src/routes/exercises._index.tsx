@@ -238,17 +238,14 @@ function Exercises() {
           {loading ? (
             <SkeletonList count={6} />
           ) : exercises.length === 0 ? (
-            <EmptyExercises
-              searchActive={!!search}
-              onCreate={handleCreateClick}
-            />
+            <EmptyExercises onCreate={handleCreateClick} />
           ) : (
             <div className="space-y-3">
               {exercises.map((exercise) => (
                 <Link key={exercise.id} to="/exercises/$id" params={{ id: exercise.id }}>
                   <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer touch-manipulation">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold line-clamp-1">{exercise.name}</h3>
+                      <h3 className="text-base font-semibold line-clamp-1">{exercise.name}</h3>
                       {exercise.muscleGroup ? <Badge variant="secondary">{exercise.muscleGroup}</Badge> : null}
                     </div>
                     {exercise.description ? <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{exercise.description}</p> : null}

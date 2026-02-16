@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target } from 'lucide-react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target, Heart } from 'lucide-react'
 import { Button } from './ui/Button'
 import { ThemeToggleCompact } from './ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
@@ -119,6 +119,14 @@ export function Header() {
           ) : null}
 
           <ThemeToggleCompact />
+
+          <a
+              href="/health"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+              <Heart className="h-4 w-4" />
+              <span className="hidden sm:inline">Health</span>
+          </a>
 
           <div className="relative" ref={settingsRef}>
               <button

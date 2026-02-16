@@ -1,13 +1,16 @@
 'use client';
 
 import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeft, Check, Clock, Dumbbell, Home, Scale, Target, Trophy, Loader2 } from 'lucide-react';
+import { Check, Clock, Dumbbell, Home, Scale, Target, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAuth } from './__root';
 import { cn } from '@/lib/cn';
 import { useDateFormat } from '@/lib/context/DateFormatContext';
 import { useUnit } from '@/lib/context/UnitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card';
+import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
+import { StatCard } from '~/components/ui/StatCard';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface WorkoutSet {
   id: string;
@@ -62,7 +65,7 @@ interface ProgramCycle {
 }
 
 function WorkoutSummary() {
-  const auth = useAuth();
+  const { user, loading: authLoading } = useRequireAuth();
   const params = useParams({ from: '/workouts/$id_/summary' });
   const router = useRouter();
   const { formatDateTimeLong } = useDateFormat();
@@ -80,14 +83,8 @@ function WorkoutSummary() {
   }>>([]);
 
   useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
-
-  useEffect(() => {
     const loadWorkout = async () => {
-      if (auth.loading || !auth.user || !params.id) return;
+      if (authLoading || !user || !params.id) return;
 
       try {
         const res = await fetch(`/api/workouts/${params.id}`, {
@@ -123,7 +120,7 @@ function WorkoutSummary() {
     };
 
     loadWorkout().catch(() => {});
-  }, [auth.loading, auth.user, params.id]);
+  }, [authLoading, user, params.id]);
 
   useEffect(() => {
     const redirectIfIncomplete = async () => {
@@ -166,11 +163,23 @@ function WorkoutSummary() {
     void fetchPRs();
   }, []);
 
-  if (auth.loading || loading) {
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="animate-spin text-primary" size={32} />
-      </div>
+      <PageLayout title="Loading" extraPadding={true}>
+        <PageLoading variant="spinner" message="Loading workout..." />
+      </PageLayout>
+    );
+  }
+
+  if (error || !workout) {
+    return (
+      <PageLayout title="Error" extraPadding={true}>
+        <ErrorState
+          title="Workout Not Found"
+          description={error ?? 'Workout not found'}
+          onGoHome={() => { window.location.href = '/'; }}
+        />
+      </PageLayout>
     );
   }
 
@@ -311,17 +320,7 @@ function WorkoutSummary() {
   const comparisonData = getComparisonData();
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="mb-6">
-          <a
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            href="/"
-          >
-            <ArrowLeft size={20} />
-            Back to dashboard
-          </a>
-        </div>
-
+    <PageLayout title="Workout Summary" extraPadding={true}>
         <div className="space-y-4">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-success/20 rounded-full">
@@ -335,48 +334,30 @@ function WorkoutSummary() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Clock size={18} />
-              <span className="text-sm font-medium">Duration</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {formatDuration(workout.startedAt, workout.completedAt ?? workout.startedAt)}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <StatCard
+            icon={Clock}
+            label="Duration"
+            value={formatDuration(workout.startedAt, workout.completedAt ?? workout.startedAt)}
+          />
 
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Dumbbell size={18} />
-              <span className="text-sm font-medium">Total Sets</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {totalSetsCount}
-            </p>
-          </div>
+          <StatCard
+            icon={Dumbbell}
+            label="Total Sets"
+            value={totalSetsCount}
+          />
 
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Scale size={18} />
-              <span className="text-sm font-medium">Volume</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {totalVolume.toLocaleString()}
-              {' '}
-              <span className="text-sm font-normal text-muted-foreground">kg</span>
-            </p>
-          </div>
+          <StatCard
+            icon={Scale}
+            label="Volume"
+            value={`${totalVolume.toLocaleString()} kg`}
+          />
 
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Target size={18} />
-              <span className="text-sm font-medium">Exercises</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {workout.exercises.length}
-            </p>
-          </div>
+          <StatCard
+            icon={Target}
+            label="Exercises"
+            value={workout.exercises.length}
+          />
         </div>
 
 {workout.name === '1RM Test' ? (() => {
@@ -561,7 +542,7 @@ function WorkoutSummary() {
             Back to Dashboard
           </a>
         </div>
-    </main>
+    </PageLayout>
   );
 }
 

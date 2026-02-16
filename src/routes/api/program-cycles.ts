@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError } from '../../lib/api/errors';
+import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import type { OneRMValues } from '~/lib/programs/types';
 import {
   createProgramCycle,
@@ -65,7 +65,7 @@ export const Route = createFileRoute('/api/program-cycles')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Get program cycles error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
        },
        POST: async ({ request }) => {
@@ -86,12 +86,12 @@ export const Route = createFileRoute('/api/program-cycles')({
            } = body;
 
            if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm || !preferredGymDays || !programStartDate || !firstSessionDate) {
-             return createApiError('Missing required fields', 400, 'VALIDATION_ERROR');
+             return createApiError('Missing required fields', 400, API_ERROR_CODES.VALIDATION_ERROR);
            }
 
            const programConfig = PROGRAM_MAP[programSlug];
            if (!programConfig) {
-             return createApiError('Invalid program', 400, 'VALIDATION_ERROR');
+             return createApiError('Invalid program', 400, API_ERROR_CODES.VALIDATION_ERROR);
            }
 
            const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
@@ -146,7 +146,7 @@ export const Route = createFileRoute('/api/program-cycles')({
              return createApiError(err.message, err.status, err.code);
            }
            console.error('Create program cycle error:', err);
-           return createApiError('Server error', 500, 'SERVER_ERROR');
+           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
          }
        },
     },

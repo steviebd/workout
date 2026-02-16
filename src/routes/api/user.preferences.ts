@@ -31,7 +31,3 @@ export const Route = createFileRoute('/api/user/preferences')({
     },
   },
 });
-
-export default function ApiUserPreferences() {
-  return null;
-}

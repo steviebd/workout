@@ -478,7 +478,7 @@ function ProgramStart() {
         subtitle="Configure your workout schedule"
       />
 
-      <Card className="mx-4 p-6">
+      <Card className="mx-4 p-6" overflow="visible">
         <div className="space-y-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
