@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getWeeklyVolume } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/progress/volume')({
   server: {
@@ -11,21 +12,23 @@ export const Route = createFileRoute('/api/progress/volume')({
           const { session, d1Db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const dateRangeParam = url.searchParams.get('dateRange');
-          const volumeScopeParam = url.searchParams.get('volumeScope');
-          const exerciseIdParam = url.searchParams.get('exerciseId');
+          const { dateRange: dateRangeParam, volumeScope: volumeScopeParam, exerciseId: exerciseIdParam } = parseQueryParams<{
+            dateRange?: '1m' | '3m' | '6m' | '1y' | 'all';
+            volumeScope?: 'all' | 'selected';
+            exerciseId?: string;
+          }>(url);
 
           const validDateRanges = ['1m', '3m', '6m', '1y', 'all'] as const;
           const validVolumeScopes = ['all', 'selected'] as const;
 
           let dateRange: typeof validDateRanges[number] | undefined;
-          if (dateRangeParam !== null && validDateRanges.includes(dateRangeParam as typeof validDateRanges[number])) {
-            dateRange = dateRangeParam as typeof validDateRanges[number];
+          if (dateRangeParam && validDateRanges.includes(dateRangeParam as typeof validDateRanges[number])) {
+            dateRange = dateRangeParam;
           }
 
           let volumeScope: typeof validVolumeScopes[number] | undefined;
-          if (volumeScopeParam !== null && validVolumeScopes.includes(volumeScopeParam as typeof validVolumeScopes[number])) {
-            volumeScope = volumeScopeParam as typeof validVolumeScopes[number];
+          if (volumeScopeParam && validVolumeScopes.includes(volumeScopeParam as typeof validVolumeScopes[number])) {
+            volumeScope = volumeScopeParam;
           }
 
           const exerciseId = exerciseIdParam ?? undefined;

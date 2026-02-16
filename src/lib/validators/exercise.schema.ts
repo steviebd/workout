@@ -13,3 +13,9 @@ export const updateExerciseSchema = z.object({
   muscleGroup: z.string().max(50).trim().optional(),
   description: z.string().max(1000).trim().optional(),
 });
+
+export const copyExerciseFromLibrarySchema = z.object({
+  name: z.string().min(1).max(200).trim(),
+  muscleGroup: z.string().max(50).trim(),
+  description: z.string().max(1000).trim().optional(),
+});

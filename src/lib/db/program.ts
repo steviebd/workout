@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
 import {
+  type NewProgramCycleWorkout,
   type ProgramCycleWorkout,
   type Template,
   type UserProgramCycle,
@@ -195,14 +195,14 @@ export async function getProgramCyclesByWorkosId(
 ): Promise<UserProgramCycle[]> {
   const db = getDb(dbOrTx);
 
-  const conditions = options?.status
+  const conditions: SQL | undefined = options?.status
     ? and(eq(userProgramCycles.workosId, workosId), eq(userProgramCycles.status, options.status))
-    : eq(userProgramCycles.workosId, workosId);
+    : undefined;
 
   const cycles = await db
     .select()
     .from(userProgramCycles)
-    .where(conditions as any)
+    .where(conditions ? and(conditions) : undefined)
     .orderBy(desc(userProgramCycles.startedAt))
     .all();
 
@@ -599,7 +599,7 @@ export async function createProgramCycleWorkouts(
 ): Promise<void> {
   const db = getDb(dbOrTx);
 
-  const workoutData = cycleWorkouts.map((workout) => {
+  const workoutData: NewProgramCycleWorkout[] = cycleWorkouts.map((workout) => {
     const targetLifts = JSON.stringify([
       ...(workout.exercises?.map(e => ({ name: e.name, lift: e.lift, targetWeight: e.targetWeight, sets: e.sets, reps: e.reps })) ?? []),
       ...(workout.accessories?.map(a => ({
@@ -632,7 +632,7 @@ export async function createProgramCycleWorkouts(
 
   for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
     const batch = workoutData.slice(i, i + BATCH_SIZE);
-    await db.insert(programCycleWorkouts).values(batch as any).run();
+    await db.insert(programCycleWorkouts).values(batch).run();
   }
 }
 

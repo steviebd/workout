@@ -7,6 +7,7 @@ import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
 import { trackEvent } from '@/lib/posthog';
 import { useToast } from '@/components/ToastProvider';
+import { UI } from '~/lib/constants';
 
 export interface WorkoutExercise {
   id: string;
@@ -95,7 +96,7 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       return res.json();
     },
     enabled: !!auth.user,
-    staleTime: 30 * 1000,
+    staleTime: UI.TIMING.QUERY_STALE_TIME_MS,
   });
 
   useEffect(() => {
@@ -261,7 +262,7 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
 
         setTimeout(() => {
           window.location.href = redirectUrl;
-        }, 1000);
+        }, UI.TIMING.AUTOSAVE_DELAY_MS);
       },
       onError: (error) => {
         toast.error(error instanceof Error ? error.message : 'Failed to complete workout');

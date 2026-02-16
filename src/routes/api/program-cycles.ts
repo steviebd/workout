@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import type { OneRMValues } from '~/lib/programs/types';
+import { parseQueryParams } from '~/lib/api/handler';
 import {
   createProgramCycle,
   getActiveProgramCycles,
@@ -17,6 +18,8 @@ import { nuckols } from '~/lib/programs/nuckols';
 import { megsquats } from '~/lib/programs/megsquats';
 import { jenSinkler } from '~/lib/programs/jen-sinkler';
 import { generateWorkoutSchedule, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
+import { validateBody } from '~/lib/api/route-helpers';
+import { createProgramCycleSchema } from '~/lib/validators';
 
 const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeof madcow | typeof nsuns | typeof candito | typeof sheiko | typeof nuckols | typeof megsquats | typeof jenSinkler> = {
   'stronglifts-5x5': stronglifts,
@@ -29,17 +32,6 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
       'stronger-by-the-day': megsquats,
       'unapologetically-strong': jenSinkler,
     };
-interface CreateProgramCycleRequest {
-  programSlug: string;
-  squat1rm: number;
-  bench1rm: number;
-  deadlift1rm: number;
-  ohp1rm: number;
-  preferredGymDays: string[];
-  preferredTimeOfDay?: 'morning' | 'afternoon' | 'evening';
-  programStartDate: string;
-  firstSessionDate: string;
-}
 
 export const Route = createFileRoute('/api/program-cycles')({
   server: {
@@ -48,9 +40,11 @@ export const Route = createFileRoute('/api/program-cycles')({
          try {
            const { session, d1Db } = await withApiContext(request);
 
-           const url = new URL(request.url);
-           const status = url.searchParams.get('status') ?? undefined;
-           const activeOnly = url.searchParams.get('active') === 'true';
+            const url = new URL(request.url);
+            const { status, active: activeOnly } = parseQueryParams<{
+              status?: string;
+              active?: string;
+            }>(url);
 
            let cycles;
            if (activeOnly) {
@@ -69,27 +63,26 @@ export const Route = createFileRoute('/api/program-cycles')({
          }
        },
        POST: async ({ request }) => {
-         try {
-           const { session, d1Db } = await withApiContext(request);
+          try {
+            const { session, d1Db } = await withApiContext(request);
 
-           const body = await request.json() as CreateProgramCycleRequest;
-           const {
-             programSlug,
-             squat1rm,
-             bench1rm,
-             deadlift1rm,
-             ohp1rm,
-             preferredGymDays,
-             preferredTimeOfDay,
-             programStartDate,
-             firstSessionDate,
-           } = body;
+            const body = await validateBody(request, createProgramCycleSchema);
+            if (!body) {
+              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+            }
+            const {
+              programSlug,
+              squat1rm,
+              bench1rm,
+              deadlift1rm,
+              ohp1rm,
+              preferredGymDays,
+              preferredTimeOfDay,
+              programStartDate,
+              firstSessionDate,
+            } = body;
 
-           if (!programSlug || !squat1rm || !bench1rm || !deadlift1rm || !ohp1rm || !preferredGymDays || !programStartDate || !firstSessionDate) {
-             return createApiError('Missing required fields', 400, API_ERROR_CODES.VALIDATION_ERROR);
-           }
-
-           const programConfig = PROGRAM_MAP[programSlug];
+            const programConfig = PROGRAM_MAP[programSlug];
            if (!programConfig) {
              return createApiError('Invalid program', 400, API_ERROR_CODES.VALIDATION_ERROR);
            }

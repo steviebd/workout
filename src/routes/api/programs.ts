@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getAllPrograms, getProgramBySlug } from '~/lib/programs';
+import { parseQueryParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/programs')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const slug = url.searchParams.get('slug');
+        const { slug } = parseQueryParams<{
+          slug?: string;
+        }>(url);
 
         if (slug) {
           const program = getProgramBySlug(slug);

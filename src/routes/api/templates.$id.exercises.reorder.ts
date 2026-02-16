@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { type ExerciseOrder, reorderTemplateExercises } from '../../lib/db/template';
+import { reorderTemplateExercises } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { reorderTemplateExercisesSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
   server: {
@@ -10,12 +12,11 @@ export const Route = createFileRoute('/api/templates/$id/exercises/reorder')({
           try {
             const { db, session } = await withApiContext(request);
 
-            const body = await request.json();
-            const { exerciseOrders } = body as { exerciseOrders: ExerciseOrder[] };
-
-            if (!exerciseOrders || !Array.isArray(exerciseOrders)) {
-              return createApiError('exerciseOrders array is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+            const body = await validateBody(request, reorderTemplateExercisesSchema);
+            if (!body) {
+              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
+            const { exerciseOrders } = body;
 
             const reordered = await reorderTemplateExercises(
               db,

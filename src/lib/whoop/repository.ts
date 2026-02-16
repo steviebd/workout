@@ -1,5 +1,6 @@
 import { eq, and, desc, gte, lte, sql, isNull } from 'drizzle-orm';
 import { createDb } from '~/lib/db';
+import { API } from '~/lib/constants';
 import {
   whoopConnections,
   whoopSleeps,
@@ -15,7 +16,7 @@ import {
   type NewWhoopWebhookEvent,
 } from '~/lib/db/schema';
 
-const SYNC_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+const SYNC_LOCK_TIMEOUT_MS = API.TIMEOUTS.SYNC_LOCK_TIMEOUT_MS;
 
 export const whoopRepository = {
   async createConnection(

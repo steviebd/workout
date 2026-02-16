@@ -3,6 +3,7 @@ import { getRecentPRs, getAllTimeBestPRs } from '../../lib/db/workout';
 import { getLocalPersonalRecords, getAllTimeLocalBestPRs } from '../../lib/db/local-repository';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/progress/prs')({
   server: {
@@ -12,9 +13,12 @@ export const Route = createFileRoute('/api/progress/prs')({
           const { session, d1Db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const limitParam = url.searchParams.get('limit');
+          const { limit: limitParam, mode, dateRange } = parseQueryParams<{
+            limit?: string;
+            mode?: string;
+            dateRange?: '1m' | '3m' | '6m' | '1y' | 'all';
+          }>(url);
           const limit = limitParam ? parseInt(limitParam, 10) : 5;
-          const mode = url.searchParams.get('mode') ?? 'recent';
 
           if (!d1Db) {
             const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -57,8 +61,6 @@ export const Route = createFileRoute('/api/progress/prs')({
               },
             });
           }
-
-          const dateRange = url.searchParams.get('dateRange') as '1m' | '3m' | '6m' | '1y' | 'all' | undefined;
 
           let fromDate: string | undefined;
           if (dateRange && dateRange !== 'all') {

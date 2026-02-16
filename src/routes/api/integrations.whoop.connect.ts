@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getSession } from '~/lib/session';
+import { API } from '~/lib/constants';
 
 function base64UrlEncode(buffer: Uint8Array): string {
   const base64 = Buffer.from(buffer).toString('base64');
@@ -64,7 +65,7 @@ export const Route = createFileRoute('/api/integrations/whoop/connect' as const)
         };
 
         const stateCookie = Buffer.from(JSON.stringify(stateData)).toString('base64');
-        const stateExpiry = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
+        const stateExpiry = new Date(Date.now() + API.TIMEOUTS.STATE_EXPIRY_MS).toUTCString();
 
         const authUrl = new URL(`${WHOOP_API_URL}/oauth/oauth2/auth`);
         authUrl.searchParams.set('client_id', WHOOP_CLIENT_ID);

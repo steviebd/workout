@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { type LibraryExercise, copyExerciseFromLibrary } from '../../lib/db/exercise';
+import { copyExerciseFromLibrary } from '../../lib/db/exercise';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { copyExerciseFromLibrarySchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/exercises/copy-from-library')({
   server: {
@@ -10,8 +12,11 @@ export const Route = createFileRoute('/api/exercises/copy-from-library')({
           try {
             const { d1Db, session } = await withApiContext(request);
 
-            const body = await request.json();
-            const { name, muscleGroup, description } = body as LibraryExercise;
+            const body = await validateBody(request, copyExerciseFromLibrarySchema);
+            if (!body) {
+              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+            }
+            const { name, muscleGroup, description } = body;
 
             if (!name || !muscleGroup) {
               return createApiError('Name and muscleGroup are required', 400, API_ERROR_CODES.VALIDATION_ERROR);
@@ -20,7 +25,7 @@ export const Route = createFileRoute('/api/exercises/copy-from-library')({
             const exercise = await copyExerciseFromLibrary(d1Db, session.sub, {
               name,
               muscleGroup,
-              description,
+              description: description ?? '',
             });
 
             return Response.json(exercise, { status: 201 });

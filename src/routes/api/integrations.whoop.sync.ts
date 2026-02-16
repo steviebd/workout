@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '~/lib/api/context';
+import { parseQueryParams } from '~/lib/api/handler';
 import { whoopRepository } from '~/lib/whoop/repository';
 import { WhoopApiClient, mapWhoopSleepToDb, mapWhoopRecoveryToDb, mapWhoopCycleToDb, mapWhoopWorkoutToDb } from '~/lib/whoop/api';
 
@@ -37,11 +38,14 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
             const endDate = formatDate(now);
 
             const url = new URL(request.url);
-            const forceFullSync = url.searchParams.get('forceFullSync') === 'true';
+            const { forceFullSync } = parseQueryParams<{
+              forceFullSync?: string;
+            }>(url);
+            const forceFullSyncBool = forceFullSync === 'true';
             const isFirstSync = !connection.lastSyncAt;
 
             let startDate: string;
-            if (forceFullSync || isFirstSync) {
+            if (forceFullSyncBool || isFirstSync) {
               startDate = formatDate(addDays(now, -200));
             } else {
               const lastSyncAt = connection.lastSyncAt ? new Date(connection.lastSyncAt) : new Date();
@@ -50,7 +54,7 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
 
             const debugInfo = {
               workosId,
-              forceFullSync,
+              forceFullSync: forceFullSyncBool,
               isFirstSync,
               lastSyncAt: connection.lastSyncAt,
               syncStatus: connection.syncStatus,

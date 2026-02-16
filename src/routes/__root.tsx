@@ -9,10 +9,7 @@ import { ToastProvider } from '@/components/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
-import { UnitProvider } from '@/lib/context/UnitContext'
-import { DateFormatProvider } from '@/lib/context/DateFormatContext'
-import { StreakProvider } from '@/lib/context/StreakContext'
-import { ThemeProvider } from '@/lib/context/ThemeContext'
+import { AppProviders } from '@/components/Providers'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 
@@ -215,27 +212,21 @@ function AppLayout() {
           </head>
           <body className="min-h-screen bg-background font-sans antialiased">
             <div className="min-h-screen flex flex-col">
-              <UnitProvider userId={user?.id}>
-                <DateFormatProvider userId={user?.id}>
-                  <StreakProvider>
-                    <ThemeProvider>
-                      <Header />
-                      <main className="flex-1 overflow-auto">
-                        <div className="mx-auto max-w-lg">
-                        <ErrorBoundary>
-                          <ToastProvider>
-                            <TooltipProvider>
-                              <Outlet />
-                            </TooltipProvider>
-                          </ToastProvider>
-                        </ErrorBoundary>
-                        </div>
-                      </main>
-                      {!location.pathname.startsWith('/workouts/') && <BottomNav />}
-                    </ThemeProvider>
-                  </StreakProvider>
-                </DateFormatProvider>
-              </UnitProvider>
+              <AppProviders userId={user?.id}>
+                <Header />
+                <main className="flex-1 overflow-auto">
+                  <div className="mx-auto max-w-lg">
+                  <ErrorBoundary>
+                    <ToastProvider>
+                      <TooltipProvider>
+                        <Outlet />
+                      </TooltipProvider>
+                    </ToastProvider>
+                  </ErrorBoundary>
+                  </div>
+                </main>
+                {!location.pathname.startsWith('/workouts/') && <BottomNav />}
+              </AppProviders>
             </div>
 
             <Scripts />

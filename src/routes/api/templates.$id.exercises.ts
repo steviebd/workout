@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { addExerciseToTemplate, getTemplateExercises } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { addExerciseToTemplateSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/templates/$id/exercises')({
   server: {
@@ -22,12 +24,11 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
           try {
             const { d1Db } = await withApiContext(request);
 
-            const body = await request.json();
-            const { exerciseId, orderIndex } = body as { exerciseId: string; orderIndex: number; localId?: string };
-
-            if (!exerciseId) {
-              return createApiError('Exercise ID is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+            const body = await validateBody(request, addExerciseToTemplateSchema);
+            if (!body) {
+              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
+            const { exerciseId, orderIndex } = body;
 
             await addExerciseToTemplate(
               d1Db,

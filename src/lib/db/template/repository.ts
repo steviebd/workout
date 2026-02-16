@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, like, type SQL } from 'drizzle-orm';
 import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
 import { getDb } from '../index';
 import type {
@@ -116,7 +115,16 @@ export async function getTemplatesByWorkosId(
     conditions.push(like(templates.name, `%${search}%`));
   }
 
-  let query = db
+  const orderByClause: SQL =
+    sortBy === 'name'
+      ? sortOrder === 'DESC'
+        ? desc(templates.name)
+        : asc(templates.name)
+      : sortOrder === 'DESC'
+        ? desc(templates.createdAt)
+        : asc(templates.createdAt);
+
+  const query = db
     .select({
       id: templates.id,
       workosId: templates.workosId,
@@ -132,29 +140,18 @@ export async function getTemplatesByWorkosId(
       ),
     })
     .from(templates)
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(orderByClause);
 
-  if (sortBy === 'name') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(templates.name))
-      : (query as any).orderBy(asc(templates.name));
-  } else {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(templates.createdAt))
-      : (query as any).orderBy(asc(templates.createdAt));
-  }
+  const results = (offset !== undefined && limit !== undefined
+    ? await query.offset(offset).limit(limit)
+    : offset !== undefined
+      ? await query.offset(offset)
+      : limit !== undefined
+        ? await query.limit(limit)
+        : await query) as TemplateWithExerciseCount[];
 
-  if (offset !== undefined) {
-    query = (query as any).offset(offset);
-  }
-
-  if (limit !== undefined) {
-    query = (query as any).limit(limit);
-  }
-
-  const results = await query;
-
-  return results as TemplateWithExerciseCount[];
+  return results;
 }
 
 export async function updateTemplate(

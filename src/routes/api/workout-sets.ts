@@ -3,6 +3,8 @@ import { eq, and } from 'drizzle-orm';
 import { workoutSets, workoutExercises, workouts } from '../../lib/db/schema';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { createWorkoutSetSchema, updateWorkoutSetByLocalIdSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/workout-sets')({
   server: {
@@ -11,19 +13,11 @@ export const Route = createFileRoute('/api/workout-sets')({
         try {
           const { session, db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body as {
-            workoutExerciseId: string;
-            setNumber: number;
-            weight?: number;
-            reps?: number;
-            rpe?: number;
-            localId?: string;
-          };
-
-          if (!workoutExerciseId || setNumber === undefined) {
-            return createApiError('Workout exercise ID and set number are required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          const body = await validateBody(request, createWorkoutSetSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
+          const { workoutExerciseId, setNumber, weight, reps, rpe, localId } = body;
 
           const exerciseWithOwnership = await db
             .select({
@@ -69,20 +63,11 @@ export const Route = createFileRoute('/api/workout-sets')({
         try {
           const { session, db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { localId, workoutExerciseId, setNumber, weight, reps, rpe, isComplete } = body as {
-            localId: string;
-            workoutExerciseId?: string;
-            setNumber?: number;
-            weight?: number;
-            reps?: number;
-            rpe?: number;
-            isComplete?: boolean;
-          };
-
-          if (!localId) {
-            return createApiError('Local ID is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          const body = await validateBody(request, updateWorkoutSetByLocalIdSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
+          const { localId, workoutExerciseId, setNumber, weight, reps, rpe, isComplete } = body;
 
           const setWithOwnership = await db
             .select({

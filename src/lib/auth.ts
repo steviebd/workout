@@ -1,4 +1,5 @@
 import { type JWTPayload, SignJWT, jwtVerify } from 'jose';
+import { AUTH } from './constants';
 
 let jwtSecret: Uint8Array | null = null;
 
@@ -35,8 +36,8 @@ export interface UserFromWorkOS {
   lastName: string;
 }
 
-export const TOKEN_EXPIRY_SECONDS = 4 * 24 * 60 * 60; // 4 days in seconds
-export const REFRESH_THRESHOLD_SECONDS = 24 * 60 * 60; // Refresh if < 24 hours remaining
+export const TOKEN_EXPIRY_SECONDS = AUTH.TOKEN_EXPIRY_SECONDS;
+export const REFRESH_THRESHOLD_SECONDS = AUTH.REFRESH_THRESHOLD_SECONDS;
 
 export async function createToken(user: UserFromWorkOS, workosId?: string): Promise<string> {
   /**

@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { type UpdatePreferencesData, getUserPreferences, upsertUserPreferences } from '../../lib/db/preferences';
+import { getUserPreferences, upsertUserPreferences } from '../../lib/db/preferences';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { updatePreferencesSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/preferences')({
   server: {
@@ -22,8 +24,11 @@ export const Route = createFileRoute('/api/preferences')({
         try {
           const { session, d1Db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { weightUnit, theme, dateFormat, weeklyWorkoutTarget } = body as UpdatePreferencesData;
+          const body = await validateBody(request, updatePreferencesSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
+          const { weightUnit, theme, dateFormat, weeklyWorkoutTarget } = body;
 
           const preferences = await upsertUserPreferences(d1Db, session.sub, {
             weightUnit,

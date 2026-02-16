@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getStrengthHistory } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/progress/strength')({
   server: {
@@ -11,8 +12,10 @@ export const Route = createFileRoute('/api/progress/strength')({
           const { session, d1Db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const exerciseId = url.searchParams.get('exerciseId');
-          const dateRange = url.searchParams.get('dateRange') as '1m' | '3m' | '6m' | '1y' | 'all' | undefined;
+          const { exerciseId, dateRange } = parseQueryParams<{
+            exerciseId?: string;
+            dateRange?: '1m' | '3m' | '6m' | '1y' | 'all';
+          }>(url);
 
           if (!exerciseId) {
             return createApiError('exerciseId is required', 400, API_ERROR_CODES.VALIDATION_ERROR);

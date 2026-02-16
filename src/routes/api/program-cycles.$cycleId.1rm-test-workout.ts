@@ -3,17 +3,8 @@ import { eq, desc, and } from 'drizzle-orm';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { workouts } from '../../lib/db/schema';
-
-interface OneRmTestUpdateBody {
-  squat1rm?: number;
-  bench1rm?: number;
-  deadlift1rm?: number;
-  ohp1rm?: number;
-  startingSquat1rm?: number;
-  startingBench1rm?: number;
-  startingDeadlift1rm?: number;
-  startingOhp1rm?: number;
-}
+import { validateBody } from '~/lib/api/route-helpers';
+import { update1RMTestWorkoutSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-workout')({
   server: {
@@ -43,7 +34,10 @@ export const Route = createFileRoute('/api/program-cycles/$cycleId/1rm-test-work
         try {
           const { db, session } = await withApiContext(request);
 
-          const body = (await request.json()) as OneRmTestUpdateBody;
+          const body = await validateBody(request, update1RMTestWorkoutSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
 
           const workout = await db
             .select()

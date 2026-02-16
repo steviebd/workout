@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, asc, desc, eq, like } from 'drizzle-orm';
+import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
 import { exercises, type Exercise, type NewExercise } from '../schema';
 import { getDb, type DbOrTx } from '../index';
 import type { CreateExerciseData, UpdateExerciseData, GetExercisesOptions, LibraryExercise } from './types';
@@ -88,36 +87,35 @@ export async function getExercisesByWorkosId(
     conditions.push(eq(exercises.muscleGroup, muscleGroup));
   }
 
-  const orderByClause = sortOrder === 'DESC'
-    ? desc(exercises.createdAt)
-    : asc(exercises.createdAt);
+  const orderByClause: SQL =
+    sortBy === 'name'
+      ? sortOrder === 'DESC'
+        ? desc(exercises.name)
+        : asc(exercises.name)
+      : sortBy === 'muscleGroup'
+        ? sortOrder === 'DESC'
+          ? desc(exercises.muscleGroup)
+          : asc(exercises.muscleGroup)
+        : sortOrder === 'DESC'
+          ? desc(exercises.createdAt)
+          : asc(exercises.createdAt);
 
-  let query = db
+  const baseQuery = db
     .select()
     .from(exercises)
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(orderByClause);
 
-  if (sortBy === 'name') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(exercises.name))
-      : (query as any).orderBy(asc(exercises.name));
-  } else if (sortBy === 'muscleGroup') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(exercises.muscleGroup))
-      : (query as any).orderBy(asc(exercises.muscleGroup));
+  let results: Exercise[];
+  if (offset !== undefined && limit !== undefined) {
+    results = await baseQuery.offset(offset).limit(limit);
+  } else if (offset !== undefined) {
+    results = await baseQuery.offset(offset);
+  } else if (limit !== undefined) {
+    results = await baseQuery.limit(limit);
   } else {
-    query = (query as any).orderBy(orderByClause);
+    results = await baseQuery;
   }
-
-  if (offset !== undefined) {
-    query = (query as any).offset(offset);
-  }
-
-  if (limit !== undefined) {
-    query = (query as any).limit(limit);
-  }
-
-  const results = await query;
 
   return results as Exercise[];
 }

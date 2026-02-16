@@ -1,11 +1,12 @@
 import { type ZodSchema } from 'zod';
 import { getSession, type SessionPayload } from '../session';
+import { VALIDATION } from '../constants';
 
-export const MAX_NAME_LENGTH = 200;
-export const MAX_DESCRIPTION_LENGTH = 1000;
-export const MAX_NOTES_LENGTH = 2000;
-export const MAX_MUSCLE_GROUP_LENGTH = 50;
-export const MAX_SEARCH_TERM_LENGTH = 100;
+export const MAX_NAME_LENGTH = VALIDATION.MAX_NAME_LENGTH;
+export const MAX_DESCRIPTION_LENGTH = VALIDATION.MAX_DESCRIPTION_LENGTH;
+export const MAX_NOTES_LENGTH = VALIDATION.MAX_NOTES_LENGTH;
+export const MAX_MUSCLE_GROUP_LENGTH = VALIDATION.MAX_MUSCLE_GROUP_LENGTH;
+export const MAX_SEARCH_TERM_LENGTH = VALIDATION.MAX_SEARCH_TERM_LENGTH;
 
 export async function requireAuth(request: Request): Promise<SessionPayload | null> {
   const session = await getSession(request);
