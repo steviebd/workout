@@ -505,7 +505,7 @@ function ProgressPage() {
           </div>
 
           <div className="mt-12 mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Workout History</h2>
+            <h2 className="text-lg font-semibold text-foreground">Workout History</h2>
           </div>
 
           <div className="space-y-6">

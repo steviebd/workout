@@ -67,7 +67,7 @@ export function ListCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate">{title}</h3>
+                <h3 className="text-base font-semibold truncate">{title}</h3>
                 {subtitle ? (
                   <p className="text-sm text-muted-foreground line-clamp-2">{subtitle}</p>
                 ) : null}

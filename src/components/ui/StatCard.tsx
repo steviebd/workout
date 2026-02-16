@@ -36,7 +36,7 @@ export function StatCard({
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground">{label}</span>
         <Icon className={cn("h-4 w-4", variantStyles[variant])} />
       </div>
       <p className="text-2xl font-semibold tabular-nums mt-1">{value}</p>

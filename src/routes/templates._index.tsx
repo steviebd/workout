@@ -177,7 +177,7 @@ function Templates() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <Link
-                        className="font-semibold hover:text-primary"
+                        className="text-base font-semibold hover:text-primary"
                         to="/templates/$id"
                         params={{ id: template.id }}
                       >

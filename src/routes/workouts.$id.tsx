@@ -153,7 +153,7 @@ function WorkoutSession() {
     <>
       <header className="bg-card border-b border-border py-4 px-4">
         <div className="max-w-lg mx-auto text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{workout.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{workout.name}</h1>
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
             <span className="flex items-center gap-1.5">
               <Calendar size={14} />

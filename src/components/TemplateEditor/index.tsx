@@ -256,7 +256,7 @@ export function TemplateEditor({
 
       <Card className="p-6 bg-gradient-to-br from-card to-card/50">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-foreground leading-tight">
+          <h1 className="text-2xl font-bold text-foreground leading-tight">
             {mode === 'create' ? 'Create Template' : 'Edit Template'}
           </h1>
           <div className="flex items-center gap-1">
