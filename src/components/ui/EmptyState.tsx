@@ -24,7 +24,7 @@ export function EmptyState({
   return (
     <div className={cn("text-center py-12", className)}>
       <div className="flex items-center justify-center mb-6">
-        <div className="bg-primary/8 rounded-full p-5">
+        <div className="bg-gradient-to-br from-primary/14 via-accent/8 to-transparent rounded-2xl p-6 border border-border/60 shadow-soft">
           {IconComponent ? (
             <IconComponent size={44} className="text-muted-foreground/50" />
           ) : (
@@ -44,9 +44,9 @@ export function EmptyState({
           )}
         </div>
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+      <h3 className="text-[18px] font-semibold tracking-tight text-foreground mb-2">{title}</h3>
       {description ? (
-        <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm">{description}</p>
+        <p className="text-muted-foreground/90 mb-6 max-w-sm mx-auto text-[13px] leading-relaxed">{description}</p>
       ) : null}
       {actionLabel && onAction ? (
         <Button onClick={onAction} size="lg" variant="cta">

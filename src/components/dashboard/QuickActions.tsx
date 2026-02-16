@@ -138,10 +138,10 @@ export function QuickActions({ templates }: QuickActionsProps) {
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="group flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2.5 transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
+            className="group pressable flex w-full items-center justify-between rounded-xl bg-surface-2/80 border border-border/50 px-3 py-3 transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="text-left">
-              <p className="font-medium group-hover:text-primary transition-colors">
+              <p className="font-medium tracking-tight group-hover:text-primary transition-colors">
                 {template.name}
               </p>
               <p className="text-xs text-muted-foreground">

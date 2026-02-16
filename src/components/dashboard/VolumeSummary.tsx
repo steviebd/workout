@@ -16,8 +16,8 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
   const volumePercentage = Math.min((totalVolume / volumeGoal) * 100, 100)
 
   return (
-    <Card variant="tinted" className="border-accent/20">
-      <CardContent className="p-4">
+    <Card variant="tinted" className="border-accent/25">
+      <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20">
@@ -28,7 +28,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
               <p className="text-2xl font-semibold tabular-nums">{formatVolume(totalVolume)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-success">
+          <div className="flex items-center gap-1 rounded-full bg-secondary/70 border border-border/60 px-2.5 py-1 text-success shadow-soft">
             <TrendingUp className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">+{volumeChange}%</span>
           </div>
@@ -38,7 +38,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
-            className="h-full rounded-full bg-accent transition-all duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-accent to-primary transition-all duration-500"
             style={{ width: `${volumePercentage}%` }}
           />
         </div>

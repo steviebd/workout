@@ -22,10 +22,10 @@ export function PageLayout({
 }: PageLayoutProps) {
   return (
     <main className={cn("mx-auto w-full max-w-full sm:max-w-lg px-4 py-6 pb-24 min-h-[calc(100vh-3.5rem-4rem)] flex flex-col", extraPadding && "sm:pb-32 pb-28", className)}>
-      <div className="flex-shrink-0 flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+          <h1 className="text-[26px] font-semibold tracking-tight">{title}</h1>
+          {subtitle ? <p className="text-[13px] text-muted-foreground/90 leading-snug mt-1">{subtitle}</p> : null}
         </div>
         {action ?? null}
       </div>

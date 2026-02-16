@@ -29,8 +29,8 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "p-4",
-        onClick && "hover:border-primary/50 hover:shadow-md cursor-pointer transition-all",
+        "p-4 shadow-soft",
+        onClick && "hover:border-primary/50 hover:shadow-pop cursor-pointer transition-all pressable",
         className
       )}
       onClick={onClick}

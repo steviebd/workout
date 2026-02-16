@@ -60,7 +60,7 @@
 .dark {
   --background: oklch(0.10 0.02 260);
   --foreground: oklch(0.98 0 0);
-  --surface-1: oklch(0.14 0.02 260);
+  --surface-1: oklch(0.155 0.02 260);
   --surface-2: oklch(0.18 0.02 260);
   --surface-3: oklch(0.22 0.025 260);
   --card: var(--surface-1);
@@ -81,7 +81,7 @@
   --warning-foreground: oklch(0.1 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.26 0.02 260);
+  --border: oklch(0.24 0.02 260);
   --border-strong: oklch(0.32 0.025 260);
   --input: oklch(0.2 0 0);
   --ring: oklch(0.72 0.19 32);
@@ -180,6 +180,11 @@
   to { transform: scale(1); opacity: 1; }
 }
 
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @layer utilities {
   .spring {
     animation: var(--animate-spring);
@@ -195,6 +200,67 @@
       box-shadow: 0 10px 40px -10px color-mix(in srgb, var(--primary), transparent 75%);
     }
   }
+
+  .shadow-soft {
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, var(--border), transparent 55%),
+      0 10px 30px -18px color-mix(in oklch, var(--foreground), transparent 92%);
+  }
+
+  .shadow-pop {
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, var(--border), transparent 50%),
+      0 18px 50px -28px color-mix(in oklch, var(--foreground), transparent 88%);
+  }
+
+  .glow-primary {
+    box-shadow: 0 10px 40px -22px color-mix(in oklch, var(--primary), transparent 65%);
+  }
+
+  .border-gradient {
+    position: relative;
+  }
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--primary), transparent 70%),
+      color-mix(in oklch, var(--accent), transparent 78%),
+      color-mix(in oklch, var(--border), transparent 65%)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .pressable {
+    transition: transform 140ms cubic-bezier(.2,.8,.2,1), box-shadow 140ms cubic-bezier(.2,.8,.2,1);
+  }
+  .pressable:active {
+    transform: scale(0.985);
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--muted), transparent 0%) 0%,
+      color-mix(in oklch, var(--muted), transparent 35%) 50%,
+      color-mix(in oklch, var(--muted), transparent 0%) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable, .hover-lift, .spring { transition: none !important; animation: none !important; }
 }
 
 @layer base {

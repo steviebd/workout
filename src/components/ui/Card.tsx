@@ -4,16 +4,16 @@ import { cn } from '~/lib/cn'
 
 function Card({ className, variant = 'surface', overflow = 'hidden', ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted'; overflow?: 'visible' | 'hidden' | 'auto' | 'clip' | 'scroll' }) {
   const variantStyles = {
-    surface: 'border border-border/60 bg-card shadow-xs',
-    elevated: 'border border-border/40 bg-card shadow-md',
-    tinted: 'border border-primary/20 bg-gradient-to-br from-primary/8 to-transparent shadow-xs',
+    surface: 'border border-border/60 bg-card shadow-soft',
+    elevated: 'border border-border/40 bg-card shadow-pop border-gradient',
+    tinted: 'border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-soft',
   }
 
   return (
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col gap-6 rounded-xl py-5 transition-shadow duration-200',
+        'flex flex-col rounded-xl transition-shadow duration-200',
         variantStyles[variant],
         className,
       )}

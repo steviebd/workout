@@ -474,7 +474,7 @@ function ProgressPage() {
               </Card>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Weekly Volume</h2>
                 <VolumeScopeToggle

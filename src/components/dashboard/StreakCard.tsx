@@ -16,7 +16,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
 
   return (
     <Card variant="tinted" className="overflow-hidden">
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`flex h-12 w-12 items-center justify-center rounded-full ${weeklyComplete ? 'bg-success/20' : 'bg-primary/20'}`}>
@@ -46,9 +46,9 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
             </p>
           </div>
 
-          <div className="h-3 overflow-hidden rounded-full bg-surface-2 mb-3">
+          <div className="h-3 overflow-hidden rounded-full bg-surface-2/80 border border-border/50 mb-3">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
               style={{ width: `${thirtyDayStreak.progress}%` }}
             />
           </div>
@@ -57,7 +57,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
             {thirtyDayStreak.weeklyDetails.slice(-4).reverse().map((week, index) => (
               <div
                 key={week.weekStart}
-                className={`text-center p-2 rounded-lg text-xs ${
+                className={`text-center p-2 rounded-lg text-xs border border-border/40 ${
                   week.meetsTarget
                     ? 'bg-success/20 text-success'
                     : week.count > 0

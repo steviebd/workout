@@ -75,8 +75,8 @@ export function ExerciseLogger({
 
   return (
     <>
-      <Card className={cn(allCompleted && 'border-success/50')}>
-        <CardHeader className="cursor-pointer p-3 sm:p-4" onClick={handleToggleExpand}>
+      <Card className={cn('pressable', allCompleted && 'border-success/50')}>
+        <CardHeader className="cursor-pointer p-4 sm:p-4 hover:bg-secondary/30 rounded-t-xl transition-colors" onClick={handleToggleExpand}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div

@@ -75,10 +75,11 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/70 relative">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+      <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/18 to-transparent border border-primary/15 shadow-soft">
               <Flame className="h-5 w-5 text-primary" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-primary">Fit Workout</span>
@@ -86,12 +87,12 @@ export function Header() {
 
           <div className="flex items-center gap-3">
             {streakLoading ? (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary/70 border border-border/60 px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-sm font-semibold">...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary/70 border border-border/60 px-3 py-1.5 shadow-soft">
                 <Target className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
               </div>
