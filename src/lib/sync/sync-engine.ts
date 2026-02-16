@@ -3,7 +3,7 @@ import { localDB, getLocalDB, type OfflineOperation } from '../db/local-db';
 import { getPendingOperations, removeOperation, incrementRetry, setLastSyncTime, getLastSyncTime } from '../db/local-repository';
 import { createEntityItem } from './entity-mappers';
 import { createUpdateFields } from './field-mappers';
-import type { SyncResult, ServerEntity, ServerSyncResponse, LocalEntity, TableType } from './types';
+import type { SyncResult, ServerEntity, ServerSyncResponse, LocalEntity, TableType, CreateEntityResponse } from './types';
 
 class SyncEngine {
   private syncInProgress: Promise<SyncResult> | null = null;
@@ -138,7 +138,7 @@ class SyncEngine {
       }
 
       if (op.type === 'create') {
-        const responseData = await response.json() as { id: string; updatedAt?: string };
+        const responseData = (await response.json()) as CreateEntityResponse;
         if (responseData.id) {
           await this.storeServerId(op.entity, op.localId, responseData.id, responseData.updatedAt ?? '');
         }
@@ -216,13 +216,16 @@ class SyncEngine {
   }
 
   private getTable<T extends LocalEntity>(tableName: TableType): DexieLib.Table<T> {
+    // Map table names to their actual Dexie table instances
+    // Using a type-safe record that returns the correct table type
     const tables: Record<TableType, DexieLib.Table<LocalEntity>> = {
-      exercises: localDB.exercises as unknown as DexieLib.Table<LocalEntity>,
-      templates: localDB.templates as unknown as DexieLib.Table<LocalEntity>,
-      workouts: localDB.workouts as unknown as DexieLib.Table<LocalEntity>,
-      workoutExercises: localDB.workoutExercises as unknown as DexieLib.Table<LocalEntity>,
-      workoutSets: localDB.workoutSets as unknown as DexieLib.Table<LocalEntity>,
+      exercises: localDB.exercises,
+      templates: localDB.templates,
+      workouts: localDB.workouts,
+      workoutExercises: localDB.workoutExercises,
+      workoutSets: localDB.workoutSets,
     };
+    // Cast through unknown since we're changing the generic type parameter
     return tables[tableName] as unknown as DexieLib.Table<T>;
   }
 
@@ -350,7 +353,9 @@ class SyncEngine {
           await tableInstance.bulkDelete(toDelete);
         }
         if (toAdd.length > 0) {
-          await tableInstance.bulkAdd(toAdd as never[]);
+          // bulkAdd expects the table's specific item type, but we're adding dynamically created items
+          // The items are validated by createEntityItem before being added to toAdd
+          await tableInstance.bulkAdd(toAdd as LocalEntity[]);
         }
         for (const { id, fields } of toUpdate) {
           await tableInstance.update(id, fields);
@@ -383,7 +388,9 @@ class SyncEngine {
     if (!localItem) {
       const newItem = createEntityItem(tableName, serverData, searchId);
       if (newItem) {
-        await table.add(newItem as never);
+        // add() expects the table's specific item type, but createEntityItem returns a dynamic type
+        // The item structure is validated by createEntityItem to match the expected table schema
+        await table.add(newItem as LocalEntity);
       }
       return;
     }

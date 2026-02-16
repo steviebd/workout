@@ -241,6 +241,8 @@ export const _workoutSetsWorkoutExerciseIdIdx = index('idx_workout_sets_workout_
 export const _workoutSetsCompletedAtIdx = index('idx_workout_sets_completed_at').on(workoutSets.completedAt);
 export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(workoutSets.localId);
 export const _workoutSetsUpdatedAtIdx = index('idx_workout_sets_updated_at').on(workoutSets.updatedAt);
+export const _workoutSetsExerciseCompleteIdx = index('idx_workout_sets_exercise_complete')
+  .on(workoutSets.workoutExerciseId, workoutSets.isComplete);
 
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);

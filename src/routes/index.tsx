@@ -4,7 +4,7 @@ import { useAuth } from './__root'
 import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
 import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
 import { DashboardProvider } from '@/lib/context/DashboardContext'
-import { formatRelativeDate } from '~/lib/date'
+import { formatRelativeDate } from '~/lib/utils/date'
 import { PageLayout } from '~/components/ui/PageLayout'
 
 interface WorkoutHistoryStats {

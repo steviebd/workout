@@ -33,3 +33,22 @@ export interface LocalEntity {
 }
 
 export type TableType = 'exercises' | 'templates' | 'workouts' | 'workoutExercises' | 'workoutSets';
+
+/**
+ * Type for entity names used in sync operations
+ */
+export type EntityType = 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set';
+
+/**
+ * Type for items that can be added to Dexie tables
+ * This is used for bulkAdd operations where the exact type is dynamic
+ */
+export type AddableItem = Record<string, unknown>;
+
+/**
+ * Response type for entity creation operations
+ */
+export interface CreateEntityResponse {
+  id: string;
+  updatedAt?: string;
+}

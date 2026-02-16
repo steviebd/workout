@@ -92,7 +92,7 @@ const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/progress.lazy').then((d) => d.Route))
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
@@ -132,7 +132,7 @@ const TemplatesNewRoute = TemplatesNewRouteImport.update({
   id: '/templates/new',
   path: '/templates/new',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/templates.new.lazy').then((d) => d.Route))
 const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
   id: '/templates/_index',
   path: '/templates',

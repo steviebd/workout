@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNull, like, type SQL } from 'drizzle-orm';
-import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
+import { type Template, exercises, templateExercises, templates } from '../schema';
 import { getDb } from '../index';
+import { applyPagination, withUpdatedAt } from '../base-repository';
 import type {
   DbOrTx,
   TemplateExerciseWithDetails,
@@ -143,13 +144,8 @@ export async function getTemplatesByWorkosId(
     .where(and(...conditions))
     .orderBy(orderByClause);
 
-  const results = (offset !== undefined && limit !== undefined
-    ? await query.offset(offset).limit(limit)
-    : offset !== undefined
-      ? await query.offset(offset)
-      : limit !== undefined
-        ? await query.limit(limit)
-        : await query) as TemplateWithExerciseCount[];
+  const paginatedQuery = applyPagination(query, offset, limit);
+  const results = (await paginatedQuery) as TemplateWithExerciseCount[];
 
   return results;
 }
@@ -162,10 +158,7 @@ export async function updateTemplate(
 ): Promise<Template | null> {
   const db = getDb(dbOrTx);
 
-  const updateData: Partial<NewTemplate> = {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
+  const updateData = withUpdatedAt(data);
 
   const updated = await db
     .update(templates)
@@ -187,10 +180,7 @@ export async function softDeleteTemplate(
 
   const result = await db
     .update(templates)
-    .set({
-      isDeleted: true,
-      updatedAt: new Date().toISOString(),
-    })
+    .set(withUpdatedAt({ isDeleted: true }))
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
     .run();
 

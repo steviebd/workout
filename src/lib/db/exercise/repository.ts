@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
-import { exercises, type Exercise, type NewExercise } from '../schema';
+import { exercises, type Exercise } from '../schema';
 import { getDb, type DbOrTx } from '../index';
+import { applyPagination, withUpdatedAt } from '../base-repository';
 import type { CreateExerciseData, UpdateExerciseData, GetExercisesOptions, LibraryExercise } from './types';
 
 export async function createExercise(
@@ -106,16 +107,7 @@ export async function getExercisesByWorkosId(
     .where(and(...conditions))
     .orderBy(orderByClause);
 
-  let results: Exercise[];
-  if (offset !== undefined && limit !== undefined) {
-    results = await baseQuery.offset(offset).limit(limit);
-  } else if (offset !== undefined) {
-    results = await baseQuery.offset(offset);
-  } else if (limit !== undefined) {
-    results = await baseQuery.limit(limit);
-  } else {
-    results = await baseQuery;
-  }
+  const results = await applyPagination(baseQuery, offset, limit);
 
   return results as Exercise[];
 }
@@ -128,10 +120,7 @@ export async function updateExercise(
 ): Promise<Exercise | null> {
   const db = getDb(dbOrTx);
 
-  const updateData: Partial<NewExercise> = {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
+  const updateData = withUpdatedAt(data);
 
   const updated = await db
     .update(exercises)
@@ -153,10 +142,7 @@ export async function softDeleteExercise(
 
   const result = await db
     .update(exercises)
-    .set({
-      isDeleted: true,
-      updatedAt: new Date().toISOString(),
-    })
+    .set(withUpdatedAt({ isDeleted: true }))
     .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
     .run();
 
