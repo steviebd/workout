@@ -50,6 +50,7 @@ export const Route = createFileRoute('/api/auth/signout')({
               
               workosLogoutUrl = workos.userManagement.getLogoutUrl({
                 sessionId: payload.workosId,
+                returnTo: url.origin,
               });
             }
           } catch (err) {
@@ -58,14 +59,34 @@ export const Route = createFileRoute('/api/auth/signout')({
         }
 
         // If we have a WorkOS logout URL, redirect there; otherwise redirect to home
-        // Force a hard navigation to ensure cookie is cleared and state is reset
+        // Use an intermediate HTML page to clear localStorage/sessionStorage before redirecting
+        // This prevents the browser back button from restoring cached auth state
         if (workosLogoutUrl) {
-          return new Response(null, {
-            status: 302,
+          const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Signing out...</title>
+</head>
+<body>
+<p>Signing out...</p>
+<script>
+  // Clear localStorage and sessionStorage before redirecting to WorkOS
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch(e) {}
+  // Use replace to prevent back button from returning to this page
+  window.location.replace(${JSON.stringify(workosLogoutUrl)});
+</script>
+</body>
+</html>`;
+
+          return new Response(html, {
+            status: 200,
             headers: {
-              'Location': workosLogoutUrl,
+              'Content-Type': 'text/html',
               'Set-Cookie': clearCookie,
-              'Cache-Control': 'no-store',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
             },
           });
         }
