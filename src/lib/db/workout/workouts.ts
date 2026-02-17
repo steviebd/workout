@@ -7,6 +7,7 @@ import {
   workouts,
 } from '../schema';
 import { getDb, calculateChunkSize } from '../index';
+import { applyPagination } from '../base-repository';
 import type {
   DbOrTx,
   CreateWorkoutData,
@@ -19,6 +20,17 @@ import type {
   NewWorkoutSet,
   NewWorkoutExercise,
 } from './types';
+
+/**
+ * Interface for Drizzle query builders that support sorting, pagination, and grouping
+ * This allows dynamic query building while maintaining type safety
+ */
+interface QueryBuilderWithModifiers {
+  orderBy: (...columns: unknown[]) => QueryBuilderWithModifiers;
+  offset: (n: number) => QueryBuilderWithModifiers;
+  limit: (n: number) => QueryBuilderWithModifiers;
+  groupBy: (...columns: unknown[]) => unknown;
+}
 
 /**
  * Creates a new workout for a user
@@ -228,11 +240,13 @@ export async function getWorkoutsByWorkosId(
     .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
     .leftJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
     .leftJoin(userProgramCycles, eq(workouts.programCycleId, userProgramCycles.id))
-    .where(and(...conditions))
-    .groupBy(workouts.id, userProgramCycles.id, userProgramCycles.name, userProgramCycles.programSlug, userProgramCycles.squat1rm, userProgramCycles.bench1rm, userProgramCycles.deadlift1rm, userProgramCycles.ohp1rm, userProgramCycles.startingSquat1rm, userProgramCycles.startingBench1rm, userProgramCycles.startingDeadlift1rm, userProgramCycles.startingOhp1rm);
+    .where(and(...conditions));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query: any = baseQuery;
+  // Build query with sorting, pagination, and grouping
+  // Note: Cast to QueryBuilderWithModifiers due to Drizzle's complex query builder types
+  // The baseQuery type after .where() doesn't expose .orderBy() in its type definition,
+  // but the runtime object does support it
+  let query: QueryBuilderWithModifiers = baseQuery as unknown as QueryBuilderWithModifiers;
 
   if (sortBy === 'startedAt') {
     query = sortOrder === 'DESC'
@@ -244,15 +258,22 @@ export async function getWorkoutsByWorkosId(
       : query.orderBy(asc(workouts.createdAt));
   }
 
-  if (offset !== undefined) {
-    query = query.offset(offset);
-  }
-
-  if (limit !== undefined) {
-    query = query.limit(limit);
-  }
-
-  const results = await query;
+  const paginatedQuery = applyPagination(query, offset, limit) as unknown as QueryBuilderWithModifiers;
+  const queryWithGroupBy = paginatedQuery.groupBy(
+    workouts.id,
+    userProgramCycles.id,
+    userProgramCycles.name,
+    userProgramCycles.programSlug,
+    userProgramCycles.squat1rm,
+    userProgramCycles.bench1rm,
+    userProgramCycles.deadlift1rm,
+    userProgramCycles.ohp1rm,
+    userProgramCycles.startingSquat1rm,
+    userProgramCycles.startingBench1rm,
+    userProgramCycles.startingDeadlift1rm,
+    userProgramCycles.startingOhp1rm
+  );
+  const results = await queryWithGroupBy;
 
   return results as WorkoutWithExerciseCount[];
 }
@@ -322,95 +343,97 @@ export async function createWorkoutWithDetails(
 ): Promise<WorkoutWithExercises> {
   const db = getDb(dbOrTx);
 
-  const workout = await db
-    .insert(workouts)
-    .values({
-      workosId: data.workosId,
-      name: data.name,
-      templateId: data.templateId,
-      programCycleId: data.programCycleId,
-      notes: data.notes,
-      startedAt: startedAt ?? new Date().toISOString(),
-      localId: data.localId,
-    })
-    .returning()
-    .get();
-
-  let workoutExercisesData: NewWorkoutExercise[];
-
-  if (data.templateId) {
-    const { getTemplateExercises } = await import('../template');
-    const templateExercises = await getTemplateExercises(db, data.templateId, data.workosId);
-
-    workoutExercisesData = templateExercises.map((te) => ({
-      workoutId: workout.id,
-      exerciseId: te.exerciseId,
-      orderIndex: te.orderIndex,
-      isAmrap: te.isAmrap ?? false,
-      setNumber: te.setNumber ?? null,
-    }));
-  } else {
-    workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
-      workoutId: workout.id,
-      exerciseId,
-      orderIndex: index,
-      isAmrap: false,
-      setNumber: null,
-    }));
-  }
-
-  let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
-
-  if (workoutExercisesData.length > 0) {
-    newWorkoutExercises = await db
-      .insert(workoutExercises)
-      .values(workoutExercisesData)
+  return db.transaction(async (tx) => {
+    const workout = await tx
+      .insert(workouts)
+      .values({
+        workosId: data.workosId,
+        name: data.name,
+        templateId: data.templateId,
+        programCycleId: data.programCycleId,
+        notes: data.notes,
+        startedAt: startedAt ?? new Date().toISOString(),
+        localId: data.localId,
+      })
       .returning()
-      .all();
-  }
+      .get();
 
-  const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');
-  const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.workosId, data.exerciseIds);
+    let workoutExercisesData: NewWorkoutExercise[];
 
-  const setsToInsert: NewWorkoutSet[] = [];
+    if (data.templateId) {
+      const { getTemplateExercises } = await import('../template');
+      const templateExercises = await getTemplateExercises(tx as unknown as DbOrTx, data.templateId, data.workosId);
 
-  for (let i = 0; i < newWorkoutExercises.length; i++) {
-    const workoutExercise = newWorkoutExercises[i];
-    const exerciseId = data.exerciseIds[i];
-    const lastSets = lastSetsByExercise.get(exerciseId) ?? [];
+      workoutExercisesData = templateExercises.map((te) => ({
+        workoutId: workout.id,
+        exerciseId: te.exerciseId,
+        orderIndex: te.orderIndex,
+        isAmrap: te.isAmrap ?? false,
+        setNumber: te.setNumber ?? null,
+      }));
+    } else {
+      workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
+        workoutId: workout.id,
+        exerciseId,
+        orderIndex: index,
+        isAmrap: false,
+        setNumber: null,
+      }));
+    }
 
-    if (lastSets.length > 0) {
-      for (const setData of lastSets) {
+    let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
+
+    if (workoutExercisesData.length > 0) {
+      newWorkoutExercises = await tx
+        .insert(workoutExercises)
+        .values(workoutExercisesData)
+        .returning()
+        .all();
+    }
+
+    const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');
+    const lastSetsByExercise = await getLastWorkoutSetsForExercises(tx as unknown as DbOrTx, data.workosId, data.exerciseIds);
+
+    const setsToInsert: NewWorkoutSet[] = [];
+
+    for (let i = 0; i < newWorkoutExercises.length; i++) {
+      const workoutExercise = newWorkoutExercises[i];
+      const exerciseId = data.exerciseIds[i];
+      const lastSets = lastSetsByExercise.get(exerciseId) ?? [];
+
+      if (lastSets.length > 0) {
+        for (const setData of lastSets) {
+          setsToInsert.push({
+            workoutExerciseId: workoutExercise.id,
+            setNumber: setData.setNumber,
+            weight: setData.weight,
+            reps: setData.reps,
+            rpe: setData.rpe,
+            isComplete: false,
+          });
+        }
+      } else {
         setsToInsert.push({
           workoutExerciseId: workoutExercise.id,
-          setNumber: setData.setNumber,
-          weight: setData.weight,
-          reps: setData.reps,
-          rpe: setData.rpe,
+          setNumber: 1,
           isComplete: false,
         });
       }
-    } else {
-      setsToInsert.push({
-        workoutExerciseId: workoutExercise.id,
-        setNumber: 1,
-        isComplete: false,
-      });
     }
-  }
 
-  if (setsToInsert.length > 0) {
-    const CHUNK_SIZE = calculateChunkSize(7);
-    for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
-      const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
-      await db.insert(workoutSets).values(batch).run();
+    if (setsToInsert.length > 0) {
+      const CHUNK_SIZE = calculateChunkSize(7);
+      for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
+        const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
+        await tx.insert(workoutSets).values(batch);
+      }
     }
-  }
 
-  const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);
+    const exercisesWithSets = await getWorkoutExercises(tx as unknown as DbOrTx, workout.id, data.workosId);
 
-  return {
-    ...workout,
-    exercises: exercisesWithSets,
-  };
+    return {
+      ...workout,
+      exercises: exercisesWithSets,
+    };
+  });
 }

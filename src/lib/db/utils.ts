@@ -1,5 +1,11 @@
+import type { DrizzleD1Database } from 'drizzle-orm/d1';
+
 export const MAX_SQL_VARS = 900;
 export const SAFE_MAX_SQL_VARS = 500;
+
+// Type for our Drizzle database instance
+// Using a generic database type since the exact schema type is complex
+export type AppDatabase = DrizzleD1Database<Record<string, unknown>>;
 
 export function calculateChunkSize(rowVariableCount: number, maxVars = SAFE_MAX_SQL_VARS): number {
   return Math.floor(maxVars / rowVariableCount);
@@ -7,8 +13,20 @@ export function calculateChunkSize(rowVariableCount: number, maxVars = SAFE_MAX_
 
 const BATCH_SIZE_SEQUENCE = [90, 60, 45, 30, 20, 15, 10, 7, 5, 3, 1];
 
+/**
+ * Inserts records with automatic batching to avoid SQLite variable limits
+ * @param db - Drizzle database instance
+ * @param table - Table to insert into
+ * @param records - Records to insert
+ * @param options - Optional settings
+ * @returns Array of inserted record IDs if returning is enabled
+ *
+ * Note: Type assertions are needed because this is a generic utility function that works
+ * with any table type. Drizzle's insert() requires specific table types at compile time,
+ * but we only know the table at runtime. The actual type safety is enforced by the caller.
+ */
 export async function insertWithAutoBatching<T>(
-  db: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  db: AppDatabase,
   table: unknown,
   records: T[],
   options?: { returning?: boolean }
@@ -20,9 +38,13 @@ export async function insertWithAutoBatching<T>(
       const results: Array<{ id: string }> = [];
       for (let i = 0; i < records.length; i += batchSize) {
         const batch = records.slice(i, i + batchSize);
-        const insertQuery = db.insert(table).values(batch);
+        // Type assertion needed: table parameter is generic, but Drizzle requires specific table type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const insertQuery = (db as AppDatabase).insert(table as any).values(batch as any);
         if (options?.returning) {
-          const inserted = await insertQuery.returning({ id: '' }) as unknown as Array<{ id: string }>;
+          // Type assertion needed: returning() needs specific column selection type
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const inserted = await insertQuery.returning({ id: '' as any }) as unknown as Array<{ id: string }>;
           results.push(...inserted);
         } else {
           await insertQuery.run();
@@ -40,8 +62,18 @@ export async function insertWithAutoBatching<T>(
   return [];
 }
 
+/**
+ * Inserts records with automatic batching (raw version without returning)
+ * @param db - Drizzle database instance
+ * @param table - Table to insert into
+ * @param records - Records to insert
+ *
+ * Note: Type assertions are needed because this is a generic utility function that works
+ * with any table type. Drizzle's insert() requires specific table types at compile time,
+ * but we only know the table at runtime. The actual type safety is enforced by the caller.
+ */
 export async function insertWithAutoBatchingRaw<T>(
-  db: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  db: AppDatabase,
   table: unknown,
   records: T[]
 ): Promise<void> {
@@ -51,7 +83,9 @@ export async function insertWithAutoBatchingRaw<T>(
     try {
       for (let i = 0; i < records.length; i += batchSize) {
         const batch = records.slice(i, i + batchSize);
-        await db.insert(table).values(batch).run();
+        // Type assertion needed: table and batch parameters are generic, but Drizzle requires specific types
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (db as AppDatabase).insert(table as any).values(batch as any).run();
       }
       break;
     } catch (err) {

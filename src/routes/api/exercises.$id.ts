@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { type UpdateExerciseData, getExerciseById, softDeleteExercise, updateExercise } from '../../lib/db/exercise';
+import { getExerciseById, softDeleteExercise, updateExercise } from '../../lib/db/exercise';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { updateExerciseSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/exercises/$id')({
   server: {
@@ -26,8 +28,11 @@ export const Route = createFileRoute('/api/exercises/$id')({
         try {
           const { session, d1Db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { name, muscleGroup, description } = body as UpdateExerciseData & { localId?: string };
+          const body = await validateBody(request, updateExerciseSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
+          const { name, muscleGroup, description } = body;
 
           const exercise = await updateExercise(d1Db, params.id, session.sub, {
             name,

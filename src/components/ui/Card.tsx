@@ -2,19 +2,49 @@ import * as React from 'react'
 
 import { cn } from '~/lib/cn'
 
-function Card({ className, variant = 'surface', overflow = 'hidden', ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted'; overflow?: 'visible' | 'hidden' | 'auto' | 'clip' | 'scroll' }) {
+function Card({ className, variant = 'surface', overflow = 'hidden', interactive = false, ...props }: React.ComponentProps<'div'> & { variant?: 'surface' | 'elevated' | 'tinted' | 'glass'; overflow?: 'visible' | 'hidden' | 'auto' | 'clip' | 'scroll'; interactive?: boolean }) {
   const variantStyles = {
-    surface: 'border border-border/60 bg-card shadow-xs',
-    elevated: 'border border-border/40 bg-card shadow-md',
-    tinted: 'border border-primary/20 bg-gradient-to-br from-primary/8 to-transparent shadow-xs',
+    surface: [
+      'bg-card',
+      'border border-border/50',
+      'shadow-[0_1px_2px_0_rgb(0_0_0/0.03),0_4px_12px_-2px_rgb(0_0_0/0.06)]',
+      'dark:shadow-[0_1px_2px_0_rgb(0_0_0/0.15),0_4px_16px_-2px_rgb(0_0_0/0.25)]',
+      'dark:border-border/40',
+    ].join(' '),
+    elevated: [
+      'bg-card border-gradient',
+      'border border-transparent',
+      'shadow-[0_1px_3px_0_rgb(0_0_0/0.04),0_8px_24px_-4px_rgb(0_0_0/0.08),0_20px_48px_-12px_rgb(0_0_0/0.06)]',
+      'dark:shadow-[0_1px_3px_0_rgb(0_0_0/0.2),0_8px_28px_-4px_rgb(0_0_0/0.35),0_24px_56px_-12px_rgb(0_0_0/0.25)]',
+      'ring-1 ring-border/30 dark:ring-border/20',
+    ].join(' '),
+    tinted: [
+      'bg-gradient-to-br from-primary/12 via-primary/6 to-accent/4',
+      'border border-primary/25 dark:border-primary/20',
+      'shadow-[0_1px_2px_0_rgb(0_0_0/0.03),0_4px_16px_-4px_var(--tw-shadow-color)]',
+      'shadow-primary/10 dark:shadow-primary/15',
+      'ring-1 ring-inset ring-primary/10',
+    ].join(' '),
+    glass: [
+      'glass',
+      'border-0',
+      'shadow-[0_4px_24px_-4px_rgb(0_0_0/0.08),0_12px_32px_-8px_rgb(0_0_0/0.06)]',
+      'dark:shadow-[0_4px_24px_-4px_rgb(0_0_0/0.3),0_12px_40px_-8px_rgb(0_0_0/0.35)]',
+      'ring-1 ring-white/20 dark:ring-white/10',
+    ].join(' '),
   }
+
+  const interactiveStyles = interactive
+    ? 'hover-lift cursor-pointer hover:shadow-[0_4px_16px_-2px_rgb(0_0_0/0.1),0_20px_40px_-8px_rgb(0_0_0/0.12)] dark:hover:shadow-[0_4px_20px_-2px_rgb(0_0_0/0.35),0_24px_48px_-8px_rgb(0_0_0/0.4)]'
+    : ''
 
   return (
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col gap-6 rounded-xl py-5 transition-shadow duration-200',
+        'flex flex-col rounded-xl transition-all duration-200',
         variantStyles[variant],
+        interactiveStyles,
         className,
       )}
       style={{ overflow }}

@@ -2,16 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { updateProgramCycle1RM, updateProgramCycleProgress, softDeleteProgramCycle, completeProgramCycle, getProgramCycleWithWorkouts } from '~/lib/db/program';
-
-interface ProgramCycleUpdateBody {
-  squat1rm?: number;
-  bench1rm?: number;
-  deadlift1rm?: number;
-  ohp1rm?: number;
-  currentWeek?: number;
-  currentSession?: number;
-  isComplete?: boolean;
-}
+import { validateBody } from '~/lib/api/route-helpers';
+import { updateProgramCycleSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/program-cycles/$id')({
   server: {
@@ -43,11 +35,14 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
          }
        },
        PUT: async ({ request, params }) => {
-         try {
-           const { session, d1Db } = await withApiContext(request);
+          try {
+            const { session, d1Db } = await withApiContext(request);
 
-           const body = await request.json() as ProgramCycleUpdateBody;
-           const { squat1rm, bench1rm, deadlift1rm, ohp1rm, currentWeek, currentSession, isComplete } = body;
+            const body = await validateBody(request, updateProgramCycleSchema);
+            if (!body) {
+              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+            }
+            const { squat1rm, bench1rm, deadlift1rm, ohp1rm, currentWeek, currentSession, isComplete } = body;
 
            const workosId = session.sub;
            let updated;

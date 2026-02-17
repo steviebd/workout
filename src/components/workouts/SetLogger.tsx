@@ -167,10 +167,10 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
     <div
       ref={containerRef}
       className={cn(
-        'rounded-lg border p-1.5 sm:p-3 transition-all relative overflow-hidden',
+        'rounded-xl border p-2 sm:p-3 transition-all relative overflow-hidden',
         set.completed
-          ? 'border-success/50 bg-success/10'
-          : 'border-border bg-secondary/30',
+          ? 'border-success/50 bg-gradient-to-br from-success/14 to-transparent'
+          : 'border-border/70 bg-surface-1/40',
         isSwiping && 'cursor-grab active:cursor-grabbing'
       )}
       onTouchStart={handleTouchStart}
@@ -191,14 +191,14 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
           <div className="flex items-center gap-0.5">
             <button
               onClick={handleWeightDecrease}
-              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
               aria-label="Decrease weight"
             >
               <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
             <div
               className={cn(
-                'w-11 sm:w-14 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background border border-border',
+                'w-11 sm:w-14 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background/70 border border-border/70',
                 isEditingWeight ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'
               )}
               onClick={startEditingWeight}
@@ -233,7 +233,7 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             </div>
             <button
               onClick={handleWeightIncrease}
-              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
               aria-label="Increase weight"
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -245,14 +245,14 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
           <div className="flex items-center gap-0.5">
             <button
               onClick={handleRepsDecrease}
-              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
               aria-label="Decrease reps"
             >
               <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
             <div
               className={cn(
-                'w-9 sm:w-12 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background border border-border',
+                'w-9 sm:w-12 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background/70 border border-border/70',
                 isEditingReps ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'
               )}
               onClick={startEditingReps}
@@ -284,7 +284,7 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
             </div>
             <button
               onClick={handleRepsIncrease}
-              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors active:scale-95"
+              className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
               aria-label="Increase reps"
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />

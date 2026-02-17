@@ -2,27 +2,26 @@ import { createFileRoute } from '@tanstack/react-router';
 import { type NewWorkoutSet, deleteWorkoutSet, updateWorkoutSet } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { updateWorkoutSetSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/workouts/sets/$setId')({
   server: {
     handlers: {
-       PUT: async ({ request, params }) => {
-          try {
-            const { d1Db, session } = await withApiContext(request);
+           PUT: async ({ request, params }) => {
+           try {
+             const { d1Db, session } = await withApiContext(request);
 
-            if (!params.setId || typeof params.setId !== 'string') {
-              console.error('Invalid set ID:', params.setId);
-              return createApiError('Invalid set ID', 400, API_ERROR_CODES.VALIDATION_ERROR);
-            }
+             if (!params.setId || typeof params.setId !== 'string') {
+               console.error('Invalid set ID:', params.setId);
+               return createApiError('Invalid set ID', 400, API_ERROR_CODES.VALIDATION_ERROR);
+             }
 
-            const body = await request.json();
-            const { weight, reps, rpe, isComplete } = body as {
-              weight?: number | null;
-              reps?: number | null;
-              rpe?: number | null;
-              isComplete?: boolean;
-              localId?: string;
-            };
+             const body = await validateBody(request, updateWorkoutSetSchema);
+             if (!body) {
+               return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+             }
+             const { weight, reps, rpe, isComplete } = body;
 
             console.log('Update set request:', {
               setId: params.setId,
@@ -30,36 +29,23 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
               reps,
               rpe,
               isComplete,
-              body
             });
 
             const updateData: Record<string, unknown> = {};
 
             if (weight !== undefined && weight !== null) {
-              if (typeof weight !== 'number' || weight < 0) {
-                return createApiError('Weight must be a non-negative number', 400, API_ERROR_CODES.VALIDATION_ERROR);
-              }
               updateData.weight = weight;
             }
 
             if (reps !== undefined && reps !== null) {
-              if (typeof reps !== 'number' || reps < 0) {
-                return createApiError('Reps must be a non-negative number', 400, API_ERROR_CODES.VALIDATION_ERROR);
-              }
               updateData.reps = reps;
             }
 
             if (rpe !== undefined && rpe !== null) {
-              if (typeof rpe !== 'number' || rpe < 0) {
-                return createApiError('RPE must be a non-negative number', 400, API_ERROR_CODES.VALIDATION_ERROR);
-              }
               updateData.rpe = rpe;
             }
 
             if (isComplete !== undefined) {
-              if (typeof isComplete !== 'boolean') {
-                return createApiError('isComplete must be a boolean', 400, API_ERROR_CODES.VALIDATION_ERROR);
-              }
               updateData.isComplete = isComplete;
               if (isComplete) {
                 updateData.completedAt = new Date().toISOString();

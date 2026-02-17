@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
-  type ExerciseOrder,
   createWorkoutExercise,
   getWorkoutExercises,
   removeWorkoutExercise,
@@ -8,6 +7,9 @@ import {
 } from '../../lib/db/workout';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
+import { validateBody } from '~/lib/api/route-helpers';
+import { createWorkoutExerciseSchema, reorderWorkoutExercisesSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/workouts/$id/exercises')({
   server: {
@@ -24,25 +26,24 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           }
         },
        POST: async ({ request, params }) => {
-          try {
-            const { d1Db, session } = await withApiContext(request);
+           try {
+             const { d1Db, session } = await withApiContext(request);
 
-            const body = await request.json();
-            const { exerciseId, orderIndex, notes, localId } = body as { exerciseId: string; orderIndex: number; notes?: string; localId?: string };
+             const body = await validateBody(request, createWorkoutExerciseSchema);
+             if (!body) {
+               return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+             }
+             const { exerciseId, orderIndex, notes, localId } = body;
 
-            if (!exerciseId || orderIndex === undefined) {
-              return createApiError('Exercise ID and order index are required', 400, API_ERROR_CODES.VALIDATION_ERROR);
-            }
-
-            const workoutExercise = await createWorkoutExercise(
-              d1Db,
-              params.id,
-              session.sub,
-              exerciseId,
-              orderIndex,
-              notes,
-              localId
-            );
+             const workoutExercise = await createWorkoutExercise(
+               d1Db,
+               params.id,
+               session.sub,
+               exerciseId,
+               orderIndex,
+               notes,
+               localId
+             );
 
             if (!workoutExercise) {
               return createApiError('Workout not found or does not belong to you', 404, API_ERROR_CODES.NOT_FOUND);
@@ -55,13 +56,15 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
           }
         },
        DELETE: async ({ request, params }) => {
-          try {
-            const { d1Db, session } = await withApiContext(request);
+           try {
+             const { d1Db, session } = await withApiContext(request);
 
-            const url = new URL(request.url);
-            const exerciseId = url.searchParams.get('exerciseId');
+             const url = new URL(request.url);
+             const { exerciseId } = parseQueryParams<{
+               exerciseId?: string;
+             }>(url);
 
-            if (!exerciseId) {
+             if (!exerciseId) {
               return createApiError('Exercise ID is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
             }
 
@@ -81,12 +84,11 @@ export const Route = createFileRoute('/api/workouts/$id/exercises')({
         try {
           const { db, session } = await withApiContext(request);
 
-          const body = await request.json();
-          const { exerciseOrders } = body as { exerciseOrders: ExerciseOrder[] };
-
-          if (!exerciseOrders || !Array.isArray(exerciseOrders)) {
-            return createApiError('Exercise orders array is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          const body = await validateBody(request, reorderWorkoutExercisesSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
+          const { exerciseOrders } = body;
 
           const reordered = await reorderWorkoutExercises(db, params.id, exerciseOrders, session.sub);
 

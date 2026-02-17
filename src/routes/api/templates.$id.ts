@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
-  type UpdateTemplateData,
   getTemplateWithExercises,
   softDeleteTemplate,
   updateTemplate
 } from '../../lib/db/template';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { validateBody } from '~/lib/api/route-helpers';
+import { updateTemplateSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/templates/$id')({
   server: {
@@ -31,8 +32,11 @@ export const Route = createFileRoute('/api/templates/$id')({
         try {
           const { session, d1Db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { name, description, notes } = body as UpdateTemplateData & { localId?: string };
+          const body = await validateBody(request, updateTemplateSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          }
+          const { name, description, notes } = body;
 
           const template = await updateTemplate(d1Db, params.id, session.sub, {
             name,

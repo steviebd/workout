@@ -1,11 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
+
 import { useEffect, useState } from 'react'
 import { useAuth } from './__root'
+import { getSession } from '~/lib/session'
 import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
 import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
 import { DashboardProvider } from '@/lib/context/DashboardContext'
-import { formatRelativeDate } from '~/lib/date'
+import { formatRelativeDate } from '~/lib/utils/date'
 import { PageLayout } from '~/components/ui/PageLayout'
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface WorkoutHistoryStats {
   totalWorkouts: number
@@ -170,6 +180,13 @@ function Dashboard() {
   )
 }
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/_index')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw redirect({ to: '/auth/signin' })
+    }
+  },
   component: Dashboard,
 })

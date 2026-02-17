@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, asc, desc, eq, like } from 'drizzle-orm';
-import { exercises, type Exercise, type NewExercise } from '../schema';
+import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
+import { exercises, type Exercise } from '../schema';
 import { getDb, type DbOrTx } from '../index';
+import { applyPagination, withUpdatedAt } from '../base-repository';
 import type { CreateExerciseData, UpdateExerciseData, GetExercisesOptions, LibraryExercise } from './types';
 
 export async function createExercise(
@@ -88,36 +88,26 @@ export async function getExercisesByWorkosId(
     conditions.push(eq(exercises.muscleGroup, muscleGroup));
   }
 
-  const orderByClause = sortOrder === 'DESC'
-    ? desc(exercises.createdAt)
-    : asc(exercises.createdAt);
+  const orderByClause: SQL =
+    sortBy === 'name'
+      ? sortOrder === 'DESC'
+        ? desc(exercises.name)
+        : asc(exercises.name)
+      : sortBy === 'muscleGroup'
+        ? sortOrder === 'DESC'
+          ? desc(exercises.muscleGroup)
+          : asc(exercises.muscleGroup)
+        : sortOrder === 'DESC'
+          ? desc(exercises.createdAt)
+          : asc(exercises.createdAt);
 
-  let query = db
+  const baseQuery = db
     .select()
     .from(exercises)
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(orderByClause);
 
-  if (sortBy === 'name') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(exercises.name))
-      : (query as any).orderBy(asc(exercises.name));
-  } else if (sortBy === 'muscleGroup') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(exercises.muscleGroup))
-      : (query as any).orderBy(asc(exercises.muscleGroup));
-  } else {
-    query = (query as any).orderBy(orderByClause);
-  }
-
-  if (offset !== undefined) {
-    query = (query as any).offset(offset);
-  }
-
-  if (limit !== undefined) {
-    query = (query as any).limit(limit);
-  }
-
-  const results = await query;
+  const results = await applyPagination(baseQuery, offset, limit);
 
   return results as Exercise[];
 }
@@ -130,10 +120,7 @@ export async function updateExercise(
 ): Promise<Exercise | null> {
   const db = getDb(dbOrTx);
 
-  const updateData: Partial<NewExercise> = {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
+  const updateData = withUpdatedAt(data);
 
   const updated = await db
     .update(exercises)
@@ -155,10 +142,7 @@ export async function softDeleteExercise(
 
   const result = await db
     .update(exercises)
-    .set({
-      isDeleted: true,
-      updatedAt: new Date().toISOString(),
-    })
+    .set(withUpdatedAt({ isDeleted: true }))
     .where(and(eq(exercises.id, exerciseId), eq(exercises.workosId, workosId)))
     .run();
 

@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { and, asc, desc, eq, isNull, like } from 'drizzle-orm';
-import { type NewTemplate, type Template, exercises, templateExercises, templates } from '../schema';
+import { and, asc, desc, eq, isNull, like, type SQL } from 'drizzle-orm';
+import { type Template, exercises, templateExercises, templates } from '../schema';
 import { getDb } from '../index';
+import { applyPagination, withUpdatedAt } from '../base-repository';
 import type {
   DbOrTx,
   TemplateExerciseWithDetails,
@@ -116,7 +116,16 @@ export async function getTemplatesByWorkosId(
     conditions.push(like(templates.name, `%${search}%`));
   }
 
-  let query = db
+  const orderByClause: SQL =
+    sortBy === 'name'
+      ? sortOrder === 'DESC'
+        ? desc(templates.name)
+        : asc(templates.name)
+      : sortOrder === 'DESC'
+        ? desc(templates.createdAt)
+        : asc(templates.createdAt);
+
+  const query = db
     .select({
       id: templates.id,
       workosId: templates.workosId,
@@ -132,29 +141,13 @@ export async function getTemplatesByWorkosId(
       ),
     })
     .from(templates)
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(orderByClause);
 
-  if (sortBy === 'name') {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(templates.name))
-      : (query as any).orderBy(asc(templates.name));
-  } else {
-    query = sortOrder === 'DESC'
-      ? (query as any).orderBy(desc(templates.createdAt))
-      : (query as any).orderBy(asc(templates.createdAt));
-  }
+  const paginatedQuery = applyPagination(query, offset, limit);
+  const results = (await paginatedQuery) as TemplateWithExerciseCount[];
 
-  if (offset !== undefined) {
-    query = (query as any).offset(offset);
-  }
-
-  if (limit !== undefined) {
-    query = (query as any).limit(limit);
-  }
-
-  const results = await query;
-
-  return results as TemplateWithExerciseCount[];
+  return results;
 }
 
 export async function updateTemplate(
@@ -165,10 +158,7 @@ export async function updateTemplate(
 ): Promise<Template | null> {
   const db = getDb(dbOrTx);
 
-  const updateData: Partial<NewTemplate> = {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
+  const updateData = withUpdatedAt(data);
 
   const updated = await db
     .update(templates)
@@ -190,10 +180,7 @@ export async function softDeleteTemplate(
 
   const result = await db
     .update(templates)
-    .set({
-      isDeleted: true,
-      updatedAt: new Date().toISOString(),
-    })
+    .set(withUpdatedAt({ isDeleted: true }))
     .where(and(eq(templates.id, templateId), eq(templates.workosId, workosId)))
     .run();
 

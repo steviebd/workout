@@ -1,3 +1,16 @@
+/**
+ * Workout Service Layer
+ *
+ * Architecture:
+ * - Repositories: Data access, CRUD, queries (src/lib/db/REPO/repository.ts)
+ * - Services: Business logic, cross-cutting concerns, side effects (this file)
+ *
+ * This service coordinates between repositories and handles:
+ * - Business rule validation
+ * - Side effects (e.g., notifications, external integrations)
+ * - Complex operations spanning multiple repositories
+ */
+
 import { eq } from 'drizzle-orm';
 import { getDb, type DbOrTx } from '../db';
 import { programCycleWorkouts } from '../db/schema';
@@ -9,44 +22,8 @@ import {
 import { getTemplateExercises } from '../db/template';
 import { markWorkoutComplete, getProgramCycleById } from '../db/program';
 import { updateUserLastWorkout } from '../streaks';
-import { isSquat, isBench, isDeadlift, isOverheadPress } from '../exercise-categories';
+import { extractTested1RMs } from '../utils/workout-calculations';
 import type { WorkoutWithExercises, CreateWorkoutData } from '../db/workout/types';
-
-interface LoggedExercise {
-  id: string;
-  name: string;
-  sets: Array<{ isComplete: boolean | null; weight?: number | null }> | null | undefined;
-}
-
-interface Tested1RMs {
-  squat: number;
-  bench: number;
-  deadlift: number;
-  ohp: number;
-}
-
-function extractTested1RMs(exercises: LoggedExercise[]): Tested1RMs {
-  const tested: Tested1RMs = { squat: 0, bench: 0, deadlift: 0, ohp: 0 };
-
-  for (const exercise of exercises) {
-    const name = exercise.name.toLowerCase();
-    for (const set of exercise.sets ?? []) {
-      if (set.isComplete && set.weight) {
-        if (isSquat(name) && set.weight > tested.squat) {
-          tested.squat = set.weight;
-        } else if (isBench(name) && set.weight > tested.bench) {
-          tested.bench = set.weight;
-        } else if (isDeadlift(name) && set.weight > tested.deadlift) {
-          tested.deadlift = set.weight;
-        } else if (isOverheadPress(name) && set.weight > tested.ohp) {
-          tested.ohp = set.weight;
-        }
-      }
-    }
-  }
-
-  return tested;
-}
 
 export interface CreateWorkoutFromTemplateInput {
   name: string;
@@ -115,7 +92,7 @@ export async function completeWorkout(
   let cycleWorkoutId: string | null = null;
   let cycleWorkoutCycleId: string | null = null;
   let is1RMTest = false;
-  let tested1RMs: Tested1RMs = { squat: 0, bench: 0, deadlift: 0, ohp: 0 };
+  let tested1RMs = { squat: 0, bench: 0, deadlift: 0, ohp: 0 };
 
   if (workout.templateId) {
     const cycleWorkout = await drizzleDb

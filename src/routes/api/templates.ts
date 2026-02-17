@@ -4,6 +4,7 @@ import { validateBody } from '../../lib/api/route-helpers';
 import { createTemplateSchema } from '../../lib/validators';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -16,13 +17,16 @@ export const Route = createFileRoute('/api/templates')({
           const { session, db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const search = url.searchParams.get('search') ?? undefined;
-          const sortBy = url.searchParams.get('sortBy') as 'createdAt' | 'name' | undefined;
-          const sortOrder = url.searchParams.get('sortOrder') as 'ASC' | 'DESC' | undefined;
-          const limitParam = url.searchParams.get('limit');
+          const { search, sortBy, sortOrder, limit: limitParam, page } = parseQueryParams<{
+            search?: string;
+            sortBy?: 'createdAt' | 'name';
+            sortOrder?: 'ASC' | 'DESC';
+            limit?: string;
+            page?: string;
+          }>(url);
           const limit = limitParam ? parseInt(limitParam, 10) : DEFAULT_LIMIT;
-          const page = parseInt(url.searchParams.get('page') ?? '1', 10);
-          const offset = (page - 1) * limit;
+          const pageNum = page ? parseInt(page, 10) : 1;
+          const offset = (pageNum - 1) * limit;
 
           if (search && search.length > 100) {
             return createApiError('Search term too long', 400, API_ERROR_CODES.VALIDATION_ERROR);

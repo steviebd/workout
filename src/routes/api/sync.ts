@@ -9,6 +9,7 @@ import {
 } from '../../lib/db/schema';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { parseQueryParams } from '~/lib/api/handler';
 
 function buildSyncResponse(
   lastSync: string,
@@ -92,7 +93,9 @@ export const Route = createFileRoute('/api/sync' as const)({
           const { session, db } = await withApiContext(request);
 
           const url = new URL(request.url);
-          const sinceParam = url.searchParams.get('since');
+          const { since: sinceParam } = parseQueryParams<{
+            since?: string;
+          }>(url);
           const lastSync = sinceParam ? new Date(sinceParam).toISOString() : new Date().toISOString();
 
           const [exercisesResult, templatesResult, workoutsResult] = await db.batch([

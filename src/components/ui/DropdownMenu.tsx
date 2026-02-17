@@ -36,7 +36,7 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }: React.Comp
   )
 }
 
-function DropdownMenuItem({ className, inset, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+function DropdownMenuItem({ className, inset, ...props }: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean
 }) {
   return (
@@ -52,7 +52,7 @@ function DropdownMenuItem({ className, inset, ...props }: React.ComponentProps<t
   )
 }
 
-function DropdownMenuLabel({ className, inset, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
+function DropdownMenuLabel({ className, inset, ...props }: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
   inset?: boolean
 }) {
   return (
@@ -78,7 +78,7 @@ function DropdownMenuSub({ ...props }: React.ComponentProps<typeof DropdownMenuP
   return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
 }
 
-function DropdownMenuSubTrigger({ className, inset, children, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
+function DropdownMenuSubTrigger({ className, inset, children, ...props }: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
   inset?: boolean
 }) {
   return (

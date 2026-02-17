@@ -59,7 +59,7 @@ export async function getLocalWorkoutStats(workosId: string): Promise<LocalWorko
         .toArray();
 
       for (const set of sets) {
-        totalVolume += (set.weight || 0) * set.reps;
+        totalVolume += (set.weight ?? 0) * set.reps;
         totalSets++;
       }
     }

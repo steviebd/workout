@@ -4,6 +4,8 @@ export { calculateChunkSize, MAX_SQL_VARS } from './utils';
 
 export { schema };
 
+export * as program from './program';
+
 import { type DbOrTx } from './workout/types';
 
 export type { DbOrTx };

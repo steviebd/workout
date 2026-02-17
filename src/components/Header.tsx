@@ -75,44 +75,48 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
-              <Flame className="h-5 w-5 text-primary" />
+    <header className="sticky top-0 z-50 glass-heavy border-b border-border/40 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.03] via-transparent to-accent/[0.03]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ backgroundSize: '200% 100%' }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+      <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4 relative">
+          <div className="flex items-center gap-2.5 group">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 shadow-glow transition-all duration-300 group-hover:shadow-[0_0_24px_-4px_var(--primary)]">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Flame className="h-5 w-5 text-primary relative z-10 transition-transform duration-300 group-hover:scale-110" />
             </div>
-            <span className="text-lg font-semibold tracking-tight text-primary">Fit Workout</span>
+            <span className="text-lg font-semibold tracking-tight text-gradient-warm">Fit Workout</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {streakLoading ? (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-full glass border border-border/50 px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary animate-pulse" />
-                <span className="text-sm font-semibold">...</span>
+                <span className="text-sm font-semibold text-muted-foreground">...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-full glass border border-primary/20 px-3 py-1.5 shadow-sm hover:shadow-glow transition-shadow duration-300">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
+                <span className="text-sm font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{weeklyCount}/{weeklyTarget}</span>
               </div>
             )}
 
           {!isOnline && (
-            <div className="flex items-center gap-1 rounded-full bg-warning/20 px-2 py-1 text-warning">
+            <div className="flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-2.5 py-1 text-warning shadow-[0_0_12px_-3px_var(--warning)] animate-pulse">
               <WifiOff className="h-3.5 w-3.5" />
-              <span className="text-xs font-medium">Offline</span>
+              <span className="text-xs font-semibold">Offline</span>
             </div>
           )}
 
           {isSyncing ? (
-            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/25 px-2.5 py-1 text-primary shadow-[0_0_16px_-4px_var(--primary)]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span className="text-xs font-medium">Syncing...</span>
+              <span className="text-xs font-semibold">Syncing...</span>
             </div>
           ) : null}
 
             {isOnline && pendingCount > 0 ? (
-            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+            <div className="flex items-center gap-1.5 rounded-full glass border border-border/50 px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
               <CloudUpload className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">{pendingCount} pending</span>
             </div>
@@ -122,7 +126,7 @@ export function Header() {
 
           <a
               href="/health"
-              className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              className="flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm"
           >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Health</span>
@@ -131,35 +135,35 @@ export function Header() {
           <div className="relative" ref={settingsRef}>
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm pressable"
               >
-                <Settings className="h-5 w-5" />
+                <Settings className={`h-5 w-5 transition-transform duration-300 ${showSettings ? 'rotate-90' : ''}`} />
               </button>
 
             {showSettings ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border bg-card py-2 shadow-lg">
-                <div className="px-4 py-3 border-b border-border">
-                  <p className="font-medium text-foreground">Settings</p>
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-heavy border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <div className="px-4 py-3 border-b border-border/60">
+                  <p className="font-semibold text-foreground">Settings</p>
                 </div>
-                <div className="px-4 py-3 border-b border-border">
-                  <p className="text-sm text-muted-foreground mb-2">Weight Unit</p>
+                <div className="px-4 py-3 border-b border-border/60">
+                  <p className="text-sm text-muted-foreground mb-2.5">Weight Unit</p>
                   <div className="flex gap-2">
                     <button
                       onClick={handleUnitToggle}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                         weightUnit === 'kg'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-glow'
+                          : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
                       }`}
                     >
                       Kilograms (kg)
                     </button>
                     <button
                       onClick={handleUnitToggle}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                         weightUnit === 'lbs'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-glow'
+                          : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
                       }`}
                     >
                       Pounds (lbs)
@@ -167,7 +171,7 @@ export function Header() {
                   </div>
                 </div>
                 <div className="px-4 py-3">
-                  <p className="text-sm text-muted-foreground mb-2">Date Format</p>
+                  <p className="text-sm text-muted-foreground mb-2.5">Date Format</p>
                   {dateLoading ? (
                     <div className="flex items-center justify-center py-2">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -176,20 +180,20 @@ export function Header() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDateFormatChange('dd/mm/yyyy')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                           dateFormat === 'dd/mm/yyyy'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                            ? 'bg-primary text-primary-foreground shadow-glow'
+                            : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
                         }`}
                       >
                         DD/MM/YY
                       </button>
                       <button
                         onClick={() => handleDateFormatChange('mm/dd/yyyy')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                           dateFormat === 'mm/dd/yyyy'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                            ? 'bg-primary text-primary-foreground shadow-glow'
+                            : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
                         }`}
                       >
                         MM/DD/YY
@@ -197,13 +201,13 @@ export function Header() {
                     </div>
                   )}
                 </div>
-                <div className="px-4 py-3 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-2">Weekly Workout Target</p>
+                <div className="px-4 py-3 border-t border-border/60">
+                  <p className="text-sm text-muted-foreground mb-2.5">Weekly Workout Target</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => void handleWeeklyTargetChange(weeklyTarget - 1)}
                       disabled={weeklyTarget <= 1 || savingTarget}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 pressable"
                     >
                       -
                     </button>
@@ -218,12 +222,12 @@ export function Header() {
                           void handleWeeklyTargetChange(val)
                         }
                       }}
-                      className="w-16 h-9 text-center rounded-lg border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-16 h-9 text-center rounded-lg border border-border/60 bg-background/80 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
                     />
                     <button
                       onClick={() => void handleWeeklyTargetChange(weeklyTarget + 1)}
                       disabled={weeklyTarget >= 7 || savingTarget}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 pressable"
                     >
                       +
                     </button>
@@ -236,16 +240,16 @@ export function Header() {
 
           <div className="relative" ref={menuRef}>
             {authLoading ? (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
-                <div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/80 border border-border/50">
+                <div className="h-5 w-5 animate-pulse rounded-full bg-muted skeleton-shimmer" />
               </div>
             ) : user ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 text-primary hover:text-primary-foreground hover:from-primary hover:to-primary/80 transition-all duration-300 shadow-sm hover:shadow-glow pressable"
               >
                 {user.name ? (
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-semibold">
                     {getUserInitials(user.name)}
                   </span>
                 ) : (
@@ -257,20 +261,21 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => { window.location.href = '/auth/signin' }}
+                className="rounded-xl"
               >
                 Sign In
               </Button>
             )}
 
             {showMenu && user ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border bg-card py-2 shadow-lg">
-                <div className="px-4 py-3 border-b border-border">
-                  <p className="font-medium text-foreground truncate">{user.name || 'User'}</p>
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-heavy border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <div className="px-4 py-3 border-b border-border/60">
+                  <p className="font-semibold text-foreground truncate">{user.name || 'User'}</p>
                   <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-all duration-200 pressable"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out

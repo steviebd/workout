@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import { getSession } from '~/lib/session';
 import { whoopRepository } from '~/lib/whoop/repository';
 import { encryptToken } from '~/lib/whoop/crypto';
+import { API } from '~/lib/constants';
 
 function getCookie(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -119,7 +120,7 @@ export const Route = createFileRoute('/api/integrations/whoop/callback' as const
           return new Response('Invalid state cookie', { status: 400 });
         }
 
-        if (Date.now() - stateData.createdAt > 10 * 60 * 1000) {
+        if (Date.now() - stateData.createdAt > API.TIMEOUTS.STATE_EXPIRY_MS) {
           return new Response('State expired', { status: 400 });
         }
 

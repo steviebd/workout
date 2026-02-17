@@ -1,5 +1,6 @@
 import { whoopRepository } from './repository';
 import { decryptToken, encryptToken } from './crypto';
+import { API } from '../constants';
 import {
   whoopTokenResponseSchema,
   whoopSleepsResponseSchema,
@@ -17,8 +18,8 @@ import {
 } from './types';
 
 const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
-const TOKEN_REFRESH_THRESHOLD_MINUTES = 5;
-const MAX_SYNC_RECORDS = 500;
+const TOKEN_REFRESH_THRESHOLD_MINUTES = API.LIMITS.TOKEN_REFRESH_THRESHOLD_MINUTES;
+const MAX_SYNC_RECORDS = API.LIMITS.MAX_SYNC_RECORDS;
 
 interface TokenData {
   accessToken: string;
@@ -142,7 +143,7 @@ export class WhoopApiClient {
 
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After');
-      const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000;
+      const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : API.TIMEOUTS.DEFAULT_RETRY_DELAY_MS;
       await new Promise((resolve) => {
         setTimeout(resolve, waitTime);
       });

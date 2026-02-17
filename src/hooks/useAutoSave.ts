@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { UI } from '~/lib/constants';
 
 interface UseAutoSaveOptions<T> {
   data: T;
@@ -23,7 +24,7 @@ interface UseAutoSaveReturn<T = unknown> {
 export function useAutoSave<T extends Record<string, unknown>>({
   data,
   onSave,
-  delay = 1000,
+  delay = UI.TIMING.AUTOSAVE_DELAY_MS,
   enabled = true,
   onSuccess,
   onError,
@@ -58,7 +59,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
 
       setTimeout(() => {
         setSaved(false);
-      }, 2000);
+      }, UI.TIMING.SAVED_INDICATOR_DURATION_MS);
     } catch (err) {
       const saveError = err instanceof Error ? err : new Error('Save failed');
       setError(saveError);

@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { updateProgramCycleWorkout, getProgramCycleWorkoutById } from '~/lib/db/program';
+import { validateBody } from '~/lib/api/route-helpers';
+import { rescheduleWorkoutSchema } from '~/lib/validators';
 
 export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutId/reschedule')({
   server: {
@@ -10,20 +12,11 @@ export const Route = createFileRoute('/api/program-cycles/$id/workouts/$workoutI
         try {
           const { d1Db } = await withApiContext(request);
 
-          const body = await request.json();
-          const { scheduledDate, scheduledTime } = body as {
-            scheduledDate: string;
-            scheduledTime?: string;
-          };
-
-          if (!scheduledDate) {
-            return createApiError('scheduledDate is required', 400, API_ERROR_CODES.VALIDATION_ERROR);
+          const body = await validateBody(request, rescheduleWorkoutSchema);
+          if (!body) {
+            return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
           }
-
-          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-          if (!dateRegex.test(scheduledDate)) {
-            return createApiError('scheduledDate must be in YYYY-MM-DD format', 400, API_ERROR_CODES.VALIDATION_ERROR);
-          }
+          const { scheduledDate, scheduledTime } = body;
 
           const existingWorkout = await getProgramCycleWorkoutById(d1Db, params.workoutId);
           if (!existingWorkout) {
