@@ -74,7 +74,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 glass-heavy border-b border-border/40 relative overflow-hidden">
+    <header className="sticky top-0 z-50 glass-heavy border-b border-border/40 relative">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.03] via-transparent to-accent/[0.03]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ backgroundSize: '200% 100%' }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
@@ -140,7 +140,7 @@ export function Header() {
               </button>
 
             {showSettings ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-heavy border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-background/95 backdrop-blur-xl border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
                 <div className="px-4 py-3 border-b border-border/60">
                   <p className="font-semibold text-foreground">Settings</p>
                 </div>
