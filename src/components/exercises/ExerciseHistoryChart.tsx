@@ -2,8 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { useMemo, useState, useEffect, type FC } from 'react';
-import { useUnit } from '@/lib/context/UnitContext';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useUnit, useDateFormat } from '@/lib/context/UserPreferencesContext';
 
 interface ExerciseHistoryItem {
   workoutId: string;

@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
 import { env } from 'cloudflare:workers';
-import { createToken, extractSessionIdFromAccessToken } from '../../../lib/auth';
-import { getOrCreateUser } from '../../../lib/db/user';
-import { createSessionResponse } from '../../../lib/session';
+import { createToken, extractSessionIdFromAccessToken, createSessionResponse } from '~/lib/auth';
+import { getOrCreateUser } from '~/lib/db/user';
 
 function getStateFromCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;

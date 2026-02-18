@@ -5,8 +5,8 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/routes/__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
-import { trackEvent } from '@/lib/posthog';
-import { useToast } from '@/components/ToastProvider';
+import { trackEvent } from '@/lib/analytics';
+import { useToast } from '@/components/app/ToastProvider';
 import { UI } from '~/lib/constants';
 
 export interface WorkoutExercise {

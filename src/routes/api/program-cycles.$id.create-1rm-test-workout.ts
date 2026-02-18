@@ -1,74 +1,67 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { withApiContext } from '../../lib/api/context';
 import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import { getProgramCycleById } from '~/lib/db/program';
 import { createWorkout, createWorkoutExercise, createWorkoutSet } from '~/lib/db/workout';
 import { getExercisesByWorkosId, createExercise } from '~/lib/db/exercise';
+import { apiRouteWithParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-workout')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const { d1Db, session } = await withApiContext(request);
+      POST: apiRouteWithParams('Create 1RM test workout', async ({ d1Db, session, params }) => {
+        const cycle = await getProgramCycleById(d1Db, params.id, session.sub);
+        if (!cycle) {
+          return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
+        }
 
-          const cycle = await getProgramCycleById(d1Db, params.id, session.sub);
-          if (!cycle) {
-            return createApiError('Program cycle not found', 404, API_ERROR_CODES.NOT_FOUND);
-          }
+        const workout = await createWorkout(d1Db, {
+          workosId: session.sub,
+          name: '1RM Test',
+          programCycleId: params.id,
+        });
 
-          const workout = await createWorkout(d1Db, {
+        const mainLifts = [
+          { name: 'Squat', muscleGroup: 'Legs' },
+          { name: 'Bench Press', muscleGroup: 'Chest' },
+          { name: 'Deadlift', muscleGroup: 'Back' },
+          { name: 'Overhead Press', muscleGroup: 'Shoulders' },
+        ];
+
+        let orderIndex = 0;
+        for (const lift of mainLifts) {
+          const exercises = await getExercisesByWorkosId(d1Db, session.sub, { search: lift.name, limit: 1 });
+          let exercise = exercises.find(e => e.name.toLowerCase() === lift.name.toLowerCase());
+          
+          exercise ??= await createExercise(d1Db, {
             workosId: session.sub,
-            name: '1RM Test',
-            programCycleId: params.id,
+            name: lift.name,
+            muscleGroup: lift.muscleGroup,
           });
 
-          const mainLifts = [
-            { name: 'Squat', muscleGroup: 'Legs' },
-            { name: 'Bench Press', muscleGroup: 'Chest' },
-            { name: 'Deadlift', muscleGroup: 'Back' },
-            { name: 'Overhead Press', muscleGroup: 'Shoulders' },
-          ];
+          const workoutExercise = await createWorkoutExercise(
+            d1Db,
+            workout.id,
+            session.sub,
+            exercise.id,
+            orderIndex
+          );
 
-          let orderIndex = 0;
-          for (const lift of mainLifts) {
-            const exercises = await getExercisesByWorkosId(d1Db, session.sub, { search: lift.name, limit: 1 });
-            let exercise = exercises.find(e => e.name.toLowerCase() === lift.name.toLowerCase());
-            
-            exercise ??= await createExercise(d1Db, {
-              workosId: session.sub,
-              name: lift.name,
-              muscleGroup: lift.muscleGroup,
-            });
-
-            const workoutExercise = await createWorkoutExercise(
+          if (workoutExercise) {
+            await createWorkoutSet(
               d1Db,
-              workout.id,
+              workoutExercise.id,
               session.sub,
-              exercise.id,
-              orderIndex
+              1,
+              0,
+              1
             );
-
-            if (workoutExercise) {
-              await createWorkoutSet(
-                d1Db,
-                workoutExercise.id,
-                session.sub,
-                1,
-                0,
-                1
-              );
-            }
-
-            orderIndex++;
           }
 
-          return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
-        } catch (err) {
-          console.error('Create 1RM test workout error:', err);
-          return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
+          orderIndex++;
         }
-      },
+
+        return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
+      }),
     },
   },
 });

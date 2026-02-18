@@ -3,7 +3,7 @@ import { Play, ChevronLeft, Loader2, RefreshCw } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from './__root'
 import { Button } from '~/components/ui/Button'
-import { useToast } from '~/components/ToastProvider'
+import { useToast } from '~/components/app/ToastProvider'
 
 interface TemplateExercise {
   id: string;

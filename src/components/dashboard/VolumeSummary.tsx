@@ -2,7 +2,7 @@
 
 import { Dumbbell, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '~/components/ui/Card'
-import { useUnit } from '@/lib/context/UnitContext'
+import { useUnit } from '@/lib/context/UserPreferencesContext'
 
 interface VolumeSummaryProps {
   totalVolume: number

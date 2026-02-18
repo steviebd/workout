@@ -15,7 +15,7 @@ import type {
   PersonalRecord,
 } from './types';
 import { calculateE1RM } from '~/lib/domain/stats/calculations';
-import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/exercise-categories';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
 /**
  * Counts the total number of completed workouts for a user

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { D1Database } from '@cloudflare/workers-types'
-import { BADGE_DEFINITIONS, calculateAllBadges } from '~/lib/badges'
+import { BADGE_DEFINITIONS, calculateAllBadges } from '~/lib/gamification'
 import { createDb } from '~/lib/db'
 
 vi.mock('~/lib/db', () => ({

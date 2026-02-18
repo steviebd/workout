@@ -3,7 +3,7 @@
 import { Trophy, TrendingUp, ChevronRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { useUnit } from '@/lib/context/UnitContext'
+import { useUnit } from '@/lib/context/UserPreferencesContext'
 
 interface PersonalRecord {
   id: string

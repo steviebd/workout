@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { Button, Card, CardContent } from '~/components/ui';
 import { PageLayout } from '~/components/ui/PageLayout';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
-import { useToast } from '@/components/ToastProvider';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
+import { useToast } from '@/components/app/ToastProvider';
 
 interface Exercise {
   id: string;

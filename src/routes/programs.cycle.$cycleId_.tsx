@@ -1,20 +1,20 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, memo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
-import { getVideoTutorialByName, type VideoTutorial } from '~/lib/exercise-library';
-import { PageHeader } from '~/components/PageHeader';
+import { getVideoTutorialByName, type VideoTutorial } from '~/lib/db/exercise/library';
+import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Progress } from '~/components/ui/Progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 import { LoadingStats, LoadingExercise } from '~/components/ui/LoadingSkeleton';
-import { WeeklySchedule } from '~/components/WeeklySchedule';
-import { RescheduleDialog } from '~/components/RescheduleDialog';
+import { WeeklySchedule } from '~/components/programs/WeeklySchedule';
+import { RescheduleDialog } from '~/components/programs/RescheduleDialog';
 import { formatTime } from '~/lib/programs/scheduler';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
-import { VideoTutorialButton } from '~/components/VideoTutorialButton';
-import { VideoTutorialModal } from '~/components/VideoTutorialModal';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
+import { VideoTutorialButton } from '~/components/workouts/VideoTutorialButton';
+import { VideoTutorialModal } from '~/components/workouts/VideoTutorialModal';
 
 interface CycleData {
   id: string;

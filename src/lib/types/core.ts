@@ -1,105 +1,20 @@
 /**
  * Core Entity Types
  * 
- * Re-exports from schema.ts with domain-specific type extensions.
- * This is the source of truth for all database entity types.
+ * Domain-specific type extensions for database entities.
+ * For base entity types, import directly from '~/lib/db/schema'.
  */
 
 import type {
-  User,
-  NewUser,
   Exercise,
-  NewExercise,
   Template,
-  NewTemplate,
   TemplateExercise,
-  NewTemplateExercise,
   Workout,
-  NewWorkout,
   WorkoutExercise,
-  NewWorkoutExercise,
   WorkoutSet,
-  NewWorkoutSet,
-  UserPreference,
-  NewUserPreference,
-  UserStreak,
-  NewUserStreak,
   UserProgramCycle,
-  NewUserProgramCycle,
   ProgramCycleWorkout,
-  NewProgramCycleWorkout,
-  WhoopConnection,
-  NewWhoopConnection,
-  WhoopSleep,
-  NewWhoopSleep,
-  WhoopRecovery,
-  NewWhoopRecovery,
-  WhoopCycle,
-  NewWhoopCycle,
-  WhoopWorkout,
-  NewWhoopWorkout,
-  WhoopWebhookEvent,
-  NewWhoopWebhookEvent,
 } from '../db/schema';
-
-// ============================================
-// BASE ENTITY TYPES
-// ============================================
-
-/** User entity from database */
-export type { User, NewUser };
-
-/** Exercise entity - core building block for workouts */
-export type { Exercise, NewExercise };
-
-/** Template for reusable workout structures */
-export type { Template, NewTemplate };
-
-/** Exercise within a template with configuration */
-export type { TemplateExercise, NewTemplateExercise };
-
-/** Workout session entity */
-export type { Workout, NewWorkout };
-
-/** Exercise performed within a workout */
-export type { WorkoutExercise, NewWorkoutExercise };
-
-/** Individual set performed for an exercise */
-export type { WorkoutSet, NewWorkoutSet };
-
-/** User preferences and settings */
-export type { UserPreference, NewUserPreference };
-
-/** User workout streak tracking */
-export type { UserStreak, NewUserStreak };
-
-/** Active program cycle for a user */
-export type { UserProgramCycle, NewUserProgramCycle };
-
-/** Scheduled workout within a program cycle */
-export type { ProgramCycleWorkout, NewProgramCycleWorkout };
-
-// ============================================
-// WHOOP INTEGRATION TYPES
-// ============================================
-
-/** WHOOP connection configuration */
-export type { WhoopConnection, NewWhoopConnection };
-
-/** Sleep data from WHOOP */
-export type { WhoopSleep, NewWhoopSleep };
-
-/** Recovery metrics from WHOOP */
-export type { WhoopRecovery, NewWhoopRecovery };
-
-/** Daily cycle/strain data from WHOOP */
-export type { WhoopCycle, NewWhoopCycle };
-
-/** Workout data from WHOOP */
-export type { WhoopWorkout, NewWhoopWorkout };
-
-/** WHOOP webhook event log */
-export type { WhoopWebhookEvent, NewWhoopWebhookEvent };
 
 // ============================================
 // DOMAIN-SPECIFIC TYPE EXTENSIONS
@@ -107,9 +22,7 @@ export type { WhoopWebhookEvent, NewWhoopWebhookEvent };
 
 /** Exercise with additional computed fields */
 export interface ExerciseWithStats extends Exercise {
-  /** Number of times this exercise has been performed */
   usageCount: number;
-  /** Date of last workout using this exercise */
   lastUsedAt: string | null;
 }
 
@@ -157,11 +70,8 @@ export interface WorkoutSummary {
 
 /** Program cycle with computed progress */
 export interface ProgramCycleWithProgress extends UserProgramCycle {
-  /** Percentage complete (0-100) */
   progressPercent: number;
-  /** Number of completed sessions */
   completedSessions: number;
-  /** Next scheduled workout */
   nextWorkout: ProgramCycleWorkout | null;
 }
 
@@ -189,11 +99,12 @@ export interface UserOwned {
 }
 
 // ============================================
-// RE-EXPORTS FROM DOMAIN TYPES (BACKWARD COMPATIBILITY)
+// RE-EXPORTS FROM DOMAIN TYPES
 // ============================================
 
 export type {
-  // Exercise types
+  CreateExerciseInput,
+  UpdateExerciseInput,
   CreateExerciseData,
   UpdateExerciseData,
   GetExercisesOptions,
@@ -201,7 +112,6 @@ export type {
 } from '../db/exercise/types';
 
 export type {
-  // Workout types
   DbOrTx as WorkoutDbOrTx,
   CreateWorkoutData,
   UpdateWorkoutData,
@@ -222,7 +132,6 @@ export type {
 } from '../db/workout/types';
 
 export type {
-  // Template types
   CreateTemplateData,
   UpdateTemplateData,
   GetTemplatesOptions,

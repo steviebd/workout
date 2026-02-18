@@ -1,5 +1,5 @@
 import { localDB, type LocalWorkoutSet } from '../local-db';
-import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/exercise-categories';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
 export interface LocalWorkoutStats {
   totalWorkouts: number;

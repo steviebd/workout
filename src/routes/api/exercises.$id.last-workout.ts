@@ -1,27 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getLastWorkoutForExercise } from '../../lib/db/workout';
-import { withApiContext } from '../../lib/api/context';
-import { createApiError, API_ERROR_CODES } from '../../lib/api/errors';
+import { apiRouteWithParams } from '~/lib/api/handler';
 
 export const Route = createFileRoute('/api/exercises/$id/last-workout')({
   server: {
     handlers: {
-        GET: async ({ request, params }) => {
-          try {
-            const { d1Db, session } = await withApiContext(request);
+      GET: apiRouteWithParams('Get last workout', async ({ d1Db, session, params }) => {
+        const lastWorkout = await getLastWorkoutForExercise(d1Db, session.sub, params.id);
 
-            const lastWorkout = await getLastWorkoutForExercise(d1Db, session.sub, params.id);
+        if (!lastWorkout) {
+          return Response.json(null);
+        }
 
-            if (!lastWorkout) {
-              return Response.json(null);
-            }
-
-            return Response.json(lastWorkout);
-          } catch (err) {
-            console.error('Get last workout error:', err);
-            return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
-          }
-        },
+        return Response.json(lastWorkout);
+      }),
     },
   },
 });

@@ -5,7 +5,7 @@ import { useRouter, Link } from '@tanstack/react-router'
 import { useState, type MouseEvent } from 'react'
 import { Button } from '~/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { useToast } from '~/components/ToastProvider'
+import { useToast } from '~/components/app/ToastProvider'
 
 interface WorkoutTemplate {
   id: string

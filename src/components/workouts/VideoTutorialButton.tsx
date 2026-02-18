@@ -1,5 +1,5 @@
 import { Play } from 'lucide-react';
-import type { VideoTutorial } from '~/lib/exercise-library';
+import type { VideoTutorial } from '~/lib/db/exercise/library';
 import { Button } from '~/components/ui/Button';
 
 interface VideoTutorialButtonProps {

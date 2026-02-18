@@ -4,8 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { useUnit } from '@/lib/context/UnitContext'
-import { useDateFormat } from '@/lib/context/DateFormatContext'
+import { useUnit, useDateFormat } from '@/lib/context/UserPreferencesContext'
 
 interface ProgressDataPoint {
   date: string

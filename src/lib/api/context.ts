@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { requireAuth } from './route-helpers';
 import { ApiError, API_ERROR_CODES } from './errors';
-import type { SessionPayload } from '../session';
+import type { SessionPayload } from '~/lib/auth';
 import { createDb } from '~/lib/db';
 
 type DbReturn = ReturnType<typeof createDb>;

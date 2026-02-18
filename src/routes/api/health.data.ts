@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { env } from 'cloudflare:workers';
-import { getSession } from '~/lib/session';
+import { apiRoute } from '~/lib/api/api-route';
 import { whoopRepository } from '~/lib/whoop';
 import { parseQueryParams } from '~/lib/api/handler';
 
@@ -17,18 +16,8 @@ function addDays(date: Date, days: number): Date {
 export const Route = createFileRoute('/api/health/data')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await getSession(request);
-        if (!session?.sub) {
-          return new Response('Unauthorized', { status: 401 });
-        }
-
+      GET: apiRoute('Get health data', async ({ d1Db, session, request }) => {
         const workosId = session.sub;
-        const d1Db = (env as { DB?: D1Database }).DB;
-        if (!d1Db) {
-          return new Response('Database not available', { status: 500 });
-        }
-
         const connection = await whoopRepository.getConnection(d1Db, workosId);
         if (!connection) {
           return Response.json({ error: 'Whoop not connected' }, { status: 400 });
@@ -87,7 +76,7 @@ export const Route = createFileRoute('/api/health/data')({
             durationMs: w.durationMs,
           })),
         });
-      },
+      }),
     },
   },
 });

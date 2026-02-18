@@ -1,5 +1,5 @@
 import { type JWTPayload, SignJWT, jwtVerify } from 'jose';
-import { AUTH } from './constants';
+import { AUTH } from '../constants';
 
 let jwtSecret: Uint8Array | null = null;
 

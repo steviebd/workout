@@ -4,12 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 import '../styles.css'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { ToastProvider } from '@/components/ToastProvider'
+import { ErrorBoundary } from '@/components/app/ErrorBoundary'
+import { ToastProvider } from '@/components/app/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
-import { Header } from '@/components/Header'
-import { BottomNav } from '@/components/BottomNav'
-import { AppProviders } from '@/components/Providers'
+import { Header } from '@/components/layout/Header'
+import { BottomNav } from '@/components/layout/BottomNav'
+import { AppProviders } from '@/components/app/Providers'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
 
 

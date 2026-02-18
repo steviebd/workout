@@ -3,13 +3,13 @@ import { X, HelpCircle, Calendar, Clock, ChevronLeft, ChevronRight, Info } from 
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { DayOfWeek, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
-import { PageHeader } from '~/components/PageHeader';
+import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
-import { useToast } from '@/components/ToastProvider';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useToast } from '@/components/app/ToastProvider';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { DatePicker } from '@/components/ui/DatePicker';
 
 const DAYS_DISPLAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

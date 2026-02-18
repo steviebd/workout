@@ -6,7 +6,7 @@ import { useAuth } from './__root';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
 import { Input } from '~/components/ui/Input';
-import { PullToRefresh } from '@/components/PullToRefresh';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { EmptyTemplates, EmptyExercises } from '@/components/ui/EmptyState';
 import { SkeletonWorkoutsPage } from '~/components/ui/Skeleton';
 import { PageLayout } from '~/components/ui/PageLayout';

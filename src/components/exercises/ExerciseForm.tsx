@@ -5,7 +5,7 @@ import { Input } from '~/components/ui/Input';
 import { Card } from '~/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/Select';
 import { MUSCLE_GROUPS } from '~/lib/constants/exercise';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 
 export interface ExerciseFormProps {
   onCancel: () => void;

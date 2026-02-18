@@ -1,4 +1,4 @@
-import { isSquat, isBench, isDeadlift, isOverheadPress } from '../exercise-categories';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
 export interface LoggedExercise {
   id: string;

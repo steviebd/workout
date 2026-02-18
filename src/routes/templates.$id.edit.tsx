@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 
 interface SelectedExercise {
   id: string;

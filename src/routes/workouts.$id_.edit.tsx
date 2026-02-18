@@ -14,13 +14,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 import { type Workout } from '@/lib/db/schema';
 import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
 import { Input } from '@/components/ui/Input';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { cn } from '@/lib/cn';
 
 interface WorkoutExercise {

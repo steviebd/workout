@@ -3,7 +3,7 @@ import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-r
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 
 const MUSCLE_GROUPS = [
   'Chest',

@@ -1,7 +1,7 @@
-import { type SessionPayload } from './auth';
-import { AUTH } from './constants';
+import { type SessionPayload } from './jwt';
+import { AUTH } from '../constants';
 
-export type { SessionPayload };
+export type { SessionPayload } from './jwt';
 export const SESSION_COOKIE_MAX_AGE = AUTH.SESSION_COOKIE_MAX_AGE;
 
 export async function getSession(request: Request): Promise<SessionPayload | null> {
@@ -14,7 +14,7 @@ export async function getSession(request: Request): Promise<SessionPayload | nul
 
   const token = sessionCookie.split('=')[1];
 
-  const { verifyToken } = await import('./auth');
+  const { verifyToken } = await import('./jwt');
   return await verifyToken(token);
 }
 

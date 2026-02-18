@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { formatTime, isSameDate, addDays, getMonday } from '~/lib/programs/scheduler';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 

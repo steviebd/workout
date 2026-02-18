@@ -4,8 +4,7 @@ import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
 import { Check, Clock, Dumbbell, Home, Scale, Target, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
-import { useUnit } from '@/lib/context/UnitContext';
+import { useDateFormat, useUnit } from '@/lib/context/UserPreferencesContext';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card';
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
 import { StatCard } from '~/components/ui/StatCard';
@@ -304,6 +303,8 @@ function WorkoutSummary() {
         pr.exerciseName.toLowerCase() === exercise.exerciseName.toLowerCase()
       );
       const historicalE1RM = historicalPR ? calculateE1RM(historicalPR.weight, historicalPR.reps) : 0;
+      const isNewWeightRecord = historicalPR ? exercise.weight > historicalPR.weight : false;
+      const isNewE1RMRecord = historicalPR ? exercise.estimatedE1RM > historicalE1RM : false;
       return {
         ...exercise,
         historicalPR: historicalPR ? {
@@ -312,7 +313,7 @@ function WorkoutSummary() {
           e1rm: historicalE1RM,
           date: historicalPR.date,
         } : null,
-        isNewRecord: historicalPR && exercise.estimatedE1RM > historicalE1RM,
+        isNewRecord: isNewWeightRecord || isNewE1RMRecord,
       };
     }).sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
   };
@@ -498,27 +499,27 @@ function WorkoutSummary() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 p-3 bg-secondary/30 rounded-lg">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Historical 1RM</p>
+                    <p className="text-xs text-muted-foreground mb-1">Previous Best</p>
                     <p className="font-semibold text-lg">
-                      {item.historicalPR ? `${item.historicalPR.e1rm} kg` : '—'}
+                      {item.historicalPR ? formatWeight(item.historicalPR.weight) : '—'}
                     </p>
                     {item.historicalPR ? (
                       <p className="text-xs text-muted-foreground">
-                        {formatWeight(item.historicalPR.weight)} × {item.historicalPR.reps}
+                        {item.historicalPR.reps} rep{item.historicalPR.reps > 1 ? 's' : ''} · Est. 1RM: {item.historicalPR.e1rm} kg
                       </p>
                     ) : null}
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-1">Today's 1RM</p>
+                    <p className="text-xs text-muted-foreground mb-1">Today's Best</p>
                     <p className={cn("font-semibold text-lg", item.isNewRecord ? "text-achievement" : "")}>
-                      {item.estimatedE1RM} kg
+                      {formatWeight(item.weight)}
                     </p>
                     <p className={cn("text-xs", item.isNewRecord ? "text-achievement" : "text-muted-foreground")}>
-                      {formatWeight(item.weight)} × {item.reps}
+                      {item.reps} rep{item.reps > 1 ? 's' : ''} · Est. 1RM: {item.estimatedE1RM} kg
                     </p>
                     {item.isNewRecord && item.historicalPR ? (
                       <p className="text-xs text-success font-medium">
-                        +{item.estimatedE1RM - item.historicalPR.e1rm} kg
+                        +{formatWeight(item.weight - item.historicalPR.weight)} weight
                       </p>
                     ) : null}
                   </div>

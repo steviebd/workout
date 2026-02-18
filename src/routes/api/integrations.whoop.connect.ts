@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { getSession } from '~/lib/session';
+import { apiRoute } from '~/lib/api/api-route';
 import { API } from '~/lib/constants';
 
 function base64UrlEncode(buffer: Uint8Array): string {
@@ -47,12 +47,7 @@ function getWhoopRedirectUri(): string {
 export const Route = createFileRoute('/api/integrations/whoop/connect' as const)({
   server: {
     handlers: {
-      GET: async ({ request }: { request: Request }) => {
-        const session = await getSession(request);
-        if (!session?.sub) {
-          return new Response('Unauthorized', { status: 401 });
-        }
-
+      GET: apiRoute('Connect Whoop', async ({ session }) => {
         const workosId = session.sub;
         const codeVerifier = generateCodeVerifier();
         const state = generateState();
@@ -83,7 +78,7 @@ export const Route = createFileRoute('/api/integrations/whoop/connect' as const)
             'Set-Cookie': `whoop_oauth_state=${stateCookie}; HttpOnly; Secure; Path=/; SameSite=Lax; Expires=${stateExpiry}`,
           },
         });
-      },
+      }),
     },
   },
 });

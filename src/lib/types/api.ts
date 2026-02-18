@@ -9,19 +9,10 @@
 // VALIDATOR SCHEMA TYPES
 // ============================================
 
-export interface CreateExerciseInput {
-  name: string;
-  muscleGroup?: string;
-  description?: string;
-  localId?: string;
-  libraryId?: string;
-}
-
-export interface UpdateExerciseInput {
-  name?: string;
-  muscleGroup?: string;
-  description?: string;
-}
+export {
+  type CreateExerciseInput,
+  type UpdateExerciseInput,
+} from '../db/exercise/types';
 
 export interface CopyExerciseFromLibraryInput {
   name: string;
@@ -158,17 +149,17 @@ export interface PaginatedResponse<T> extends ApiSuccess<T> {
 
 /** Response type for exercise list queries */
 export interface ExerciseListResponse {
-  exercises: Array<import('./core').Exercise>;
+  exercises: Array<import('../db/schema').Exercise>;
 }
 
 /** Response type for workout list queries */
 export interface WorkoutListResponse {
-  workouts: Array<import('./core').Workout>;
+  workouts: Array<import('../db/schema').Workout>;
 }
 
 /** Response type for template list queries */
 export interface TemplateListResponse {
-  templates: Array<import('./core').Template>;
+  templates: Array<import('../db/schema').Template>;
 }
 
 /** Response for CRUD operations returning a single entity */

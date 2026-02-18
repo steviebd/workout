@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { Check, Minus, Plus } from 'lucide-react'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
-import { useUnit } from '@/lib/context/UnitContext'
+import { useUnit } from '@/lib/context/UserPreferencesContext'
 
 interface WorkoutSet {
   id: string
