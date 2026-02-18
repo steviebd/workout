@@ -150,9 +150,9 @@ export function Header() {
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-muted-foreground hover:text-foreground'
                           }`}
-                          >
+                    >
                           Kilograms (kg)
-                          </button>
+                    </button>
                           <button
                           onClick={handleUnitToggle}
                           className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
@@ -160,9 +160,9 @@ export function Header() {
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-muted-foreground hover:text-foreground'
                       }`}
-                    >
+                          >
                       Pounds (lbs)
-                    </button>
+                          </button>
                   </div>
                 </div>
                 <div className="px-4 py-3">
@@ -180,9 +180,9 @@ export function Header() {
                              ? 'bg-primary text-primary-foreground'
                              : 'bg-secondary text-muted-foreground hover:text-foreground'
                           }`}
-                          >
+                      >
                           DD/MM/YY
-                          </button>
+                      </button>
                           <button
                           onClick={() => handleDateFormatChange('mm/dd/yyyy')}
                           className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
@@ -190,9 +190,9 @@ export function Header() {
                              ? 'bg-primary text-primary-foreground'
                              : 'bg-secondary text-muted-foreground hover:text-foreground'
                         }`}
-                      >
+                          >
                         MM/DD/YY
-                      </button>
+                          </button>
                     </div>
                   )}
                 </div>

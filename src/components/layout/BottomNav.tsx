@@ -36,11 +36,13 @@ export function BottomNav() {
               <item.icon className={cn(
                 'h-5 w-5',
                 isActive ? 'text-primary' : 'text-muted-foreground'
-              )} />
+              )}
+              />
               <span className={cn(
                 'font-medium truncate max-w-full',
                 isActive ? 'text-primary' : ''
-              )}>
+              )}
+              >
                 {item.label}
               </span>
             </Link>
