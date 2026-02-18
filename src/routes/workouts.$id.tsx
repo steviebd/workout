@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
-import { getVideoTutorialByName, type VideoTutorial } from '@/lib/exercise-library';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { getVideoTutorialByName, type VideoTutorial } from '@/lib/db/exercise/library';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { ExerciseLogger } from '@/components/workouts/ExerciseLogger';
-import { VideoTutorialModal } from '@/components/VideoTutorialModal';
+import { VideoTutorialModal } from '@/components/workouts/VideoTutorialModal';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';

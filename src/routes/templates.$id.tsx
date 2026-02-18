@@ -8,7 +8,7 @@ import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 
 function TemplateDetail() {
   const params = useParams({ from: '/templates/$id' });

@@ -21,9 +21,9 @@ import {
 } from '../db/workout';
 import { getTemplateExercises } from '../db/template';
 import { markWorkoutComplete, getProgramCycleById } from '../db/program';
-import { updateUserLastWorkout } from '../streaks';
 import { extractTested1RMs } from '../utils/workout-calculations';
 import type { WorkoutWithExercises, CreateWorkoutData } from '../db/workout/types';
+import { updateUserLastWorkout } from '~/lib/gamification';
 
 export interface CreateWorkoutFromTemplateInput {
   name: string;

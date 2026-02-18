@@ -1,7 +1,7 @@
 import { eq, and, sql } from 'drizzle-orm';
-import { getDb, type DbOrTx } from './db/index';
-import { workouts, workoutSets, workoutExercises, userStreaks } from './db/schema';
 import { calculateThirtyDayStreak, getTotalWorkouts } from './streaks';
+import { getDb, type DbOrTx } from '~/lib/db/index';
+import { workouts, workoutSets, workoutExercises, userStreaks } from '~/lib/db/schema';
 
 export interface BadgeDefinition {
   id: string

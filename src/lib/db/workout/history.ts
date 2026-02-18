@@ -290,7 +290,7 @@ export async function getRecentPRs(
   const exerciseCategories: Record<string, { id: string; name: string; isMatch: (n: string) => boolean }> = {};
 
   for (const wm of workoutMaxes) {
-    const { isSquat, isBench, isDeadlift, isOverheadPress } = await import('~/lib/exercise-categories');
+    const { isSquat, isBench, isDeadlift, isOverheadPress } = await import('~/lib/db/exercise/categories');
     if (isSquat(wm.exerciseName) && !exerciseCategories.squat) {
       exerciseCategories.squat = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isSquat };
     }

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Calendar } from 'lucide-react';
 import { Card } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
-import { useDateFormat } from '@/lib/context/DateFormatContext';
+import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 
 export interface ExerciseItemProps {
   id: string;

@@ -1,11 +1,8 @@
 import { type ZodSchema } from 'zod';
-import { withApiContext } from './context';
 import { createApiError, API_ERROR_CODES, ApiError } from './errors';
-import type { SessionPayload } from '../session';
-import { createDb } from '~/lib/db';
 
 export { withApiContext } from './context';
-export { apiRoute, type ApiCtx } from './api-route';
+export { apiRoute, apiRouteWithParams, type ApiCtx, type ApiCtxWithParams } from './api-route';
 export { parseBody, parseQuery } from './parse';
 
 export function handleApiError(err: unknown, operation: string): Response {
@@ -50,20 +47,4 @@ export function parseAndValidateQueryParams<T extends Record<string, unknown>>(
   }
 
   return { data: result.data, error: null };
-}
-
-export async function withApiHandler(
-  request: Request,
-  handler: (params: {
-    session: SessionPayload;
-    db: ReturnType<typeof createDb>;
-    d1Db: D1Database;
-  }) => Promise<Response>
-): Promise<Response> {
-  try {
-    const context = await withApiContext(request);
-    return handler(context);
-  } catch (err) {
-    return handleApiError(err, 'API handler');
-  }
 }

@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './DropdownMenu';
-import { useTheme } from '@/lib/context/ThemeContext';
+import { useTheme } from '@/lib/context/UserPreferencesContext';
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();

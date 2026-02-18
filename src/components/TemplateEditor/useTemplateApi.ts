@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { type FormData, type SelectedExercise } from './types';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { type Template, type Exercise, type TemplateExercise } from '@/lib/db/schema';
 

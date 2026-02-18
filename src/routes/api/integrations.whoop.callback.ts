@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { env } from 'cloudflare:workers';
-import { getSession } from '~/lib/session';
+import { getSession } from '~/lib/auth';
 import { whoopRepository } from '~/lib/whoop/repository';
 import { encryptToken } from '~/lib/whoop/crypto';
 import { API } from '~/lib/constants';

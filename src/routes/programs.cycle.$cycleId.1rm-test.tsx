@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { PageHeader } from '~/components/PageHeader';
+import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';

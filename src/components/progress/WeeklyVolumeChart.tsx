@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { Dumbbell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { useUnit } from '@/lib/context/UnitContext'
+import { useUnit } from '@/lib/context/UserPreferencesContext'
 
 const BarShape = (props: React.SVGProps<SVGRectElement> & { weekStart?: unknown; stackedBarStart?: unknown; tooltipPosition?: unknown; parentViewBox?: unknown; isActive?: unknown; dataKey?: unknown }) => {
   const { weekStart: _weekStart, stackedBarStart: _stackedBarStart, tooltipPosition: _tooltipPosition, parentViewBox: _parentViewBox, isActive: _isActive, dataKey: _dataKey, ...restProps } = props

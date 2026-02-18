@@ -5,7 +5,7 @@ import { useAuth } from './__root';
 import { EmptyExercises } from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '~/components/ui/Button';
-import { PullToRefresh } from '@/components/PullToRefresh';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { ExerciseList, ExerciseSearch, ExerciseForm } from '@/components/exercises';
 

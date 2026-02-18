@@ -5,7 +5,7 @@ import { useAuth } from './__root';
 import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 
 const MUSCLE_GROUPS = [
   'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Forearms',

@@ -1,7 +1,7 @@
  
 import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { trackEvent } from '@/lib/posthog';
+import { trackEvent } from '@/lib/analytics';
 
 function Callback() {
   const search = useSearch({ from: '/auth/callback' });

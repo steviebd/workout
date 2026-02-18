@@ -2,6 +2,7 @@
  * Shared Utility Types
  *
  * Common utility types used across the application.
+ * Only types that are actively used are exported.
  */
 
 import type { z } from 'zod';
@@ -42,27 +43,6 @@ export type MaybeAsyncFn<TArgs, TResult> =
   | ((args: TArgs) => TResult);
 
 // ============================================
-// ARRAY HELPERS
-// ============================================
-
-/** Non-empty array type - use with 'as const' for tuples */
-export type NonEmptyArray<T> = [T, ...T[]];
-
-// ============================================
-// STRING HELPERS
-// ============================================
-
-/** Template literal for snake_case */
-export type SnakeCase<S extends string> = S extends `${infer T}${infer U}`
-  ? `${T extends Capitalize<T> ? '_' : ''}${Lowercase<T>}${SnakeCase<U>}`
-  : S;
-
-/** Template literal for camelCase */
-export type CamelCase<S extends string> = S extends `${infer T}_${infer U}`
-  ? `${T}${Capitalize<CamelCase<U>>}`
-  : S;
-
-// ============================================
 // DATE/TIME HELPERS
 // ============================================
 
@@ -77,25 +57,6 @@ export type UnixTimestampMs = number;
 
 /** Unix timestamp in seconds */
 export type UnixTimestamp = number;
-
-// ============================================
-// RESULT TYPES
-// ============================================
-
-/** Error-first result pattern */
-export type Result<T, E = Error> = 
-  | { ok: true; value: T }
-  | { ok: false; error: E };
-
-/** Create a success result */
-export function success<T>(value: T): { ok: true; value: T } {
-  return { ok: true, value };
-}
-
-/** Create an error result */
-export function fail<E = Error>(error: E): { ok: false; error: E } {
-  return { ok: false, error };
-}
 
 // ============================================
 // PROMISE HELPERS

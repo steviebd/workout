@@ -3,7 +3,7 @@ import { env, waitUntil } from 'cloudflare:workers';
 import { timingSafeEqual } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { whoopRepository, WhoopApiClient } from '~/lib/whoop';
-import { trackEvent } from '~/lib/posthog';
+import { trackEvent } from '~/lib/analytics/server';
 import { mapWhoopSleepToDb, mapWhoopRecoveryToDb, mapWhoopWorkoutToDb } from '~/lib/whoop/api';
 
 const REPLAY_TOLERANCE_MS = 5 * 60 * 1000;

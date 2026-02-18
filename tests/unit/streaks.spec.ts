@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { D1Database } from '@cloudflare/workers-types'
-import { calculateThirtyDayStreak, countWorkoutsInRange, getWeeklyWorkoutCount, getTotalWorkouts } from '~/lib/streaks'
+import { calculateThirtyDayStreak, countWorkoutsInRange, getWeeklyWorkoutCount, getTotalWorkouts } from '~/lib/gamification'
 import { createDb } from '~/lib/db'
 
 vi.mock('~/lib/db', () => {

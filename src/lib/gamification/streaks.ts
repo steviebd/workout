@@ -1,6 +1,6 @@
 import { eq, isNotNull, sql, and } from 'drizzle-orm';
-import { getDb, type DbOrTx } from './db/index';
-import { workouts, userStreaks } from './db/schema';
+import { getDb, type DbOrTx } from '~/lib/db/index';
+import { workouts, userStreaks } from '~/lib/db/schema';
 
 export interface WeeklyWorkoutCount {
   weekStart: string;

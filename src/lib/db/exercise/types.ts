@@ -2,7 +2,7 @@ import { type Exercise, type NewExercise } from '../schema';
 
 export type { Exercise, NewExercise };
 
-export interface CreateExerciseData {
+export interface CreateExerciseInput {
   name: string;
   muscleGroup?: string;
   description?: string;
@@ -10,11 +10,17 @@ export interface CreateExerciseData {
   libraryId?: string;
 }
 
-export interface UpdateExerciseData {
+export interface UpdateExerciseInput {
   name?: string;
   muscleGroup?: string;
   description?: string;
 }
+
+/** @deprecated Use CreateExerciseInput instead */
+export type CreateExerciseData = CreateExerciseInput;
+
+/** @deprecated Use UpdateExerciseInput instead */
+export type UpdateExerciseData = UpdateExerciseInput;
 
 export interface GetExercisesOptions {
   search?: string;

@@ -1,6 +1,6 @@
 import { type ZodSchema } from 'zod';
-import { getSession, type SessionPayload } from '../session';
 import { VALIDATION } from '../constants';
+import { getSession, type SessionPayload } from '~/lib/auth';
 
 export const MAX_NAME_LENGTH = VALIDATION.MAX_NAME_LENGTH;
 export const MAX_DESCRIPTION_LENGTH = VALIDATION.MAX_DESCRIPTION_LENGTH;

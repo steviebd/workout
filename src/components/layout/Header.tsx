@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target, Heart } from 'lucide-react'
-import { Button } from './ui/Button'
-import { ThemeToggleCompact } from './ui/ThemeToggle'
+import { Button } from '../ui/Button'
+import { ThemeToggleCompact } from '../ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
-import { useUnit } from '@/lib/context/UnitContext'
-import { useDateFormat } from '@/lib/context/DateFormatContext'
+import { useUnit, useDateFormat } from '@/lib/context/UserPreferencesContext'
 import { useStreak } from '@/lib/context/StreakContext'
 
 export function Header() {

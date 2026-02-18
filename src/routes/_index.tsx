@@ -4,7 +4,7 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import { useEffect, useState } from 'react'
 import { useAuth } from './__root'
-import { getSession } from '~/lib/session'
+import { getSession } from '~/lib/auth'
 import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
 import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
 import { DashboardProvider } from '@/lib/context/DashboardContext'

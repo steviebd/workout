@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Dumbbell, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { PageHeader } from '~/components/PageHeader'
+import { PageHeader } from '~/components/ui/PageHeader'
 import { Card } from '~/components/ui/Card'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
-import { useToast } from '@/components/ToastProvider'
+import { useToast } from '@/components/app/ToastProvider'
 
 const LIFTS = [
   { key: 'squat', name: 'Squat', description: 'Back Squat' },

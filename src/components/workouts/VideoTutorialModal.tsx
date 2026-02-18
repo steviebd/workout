@@ -1,5 +1,5 @@
 import { Play } from 'lucide-react';
-import type { VideoTutorial } from '~/lib/exercise-library';
+import type { VideoTutorial } from '~/lib/db/exercise/library';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '~/components/ui/Dialog';
 
 interface VideoTutorialModalProps {

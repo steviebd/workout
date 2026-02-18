@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { trackEvent } from '../../../lib/posthog.server';
+import { trackEvent } from '~/lib/analytics/server';
 
 export const Route = createFileRoute('/api/analytics/track')({
   server: {

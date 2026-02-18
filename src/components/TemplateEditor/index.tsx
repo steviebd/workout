@@ -3,15 +3,15 @@ import { ArrowLeft, Loader2, Save, Undo, Redo, Plus } from 'lucide-react';
 import { useTemplateEditorState } from './useTemplateEditorState';
 import { useTemplateApi } from './useTemplateApi';
 import { type TemplateEditorProps, type SelectedExercise, type Exercise } from './types';
-import { useToast } from '@/components/ToastProvider';
+import { useToast } from '@/components/app/ToastProvider';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { CollapsibleSection } from '@/components/ui/Collapsible';
-import { ExerciseSearch } from '@/components/ExerciseSearch';
-import { ExerciseList } from '@/components/ExerciseList';
-import { InlineEditExercise } from '@/components/InlineEditExercise';
-import { AccessorySection } from '@/components/AccessorySection';
+import { ExerciseSearch } from '@/components/exercises/ExerciseSearch';
+import { ExerciseList } from '@/components/exercises/ExerciseList';
+import { InlineEditExercise } from '@/components/exercises/InlineEditExercise';
+import { AccessorySection } from '@/components/workouts/AccessorySection';
 import { Drawer, DrawerContent, DrawerClose, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
 
 export function TemplateEditor({

@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { withApiContext } from '../../lib/api/context';
-import { createApiError, ApiError, API_ERROR_CODES } from '../../lib/api/errors';
 import type { OneRMValues } from '~/lib/programs/types';
-import { parseQueryParams } from '~/lib/api/handler';
+import { apiRoute, parseQueryParams } from '~/lib/api/handler';
+import { createApiError, API_ERROR_CODES } from '~/lib/api/errors';
 import {
   createProgramCycle,
   getActiveProgramCycles,
@@ -36,112 +35,92 @@ const PROGRAM_MAP: Record<string, typeof stronglifts | typeof wendler531 | typeo
 export const Route = createFileRoute('/api/program-cycles')({
   server: {
     handlers: {
-       GET: async ({ request }) => {
-         try {
-           const { session, d1Db } = await withApiContext(request);
+      GET: apiRoute('Get program cycles', async ({ session, d1Db, request }) => {
+        const url = new URL(request.url);
+        const { status, active: activeOnly } = parseQueryParams<{
+          status?: string;
+          active?: string;
+        }>(url);
 
-            const url = new URL(request.url);
-            const { status, active: activeOnly } = parseQueryParams<{
-              status?: string;
-              active?: string;
-            }>(url);
+        let cycles;
+        if (activeOnly) {
+          cycles = await getActiveProgramCycles(d1Db, session.sub);
+        } else {
+          cycles = await getProgramCyclesByWorkosId(d1Db, session.sub, { status });
+        }
 
-           let cycles;
-           if (activeOnly) {
-             cycles = await getActiveProgramCycles(d1Db, session.sub);
-           } else {
-             cycles = await getProgramCyclesByWorkosId(d1Db, session.sub, { status });
-           }
+        return Response.json(cycles);
+      }),
+      POST: apiRoute('Create program cycle', async ({ session, d1Db, request }) => {
+        const body = await validateBody(request, createProgramCycleSchema);
+        if (!body) {
+          return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
+        }
+        const {
+          programSlug,
+          squat1rm,
+          bench1rm,
+          deadlift1rm,
+          ohp1rm,
+          preferredGymDays,
+          preferredTimeOfDay,
+          programStartDate,
+          firstSessionDate,
+        } = body;
 
-           return Response.json(cycles);
-         } catch (err) {
-           if (err instanceof ApiError) {
-             return createApiError(err.message, err.status, err.code);
-           }
-           console.error('Get program cycles error:', err);
-           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
-         }
-       },
-       POST: async ({ request }) => {
-          try {
-            const { session, d1Db } = await withApiContext(request);
+        const programConfig = PROGRAM_MAP[programSlug];
+        if (!programConfig) {
+          return createApiError('Invalid program', 400, API_ERROR_CODES.VALIDATION_ERROR);
+        }
 
-            const body = await validateBody(request, createProgramCycleSchema);
-            if (!body) {
-              return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
-            }
-            const {
-              programSlug,
-              squat1rm,
-              bench1rm,
-              deadlift1rm,
-              ohp1rm,
-              preferredGymDays,
-              preferredTimeOfDay,
-              programStartDate,
-              firstSessionDate,
-            } = body;
+        const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
+        const generatedWorkouts = programConfig.generateWorkouts(oneRMs);
 
-            const programConfig = PROGRAM_MAP[programSlug];
-           if (!programConfig) {
-             return createApiError('Invalid program', 400, API_ERROR_CODES.VALIDATION_ERROR);
-           }
+        const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const cycleName = `${programConfig.info.name} - ${monthYear}`;
 
-           const oneRMs: OneRMValues = { squat: squat1rm, bench: bench1rm, deadlift: deadlift1rm, ohp: ohp1rm };
-           const generatedWorkouts = programConfig.generateWorkouts(oneRMs);
+        const schedule = generateWorkoutSchedule(
+          generatedWorkouts,
+          new Date(`${programStartDate}T00:00:00Z`),
+          {
+            preferredDays: preferredGymDays.map((d: string) => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
+            preferredTimeOfDay: preferredTimeOfDay,
+            forceFirstSessionDate: new Date(`${firstSessionDate}T00:00:00Z`),
+          }
+        );
 
-           const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-           const cycleName = `${programConfig.info.name} - ${monthYear}`;
+        const workouts = schedule.map((w, index) => {
+          const generatedWorkout = generatedWorkouts[index];
+          return {
+            weekNumber: w.weekNumber,
+            sessionNumber: w.sessionNumber,
+            sessionName: w.sessionName,
+            scheduledDate: w.scheduledDate.toISOString().split('T')[0],
+            scheduledTime: w.scheduledTime,
+            targetLifts: JSON.stringify({
+              exercises: generatedWorkout?.exercises ?? [],
+              accessories: generatedWorkout?.accessories ?? [],
+            }),
+          };
+        });
 
-           const schedule = generateWorkoutSchedule(
-             generatedWorkouts,
-             new Date(`${programStartDate}T00:00:00Z`),
-             {
-               preferredDays: preferredGymDays.map((d: string) => d.toLowerCase() as typeof DAYS_OF_WEEK[number]),
-               preferredTimeOfDay: preferredTimeOfDay,
-               forceFirstSessionDate: new Date(`${firstSessionDate}T00:00:00Z`),
-             }
-           );
+        const cycle = await createProgramCycle(d1Db, session.sub, {
+          programSlug,
+          name: cycleName,
+          squat1rm,
+          bench1rm,
+          deadlift1rm,
+          ohp1rm,
+          totalSessionsPlanned: workouts.length,
+          preferredGymDays: preferredGymDays.join(','),
+          preferredTimeOfDay,
+          programStartDate,
+          firstSessionDate,
+          workouts,
+        });
 
-           const workouts = schedule.map((w, index) => {
-             const generatedWorkout = generatedWorkouts[index];
-             return {
-               weekNumber: w.weekNumber,
-               sessionNumber: w.sessionNumber,
-               sessionName: w.sessionName,
-               scheduledDate: w.scheduledDate.toISOString().split('T')[0],
-               scheduledTime: w.scheduledTime,
-               targetLifts: JSON.stringify({
-                 exercises: generatedWorkout?.exercises ?? [],
-                 accessories: generatedWorkout?.accessories ?? [],
-               }),
-             };
-           });
-
-           const cycle = await createProgramCycle(d1Db, session.sub, {
-             programSlug,
-             name: cycleName,
-             squat1rm,
-             bench1rm,
-             deadlift1rm,
-             ohp1rm,
-             totalSessionsPlanned: workouts.length,
-             preferredGymDays: preferredGymDays.join(','),
-             preferredTimeOfDay,
-             programStartDate,
-             firstSessionDate,
-             workouts,
-           });
-
-           return Response.json(cycle, { status: 201 });
-         } catch (err) {
-           if (err instanceof ApiError) {
-             return createApiError(err.message, err.status, err.code);
-           }
-           console.error('Create program cycle error:', err);
-           return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
-         }
-       },
+        return Response.json(cycle, { status: 201 });
+      }),
     },
   },
 });

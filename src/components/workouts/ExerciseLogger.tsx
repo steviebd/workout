@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import { SetLogger } from './SetLogger'
-import type { VideoTutorial } from '~/lib/exercise-library'
+import type { VideoTutorial } from '~/lib/db/exercise/library'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
-import { VideoTutorialModal } from '~/components/VideoTutorialModal'
+import { VideoTutorialModal } from '~/components/workouts/VideoTutorialModal'
 
 interface WorkoutSet {
   id: string

@@ -5,7 +5,7 @@ import React from "react"
 import { Flame, Crown, Trophy, Dumbbell, Medal, Star, Zap, Footprints, Lock } from 'lucide-react'
 import { Card, CardContent } from '~/components/ui/Card'
 import { cn } from '~/lib/cn'
-import { useDateFormat } from '@/lib/context/DateFormatContext'
+import { useDateFormat } from '@/lib/context/UserPreferencesContext'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   flame: Flame,

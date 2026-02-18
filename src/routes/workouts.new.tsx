@@ -7,7 +7,7 @@ import { useAuth } from './__root'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
 import { Card, CardContent } from '~/components/ui/Card'
-import { useToast } from '~/components/ToastProvider'
+import { useToast } from '~/components/app/ToastProvider'
 
 interface Exercise {
   id: string

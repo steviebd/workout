@@ -2,11 +2,11 @@ import { and, asc, desc, eq, like, type SQL } from 'drizzle-orm';
 import { exercises, type Exercise } from '../schema';
 import { getDb, type DbOrTx } from '../index';
 import { applyPagination, withUpdatedAt } from '../base-repository';
-import type { CreateExerciseData, UpdateExerciseData, GetExercisesOptions, LibraryExercise } from './types';
+import type { CreateExerciseInput, UpdateExerciseInput, GetExercisesOptions, LibraryExercise } from './types';
 
 export async function createExercise(
   dbOrTx: DbOrTx,
-  data: CreateExerciseData & { workosId: string }
+  data: CreateExerciseInput & { workosId: string }
 ): Promise<Exercise> {
   const db = getDb(dbOrTx);
 
@@ -116,7 +116,7 @@ export async function updateExercise(
   dbOrTx: DbOrTx,
   exerciseId: string,
   workosId: string,
-  data: UpdateExerciseData
+  data: UpdateExerciseInput
 ): Promise<Exercise | null> {
   const db = getDb(dbOrTx);
 

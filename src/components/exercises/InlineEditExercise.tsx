@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { X, Check } from 'lucide-react';
-import { Button } from './ui/Button';
-import { Input } from './ui/Input';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface Exercise {
   id: string;
