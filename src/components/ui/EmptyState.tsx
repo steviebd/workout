@@ -24,7 +24,7 @@ export function EmptyState({
   return (
     <div className={cn("text-center py-12", className)}>
       <div className="flex items-center justify-center mb-6">
-        <div className="bg-gradient-to-br from-primary/14 via-accent/8 to-transparent rounded-2xl p-6 border border-border/60 shadow-soft">
+        <div className="rounded-2xl bg-muted/50 p-5">
           {IconComponent ? (
             <IconComponent size={44} className="text-muted-foreground/50" />
           ) : (

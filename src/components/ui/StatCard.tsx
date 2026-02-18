@@ -29,7 +29,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "p-4 shadow-soft",
+        "p-4",
         onClick && "hover:border-primary/50 hover:shadow-pop cursor-pointer transition-all pressable",
         className
       )}

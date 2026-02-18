@@ -10,7 +10,6 @@ interface PageLayoutProps {
   children: React.ReactNode
   className?: string
   extraPadding?: boolean
-  gradientTitle?: boolean
 }
 
 export function PageLayout({
@@ -20,7 +19,6 @@ export function PageLayout({
   children,
   className,
   extraPadding = false,
-  gradientTitle = false
 }: PageLayoutProps) {
   return (
     <main 
@@ -30,24 +28,11 @@ export function PageLayout({
         className
       )}
     >
-      <div 
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-        aria-hidden="true"
-      >
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute top-1/4 -left-32 h-48 w-48 rounded-full bg-primary/3 blur-2xl" />
-      </div>
-
-      <header className="relative flex-shrink-0 mb-8">
+      <header className="flex-shrink-0 mb-8">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <h1 
-              className={cn(
-                "text-[28px] font-bold tracking-tight leading-tight",
-                gradientTitle 
-                  ? "bg-gradient-to-r from-foreground via-foreground/90 to-primary bg-clip-text text-transparent"
-                  : "text-foreground"
-              )}
+              className="text-2xl font-bold tracking-tight text-foreground"
             >
               {title}
             </h1>
@@ -59,10 +44,10 @@ export function PageLayout({
               {action}
                     </div> : null}
         </div>
-        <div className="mt-6 h-px bg-gradient-to-r from-border via-border/50 to-transparent" />
+        <div className="mt-6 h-px bg-border" />
       </header>
 
-      <div className="relative flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto">
         {children}
       </div>
     </main>

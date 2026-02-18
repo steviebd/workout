@@ -113,7 +113,7 @@ export function ThemeToggleCompact() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground shadow-sm ring-1 ring-border/50 backdrop-blur-sm transition-all duration-300 hover:bg-secondary hover:text-foreground hover:shadow-md hover:ring-border hover:scale-105 active:scale-95"
+      className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors duration-150 hover:bg-secondary/80 hover:text-foreground"
     >
       <div className="relative h-5 w-5">
         <Sun

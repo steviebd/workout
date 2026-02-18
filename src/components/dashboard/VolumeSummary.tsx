@@ -28,7 +28,7 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
               <p className="text-2xl font-semibold tabular-nums">{formatVolume(totalVolume)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 rounded-full bg-secondary/70 border border-border/60 px-2.5 py-1 text-success shadow-soft">
+          <div className="flex items-center gap-1 rounded-full bg-secondary/70 border border-border/60 px-2.5 py-1 text-success shadow-sm">
             <TrendingUp className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">+{volumeChange}%</span>
           </div>
