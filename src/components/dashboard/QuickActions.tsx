@@ -76,8 +76,8 @@ export function QuickActions({ templates }: QuickActionsProps) {
 
   if (!hasTemplates) {
     return (
-      <Card className="card-glow overflow-hidden">
-        <CardHeader className="pb-3">
+      <Card className="overflow-hidden">
+        <CardHeader className="p-5 pb-3">
           <CardTitle className="flex items-center gap-2.5 text-base">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <Play className="h-4 w-4 text-primary" />
@@ -85,14 +85,14 @@ export function QuickActions({ templates }: QuickActionsProps) {
             <span>Start Session</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative rounded-xl border border-dashed border-border-strong bg-gradient-to-br from-surface-2 to-surface-3/50 p-5 text-center">
+        <CardContent className="p-5 pt-0 space-y-3">
+          <div className="relative rounded-xl border border-dashed border-border-strong bg-surface-2 p-5 text-center">
             <div className="mb-4 flex justify-center">
               <div className="relative">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
                   <Sparkles className="h-7 w-7 text-primary" />
                 </div>
-                <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-primary glow-animated" />
+                <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-primary animate-pulse" />
               </div>
             </div>
             <h3 className="mb-1.5 font-semibold text-foreground">Get Started</h3>
@@ -100,7 +100,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
               Choose a program or create your first workout
             </p>
             <div className="flex flex-col gap-2.5">
-              <Button asChild={true} className="group w-full shine">
+              <Button asChild={true} className="group w-full">
                 <Link to="/programs">
                   <Calendar className="mr-2 h-4 w-4" />
                   Browse Programs
@@ -137,8 +137,8 @@ export function QuickActions({ templates }: QuickActionsProps) {
   }
 
   return (
-    <Card className="card-glow overflow-hidden">
-      <CardHeader className="pb-3">
+    <Card className="overflow-hidden">
+      <CardHeader className="p-5 pb-3">
         <CardTitle className="flex items-center gap-2.5 text-base">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Play className="h-4 w-4 text-primary" />
@@ -146,16 +146,16 @@ export function QuickActions({ templates }: QuickActionsProps) {
           <span>Start Session</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="p-5 pt-0 space-y-3">
         {templates.slice(0, 3).map((template, index) => (
           <button
             key={template.id}
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="group pressable shine relative flex w-full items-center gap-3 rounded-xl border border-border/60 bg-gradient-to-r from-surface-2/80 to-surface-2/40 px-3.5 py-3 transition-all duration-200 hover:border-primary/30 hover:from-surface-3 hover:to-surface-2/60 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="pressable relative flex w-full items-center gap-3 rounded-xl border border-border bg-surface-1 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 transition-colors group-hover:bg-primary/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 transition-colors group-hover:bg-primary/10">
               {loadingTemplateId === template.id ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
               ) : (
@@ -172,7 +172,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary/70" />
             {index === 0 && (
-              <div className="absolute -right-px -top-px rounded-bl-lg rounded-tr-xl bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              <div className="absolute -right-px -top-px rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 Recent
               </div>
             )}

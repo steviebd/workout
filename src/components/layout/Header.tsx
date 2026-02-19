@@ -74,48 +74,44 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 glass-heavy border-b border-border/40 relative">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.03] via-transparent to-accent/[0.03]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ backgroundSize: '200% 100%' }} />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4 relative">
           <div className="flex items-center gap-2.5 group">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 shadow-glow transition-all duration-300 group-hover:shadow-[0_0_24px_-4px_var(--primary)]">
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <Flame className="h-5 w-5 text-primary relative z-10 transition-transform duration-300 group-hover:scale-110" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <Flame className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-lg font-semibold tracking-tight text-gradient-warm">Fit Workout</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground">Fit Workout</span>
           </div>
 
           <div className="flex items-center gap-2.5">
             {streakLoading ? (
-              <div className="flex items-center gap-1.5 rounded-full glass border border-border/50 px-3 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-sm font-semibold text-muted-foreground">...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-full glass border border-primary/20 px-3 py-1.5 shadow-sm hover:shadow-glow transition-shadow duration-300">
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{weeklyCount}/{weeklyTarget}</span>
+                <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
               </div>
             )}
 
           {!isOnline && (
-            <div className="flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-2.5 py-1 text-warning shadow-[0_0_12px_-3px_var(--warning)] animate-pulse">
+            <div className="flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-1 text-warning">
               <WifiOff className="h-3.5 w-3.5" />
               <span className="text-xs font-semibold">Offline</span>
             </div>
           )}
 
           {isSyncing ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/25 px-2.5 py-1 text-primary shadow-[0_0_16px_-4px_var(--primary)]">
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-primary">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               <span className="text-xs font-semibold">Syncing...</span>
             </div>
           ) : null}
 
             {isOnline && pendingCount > 0 ? (
-            <div className="flex items-center gap-1.5 rounded-full glass border border-border/50 px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
+            <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
               <CloudUpload className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">{pendingCount} pending</span>
             </div>
@@ -140,7 +136,7 @@ export function Header() {
               </button>
 
             {showSettings ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-background/95 backdrop-blur-xl border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-popover border border-border py-2 shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
                 <div className="px-4 py-3 border-b border-border/60">
                   <p className="font-semibold text-foreground">Settings</p>
                 </div>
@@ -151,22 +147,22 @@ export function Header() {
                       onClick={handleUnitToggle}
                       className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                         weightUnit === 'kg'
-                          ? 'bg-primary text-primary-foreground shadow-glow'
-                          : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
-                      }`}
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          }`}
                     >
-                      Kilograms (kg)
+                          Kilograms (kg)
                     </button>
-                    <button
-                      onClick={handleUnitToggle}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
-                        weightUnit === 'lbs'
-                          ? 'bg-primary text-primary-foreground shadow-glow'
-                          : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
+                          <button
+                          onClick={handleUnitToggle}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
+                          weightUnit === 'lbs'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
                       }`}
-                    >
+                          >
                       Pounds (lbs)
-                    </button>
+                          </button>
                   </div>
                 </div>
                 <div className="px-4 py-3">
@@ -181,22 +177,22 @@ export function Header() {
                         onClick={() => handleDateFormatChange('dd/mm/yyyy')}
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
                           dateFormat === 'dd/mm/yyyy'
-                            ? 'bg-primary text-primary-foreground shadow-glow'
-                            : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
-                        }`}
+                             ? 'bg-primary text-primary-foreground'
+                             : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          }`}
                       >
-                        DD/MM/YY
+                          DD/MM/YY
                       </button>
-                      <button
-                        onClick={() => handleDateFormatChange('mm/dd/yyyy')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
-                          dateFormat === 'mm/dd/yyyy'
-                            ? 'bg-primary text-primary-foreground shadow-glow'
-                            : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
+                          <button
+                          onClick={() => handleDateFormatChange('mm/dd/yyyy')}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
+                           dateFormat === 'mm/dd/yyyy'
+                             ? 'bg-primary text-primary-foreground'
+                             : 'bg-secondary text-muted-foreground hover:text-foreground'
                         }`}
-                      >
+                          >
                         MM/DD/YY
-                      </button>
+                          </button>
                     </div>
                   )}
                 </div>
@@ -245,7 +241,7 @@ export function Header() {
             ) : user ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 text-primary hover:text-primary-foreground hover:from-primary hover:to-primary/80 transition-all duration-300 shadow-sm hover:shadow-glow pressable"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-150"
               >
                 {user.name ? (
                   <span className="text-sm font-semibold">
@@ -267,7 +263,7 @@ export function Header() {
             )}
 
             {showMenu && user ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-heavy border border-border/60 py-2 shadow-pop animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-popover border border-border py-2 shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
                 <div className="px-4 py-3 border-b border-border/60">
                   <p className="font-semibold text-foreground truncate">{user.name || 'User'}</p>
                   <p className="text-sm text-muted-foreground truncate">{user.email}</p>

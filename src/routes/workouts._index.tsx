@@ -90,7 +90,7 @@ function WorkoutsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6 touch-pan-y" style={{ touchAction: 'pan-y' }}>
+      <main className="mx-auto max-w-lg px-5 py-8 touch-pan-y" style={{ touchAction: 'pan-y' }}>
         <SkeletonWorkoutsPage />
       </main>
     );
@@ -100,9 +100,9 @@ function WorkoutsPage() {
     <PageLayout title="Workouts">
       <PullToRefresh onRefresh={refreshAll}>
           {activePrograms.length > 0 ? (
-            <section className="mb-8">
+            <section className="mb-6">
               <SectionHeader title="Active Programs" />
-              <div className="space-y-3 max-h-[220px] overflow-y-auto -mx-2 px-2">
+              <div className="space-y-4 max-h-[220px] overflow-y-auto -mx-2 px-2">
                 {activePrograms.slice(0, 2).map((program) => (
                   <Link
                     key={program.id}
@@ -134,7 +134,7 @@ function WorkoutsPage() {
             </section>
           ) : null}
 
-          <section className="mb-8">
+          <section className="mb-6">
             <SectionHeader
               title="Your Templates"
               action={
@@ -152,7 +152,7 @@ function WorkoutsPage() {
                 onCreate={() => { window.location.href = '/templates/new'; }}
               />
             ) : (
-              <div className="space-y-3 max-h-[440px] overflow-y-auto -mx-2 px-2">
+              <div className="space-y-4 max-h-[440px] overflow-y-auto -mx-2 px-2">
                 {templates.slice(0, 5).map((template) => (
                   <Link
                     key={template.id}
@@ -193,7 +193,7 @@ function WorkoutsPage() {
             </Button>
           </section>
 
-          <section className="mt-8">
+          <section className="mb-6">
             <SectionHeader
               title="Your Exercises"
               action={

@@ -31,7 +31,7 @@ export function StreakDisplay({ stats, workoutDatesInWeek = [] as string[] }: St
   const weeklyComplete = stats.weeklyCount >= 3
 
   return (
-    <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+    <Card className="overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-center justify-center gap-4 mb-6">
           <div className="relative">

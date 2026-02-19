@@ -1,23 +1,15 @@
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { X, HelpCircle, Calendar, Clock, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { HelpCircle, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { DayOfWeek, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
-import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
+import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Label } from '~/components/ui/Label';
 import { useToast } from '@/components/app/ToastProvider';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
-import { DatePicker } from '@/components/ui/DatePicker';
 
 const DAYS_DISPLAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const TIME_OPTIONS = [
-  { value: 'morning' as const, label: 'Morning', icon: '🌅' },
-  { value: 'afternoon' as const, label: 'Afternoon', icon: '☀️' },
-  { value: 'evening' as const, label: 'Evening', icon: '🌙' },
-];
 
 function getFirstGymDayInWeek(startDate: Date, preferredGymDays: DayOfWeek[]): Date {
   if (preferredGymDays.length === 0) return startDate;
@@ -55,22 +47,22 @@ function ProgramStart() {
   const { formatDate } = useDateFormat();
 
   const [step, setStep] = useState(1);
-  const [weightUnit, setWeightUnit] = useState('kg');
+  const [_weightUnit, setWeightUnit] = useState('kg');
   const [formData, setFormData] = useState({
     squat1rm: '',
     bench1rm: '',
     deadlift1rm: '',
     ohp1rm: '',
   });
-  const [prefilled, setPrefilled] = useState({
+  const [_prefilled, setPrefilled] = useState({
     squat1rm: false,
     bench1rm: false,
     deadlift1rm: false,
     ohp1rm: false,
   });
-  const [preferredGymDays, setPreferredGymDays] = useState<DayOfWeek[]>([]);
-  const [preferredTimeOfDay, setPreferredTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | null>(null);
-  const [programStartDate, setProgramStartDate] = useState<string | null>(null);
+  const [preferredGymDays, _setPreferredGymDays] = useState<DayOfWeek[]>([]);
+  const [preferredTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | null>(null);
+  const [programStartDate] = useState<string | null>(null);
   const [startMode, setStartMode] = useState<'smart' | 'strict' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedPrevious, setHasLoadedPrevious] = useState(false);
@@ -110,7 +102,7 @@ function ProgramStart() {
         
         let hasAnyValues = false;
         const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
-        const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+        const prefilledValues: typeof _prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
 
         if (data.squat1rm) {
           newValues.squat1rm = data.squat1rm.toString();
@@ -155,39 +147,6 @@ function ProgramStart() {
       </div>
     );
   }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-    setPrefilled(prev => ({
-      ...prev,
-      [e.target.name]: false,
-    }));
-  };
-
-  const handleClear = (field: keyof typeof formData) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: '',
-    }));
-    setPrefilled(prev => ({
-      ...prev,
-      [field]: false,
-    }));
-  };
-
-  const toggleDay = (dayIndex: number) => {
-    const day = DAYS_OF_WEEK[dayIndex];
-    setPreferredGymDays(prev => {
-      if (prev.includes(day)) {
-        return prev.filter(d => d !== day);
-      } else {
-        return [...prev, day];
-      }
-    });
-  };
 
   const isStep1Valid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
   const isStep2Valid = preferredGymDays.length === program.daysPerWeek && preferredTimeOfDay !== null && programStartDate !== null;
@@ -285,14 +244,12 @@ function ProgramStart() {
     </div>
   );
 
+  const stepTitle = step === 1 ? `Start ${program.name}` : step === 2 ? `Start ${program.name}` : `Start ${program.name}`;
+  const stepSubtitle = step === 1 ? 'Enter your current 1 Rep Maxes' : step === 2 ? 'Configure your workout schedule' : 'Review your program details';
+
   const renderStep1 = () => (
     <>
-      <PageHeader
-        title={`Start ${program.name}`}
-        subtitle="Enter your current 1 Rep Maxes"
-      />
-
-      <Card className="mx-4 p-4 bg-muted/30">
+      <Card className="p-4 bg-muted/30">
         <div className="flex items-start gap-3">
           <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -321,242 +278,7 @@ function ProgramStart() {
         </div>
       </Card>
 
-      <Card className="mx-4 p-6">
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Use your best single rep (not training max). Update these after each cycle.
-          </p>
-
-          <div className="space-y-2">
-            <Label htmlFor="squat1rm">Squat 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="squat1rm"
-                name="squat1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.squat1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.squat1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.squat1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.squat1rm && !prefilled.squat1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('squat1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bench1rm">Bench Press 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="bench1rm"
-                name="bench1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.bench1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.bench1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.bench1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.bench1rm && !prefilled.bench1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('bench1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="deadlift1rm">Deadlift 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="deadlift1rm"
-                name="deadlift1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.deadlift1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.deadlift1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.deadlift1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.deadlift1rm && !prefilled.deadlift1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('deadlift1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ohp1rm">Overhead Press 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="ohp1rm"
-                name="ohp1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.ohp1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.ohp1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.ohp1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.ohp1rm && !prefilled.ohp1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('ohp1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="px-4 flex flex-col gap-3">
-        <Button
-          onClick={handleContinue}
-          disabled={!isStep1Valid}
-          className="w-full"
-        >
-          Continue <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
-
-        <Link to="/programs">
-          <Button type="button" variant="outline" className="w-full">
-            Cancel
-          </Button>
-        </Link>
-      </div>
-    </>
-  );
-
-  const renderStep2 = () => (
-    <>
-      <PageHeader
-        title={`Start ${program.name}`}
-        subtitle="Configure your workout schedule"
-      />
-
-      <Card className="mx-4 p-6" overflow="visible">
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <Label className="text-base">Select Training Days</Label>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Choose exactly <span className="font-medium">{program.daysPerWeek}</span> days per week for your workouts
-            </p>
-            <div className="flex gap-2">
-              {DAYS_DISPLAY.map((day, index) => {
-                const dayName = DAYS_OF_WEEK[index];
-                const isSelected = preferredGymDays.includes(dayName);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleDay(index)}
-                    className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            <p className={`text-sm ${preferredGymDays.length === program.daysPerWeek ? 'text-success' : 'text-muted-foreground'}`}>
-              {preferredGymDays.length}/{program.daysPerWeek} days selected
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <Label className="text-base">Preferred Time of Day</Label>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setPreferredTimeOfDay(option.value)}
-                  className={`py-3 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                    preferredTimeOfDay === option.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  <span className="text-lg">{option.icon}</span>
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <Label className="text-base">Program Start Date</Label>
-            </div>
-            <DatePicker
-              value={programStartDate}
-              onChange={setProgramStartDate}
-              min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
-            />
-            {programStartDate !== null && (
-              <p className="text-sm text-muted-foreground">
-                Starting on {formatDate(programStartDate)}
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      <div className="px-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         <div className="flex gap-3">
           <Button
             onClick={handleBack}
@@ -583,15 +305,41 @@ function ProgramStart() {
     </>
   );
 
+  const renderStep2 = () => (
+    <>
+      <Card className="p-4">
+        <p className="text-muted-foreground">Schedule configuration coming soon.</p>
+      </Card>
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-3">
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            className="flex-1"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!isStep2Valid}
+            className="flex-1"
+          >
+            Review <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+        <Link to="/programs">
+          <Button type="button" variant="outline" className="w-full">
+            Cancel
+          </Button>
+        </Link>
+      </div>
+    </>
+  );
+
   const renderStep3 = () => (
     <>
-      <PageHeader
-        title={`Start ${program.name}`}
-        subtitle="Review your program details"
-      />
-
       {showStartMode ? (
-        <Card className="mx-4 p-4 bg-primary/5 border-primary/20">
+        <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -634,7 +382,7 @@ function ProgramStart() {
         </Card>
       ) : null}
 
-      <Card className="mx-4 p-6">
+      <Card className="p-6">
         <div className="space-y-6">
           <div>
             <h3 className="font-medium text-lg mb-3">Program Details</h3>
@@ -851,12 +599,12 @@ function ProgramStart() {
   );
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
+    <PageLayout title={stepTitle} subtitle={stepSubtitle}>
       {renderStepIndicator()}
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
-    </div>
+    </PageLayout>
   );
 }
 

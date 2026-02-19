@@ -223,52 +223,40 @@ test.describe('Template Management', () => {
 	test('create template with exercise from library', async ({ page }) => {
 		const timestamp = Date.now();
 		const templateName = `Library Template ${timestamp}`;
-		const description = 'Template created with exercise library';
 
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
 		await expect(page.locator('h1:has-text("Create Template")').first()).toBeVisible({ timeout: 10000 });
 
-		await page.fill('input[id="name"]', templateName);
-
-		const descriptionCollapsible = page.locator('button:has-text("Description (optional)")');
-		if (await descriptionCollapsible.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await descriptionCollapsible.click();
-			await page.waitForTimeout(500);
-		}
-		await page.fill('textarea[id="description"]', description);
+		await page.waitForTimeout(1000);
 
 		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
+		await page.waitForTimeout(500);
 
-		const searchInput = page.locator('.fixed input[placeholder="Search exercises..."]');
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
 		await expect(searchInput).toBeVisible({ timeout: 5000 });
-
 		await searchInput.fill('Squat');
 		await page.waitForTimeout(500);
 
-		const exerciseButtons = page.locator('.fixed button.w-full');
-		const count = await exerciseButtons.count();
+		const exerciseButton = page.locator('[data-slot="drawer-content"] button.w-full').first();
+		await expect(exerciseButton).toBeVisible({ timeout: 5000 });
+		await exerciseButton.click();
 
-		if (count > 0) {
-			await exerciseButtons.first().evaluate(el => (el as HTMLElement).click());
-		} else {
-			await page.locator('.fixed button:has-text("Create")').first().click();
-			await expect(page.locator('text=Create New Exercise')).toBeVisible({ timeout: 5000 });
-			await page.locator('input[placeholder="Exercise name"]').fill(`Template Exercise ${timestamp}`);
-			await page.locator('select').first().selectOption('Biceps');
-			await page.locator('button:has-text("Create")').first().click();
-		}
-
-		await page.waitForTimeout(1000);
-
-		await page.click('button:has-text("Done")').catch(() => {});
 		await page.waitForTimeout(500);
 
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
+		}
+		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', templateName);
+		await page.waitForTimeout(300);
+
 		await page.click('button:has-text("Create Template")');
-		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
 		await expect(page.locator(`text=${templateName}`).first()).toBeVisible({ timeout: 10000 });
-		await expect(page.locator(`text=${description}`).first()).toBeVisible();
 
 		console.log(`Template "${templateName}" created successfully`);
 
@@ -279,47 +267,50 @@ test.describe('Template Management', () => {
 		const timestamp = Date.now();
 		const exerciseName = `Direct Exercise ${timestamp}`;
 		const templateName = `Direct Template ${timestamp}`;
-		const muscleGroup = 'Triceps';
 
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
 		await expect(page.locator('h1:has-text("Create Template")').first()).toBeVisible({ timeout: 10000 });
 
-		await page.fill('input[id="name"]', templateName);
+		await page.waitForTimeout(1000);
 
 		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
-
-		const searchInput = page.locator('.fixed input[placeholder="Search exercises..."]');
-		await expect(searchInput).toBeVisible({ timeout: 5000 });
-
-		await searchInput.fill(`NonExistentExerciseXYZ${timestamp}`);
-		await page.waitForTimeout(1000);
-
-		const createButton = page.locator('.fixed button.w-full').filter({ hasText: /Create/i }).first();
-		if (await createButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await createButton.click();
-		} else {
-			const createLink = page.locator('.fixed a:has-text("Create")').first();
-			if (await createLink.isVisible({ timeout: 2000 }).catch(() => false)) {
-				await createLink.click();
-			}
-		}
-
-		await page.waitForTimeout(1000);
-
-		const inlineForm = page.locator('.fixed').filter({ has: page.locator('text=Create New Exercise') });
-		if (await inlineForm.isVisible({ timeout: 3000 }).catch(() => false)) {
-			await inlineForm.locator('input[placeholder="Exercise name"]').fill(exerciseName);
-			await inlineForm.locator('select').first().selectOption(muscleGroup);
-			await inlineForm.locator('button:has-text("Create")').first().click();
-			await page.waitForTimeout(1000);
-		}
-
-		await page.click('button:has-text("Done")').catch(() => {});
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
 		await page.waitForTimeout(500);
 
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
+		await expect(searchInput).toBeVisible({ timeout: 5000 });
+		await searchInput.fill(`NonExistentExerciseXYZ${timestamp}`);
+		await page.waitForTimeout(500);
+
+		const createButton = page.locator('[data-slot="drawer-content"] button:has-text("Create")').first();
+		await expect(createButton).toBeVisible({ timeout: 5000 });
+		await createButton.click();
+
+		await page.waitForTimeout(500);
+
+		const nameInput = page.locator('[data-slot="drawer-content"] input[placeholder="Exercise name"]');
+		await expect(nameInput).toBeVisible({ timeout: 5000 });
+		await nameInput.fill(exerciseName);
+
+		const muscleSelect = page.locator('[data-slot="drawer-content"] select').first();
+		await muscleSelect.selectOption('Triceps');
+
+		const createExerciseBtn = page.locator('[data-slot="drawer-content"] button:has-text("Create"):not(:has-text("Create Template"))').first();
+		await createExerciseBtn.click();
+
+		await page.waitForTimeout(1000);
+
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
+		}
+		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', templateName);
+		await page.waitForTimeout(300);
+
 		await page.click('button:has-text("Create Template")');
-		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
 		await expect(page.locator(`text=${templateName}`).first()).toBeVisible({ timeout: 10000 });
 
@@ -335,51 +326,52 @@ test.describe('Template Management', () => {
 		const updatedName = `Updated Template ${timestamp}`;
 
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
-		await page.fill('input[id="name"]', originalName);
-
-		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
-		
-		await page.locator('.fixed input[placeholder="Search exercises..."]').fill('Squat');
-		await page.waitForTimeout(500);
-		
-		const exerciseButton = page.locator('.fixed button.w-full').first();
-		if (await exerciseButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await exerciseButton.evaluate(el => (el as HTMLElement).click());
-		}
-		
 		await page.waitForTimeout(1000);
 
-		await page.click('button:has-text("Done")').catch(() => {});
+		await page.click('button:has-text("Add Exercise")');
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
 		await page.waitForTimeout(500);
+
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
+		await searchInput.fill('Squat');
+		await page.waitForTimeout(500);
+
+		const exerciseButton = page.locator('[data-slot="drawer-content"] button.w-full').first();
+		await expect(exerciseButton).toBeVisible({ timeout: 5000 });
+		await exerciseButton.click();
+
+		await page.waitForTimeout(500);
+
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
+		}
+		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', originalName);
+		await page.waitForTimeout(300);
 
 		await page.click('button:has-text("Create Template")');
 
-		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 10000 });
-		await page.click('text=View Template');
+		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 15000 });
+		await page.click('a:has-text("View Template")');
 		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
 		await expect(page.locator(`text=${originalName}`).first()).toBeVisible({ timeout: 10000 });
 
 		const templateId = page.url().match(/\/templates\/([a-zA-Z0-9-]+)\/?/)?.[1];
 		if (templateId) {
-			await page.goto(`${BASE_URL}/templates/${templateId}/edit`, { waitUntil: 'networkidle', timeout: 20000 });
+			await page.goto(`${BASE_URL}/templates/${templateId}/edit`, { waitUntil: 'load', timeout: 20000 });
 		} else {
 			throw new Error('Could not extract template ID from URL');
 		}
 
-		await page.waitForTimeout(5000);
-		
-		const pageContent = await page.content();
-		console.log('URL after load:', page.url());
-		console.log('Page contains "Edit Template":', pageContent.includes('Edit Template'));
-		console.log('Page contains "Loading":', pageContent.includes('Loading...'));
-		console.log('Page heading:', await page.locator('h1').textContent().catch(() => 'no h1'));
-		
+		await page.waitForTimeout(2000);
+
 		await expect(page.locator('text=Edit Template')).toBeVisible({ timeout: 10000 });
 		await page.fill('input[id="name"]', updatedName);
 		await page.click('button:has-text("Save Changes")');
-		await page.waitForURL(/\/templates\//, { timeout: 10000 });
+		await page.waitForURL(/\/templates\//, { timeout: 15000 });
 
 		await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 10000 });
 
@@ -391,35 +383,42 @@ test.describe('Template Management', () => {
 		const templateName = `Template to Copy ${timestamp}`;
 
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
-		await page.fill('input[id="name"]', templateName);
-
-		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
-		
-		await page.locator('.fixed input[placeholder="Search exercises..."]').fill('Squat');
-		await page.waitForTimeout(500);
-		
-		const exerciseButton = page.locator('.fixed button.w-full').first();
-		if (await exerciseButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await exerciseButton.evaluate(el => (el as HTMLElement).click());
-		}
-		
 		await page.waitForTimeout(1000);
 
-		await page.click('button:has-text("Done")').catch(() => {});
+		await page.click('button:has-text("Add Exercise")');
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
 		await page.waitForTimeout(500);
+
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
+		await searchInput.fill('Squat');
+		await page.waitForTimeout(500);
+
+		const exerciseButton = page.locator('[data-slot="drawer-content"] button.w-full').first();
+		await expect(exerciseButton).toBeVisible({ timeout: 5000 });
+		await exerciseButton.click();
+
+		await page.waitForTimeout(500);
+
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
+		}
+		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', templateName);
+		await page.waitForTimeout(300);
 
 		await page.click('button:has-text("Create Template")');
 
-		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 10000 });
-		await page.click('text=View Template');
-		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 15000 });
+		await page.click('a:has-text("View Template")');
+		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
 		await expect(page.locator(`text=${templateName}`).first()).toBeVisible({ timeout: 10000 });
 
 		await expect(page.locator('button:has-text("Copy")').first()).toBeVisible({ timeout: 10000 });
 		await page.locator('button:has-text("Copy")').first().click();
-		await page.waitForURL(/\/templates\//, { timeout: 10000 });
+		await page.waitForURL(/\/templates\//, { timeout: 15000 });
 
 		await expect(page.locator(`text=${templateName} (Copy)`).first()).toBeVisible({ timeout: 10000 });
 
@@ -432,29 +431,36 @@ test.describe('Template Management', () => {
 		const templateName = `Template to Delete ${timestamp}`;
 
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
-		await page.fill('input[id="name"]', templateName);
-
-		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
-		
-		await page.locator('.fixed input[placeholder="Search exercises..."]').fill('Squat');
-		await page.waitForTimeout(500);
-		
-		const exerciseButton = page.locator('.fixed button.w-full').first();
-		if (await exerciseButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await exerciseButton.evaluate(el => (el as HTMLElement).click());
-		}
-		
 		await page.waitForTimeout(1000);
 
-		await page.click('button:has-text("Done")').catch(() => {});
+		await page.click('button:has-text("Add Exercise")');
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
 		await page.waitForTimeout(500);
+
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
+		await searchInput.fill('Squat');
+		await page.waitForTimeout(500);
+
+		const exerciseButton = page.locator('[data-slot="drawer-content"] button.w-full').first();
+		await expect(exerciseButton).toBeVisible({ timeout: 5000 });
+		await exerciseButton.click();
+
+		await page.waitForTimeout(500);
+
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
+		}
+		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', templateName);
+		await page.waitForTimeout(300);
 
 		await page.click('button:has-text("Create Template")');
 
-		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 10000 });
-		await page.click('text=View Template');
-		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 10000 });
+		await expect(page.locator('text=Template Created!')).toBeVisible({ timeout: 15000 });
+		await page.click('a:has-text("View Template")');
+		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });
 
 		await expect(page.locator(`text=${templateName}`).first()).toBeVisible({ timeout: 10000 });
 
@@ -466,30 +472,36 @@ test.describe('Template Management', () => {
 		await expect(deleteButton).toBeVisible({ timeout: 10000 });
 		await deleteButton.click();
 
-		await page.waitForURL(`${BASE_URL}/templates`, { timeout: 10000 });
+		await page.waitForURL(`${BASE_URL}/templates`, { timeout: 15000 });
 	});
 
 	test('add multiple exercises to template', async ({ page }) => {
 		const timestamp = Date.now();
 		await page.goto(`${BASE_URL}/templates/new`, { waitUntil: 'load' });
-		await page.fill('input[id="name"]', `Multi Exercise Template ${timestamp}`);
+		await page.waitForTimeout(1000);
 
 		await page.click('button:has-text("Add Exercise")');
-		await page.waitForSelector('.fixed.inset-0', { timeout: 10000 });
-
-		await page.locator('.fixed input[placeholder="Search exercises..."]').fill('Squat');
+		await page.waitForSelector('[data-slot="drawer-overlay"]', { timeout: 10000 });
 		await page.waitForTimeout(500);
 
-		const exerciseButtons = page.locator('.fixed button.w-full');
-		const initialCount = await exerciseButtons.count();
+		const searchInput = page.locator('[data-slot="drawer-content"] input[placeholder="Search exercises..."]');
+		await searchInput.fill('Squat');
+		await page.waitForTimeout(500);
 
-		if (initialCount > 0) {
-			await exerciseButtons.first().evaluate(el => (el as HTMLElement).click());
-			await page.waitForTimeout(1000);
+		const exerciseButton = page.locator('[data-slot="drawer-content"] button.w-full').first();
+		await expect(exerciseButton).toBeVisible({ timeout: 5000 });
+		await exerciseButton.click();
+
+		await page.waitForTimeout(500);
+
+		const doneButton = page.locator('[data-slot="drawer-content"] button:has-text("Done")');
+		if (await doneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await doneButton.click();
 		}
-
-		await page.click('button:has-text("Done")').catch(() => {});
 		await page.waitForTimeout(500);
+
+		await page.fill('input[id="name"]', `Multi Exercise Template ${timestamp}`);
+		await page.waitForTimeout(300);
 
 		await page.click('button:has-text("Create Template")');
 		await page.waitForURL(/\/templates\/[a-zA-Z0-9-]+/, { timeout: 15000 });

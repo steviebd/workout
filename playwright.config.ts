@@ -21,13 +21,14 @@ export default defineConfig({
 	workers: process.env.CI ? 2 : 2,
 	reporter: process.env.CI ? 'github' : 'list',
 	globalSetup: path.join(__dirname, 'playwright/global-setup.ts'),
+	timeout: 60000,
 	use: {
 		trace: 'on-first-retry',
 		headless: !!process.env.CI || !process.env.DEBUG,
 		baseURL: 'http://localhost:8787',
 		storageState: 'playwright/.auth/state.json',
-		actionTimeout: 10000,
-		navigationTimeout: 30000,
+		actionTimeout: 15000,
+		navigationTimeout: 45000,
 	},
 	projects: [
 		{

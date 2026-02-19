@@ -24,11 +24,13 @@ export function EmptyStateBanner() {
   if (!isVisible) return null
 
   return (
-    <Card className="mb-6 border-primary/20 bg-primary/5">
-      <div className="flex flex-col gap-4 p-4">
+    <Card className="mb-6 border-primary/20 bg-primary/5 p-5">
+      <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">👋</span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+              <span className="text-2xl">👋</span>
+            </div>
             <h2 className="text-lg font-semibold">Welcome to Fit Workout!</h2>
           </div>
           <button
@@ -43,7 +45,7 @@ export function EmptyStateBanner() {
           You're just getting started. Here's how to begin your strength journey:
         </p>
 
-        <div className="flex flex-col gap-3 text-sm">
+        <div className="space-y-4 text-sm">
           <div className="flex items-start gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
               1

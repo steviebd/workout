@@ -523,7 +523,6 @@ function ProgressPage() {
                     icon={Trophy}
                     label="Total Workouts"
                     value={stats?.totalWorkouts ?? 0}
-                    variant="primary"
                     onClick={handleTotalWorkoutsClick}
                   />
 
@@ -531,7 +530,6 @@ function ProgressPage() {
                     icon={Calendar}
                     label="This Week"
                     value={stats?.thisWeek ?? 0}
-                    variant="primary"
                     onClick={handleThisWeekStatClick}
                   />
 
@@ -539,7 +537,6 @@ function ProgressPage() {
                     icon={Calendar}
                     label="This Month"
                     value={stats?.thisMonth ?? 0}
-                    variant="primary"
                     onClick={handleThisMonthStatClick}
                   />
 
@@ -547,7 +544,6 @@ function ProgressPage() {
                     icon={Scale}
                     label="Total Volume"
                     value={formatVolume(stats?.totalVolume ?? 0)}
-                    variant="primary"
                   />
                 </>
               )}
@@ -561,7 +557,6 @@ function ProgressPage() {
                   icon={Dumbbell}
                   label="Total Sets"
                   value={stats?.totalSets ?? 0}
-                  variant="primary"
                 />
               )}
             </div>

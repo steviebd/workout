@@ -71,10 +71,10 @@ export function DashboardWidgets({ templates, personalRecords, stats, isNewUser 
   if (streakLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-[280px] rounded-xl" />
         <Skeleton className="h-[120px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[240px] rounded-xl" />
         <Skeleton className="h-[200px] rounded-xl" />
-        <Skeleton className="h-[150px] rounded-xl" />
       </div>
     );
   }

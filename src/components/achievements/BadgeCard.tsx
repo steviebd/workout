@@ -19,10 +19,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 }
 
 const categoryColors: Record<string, string> = {
-  streak: 'from-primary/20 to-primary/5 border-primary/30',
-  volume: 'from-exercise/20 to-exercise/5 border-exercise/30',
-  pr: 'from-volume/20 to-volume/5 border-volume/30',
-  consistency: 'from-success/20 to-success/5 border-success/30',
+  streak: 'bg-primary/5 border-primary/15',
+  volume: 'bg-exercise/5 border-exercise/15',
+  pr: 'bg-volume/5 border-volume/15',
+  consistency: 'bg-success/5 border-success/15',
 }
 
 const categoryIconColors: Record<string, string> = {
@@ -58,7 +58,7 @@ export function BadgeCard({ badge }: BadgeCardProps) {
       className={cn(
         'relative overflow-hidden border transition-all',
         badge.unlocked
-          ? `bg-gradient-to-br ${categoryColors[badge.category]}`
+          ? categoryColors[badge.category]
           : 'bg-secondary/30 border-border opacity-60'
       )}
     >

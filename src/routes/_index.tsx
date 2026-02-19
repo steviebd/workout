@@ -132,7 +132,7 @@ function Dashboard() {
 
   if (auth.loading || loading) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+      <div className="mx-auto max-w-lg px-5 py-8 space-y-4">
         <div className="space-y-2">
           <div className="h-8 w-48 rounded bg-muted animate-pulse" />
           <div className="h-4 w-64 rounded bg-muted animate-pulse" />

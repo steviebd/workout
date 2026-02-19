@@ -71,7 +71,9 @@ function getSessionToken(storageStatePath: string): string | null {
 	try {
 		const content = readFileSync(storageStatePath, 'utf-8');
 		const state = JSON.parse(content) as StorageState;
-		const sessionCookie = state.cookies.find((cookie) => cookie.name === 'session_token');
+		const sessionCookie = state.cookies.find(
+			(cookie) => cookie.name === 'session' && cookie.domain === 'localhost'
+		);
 		return sessionCookie?.value ?? null;
 	} catch {
 		return null;

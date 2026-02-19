@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Dumbbell, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { PageHeader } from '~/components/ui/PageHeader'
 import { Card } from '~/components/ui/Card'
+import { PageLayout } from '~/components/ui/PageLayout'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
 import { useToast } from '@/components/app/ToastProvider'
@@ -149,13 +149,11 @@ function OneRMTest() {
 
   if (step === 'intro') {
     return (
-      <div className="flex flex-col gap-6 pb-20">
-        <PageHeader
-          title="Test Your 1RM"
-          subtitle="Find your true strength levels"
-        />
-
-        <div className="px-4 flex flex-col gap-4">
+      <PageLayout
+        title="Test Your 1RM"
+        subtitle="Find your true strength levels"
+      >
+        <div className="flex flex-col gap-4">
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -208,19 +206,17 @@ function OneRMTest() {
             </Button>
           </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   if (step === 'select') {
     return (
-      <div className="flex flex-col gap-6 pb-20">
-        <PageHeader
-          title="Select Lifts to Test"
-          subtitle="Choose which lifts you want to measure"
-        />
-
-        <div className="px-4 flex flex-col gap-4">
+      <PageLayout
+        title="Select Lifts to Test"
+        subtitle="Choose which lifts you want to measure"
+      >
+        <div className="flex flex-col gap-4">
           <Card className="p-4">
             <div className="flex flex-col gap-2">
               {lifts.map((lift) => (
@@ -277,7 +273,7 @@ function OneRMTest() {
             </Button>
           </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
@@ -286,13 +282,11 @@ function OneRMTest() {
     const totalToTest = lifts.filter((l) => selectedLifts.has(l.key)).length
 
     return (
-      <div className="flex flex-col gap-6 pb-20">
-        <PageHeader
-          title="Enter Your Results"
-          subtitle={`${testedCount}/${totalToTest} lifts recorded`}
-        />
-
-        <div className="px-4 flex flex-col gap-4">
+      <PageLayout
+        title="Enter Your Results"
+        subtitle={`${testedCount}/${totalToTest} lifts recorded`}
+      >
+        <div className="flex flex-col gap-4">
           {lifts
             .filter((l) => selectedLifts.has(l.key))
             .map((lift) => (
@@ -338,7 +332,7 @@ function OneRMTest() {
             </Button>
           </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
