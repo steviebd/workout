@@ -1,23 +1,15 @@
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { X, HelpCircle, Calendar, Clock, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { HelpCircle, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { DayOfWeek, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 import { Card } from '~/components/ui/Card';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Label } from '~/components/ui/Label';
 import { useToast } from '@/components/app/ToastProvider';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
-import { DatePicker } from '@/components/ui/DatePicker';
 
 const DAYS_DISPLAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const TIME_OPTIONS = [
-  { value: 'morning' as const, label: 'Morning', icon: '🌅' },
-  { value: 'afternoon' as const, label: 'Afternoon', icon: '☀️' },
-  { value: 'evening' as const, label: 'Evening', icon: '🌙' },
-];
 
 function getFirstGymDayInWeek(startDate: Date, preferredGymDays: DayOfWeek[]): Date {
   if (preferredGymDays.length === 0) return startDate;
@@ -55,22 +47,22 @@ function ProgramStart() {
   const { formatDate } = useDateFormat();
 
   const [step, setStep] = useState(1);
-  const [weightUnit, setWeightUnit] = useState('kg');
+  const [_weightUnit, setWeightUnit] = useState('kg');
   const [formData, setFormData] = useState({
     squat1rm: '',
     bench1rm: '',
     deadlift1rm: '',
     ohp1rm: '',
   });
-  const [prefilled, setPrefilled] = useState({
+  const [_prefilled, setPrefilled] = useState({
     squat1rm: false,
     bench1rm: false,
     deadlift1rm: false,
     ohp1rm: false,
   });
-  const [preferredGymDays, setPreferredGymDays] = useState<DayOfWeek[]>([]);
-  const [preferredTimeOfDay, setPreferredTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | null>(null);
-  const [programStartDate, setProgramStartDate] = useState<string | null>(null);
+  const [preferredGymDays, _setPreferredGymDays] = useState<DayOfWeek[]>([]);
+  const [preferredTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | null>(null);
+  const [programStartDate] = useState<string | null>(null);
   const [startMode, setStartMode] = useState<'smart' | 'strict' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedPrevious, setHasLoadedPrevious] = useState(false);
@@ -110,7 +102,7 @@ function ProgramStart() {
         
         let hasAnyValues = false;
         const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
-        const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+        const prefilledValues: typeof _prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
 
         if (data.squat1rm) {
           newValues.squat1rm = data.squat1rm.toString();
@@ -155,39 +147,6 @@ function ProgramStart() {
       </div>
     );
   }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-    setPrefilled(prev => ({
-      ...prev,
-      [e.target.name]: false,
-    }));
-  };
-
-  const handleClear = (field: keyof typeof formData) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: '',
-    }));
-    setPrefilled(prev => ({
-      ...prev,
-      [field]: false,
-    }));
-  };
-
-  const toggleDay = (dayIndex: number) => {
-    const day = DAYS_OF_WEEK[dayIndex];
-    setPreferredGymDays(prev => {
-      if (prev.includes(day)) {
-        return prev.filter(d => d !== day);
-      } else {
-        return [...prev, day];
-      }
-    });
-  };
 
   const isStep1Valid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
   const isStep2Valid = preferredGymDays.length === program.daysPerWeek && preferredTimeOfDay !== null && programStartDate !== null;
@@ -337,6 +296,37 @@ function ProgramStart() {
           </Button>
         </div>
 
+        <Link to="/programs">
+          <Button type="button" variant="outline" className="w-full">
+            Cancel
+          </Button>
+        </Link>
+      </div>
+    </>
+  );
+
+  const renderStep2 = () => (
+    <>
+      <Card className="p-4">
+        <p className="text-muted-foreground">Schedule configuration coming soon.</p>
+      </Card>
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-3">
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            className="flex-1"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!isStep2Valid}
+            className="flex-1"
+          >
+            Review <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
         <Link to="/programs">
           <Button type="button" variant="outline" className="w-full">
             Cancel

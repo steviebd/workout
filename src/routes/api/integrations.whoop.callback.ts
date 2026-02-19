@@ -17,14 +17,9 @@ const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID ?? '';
 const WHOOP_CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET ?? '';
 const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
 
-function getWhoopRedirectUri(): string {
-  const environment = process.env.ENVIRONMENT ?? 'dev';
-  const baseUrl = environment === 'production'
-    ? 'https://fit.stevenduong.com'
-    : environment === 'staging'
-      ? 'https://staging.fit.stevenduong.com'
-      : 'http://localhost:8787';
-  return process.env.WHOOP_REDIRECT_URI ?? `${baseUrl}/api/integrations/whoop/callback`;
+function getWhoopRedirectUri(requestUrl: string): string {
+  const url = new URL(requestUrl);
+  return `${url.origin}/api/integrations/whoop/callback`;
 }
 
 interface TokenResponse {
@@ -33,14 +28,14 @@ interface TokenResponse {
   expires_in: number;
 }
 
-async function exchangeCodeForTokens(code: string, codeVerifier: string): Promise<TokenResponse> {
+async function exchangeCodeForTokens(code: string, codeVerifier: string, requestUrl: string): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     code_verifier: codeVerifier,
     client_id: WHOOP_CLIENT_ID,
     client_secret: WHOOP_CLIENT_SECRET,
-    redirect_uri: getWhoopRedirectUri(),
+    redirect_uri: getWhoopRedirectUri(requestUrl),
   });
 
   const response = await fetch(`${WHOOP_API_URL}/oauth/oauth2/token`, {
@@ -130,7 +125,7 @@ export const Route = createFileRoute('/api/integrations/whoop/callback' as const
 
         let tokens: TokenResponse;
         try {
-          tokens = await exchangeCodeForTokens(code, stateData.codeVerifier);
+          tokens = await exchangeCodeForTokens(code, stateData.codeVerifier, request.url);
         } catch (err) {
           console.error('Token exchange error:', err);
           return new Response(null, {

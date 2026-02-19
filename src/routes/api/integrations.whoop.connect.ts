@@ -34,20 +34,15 @@ const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID ?? '';
 const WHOOP_API_URL = process.env.WHOOP_API_URL ?? 'https://api.prod.whoop.com';
 const WHOOP_SCOPES = ['read:recovery', 'read:cycles', 'read:sleep', 'read:workout', 'read:profile', 'offline'];
 
-function getWhoopRedirectUri(): string {
-  const environment = process.env.ENVIRONMENT ?? 'dev';
-  const baseUrl = environment === 'production'
-    ? 'https://fit.stevenduong.com'
-    : environment === 'staging'
-      ? 'https://staging.fit.stevenduong.com'
-      : 'http://localhost:8787';
-  return process.env.WHOOP_REDIRECT_URI ?? `${baseUrl}/api/integrations/whoop/callback`;
+function getWhoopRedirectUri(requestUrl: string): string {
+  const url = new URL(requestUrl);
+  return `${url.origin}/api/integrations/whoop/callback`;
 }
 
 export const Route = createFileRoute('/api/integrations/whoop/connect' as const)({
   server: {
     handlers: {
-      GET: apiRoute('Connect Whoop', async ({ session }) => {
+      GET: apiRoute('Connect Whoop', async ({ session, request }) => {
         const workosId = session.sub;
         const codeVerifier = generateCodeVerifier();
         const state = generateState();
@@ -65,7 +60,7 @@ export const Route = createFileRoute('/api/integrations/whoop/connect' as const)
         const authUrl = new URL(`${WHOOP_API_URL}/oauth/oauth2/auth`);
         authUrl.searchParams.set('client_id', WHOOP_CLIENT_ID);
         authUrl.searchParams.set('response_type', 'code');
-        authUrl.searchParams.set('redirect_uri', getWhoopRedirectUri());
+        authUrl.searchParams.set('redirect_uri', getWhoopRedirectUri(request.url));
         authUrl.searchParams.set('scope', WHOOP_SCOPES.join(' '));
         authUrl.searchParams.set('state', state);
         authUrl.searchParams.set('code_challenge', codeChallenge);
