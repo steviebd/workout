@@ -18,8 +18,8 @@ function ProgramsIndex() {
     { value: "women's", label: "Women's" },
   ];
 
-  const categoryColors: Record<ProgramCategory, 'default' | 'secondary' | 'outline'> = {
-    powerlifting: 'outline',
+  const categoryColors: Record<ProgramCategory, 'default' | 'secondary' | 'success'> = {
+    powerlifting: 'secondary',
     'general-strength': 'secondary',
     "women's": 'default',
   };

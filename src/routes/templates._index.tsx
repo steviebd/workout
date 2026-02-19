@@ -171,7 +171,7 @@ function Templates() {
           ) : templates.length === 0 ? (
             <EmptyTemplates onCreate={handleCreateTemplate} />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {templates.map((template) => (
                 <Card key={template.id} className="overflow-hidden touch-manipulation">
                   <CardContent className="p-4">

@@ -6,7 +6,6 @@ interface StatCardProps {
   icon: LucideIcon
   label: string
   value: string | number
-  variant?: 'default' | 'primary' | 'success' | 'warning'
   onClick?: () => void
   className?: string
 }
@@ -15,31 +14,27 @@ export function StatCard({
   icon: Icon,
   label,
   value,
-  variant = 'default',
   onClick,
   className
 }: StatCardProps) {
-  const variantStyles = {
-    default: 'text-muted-foreground',
-    primary: 'text-primary',
-    success: 'text-success',
-    warning: 'text-warning',
-  }
-
   return (
     <Card
       className={cn(
-        "p-4",
+        "p-5",
         onClick && "hover:border-primary/50 hover:shadow-pop cursor-pointer transition-all pressable",
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className={cn("h-4 w-4", variantStyles[variant])} />
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div className="flex-1">
+          <span className="text-sm text-muted-foreground">{label}</span>
+          <p className="text-2xl font-semibold tabular-nums mt-1">{value}</p>
+        </div>
       </div>
-      <p className="text-2xl font-semibold tabular-nums mt-1">{value}</p>
     </Card>
   )
 }

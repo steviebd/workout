@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Flame, Target, Trophy, TrendingUp } from 'lucide-react';
+import { Check, Flame, Trophy, TrendingUp } from 'lucide-react';
 import type { ThirtyDayStreakResult } from '~/lib/context/StreakContext';
 import { Card, CardContent } from '~/components/ui/Card';
 
@@ -16,7 +16,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
   const streakComplete = thirtyDayStreak.current >= thirtyDayStreak.target;
 
   return (
-    <Card variant="tinted" className="overflow-hidden">
+    <Card className="overflow-hidden">
       <CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -24,20 +24,20 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
               className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                 weeklyComplete 
                    ? 'bg-success/20' 
-                   : 'bg-primary/20'
+                   : 'bg-streak/20'
               }`}
             >
               {weeklyComplete ? (
                 <Flame className="h-6 w-6 text-success" />
               ) : (
-                <Target className="h-6 w-6 text-primary" />
+                <Flame className="h-6 w-6 text-streak" />
               )}
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Times this week</p>
               <div className="flex items-baseline gap-2">
                 <p className={`text-2xl font-semibold tabular-nums transition-colors duration-300 ${
-                  weeklyComplete ? 'text-primary' : 'text-foreground'
+                  weeklyComplete ? 'text-success' : 'text-foreground'
                 }`}
                 >
                   {weeklyCount}
@@ -54,25 +54,25 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
                             </div> : null}
         </div>
 
-        <div className="border-t border-border/50 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="rounded-full p-0.5">
-                <TrendingUp className="h-5 w-5 text-primary" />
+                <TrendingUp className="h-5 w-5 text-streak" />
               </div>
               <p className="text-lg font-semibold">30 Day Streak</p>
             </div>
             <p className={`text-sm tabular-nums ${
-              streakComplete ? 'text-primary font-medium' : 'text-muted-foreground'
+              streakComplete ? 'text-streak font-medium' : 'text-muted-foreground'
             }`}
             >
               {thirtyDayStreak.current} / {thirtyDayStreak.target} weeks
             </p>
           </div>
 
-          <div className="h-3 overflow-hidden rounded-full bg-secondary mb-4">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2 mb-4">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-streak transition-all duration-500 ease-out"
               style={{ width: `${thirtyDayStreak.progress}%` }}
             />
           </div>
@@ -106,13 +106,13 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
           </div>
         </div>
 
-        <div className="border-t border-border/50 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-achievement" />
+              <Trophy className="h-5 w-5 text-streak" />
               <p className="text-sm text-muted-foreground">Total Workouts</p>
             </div>
-            <p className="text-xl font-bold tabular-nums text-primary">{totalWorkouts}</p>
+            <p className="text-xl font-bold tabular-nums text-streak">{totalWorkouts}</p>
           </div>
         </div>
       </CardContent>

@@ -22,9 +22,9 @@ export function RecentPRs({ records }: RecentPRsProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-row items-center justify-between p-5 pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Trophy className="h-5 w-5 text-chart-4" />
+          <Trophy className="h-5 w-5 text-streak" />
           Recent PRs
         </CardTitle>
         <Link
@@ -35,15 +35,15 @@ export function RecentPRs({ records }: RecentPRsProps) {
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="p-5 pt-0 space-y-3">
         {records.slice(0, 3).map((record) => (
           <div 
             key={record.id}
             className="flex items-center justify-between rounded-lg bg-secondary/50 p-3"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-4/20">
-                <TrendingUp className="h-5 w-5 text-chart-4" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/20">
+                <TrendingUp className="h-5 w-5 text-success" />
               </div>
               <div>
                 <p className="font-medium">{record.exerciseName}</p>
@@ -51,7 +51,7 @@ export function RecentPRs({ records }: RecentPRsProps) {
               </div>
             </div>
             <div className="text-right">
-              <p className="font-bold text-chart-4">{formatWeight(record.weight)}</p>
+              <p className="font-bold text-success">{formatWeight(record.weight)}</p>
               {record.improvement > 0 && (
                 <p className="text-xs text-success">
                   +{formatWeight(record.improvement)}

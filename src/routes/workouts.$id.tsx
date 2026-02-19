@@ -108,7 +108,7 @@ function WorkoutSession() {
 
   if (workoutLoading) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <main className="mx-auto max-w-lg px-5 py-8">
         <div className="flex items-center gap-3 mb-6">
           <Skeleton className="h-9 w-9 rounded-lg" />
           <Skeleton className="h-7 w-32" />
@@ -167,7 +167,7 @@ function WorkoutSession() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-3 py-4 pb-28 sm:px-4 sm:py-6 sm:pb-32">
+      <main className="mx-auto max-w-lg px-4 py-6 pb-28">
         {Boolean(updateSetMutation.isError) && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <p className="text-sm text-destructive">Failed to update set</p>

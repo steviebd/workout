@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
+import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
@@ -123,13 +123,11 @@ function Update1RM() {
   const isFormValid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <PageHeader 
-        title="Update 1RM Values"
-        subtitle="Update your current 1 Rep Maxes"
-      />
-
-      <form onSubmit={(e) => { void handleSubmit(e); }} className="px-4 flex flex-col gap-4">
+    <PageLayout
+      title="Update 1RM Values"
+      subtitle="Update your current 1 Rep Maxes"
+    >
+      <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-4">
         <Card className="p-6">
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
@@ -204,7 +202,7 @@ function Update1RM() {
           </Button>
         </Link>
       </form>
-    </div>
+    </PageLayout>
   );
 }
 

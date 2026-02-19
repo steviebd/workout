@@ -2,8 +2,8 @@ import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-r
 import { useEffect, useState, memo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
 import { getVideoTutorialByName, type VideoTutorial } from '~/lib/db/exercise/library';
-import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
+import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
 import { Progress } from '~/components/ui/Progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '~/components/ui/AlertDialog';
@@ -355,27 +355,27 @@ function ProgramDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 mx-auto max-w-lg px-4 py-6 pb-20">
+      <PageLayout title="Loading...">
         <div>
           <LoadingStats />
         </div>
-        <div className="px-4 space-y-4">
+        <div className="space-y-4">
           <LoadingExercise />
           <LoadingExercise />
           <LoadingExercise />
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (!cycle) {
     return (
-      <div className="p-4 mx-auto max-w-lg">
+      <PageLayout title="Not Found">
         <p>Program cycle not found</p>
         <Link to="/programs">
           <Button variant="outline" className="mt-4">Back to Programs</Button>
         </Link>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -385,9 +385,7 @@ function ProgramDashboard() {
     : 0;
 
   return (
-    <div className="flex flex-col gap-6 mx-auto max-w-lg px-4 py-6 pb-24">
-      <PageHeader title={cycle.name} />
-
+    <PageLayout title={cycle.name}>
       <div className="space-y-4">
         <Card className="p-4">
           <div className="space-y-2">
@@ -532,7 +530,7 @@ function ProgramDashboard() {
           </Card>
         ) : null}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

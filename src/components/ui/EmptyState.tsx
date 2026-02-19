@@ -24,29 +24,29 @@ export function EmptyState({
   return (
     <div className={cn("text-center py-12", className)}>
       <div className="flex items-center justify-center mb-6">
-        <div className="rounded-2xl bg-muted/50 p-5">
+        <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center">
           {IconComponent ? (
-            <IconComponent size={44} className="text-muted-foreground/50" />
+            <IconComponent size={28} className="text-muted-foreground/50" />
           ) : (
             <svg
-              width={44}
-              height={44}
+              width={28}
+              height={28}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
               className="text-muted-foreground/50"
             >
-              <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
-              <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
+              <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0 -4.242 0Z" />
+              <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0 -4.242 0Z" />
               <path d="M5 12h14" />
             </svg>
           )}
         </div>
       </div>
-      <h3 className="text-[18px] font-semibold tracking-tight text-foreground mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
       {description ? (
-        <p className="text-muted-foreground/90 mb-6 max-w-sm mx-auto text-[13px] leading-relaxed">{description}</p>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">{description}</p>
       ) : null}
       {actionLabel && onAction ? (
         <Button onClick={onAction} size="lg" variant="cta">
@@ -57,7 +57,7 @@ export function EmptyState({
   );
 }
 
-const DumbbellIcon = ({ size = 44, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
+const DumbbellIcon = ({ size = 28, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
   <svg
     className={className}
     width={size}
@@ -69,13 +69,13 @@ const DumbbellIcon = ({ size = 44, className = '' }: { readonly size?: number; r
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
-    <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0-4.242 0Z" />
+    <path d="M6.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0 -4.242 0Z" />
+    <path d="M15.5 6.5a2.121 2.121 0 1 0 4.242 0 2.121 2.121 0 1 0 -4.242 0Z" />
     <path d="M5 12h14" />
   </svg>
 );
 
-const FileTextIcon = ({ size = 44, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
+const FileTextIcon = ({ size = 28, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
   <svg
     className={className}
     width={size}
@@ -95,7 +95,7 @@ const FileTextIcon = ({ size = 44, className = '' }: { readonly size?: number; r
   </svg>
 );
 
-const ActivityIcon = ({ size = 44, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
+const ActivityIcon = ({ size = 28, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
   <svg
     className={className}
     width={size}
@@ -111,7 +111,7 @@ const ActivityIcon = ({ size = 44, className = '' }: { readonly size?: number; r
   </svg>
 );
 
-const CalendarIcon = ({ size = 44, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
+const CalendarIcon = ({ size = 28, className = '' }: { readonly size?: number; readonly className?: string }): ReactNode => (
   <svg
     className={className}
     width={size}

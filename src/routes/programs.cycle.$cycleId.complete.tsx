@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { PageHeader } from '~/components/ui/PageHeader';
 import { Card } from '~/components/ui/Card';
+import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
 import { LoadingCard } from '~/components/ui/LoadingSkeleton';
 
@@ -93,13 +93,11 @@ function CompleteProgram() {
   const completedWorkouts = workouts.filter(w => w.isComplete).length;
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <PageHeader 
-        title={`Complete ${cycle.name}`}
-        subtitle="Congratulations on finishing your program!"
-      />
-
-      <div className="px-4 space-y-4">
+    <PageLayout
+      title={`Complete ${cycle.name}`}
+      subtitle="Congratulations on finishing your program!"
+    >
+      <div className="space-y-4">
         <Card className="p-6">
           <div className="flex flex-col gap-4">
             <p className="text-muted-foreground">
@@ -164,7 +162,7 @@ function CompleteProgram() {
           </Button>
         </Link>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
