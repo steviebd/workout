@@ -288,7 +288,7 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
 
   const totalSetsCount = exercises.reduce((acc, e) => acc + e.sets.length, 0);
 
-  const formatDuration = (startTime: string) => {
+  const formatDuration = useCallback((startTime: string) => {
     const start = new Date(startTime);
     const now = new Date();
     const diffMs = now.getTime() - start.getTime();
@@ -300,7 +300,7 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       return `${hours}h ${mins}m`;
     }
     return `${mins}m`;
-  };
+  }, []);
 
   return {
     workout,

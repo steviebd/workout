@@ -45,20 +45,22 @@ export async function getLocalWorkoutStats(workosId: string): Promise<LocalWorko
   let totalVolume = 0;
   let totalSets = 0;
 
-  for (const workout of workouts) {
-    const exercises = await localDB.workoutExercises
+  const workoutIds = workouts.map(w => w.localId);
+  if (workoutIds.length > 0) {
+    const allWorkoutExercises = await localDB.workoutExercises
       .where('workoutId')
-      .equals(workout.localId)
+      .anyOf(workoutIds)
       .toArray();
 
-    for (const exercise of exercises) {
-      const sets = await localDB.workoutSets
+    const exerciseIds = allWorkoutExercises.map(e => e.localId);
+    if (exerciseIds.length > 0) {
+      const allWorkoutSets = await localDB.workoutSets
         .where('workoutExerciseId')
-        .equals(exercise.localId)
+        .anyOf(exerciseIds)
         .and(s => s.completed)
         .toArray();
 
-      for (const set of sets) {
+      for (const set of allWorkoutSets) {
         totalVolume += (set.weight ?? 0) * set.reps;
         totalSets++;
       }

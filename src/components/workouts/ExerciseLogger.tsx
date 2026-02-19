@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import { SetLogger } from './SetLogger'
 import type { VideoTutorial } from '~/lib/db/exercise/library'
@@ -47,11 +47,11 @@ export function ExerciseLogger({
 
   const isAmrapSet = exercise.isAmrap ?? exercise.name.endsWith('3+')
 
-  const handleSetUpdate = (index: number, updatedSet: WorkoutSet) => {
+  const handleSetUpdate = useCallback((index: number, updatedSet: WorkoutSet) => {
     const newSets = [...sets]
     newSets[index] = updatedSet
     onSetsUpdate(newSets)
-  }
+  }, [sets, onSetsUpdate])
 
   const addSet = async () => {
     const lastSet = sets[sets.length - 1]

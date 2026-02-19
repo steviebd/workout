@@ -70,7 +70,7 @@ export async function getExercisesByWorkosId(
     excludeDeleted = true,
     sortBy = 'createdAt',
     sortOrder = 'DESC',
-    limit,
+    limit = 50,
     offset,
   } = options;
 

@@ -43,9 +43,9 @@ export const updateWorkoutSetByLocalIdSchema = z.object({
 export const createWorkoutSetSchema = z.object({
   workoutExerciseId: z.string(),
   setNumber: z.number().int().min(1),
-  weight: z.number().min(0).optional(),
-  reps: z.number().min(0).optional(),
-  rpe: z.number().min(0).optional(),
+  weight: z.number().min(0).nullable().optional(),
+  reps: z.number().min(0).nullable().optional(),
+  rpe: z.number().min(0).nullable().optional(),
   localId: z.string().optional(),
 });
 

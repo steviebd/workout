@@ -25,7 +25,7 @@ interface WeeklyVolumeChartProps {
   data: WeeklyVolume[]
 }
 
-export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
+function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
   const { weightUnit, formatVolume } = useUnit()
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 })
@@ -146,3 +146,6 @@ export function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
     </Card>
   )
 }
+
+export { WeeklyVolumeChart }
+export default WeeklyVolumeChart

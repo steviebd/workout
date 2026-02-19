@@ -19,7 +19,11 @@ export const Route = createFileRoute('/api/templates/$id')({
           return createApiError('Template not found', 404, API_ERROR_CODES.NOT_FOUND);
         }
 
-        return Response.json(template);
+        return Response.json(template, {
+          headers: {
+            'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          },
+        });
       }),
       PUT: apiRouteWithParams('Update template', async ({ session, d1Db, params, request }) => {
         const body = await validateBody(request, updateTemplateSchema);

@@ -1,9 +1,7 @@
 import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useAuth } from './__root';
-import { StrengthChart } from '~/components/progress/StrengthChart';
-import { WeeklyVolumeChart } from '~/components/progress/WeeklyVolumeChart';
 import { ExerciseSelector } from '~/components/progress/ExerciseSelector';
 import { PRBoard } from '~/components/progress/PRBoard';
 import { DateRangeSelector, type DateRange } from '~/components/progress/DateRangeSelector';
@@ -20,6 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { SectionHeader } from '~/components/ui/SectionHeader';
+
+const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
+const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
 
 interface Exercise {
   id: string;
@@ -461,10 +462,12 @@ function ProgressPage() {
             {isLoadingStrength ? (
               <Skeleton className="h-[200px] rounded-lg" />
             ) : strengthData.length > 0 ? (
-              <StrengthChart
-                data={strengthData}
-                exerciseName={selectedExercise?.name ?? ''}
-              />
+              <Suspense fallback={<Skeleton className="h-[220px] rounded-lg" />}>
+                <StrengthChart
+                  data={strengthData}
+                  exerciseName={selectedExercise?.name ?? ''}
+                />
+              </Suspense>
             ) : (
               <Card className="p-6 text-center">
                 <p className="text-muted-foreground">
@@ -485,7 +488,9 @@ function ProgressPage() {
               {isLoadingVolume ? (
                 <Skeleton className="h-[200px] rounded-lg" />
               ) : weeklyVolume.length > 0 ? (
-                <WeeklyVolumeChart data={weeklyVolume} />
+                <Suspense fallback={<Skeleton className="h-[220px] rounded-lg" />}>
+                  <WeeklyVolumeChart data={weeklyVolume} />
+                </Suspense>
               ) : (
                 <Card className="p-6 text-center">
                   <p className="text-muted-foreground">No volume data for the selected period</p>

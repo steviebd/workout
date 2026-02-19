@@ -20,12 +20,18 @@ const createMockInsertChain = (result: Exercise) => ({
   get: vi.fn().mockResolvedValue(result),
 });
 
-const createMockSelectChain = (result: Exercise | Exercise[] | undefined) => ({
-  from: vi.fn().mockReturnThis(),
-  where: vi.fn().mockReturnThis(),
-  orderBy: vi.fn().mockResolvedValue(result),
-  get: vi.fn().mockResolvedValue(result),
-});
+const createMockSelectChain = (result: Exercise | Exercise[] | undefined) => {
+  const chain = {
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    offset: vi.fn().mockReturnThis(),
+    get: vi.fn().mockResolvedValue(result),
+    then: vi.fn((resolve) => Promise.resolve(result).then(resolve)),
+  };
+  return chain;
+};
 
 const createMockUpdateChain = (result: Exercise | undefined | { success: boolean }) => ({
   set: vi.fn().mockReturnThis(),

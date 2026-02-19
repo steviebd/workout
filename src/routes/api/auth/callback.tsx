@@ -19,8 +19,7 @@ function createErrorRedirect(error: string): Response {
   });
 }
 
-const {WORKOS_API_KEY} = process.env;
-const {WORKOS_CLIENT_ID} = process.env;
+const {WORKOS_API_KEY, WORKOS_CLIENT_ID} = env as typeof env & { WORKOS_API_KEY?: string; WORKOS_CLIENT_ID?: string };
 
 export const Route = createFileRoute('/api/auth/callback')({
   server: {

@@ -16,7 +16,7 @@ interface StrengthChartProps {
   exerciseName: string
 }
 
-export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
+function StrengthChart({ data, exerciseName }: StrengthChartProps) {
   const { convertWeight, formatWeight } = useUnit()
   const { formatDateShort, formatDateLong } = useDateFormat()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -153,3 +153,6 @@ export function StrengthChart({ data, exerciseName }: StrengthChartProps) {
     </Card>
   )
 }
+
+export { StrengthChart }
+export default StrengthChart

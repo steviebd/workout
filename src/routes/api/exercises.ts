@@ -28,7 +28,11 @@ export const Route = createFileRoute('/api/exercises')({
           sortOrder,
         });
 
-        return Response.json(exercises);
+        return Response.json(exercises, {
+          headers: {
+            'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          },
+        });
       }),
       POST: apiRoute('Create exercise', async ({ session, d1Db, request }) => {
         const body = await validateBody(request, createExerciseSchema);

@@ -343,97 +343,95 @@ export async function createWorkoutWithDetails(
 ): Promise<WorkoutWithExercises> {
   const db = getDb(dbOrTx);
 
-  return db.transaction(async (tx) => {
-    const workout = await tx
-      .insert(workouts)
-      .values({
-        workosId: data.workosId,
-        name: data.name,
-        templateId: data.templateId,
-        programCycleId: data.programCycleId,
-        notes: data.notes,
-        startedAt: startedAt ?? new Date().toISOString(),
-        localId: data.localId,
-      })
+  const workout = await db
+    .insert(workouts)
+    .values({
+      workosId: data.workosId,
+      name: data.name,
+      templateId: data.templateId,
+      programCycleId: data.programCycleId,
+      notes: data.notes,
+      startedAt: startedAt ?? new Date().toISOString(),
+      localId: data.localId,
+    })
+    .returning()
+    .get();
+
+  let workoutExercisesData: NewWorkoutExercise[];
+
+  if (data.templateId) {
+    const { getTemplateExercises } = await import('../template');
+    const templateExercises = await getTemplateExercises(db, data.templateId, data.workosId);
+
+    workoutExercisesData = templateExercises.map((te) => ({
+      workoutId: workout.id,
+      exerciseId: te.exerciseId,
+      orderIndex: te.orderIndex,
+      isAmrap: te.isAmrap ?? false,
+      setNumber: te.setNumber ?? null,
+    }));
+  } else {
+    workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
+      workoutId: workout.id,
+      exerciseId,
+      orderIndex: index,
+      isAmrap: false,
+      setNumber: null,
+    }));
+  }
+
+  let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
+
+  if (workoutExercisesData.length > 0) {
+    newWorkoutExercises = await db
+      .insert(workoutExercises)
+      .values(workoutExercisesData)
       .returning()
-      .get();
+      .all();
+  }
 
-    let workoutExercisesData: NewWorkoutExercise[];
+  const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');
+  const lastSetsByExercise = await getLastWorkoutSetsForExercises(db, data.workosId, data.exerciseIds);
 
-    if (data.templateId) {
-      const { getTemplateExercises } = await import('../template');
-      const templateExercises = await getTemplateExercises(tx as unknown as DbOrTx, data.templateId, data.workosId);
+  const setsToInsert: NewWorkoutSet[] = [];
 
-      workoutExercisesData = templateExercises.map((te) => ({
-        workoutId: workout.id,
-        exerciseId: te.exerciseId,
-        orderIndex: te.orderIndex,
-        isAmrap: te.isAmrap ?? false,
-        setNumber: te.setNumber ?? null,
-      }));
-    } else {
-      workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
-        workoutId: workout.id,
-        exerciseId,
-        orderIndex: index,
-        isAmrap: false,
-        setNumber: null,
-      }));
-    }
+  for (let i = 0; i < newWorkoutExercises.length; i++) {
+    const workoutExercise = newWorkoutExercises[i];
+    const exerciseId = data.exerciseIds[i];
+    const lastSets = lastSetsByExercise.get(exerciseId) ?? [];
 
-    let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
-
-    if (workoutExercisesData.length > 0) {
-      newWorkoutExercises = await tx
-        .insert(workoutExercises)
-        .values(workoutExercisesData)
-        .returning()
-        .all();
-    }
-
-    const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');
-    const lastSetsByExercise = await getLastWorkoutSetsForExercises(tx as unknown as DbOrTx, data.workosId, data.exerciseIds);
-
-    const setsToInsert: NewWorkoutSet[] = [];
-
-    for (let i = 0; i < newWorkoutExercises.length; i++) {
-      const workoutExercise = newWorkoutExercises[i];
-      const exerciseId = data.exerciseIds[i];
-      const lastSets = lastSetsByExercise.get(exerciseId) ?? [];
-
-      if (lastSets.length > 0) {
-        for (const setData of lastSets) {
-          setsToInsert.push({
-            workoutExerciseId: workoutExercise.id,
-            setNumber: setData.setNumber,
-            weight: setData.weight,
-            reps: setData.reps,
-            rpe: setData.rpe,
-            isComplete: false,
-          });
-        }
-      } else {
+    if (lastSets.length > 0) {
+      for (const setData of lastSets) {
         setsToInsert.push({
           workoutExerciseId: workoutExercise.id,
-          setNumber: 1,
+          setNumber: setData.setNumber,
+          weight: setData.weight,
+          reps: setData.reps,
+          rpe: setData.rpe,
           isComplete: false,
         });
       }
+    } else {
+      setsToInsert.push({
+        workoutExerciseId: workoutExercise.id,
+        setNumber: 1,
+        isComplete: false,
+      });
     }
+  }
 
-    if (setsToInsert.length > 0) {
-      const CHUNK_SIZE = calculateChunkSize(7);
-      for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
-        const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
-        await tx.insert(workoutSets).values(batch);
-      }
+  if (setsToInsert.length > 0) {
+    const CHUNK_SIZE = calculateChunkSize(7);
+    for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
+      const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
+      await db.insert(workoutSets).values(batch);
     }
+  }
 
-    const exercisesWithSets = await getWorkoutExercises(tx as unknown as DbOrTx, workout.id, data.workosId);
+  const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);
 
-    return {
-      ...workout,
-      exercises: exercisesWithSets,
-    };
-  });
+  return {
+    ...workout,
+    exercises: exercisesWithSets,
+  };
 }
