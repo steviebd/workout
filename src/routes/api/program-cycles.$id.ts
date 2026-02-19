@@ -22,7 +22,11 @@ export const Route = createFileRoute('/api/program-cycles/$id')({
           totalSessionsCompleted: completedCount,
         };
 
-        return Response.json(responseData);
+        return Response.json(responseData, {
+          headers: {
+            'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          },
+        });
       }),
       PUT: apiRouteWithParams('Update program cycle', async ({ session, d1Db, params, request }) => {
         const body = await validateBody(request, updateProgramCycleSchema);

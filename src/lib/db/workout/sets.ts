@@ -16,9 +16,9 @@ export async function createWorkoutSet(
   workoutExerciseId: string,
   workosId: string,
   setNumber: number,
-  weight?: number,
-  reps?: number,
-  rpe?: number,
+  weight?: number | null,
+  reps?: number | null,
+  rpe?: number | null,
   localId?: string
 ): Promise<WorkoutSet | null> {
   const db = getDb(dbOrTx);

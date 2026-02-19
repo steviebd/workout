@@ -65,10 +65,9 @@ export async function getTotalVolume(
     return 0;
   }
 
-  const sets = await db
+  const result = await db
     .select({
-      weight: workoutSets.weight,
-      reps: workoutSets.reps,
+      totalVolume: sql<number>`COALESCE(SUM(${workoutSets.weight} * ${workoutSets.reps}), 0)`.mapWith(Number),
     })
     .from(workoutSets)
     .innerJoin(workoutExercises, and(
@@ -80,16 +79,9 @@ export async function getTotalVolume(
       eq(workouts.workosId, workosId)
     ))
     .where(eq(workoutSets.isComplete, true))
-    .all();
+    .get();
 
-  let totalVolume = 0;
-  for (const set of sets) {
-    if (set.weight !== null && set.reps !== null) {
-      totalVolume += set.weight * set.reps;
-    }
-  }
-
-  return totalVolume;
+  return result?.totalVolume ?? 0;
 }
 
 export async function getPrCount(
@@ -287,6 +279,7 @@ export async function getAllTimeBestPRs(
       desc(workoutSets.reps),
       desc(workouts.startedAt)
     )
+    .limit(500)
     .all();
 
   const bestByExercise = new Map<string, {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { StreakCard } from './StreakCard';
 import { VolumeSummary } from './VolumeSummary';
 import { QuickActions } from './QuickActions';
@@ -32,7 +33,10 @@ export function DashboardWidgets({ templates, personalRecords, stats, isNewUser 
   const { widgets } = useDashboard();
   const { weeklyCount, weeklyTarget, thirtyDayStreak, totalWorkouts, loading: streakLoading } = useStreak();
 
-  const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
+  const sortedWidgets = useMemo(() =>
+    [...widgets].sort((a, b) => a.order - b.order),
+    [widgets]
+  );
 
   const renderWidget = (widgetId: string) => {
     switch (widgetId) {

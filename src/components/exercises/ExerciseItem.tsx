@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Calendar } from 'lucide-react';
 import { Card } from '~/components/ui/Card';
@@ -12,7 +13,7 @@ export interface ExerciseItemProps {
   createdAt: string;
 }
 
-export function ExerciseItem({ id, name, muscleGroup, description, createdAt }: ExerciseItemProps) {
+export const ExerciseItem = memo(function ExerciseItem({ id, name, muscleGroup, description, createdAt }: ExerciseItemProps) {
   const { formatDate } = useDateFormat();
 
   return (
@@ -33,4 +34,4 @@ export function ExerciseItem({ id, name, muscleGroup, description, createdAt }: 
       </Card>
     </Link>
   );
-}
+});

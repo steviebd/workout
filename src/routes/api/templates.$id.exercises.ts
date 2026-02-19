@@ -11,7 +11,11 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
       GET: apiRouteWithParams('Get template exercises', async ({ db, session, params }) => {
         const exercises = await getTemplateExercises(db, params.id, session.sub);
 
-        return Response.json(exercises);
+        return Response.json(exercises, {
+          headers: {
+            'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          },
+        });
       }),
       POST: apiRouteWithParams('Add exercise to template', async ({ d1Db, params, request }) => {
         const body = await validateBody(request, addExerciseToTemplateSchema);

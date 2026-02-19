@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { X, Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '~/lib/cn';
@@ -293,7 +293,7 @@ interface ExerciseListRowProps {
   onEdit: () => void;
 }
 
-export function ExerciseListRow({
+export const ExerciseListRow = memo(function ExerciseListRow({
   exercise,
   index,
   isDragging,
@@ -339,4 +339,4 @@ export function ExerciseListRow({
       </div>
     </div>
   );
-}
+});

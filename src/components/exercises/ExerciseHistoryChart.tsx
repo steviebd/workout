@@ -21,7 +21,7 @@ interface ExerciseHistoryChartProps {
 
 
 
-export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, chartType }) => {
+const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, chartType }) => {
   const { weightUnit, convertWeight } = useUnit();
   const { formatDateShort } = useDateFormat();
   const [mounted, setMounted] = useState(false);
@@ -117,3 +117,6 @@ export const ExerciseHistoryChart: FC<ExerciseHistoryChartProps> = ({ data, char
     </div>
   );
 };
+
+export { ExerciseHistoryChart }
+export default ExerciseHistoryChart
