@@ -3,6 +3,7 @@ import { type FormData, type SelectedExercise } from './types';
 import { useToast } from '@/components/app/ToastProvider';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { type Template, type Exercise, type TemplateExercise } from '@/lib/db/schema';
+import { trackEvent } from '@/lib/analytics';
 
 interface UseTemplateApiProps {
   mode: 'create' | 'edit';
@@ -164,10 +165,20 @@ export function useTemplateApi({
           )
         );
 
+        void trackEvent('template_created', {
+          template_id: template.id,
+          template_name: formData.name,
+          exercise_count: selectedExercises.length,
+        });
         toast.success('Template created successfully!');
         setCreatedTemplate(template);
       } else {
         await syncExercises(template.id);
+        void trackEvent('template_updated', {
+          template_id: template.id,
+          template_name: formData.name,
+          exercise_count: selectedExercises.length,
+        });
         toast.success('Template saved!');
       }
     } catch (err) {
@@ -177,7 +188,7 @@ export function useTemplateApi({
     } finally {
       setSaving(false);
     }
-  }, [selectedExercises, mode, toast, saveTemplate, syncExercises, accessoryAddedWeights]);
+  }, [selectedExercises, mode, toast, saveTemplate, syncExercises, accessoryAddedWeights, formData.name]);
 
   const fetchExercises = useCallback(async () => {
     try {

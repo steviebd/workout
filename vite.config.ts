@@ -31,7 +31,7 @@ const config = defineConfig({
       manifest: {
         name: 'Fit Workout',
         short_name: 'Fit Workout',
-        theme_color: '#3b82f6',
+        theme_color: '#6366f1',
         display: 'standalone',
         icons: [
           {

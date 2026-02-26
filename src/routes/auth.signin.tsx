@@ -1,8 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { WorkOS } from '@workos-inc/node';
-
-const {WORKOS_API_KEY} = process.env;
-const {WORKOS_CLIENT_ID} = process.env;
+import { env } from 'cloudflare:workers';
 
 function isLocalhost(request: Request): boolean {
   const url = new URL(request.url);
@@ -13,23 +10,26 @@ export const Route = createFileRoute('/auth/signin')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const workos = new WorkOS(WORKOS_API_KEY);
-        const url = new URL(request.url);
-        const redirectUri = `${url.origin}/api/auth/callback`;
+        const { WORKOS_CLIENT_ID } = env as typeof env & { WORKOS_CLIENT_ID?: string };
 
         if (!WORKOS_CLIENT_ID) {
           throw new Error('WORKOS_CLIENT_ID is not configured');
         }
 
+        const url = new URL(request.url);
+        const redirectUri = `${url.origin}/api/auth/callback`;
         const state = crypto.randomUUID();
         const isDev = isLocalhost(request);
 
-        const authorizationUrl = workos.userManagement.getAuthorizationUrl({
-          clientId: WORKOS_CLIENT_ID,
-          redirectUri,
+        const params = new URLSearchParams({
+          client_id: WORKOS_CLIENT_ID,
+          redirect_uri: redirectUri,
+          response_type: 'code',
           provider: 'authkit',
           state,
         });
+
+        const authorizationUrl = `https://api.workos.com/user_management/authorize?${params.toString()}`;
 
         const stateCookie = isDev
           ? `oauth_state=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`

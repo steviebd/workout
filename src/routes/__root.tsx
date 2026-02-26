@@ -11,6 +11,7 @@ import { Header } from '@/components/layout/Header'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { AppProviders } from '@/components/app/Providers'
 import { cacheUser, getCachedUser, clearCachedUser } from '@/lib/auth/offline-auth'
+import { trackEvent, identifyUser } from '@/lib/analytics'
 
 
 let browserQueryClient: QueryClient | undefined
@@ -90,6 +91,7 @@ function AppLayout() {
   });
 
   const signOut = useCallback(() => {
+    void trackEvent('user_signed_out');
     setUser(null);
     void clearCachedUser();
     localStorage.removeItem('auth_user');
@@ -128,6 +130,10 @@ function AppLayout() {
           const userData = (await apiResponse.json()) as AuthUserData | null;
           if (userData) {
             setUser(userData);
+            void identifyUser(userData.id, {
+              email: userData.email,
+              name: userData.name,
+            });
             await cacheUser({
               id: userData.id,
               email: userData.email,
@@ -136,11 +142,18 @@ function AppLayout() {
           } else {
             setUser(null);
           }
-        } else if (apiResponse?.status === 401 || !apiResponse) {
+        } else if (apiResponse?.status === 401) {
+          setUser(null);
+          await clearCachedUser();
+        } else if (!apiResponse && !cachedUser) {
           setUser(null);
         } else if (cachedUser) {
           setUser({
             id: cachedUser.id,
+            email: cachedUser.email,
+            name: cachedUser.name,
+          });
+          void identifyUser(cachedUser.id, {
             email: cachedUser.email,
             name: cachedUser.name,
           });
@@ -181,6 +194,41 @@ function AppLayout() {
       pendingCount: 0,
     });
   }, []);
+
+  useEffect(() => {
+    function handleGlobalError(event: ErrorEvent) {
+      void trackEvent('error_unhandled', {
+        error_message: event.message,
+        error_filename: event.filename,
+        error_lineno: event.lineno,
+        error_colno: event.colno,
+      });
+    }
+
+    function handleUnhandledRejection(event: PromiseRejectionEvent) {
+      void trackEvent('error_promise_rejection', {
+        error_message: event.reason?.message ?? String(event.reason),
+        error_stack: event.reason?.stack,
+      });
+    }
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      void trackEvent('page_viewed', {
+        path: location.pathname,
+        search: location.search,
+      });
+    }
+  }, [location, loading]);
 
   return (
     <QueryClientProvider client={queryClient}>

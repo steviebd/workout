@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { WorkOS } from '@workos-inc/node';
 import { env } from 'cloudflare:workers';
 import { createToken, extractSessionIdFromAccessToken, createSessionResponse } from '~/lib/auth';
 import { getOrCreateUser } from '~/lib/db/user';
@@ -19,12 +18,25 @@ function createErrorRedirect(error: string): Response {
   });
 }
 
-const {WORKOS_API_KEY, WORKOS_CLIENT_ID} = env as typeof env & { WORKOS_API_KEY?: string; WORKOS_CLIENT_ID?: string };
+interface WorkOSAuthResponse {
+  user: {
+    id: string;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+  access_token: string;
+}
 
 export const Route = createFileRoute('/api/auth/callback')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { WORKOS_API_KEY, WORKOS_CLIENT_ID } = env as typeof env & {
+          WORKOS_API_KEY?: string;
+          WORKOS_CLIENT_ID?: string;
+        };
+
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
         const state = url.searchParams.get('state');
@@ -51,30 +63,39 @@ export const Route = createFileRoute('/api/auth/callback')({
             return createErrorRedirect('config_missing');
           }
 
-          const workos = new WorkOS(WORKOS_API_KEY);
-          const { user, accessToken } = await workos.userManagement.authenticateWithCode({
-            code,
-            clientId: WORKOS_CLIENT_ID,
-          });
-
-          await getOrCreateUser(db, {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName ?? '',
-            lastName: user.lastName ?? '',
-          });
-
-          const workosSessionId = extractSessionIdFromAccessToken(accessToken) ?? undefined;
-
-          const token = await createToken(
-            {
-              id: user.id,
-              email: user.email,
-              firstName: user.firstName ?? '',
-              lastName: user.lastName ?? '',
+          const authResponse = await fetch('https://api.workos.com/user_management/authenticate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${WORKOS_API_KEY}`,
             },
-            workosSessionId
-          );
+            body: JSON.stringify({
+              grant_type: 'authorization_code',
+              client_id: WORKOS_CLIENT_ID,
+              client_secret: WORKOS_API_KEY,
+              code,
+            }),
+          });
+
+          if (!authResponse.ok) {
+            const errorText = await authResponse.text();
+            console.error('WorkOS authenticate failed:', authResponse.status, errorText);
+            return createErrorRedirect('auth_failed');
+          }
+
+          const data = (await authResponse.json()) as WorkOSAuthResponse;
+          const user = {
+            id: data.user.id,
+            email: data.user.email,
+            firstName: data.user.first_name ?? '',
+            lastName: data.user.last_name ?? '',
+          };
+
+          await getOrCreateUser(db, user);
+
+          const workosSessionId = extractSessionIdFromAccessToken(data.access_token) ?? undefined;
+
+          const token = await createToken(user, workosSessionId);
 
           return createSessionResponse(token, request, '/');
         } catch (err) {

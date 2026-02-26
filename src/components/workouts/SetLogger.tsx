@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Check, Minus, Plus } from 'lucide-react'
+import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
 import { useUnit } from '@/lib/context/UserPreferencesContext'
@@ -17,6 +17,7 @@ interface SetLoggerProps {
   setNumber: number
   set: WorkoutSet
   onUpdate: (set: WorkoutSet) => void
+  onDelete?: () => void
 }
 
 function sanitizeReps(value: number): number {
@@ -26,7 +27,7 @@ function sanitizeReps(value: number): number {
   return Math.max(0, Math.round(value))
 }
 
-export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
+export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps) {
   const { weightUnit } = useUnit()
   const [weight, setWeight] = useState(set.weight)
   const [reps, setReps] = useState(() => sanitizeReps(set.reps))
@@ -310,6 +311,18 @@ export function SetLogger({ setNumber, set, onUpdate }: SetLoggerProps) {
         >
           <Check className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
+
+        {onDelete ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onDelete}
+            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            aria-label="Delete set"
+          >
+            <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+        ) : null}
       </div>
     </div>
   )

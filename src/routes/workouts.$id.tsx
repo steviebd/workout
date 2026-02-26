@@ -51,6 +51,7 @@ function WorkoutSession() {
     completeWorkoutMutation,
     handleUpdateSet,
     handleAddSet,
+    handleDeleteSet,
     handleAddExercise,
     handleCompleteWorkout,
     handleDiscardWorkout,
@@ -221,6 +222,7 @@ function WorkoutSession() {
                   onAddSet={async (exerciseId, currentSets) => {
                     await handleAddSet(exerciseId, currentSets);
                   }}
+                  onDeleteSet={handleDeleteSet}
                   videoTutorial={videoTutorial ?? null}
                 />
               );

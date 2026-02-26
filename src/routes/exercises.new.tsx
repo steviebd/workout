@@ -6,6 +6,7 @@ import { Card } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { useToast } from '@/components/app/ToastProvider';
+import { trackEvent } from '@/lib/analytics';
 
 const MUSCLE_GROUPS = [
   'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Forearms',
@@ -53,6 +54,11 @@ function NewExercise() {
       }
 
       const data: { id: string } = await response.json();
+      void trackEvent('exercise_created', {
+        exercise_id: data.id,
+        exercise_name: newExercise.name,
+        muscle_group: newExercise.muscleGroup,
+      });
       toast.success('Exercise created successfully!');
       void navigate({ to: '/exercises/$id', params: { id: data.id } });
     } catch (err) {
