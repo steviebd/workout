@@ -1,57 +1,61 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { WorkOS } from '@workos-inc/node';
 import { env } from 'cloudflare:workers';
 import { getTokenFromCookie, verifyToken } from '../../../lib/auth';
 
-const {WORKOS_API_KEY, WORKOS_CLIENT_ID} = env as typeof env & { WORKOS_API_KEY?: string; WORKOS_CLIENT_ID?: string };
-
-function createClearCookie(cookieName: string, isDev: boolean): string {
+function createClearCookie(isDev: boolean): string {
   if (isDev) {
-    return `${cookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
+    return `session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
   }
-  return `${cookieName}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  return `session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 export const Route = createFileRoute('/api/auth/signout')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { WORKOS_API_KEY, WORKOS_CLIENT_ID } = env as typeof env & {
+          WORKOS_API_KEY?: string;
+          WORKOS_CLIENT_ID?: string;
+        };
+
         const url = new URL(request.url);
         const isDev = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-        const cookieName = isDev ? 'session' : '__Host-session';
-        const clearCookie = createClearCookie(cookieName, isDev);
+        const clearCookie = createClearCookie(isDev);
 
         const cookieHeader = request.headers.get('Cookie');
-        
-        let token = getTokenFromCookie(cookieHeader, cookieName);
-        
+
+        let token = getTokenFromCookie(cookieHeader, 'session');
+
         if (!token) {
           const authHeader = request.headers.get('Authorization');
           if (authHeader?.startsWith('Bearer ')) {
             token = authHeader.substring(7);
           }
         }
-        
+
         let workosLogoutUrl: string | null = null;
 
         if (token && WORKOS_API_KEY && WORKOS_CLIENT_ID) {
           try {
             const payload = await verifyToken(token);
             if (payload?.workosId) {
-              const workos = new WorkOS(WORKOS_API_KEY, { clientId: WORKOS_CLIENT_ID });
-              
               try {
-                await workos.userManagement.revokeSession({
-                  sessionId: payload.workosId,
+                await fetch('https://api.workos.com/user_management/sessions/revoke', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${WORKOS_API_KEY}`,
+                  },
+                  body: JSON.stringify({ session_id: payload.workosId }),
                 });
               } catch (revokeErr) {
                 console.warn('[/api/auth/signout] Failed to revoke WorkOS session:', revokeErr);
               }
-              
-              workosLogoutUrl = workos.userManagement.getLogoutUrl({
-                sessionId: payload.workosId,
-                returnTo: url.origin,
-              });
+
+              const logoutUrl = new URL('/user_management/sessions/logout', 'https://api.workos.com');
+              logoutUrl.searchParams.set('session_id', payload.workosId);
+              logoutUrl.searchParams.set('return_to', url.origin);
+              workosLogoutUrl = logoutUrl.toString();
             }
           } catch (err) {
             console.error('[/api/auth/signout] Error:', err);

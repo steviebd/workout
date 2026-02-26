@@ -18,13 +18,16 @@ export async function getSession(request: Request): Promise<SessionPayload | nul
   return await verifyToken(token);
 }
 
-export function createSessionResponse(token: string, _request: Request, redirectPath: string, refreshToken?: string): Response {
+export function createSessionResponse(token: string, request: Request, redirectPath: string, refreshToken?: string): Response {
   const tokenToSet = refreshToken ?? token;
+  const url = new URL(request.url);
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  const securePart = isLocalhost ? '' : ' Secure;';
   return new Response(null, {
     status: 302,
     headers: {
       Location: redirectPath,
-      'Set-Cookie': `session=${tokenToSet}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${SESSION_COOKIE_MAX_AGE}`,
+      'Set-Cookie': `session=${tokenToSet}; HttpOnly;${securePart} Path=/; SameSite=Lax; Max-Age=${SESSION_COOKIE_MAX_AGE}`,
     },
   });
 }
