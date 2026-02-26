@@ -15,7 +15,11 @@ function Callback() {
 
     if (code) {
       void trackEvent('user_signed_in');
-      window.location.href = `/api/auth/callback?code=${encodeURIComponent(code)}`;
+      const params = new URLSearchParams({ code });
+      const searchParams = new URLSearchParams(window.location.search);
+      const state = searchParams.get('state');
+      if (state) params.set('state', state);
+      window.location.href = `/api/auth/callback?${params.toString()}`;
     } else {
       window.location.href = '/auth/signin';
     }

@@ -28,6 +28,7 @@ interface ExerciseLoggerProps {
   sets: WorkoutSet[]
   onSetsUpdate: (sets: WorkoutSet[]) => void
   onAddSet?: (exerciseId: string, currentSets: WorkoutSet[]) => Promise<void>
+  onDeleteSet?: (exerciseId: string, setId: string) => Promise<void>
   videoTutorial?: VideoTutorial | null
 }
 
@@ -36,6 +37,7 @@ export function ExerciseLogger({
   sets,
   onSetsUpdate,
   onAddSet,
+  onDeleteSet,
   videoTutorial,
 }: ExerciseLoggerProps) {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -137,6 +139,7 @@ export function ExerciseLogger({
                 setNumber={index + 1}
                 set={set}
                 onUpdate={(updatedSet) => handleSetUpdate(index, updatedSet)}
+                onDelete={onDeleteSet ? () => { void onDeleteSet(exercise.id, set.id); } : undefined}
               />
             ))}
 

@@ -177,6 +177,46 @@ function EditWorkout() {
     }
   }, [exercises, addSetToBackend]);
 
+  const handleDeleteSet = useCallback(async (exerciseId: string, setId: string) => {
+    const exercise = exercises.find(e => e.exerciseId === exerciseId);
+    if (!exercise) return;
+
+    const setToDelete = exercise.sets.find(s => s.id === setId);
+    if (!setToDelete) return;
+
+    // eslint-disable-next-line no-alert
+    if (!confirm('Are you sure you want to delete this set?')) return;
+
+    try {
+      const res = await fetch(`/api/workouts/sets/${setId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        setExercises(prev => prev.map(e => {
+          if (e.exerciseId === exerciseId) {
+            const newSets = e.sets.filter((s: WorkoutSet) => s.id !== setId);
+            return {
+              ...e,
+              sets: newSets.map((s: WorkoutSet, idx: number) => ({
+                ...s,
+                setNumber: idx + 1,
+              })),
+            };
+          }
+          return e;
+        }));
+        toast.success('Set deleted');
+      } else {
+        toast.error('Failed to delete set');
+      }
+    } catch (err) {
+      console.error('Failed to delete set:', err);
+      toast.error('Failed to delete set');
+    }
+  }, [exercises, toast]);
+
   const handleAddExercise = useCallback(async (exercise: Exercise) => {
     const orderIndex = exercises.length;
 
@@ -513,6 +553,7 @@ function EditWorkout() {
                   }
                 }}
                 onAddSet={(exerciseId, currentSets) => handleAddSet(exerciseId, currentSets)}
+                onDeleteSet={handleDeleteSet}
               />
             ))
           )}

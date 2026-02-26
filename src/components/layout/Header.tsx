@@ -84,34 +84,40 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {!isOnline && (
+              <div className="flex sm:hidden items-center justify-center" title="Offline">
+                <div className="h-2 w-2 rounded-full bg-warning" />
+              </div>
+            )}
+
             {streakLoading ? (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
+              <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-sm font-semibold text-muted-foreground">...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
+              <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
               </div>
             )}
 
           {!isOnline && (
-            <div className="flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-1 text-warning">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-1 text-warning">
               <WifiOff className="h-3.5 w-3.5" />
               <span className="text-xs font-semibold">Offline</span>
             </div>
           )}
 
           {isSyncing ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-primary">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-primary">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               <span className="text-xs font-semibold">Syncing...</span>
             </div>
           ) : null}
 
             {isOnline && pendingCount > 0 ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-secondary border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
               <CloudUpload className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">{pendingCount} pending</span>
             </div>
@@ -121,7 +127,7 @@ export function Header() {
 
           <a
               href="/health"
-              className="flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm"
+              className="hidden md:flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm"
           >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Health</span>

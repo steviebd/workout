@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
-
-const {WORKOS_API_KEY} = process.env;
-const {WORKOS_CLIENT_ID} = process.env;
+import { env } from 'cloudflare:workers';
 
 function isLocalhost(request: Request): boolean {
   const url = new URL(request.url);
   return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 }
+
+const {WORKOS_API_KEY, WORKOS_CLIENT_ID} = env as typeof env & { WORKOS_API_KEY?: string; WORKOS_CLIENT_ID?: string };
 
 export const Route = createFileRoute('/auth/signin')({
   server: {

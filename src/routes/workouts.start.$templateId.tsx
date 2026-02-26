@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from './__root'
 import { Button } from '~/components/ui/Button'
 import { useToast } from '~/components/app/ToastProvider'
+import { trackEvent } from '@/lib/analytics'
 
 interface TemplateExercise {
   id: string;
@@ -98,6 +99,11 @@ function StartWorkoutPage() {
 
       if (res.ok) {
         const workout: { id: string } = await res.json()
+        void trackEvent('workout_started', {
+          template_id: template.id,
+          template_name: template.name,
+          workout_id: workout.id,
+        });
         await router.navigate({ to: '/workouts/$id', params: { id: workout.id } })
       } else {
         let errorData: { error?: string } = {}

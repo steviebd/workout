@@ -195,6 +195,19 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
     },
   });
 
+  const deleteSetMutation = useMutation({
+    mutationFn: async ({ setId }: { setId: string }) => {
+      const res = await fetch(`/api/workouts/sets/${setId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete set');
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
+    },
+  });
+
   const saveNotesMutation = useMutation({
     mutationFn: async (notesValue: string) => {
       const res = await fetch(`/api/workouts/${workoutId}`, {
@@ -227,6 +240,10 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       rpe: null,
     });
   }, [exercises, addSetMutation]);
+
+  const handleDeleteSet = useCallback(async (_exerciseId: string, setId: string) => {
+    deleteSetMutation.mutate({ setId });
+  }, [deleteSetMutation]);
 
   const handleAddExercise = useCallback((exercise: Exercise) => {
     const orderIndex = exercises.length;
@@ -318,8 +335,10 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
     completeWorkoutMutation,
     deleteWorkoutMutation,
     saveNotesMutation,
+    deleteSetMutation,
     handleUpdateSet,
     handleAddSet,
+    handleDeleteSet,
     handleAddExercise,
     handleCompleteWorkout,
     handleDiscardWorkout,

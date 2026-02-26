@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { WorkOS } from '@workos-inc/node';
+import { env } from 'cloudflare:workers';
 import { getTokenFromCookie, verifyToken } from '../../../lib/auth';
 
-const WORKOS_API_KEY = process.env.WORKOS_API_KEY as string | undefined;
-const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID as string | undefined;
+const {WORKOS_API_KEY, WORKOS_CLIENT_ID} = env as typeof env & { WORKOS_API_KEY?: string; WORKOS_CLIENT_ID?: string };
 
 function createClearCookie(cookieName: string, isDev: boolean): string {
   if (isDev) {
@@ -58,65 +58,12 @@ export const Route = createFileRoute('/api/auth/signout')({
           }
         }
 
-        // If we have a WorkOS logout URL, redirect there; otherwise redirect to home
-        // Use an intermediate HTML page to clear localStorage/sessionStorage before redirecting
-        // This prevents the browser back button from restoring cached auth state
-        if (workosLogoutUrl) {
-          const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>Signing out...</title>
-</head>
-<body>
-<p>Signing out...</p>
-<script>
-  // Clear localStorage and sessionStorage before redirecting to WorkOS
-  try {
-    localStorage.clear();
-    sessionStorage.clear();
-  } catch(e) {}
-  // Use replace to prevent back button from returning to this page
-  window.location.replace(${JSON.stringify(workosLogoutUrl)});
-</script>
-</body>
-</html>`;
+        const redirectTo = workosLogoutUrl ?? url.origin;
 
-          return new Response(html, {
-            status: 200,
-            headers: {
-              'Content-Type': 'text/html',
-              'Set-Cookie': clearCookie,
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-            },
-          });
-        }
-
-        // No WorkOS session - just redirect to home with cookie cleared
-        // Use meta refresh to force a hard page reload to clear any SPA state
-        const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="refresh" content="0;url=${url.origin}/">
-  <title>Signed out</title>
-</head>
-<body>
-<p>You have been signed out. <a href="${url.origin}/">Click here</a> to continue.</p>
-<script>
-  // Clear localStorage and sessionStorage before navigating
-  try {
-    localStorage.clear();
-    sessionStorage.clear();
-  } catch(e) {}
-  // Force hard navigation
-  window.location.replace("${url.origin}/");
-</script>
-</body>
-</html>`;
-
-        return new Response(html, {
-          status: 200,
+        return new Response(null, {
+          status: 302,
           headers: {
-            'Content-Type': 'text/html',
+            Location: redirectTo,
             'Set-Cookie': clearCookie,
             'Cache-Control': 'no-store',
           },
