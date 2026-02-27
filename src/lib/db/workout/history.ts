@@ -14,6 +14,7 @@ import type {
   WorkoutHistoryStats,
 } from './types';
 import { calculateE1RM } from '~/lib/domain/stats/calculations';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
 /**
  * Retrieves the exercise history for a user
@@ -290,7 +291,6 @@ export async function getRecentPRs(
   const exerciseCategories: Record<string, { id: string; name: string; isMatch: (n: string) => boolean }> = {};
 
   for (const wm of workoutMaxes) {
-    const { isSquat, isBench, isDeadlift, isOverheadPress } = await import('~/lib/db/exercise/categories');
     if (isSquat(wm.exerciseName) && !exerciseCategories.squat) {
       exerciseCategories.squat = { id: wm.exerciseId, name: wm.exerciseName, isMatch: isSquat };
     }

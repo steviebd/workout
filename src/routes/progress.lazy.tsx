@@ -258,15 +258,17 @@ function ProgressPage() {
         const data = await response.json();
         const workoutList = data as WorkoutHistoryItem[];
 
-        const sortedWorkouts = [...workoutList];
+        let sortedWorkouts: WorkoutHistoryItem[];
         if (sortBy === 'volume') {
-          sortedWorkouts.sort((a, b) => {
+          sortedWorkouts = workoutList.toSorted((a, b) => {
             return sortOrder === 'DESC' ? b.totalVolume - a.totalVolume : a.totalVolume - b.totalVolume;
           });
         } else if (sortBy === 'duration') {
-          sortedWorkouts.sort((a, b) => {
+          sortedWorkouts = workoutList.toSorted((a, b) => {
             return sortOrder === 'DESC' ? b.duration - a.duration : a.duration - b.duration;
           });
+        } else {
+          sortedWorkouts = workoutList;
         }
 
         if (append) {
