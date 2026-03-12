@@ -100,9 +100,9 @@ function WorkoutsPage() {
     <PageLayout title="Workouts">
       <PullToRefresh onRefresh={refreshAll}>
           {activePrograms.length > 0 ? (
-            <section className="mb-6">
+            <section className="mb-8">
               <SectionHeader title="Active Programs" />
-              <div className="space-y-4 max-h-[220px] overflow-y-auto -mx-2 px-2">
+              <div className="space-y-3 max-h-[220px] overflow-y-auto -mx-4 px-4">
                 {activePrograms.slice(0, 2).map((program) => (
                   <Link
                     key={program.id}
@@ -134,14 +134,14 @@ function WorkoutsPage() {
             </section>
           ) : null}
 
-          <section className="mb-6">
+          <section className="mb-8">
             <SectionHeader
               title="Your Templates"
               action={
                 <Button asChild={true} variant="outline" size="sm">
                   <Link to="/templates/new">
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Template
+                    Create
                   </Link>
                 </Button>
               }
@@ -152,7 +152,7 @@ function WorkoutsPage() {
                 onCreate={() => { window.location.href = '/templates/new'; }}
               />
             ) : (
-              <div className="space-y-4 max-h-[440px] overflow-y-auto -mx-2 px-2">
+              <div className="space-y-3 max-h-[440px] overflow-y-auto -mx-4 px-4">
                 {templates.slice(0, 5).map((template) => (
                   <Link
                     key={template.id}
@@ -182,25 +182,24 @@ function WorkoutsPage() {
             )}
           </section>
 
-          <section>
-            <SectionHeader title="Create Your Own Workout" />
+          <section className="mb-8">
+            <SectionHeader title="Create Workout" />
             <Button 
               className="w-full"
               onClick={() => { window.location.href = '/workouts/new'; }}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Build Custom Workout
+              New Custom Workout
             </Button>
           </section>
 
-          <section className="mb-6">
+          <section className="mb-8">
             <SectionHeader
-              title="Your Exercises"
+              title="Exercises"
               action={
                 <Button asChild={true} variant="outline" size="sm">
                   <Link to="/exercises/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Exercise
+                    <Plus className="h-4 w-4" />
                   </Link>
                 </Button>
               }
@@ -220,7 +219,7 @@ function WorkoutsPage() {
             {exercises.length === 0 ? (
               <EmptyExercises onCreate={() => { window.location.href = '/exercises/new'; }} />
             ) : (
-              <div className="grid grid-cols-1 gap-2 max-h-[380px] overflow-y-auto -mx-2 px-2">
+              <div className="grid grid-cols-1 gap-2 max-h-[380px] overflow-y-auto -mx-4 px-4">
                 {exercises.slice(0, 5).map((exercise) => (
                   <Link
                     key={exercise.id}

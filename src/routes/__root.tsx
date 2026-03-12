@@ -268,14 +268,14 @@ function AppLayout() {
               <AppProviders userId={user?.id}>
                 <Header />
                 <main className="flex-1 overflow-auto">
-                  <div className="mx-auto max-w-lg">
-                  <ErrorBoundary>
-                    <ToastProvider>
-                      <TooltipProvider>
-                        <Outlet />
-                      </TooltipProvider>
-                    </ToastProvider>
-                  </ErrorBoundary>
+                  <div className="mx-auto w-full max-w-lg px-4">
+                    <ErrorBoundary>
+                      <ToastProvider>
+                        <TooltipProvider>
+                          <Outlet />
+                        </TooltipProvider>
+                      </ToastProvider>
+                    </ErrorBoundary>
                   </div>
                 </main>
                 {!location.pathname.startsWith('/workouts/') && <BottomNav />}

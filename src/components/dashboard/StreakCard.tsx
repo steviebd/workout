@@ -17,7 +17,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
 
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div 
@@ -54,7 +54,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
                             </div> : null}
         </div>
 
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-border/50 pt-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="rounded-full p-0.5">
@@ -106,7 +106,7 @@ export function StreakCard({ weeklyCount, weeklyTarget, thirtyDayStreak, totalWo
           </div>
         </div>
 
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-border/50 pt-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-streak" />

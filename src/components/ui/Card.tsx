@@ -4,14 +4,14 @@ import { cn } from '~/lib/cn'
 
 function Card({ className, overflow = 'hidden', interactive = false, ...props }: React.ComponentProps<'div'> & { overflow?: 'visible' | 'hidden' | 'auto' | 'clip' | 'scroll'; interactive?: boolean }) {
   const interactiveStyles = interactive
-    ? 'hover:border-primary/30 hover:shadow-md cursor-pointer transition-all'
+    ? 'hover:border-primary/40 hover:shadow-md hover:bg-surface-2 cursor-pointer transition-all'
     : ''
 
   return (
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col bg-surface-1 border border-border shadow-sm rounded-xl',
+        'flex flex-col bg-card border border-border rounded-lg shadow-sm',
         interactiveStyles,
         className,
       )}
@@ -26,7 +26,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 p-5 pb-4 has-data-[slot=card-action]:grid-cols-[1fr_auto]',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 p-6 pb-5 has-data-[slot=card-action]:grid-cols-[1fr_auto]',
         className,
       )}
       {...props}
@@ -38,7 +38,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('text-base font-semibold', className)}
+      className={cn('text-lg font-semibold text-foreground', className)}
       {...props}
     />
   )
@@ -71,7 +71,7 @@ function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-content"
-        className={cn('p-5 pt-0', className)}
+        className={cn('p-6 pt-0', className)}
       {...props}
     />
   )
@@ -81,7 +81,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-footer"
-        className={cn('p-5 pt-4 border-t border-border', className)}
+        className={cn('px-6 py-5 border-t border-border', className)}
       {...props}
     />
   )

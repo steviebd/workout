@@ -17,10 +17,10 @@ export function VolumeSummary({ totalVolume, volumeGoal, volumeChange }: VolumeS
 
   return (
     <Card className="border-volume/25">
-      <CardContent className="p-5">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-volume/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-volume/20">
               <Dumbbell className="h-6 w-6 text-volume" />
             </div>
             <div>
