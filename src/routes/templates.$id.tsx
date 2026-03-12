@@ -1,4 +1,3 @@
-/* eslint-disable no-alert */
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -9,6 +8,7 @@ import { Card, CardContent } from '~/components/ui/Card';
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 
 function TemplateDetail() {
   const params = useParams({ from: '/templates/$id' });
@@ -20,6 +20,7 @@ function TemplateDetail() {
   const [error, setError] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const templateId = params.id;
 
@@ -36,20 +37,16 @@ function TemplateDetail() {
           const newTemplate: Template = await response.json();
           window.location.href = `/templates/${newTemplate.id}`;
       } else {
-        alert('Failed to copy template');
+        setError('Failed to copy template');
       }
     } catch {
-      alert('Failed to copy template');
+      setError('Failed to copy template');
     } finally {
       setCopying(false);
     }
   }, [templateId]);
 
   const handleDelete = useCallback(async () => {
-    if (!confirm('Are you sure you want to delete this template?')) {
-      return;
-    }
-
     setDeleting(true);
 
     try {
@@ -61,12 +58,13 @@ function TemplateDetail() {
       if (response.ok) {
         window.location.href = '/templates';
       } else {
-        alert('Failed to delete template');
+        setError('Failed to delete template');
       }
     } catch {
-      alert('Failed to delete template');
+      setError('Failed to delete template');
     } finally {
       setDeleting(false);
+      setShowDeleteDialog(false);
     }
   }, [templateId]);
 
@@ -75,6 +73,10 @@ function TemplateDetail() {
   }, [handleCopy]);
 
   const handleDeleteClick = useCallback(() => {
+    setShowDeleteDialog(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
     void handleDelete();
   }, [handleDelete]);
 
@@ -173,6 +175,23 @@ function TemplateDetail() {
             </a>
           </CardContent>
         </Card>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Template</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this template? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </PageLayout>
     );
   }

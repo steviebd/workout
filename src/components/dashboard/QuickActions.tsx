@@ -46,18 +46,14 @@ export function QuickActions({ templates }: QuickActionsProps) {
           name: templateData.name,
           templateId: template.id,
         }),
-      })
-
-      console.log('QuickActions: Create workout response status:', createResponse.status)
+      }      )
 
       if (!createResponse.ok) {
         const errorData = await createResponse.json() as { error?: string }
-        console.error('QuickActions: Create workout error:', errorData)
         throw new Error(errorData.error ?? 'Failed to create workout')
       }
 
       const workout = await createResponse.json() as { id: string }
-      console.log('QuickActions: Workout created with ID:', workout.id)
       void router.navigate({ to: '/workouts/$id', params: { id: workout.id } })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong'

@@ -41,7 +41,6 @@ export function ExerciseList({
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
 
-  // Add drop indicator element
   useEffect(() => {
     if (!listRef.current) return;
 

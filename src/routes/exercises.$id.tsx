@@ -5,6 +5,7 @@ import { Button, Card, CardContent } from '~/components/ui';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { useToast } from '@/components/app/ToastProvider';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 
 interface Exercise {
   id: string;
@@ -24,6 +25,7 @@ function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const exerciseId = id;
 
@@ -64,11 +66,6 @@ function ExerciseDetail() {
   }, [auth.loading, auth.user, exerciseId]);
 
    const handleDelete = useCallback(async () => {
-     // eslint-disable-next-line no-alert
-     if (!confirm('Are you sure you want to delete this exercise?')) {
-       return;
-     }
-
      setDeleting(true);
 
      try {
@@ -86,12 +83,13 @@ function ExerciseDetail() {
        toast.error('Failed to delete exercise');
      } finally {
        setDeleting(false);
+       setShowDeleteDialog(false);
      }
    }, [exerciseId, toast]);
 
    const handleDeleteClick = useCallback(() => {
-     void handleDelete();
-   }, [handleDelete]);
+     setShowDeleteDialog(true);
+   }, []);
 
    useEffect(() => {
      if (!auth.loading && !auth.user) {
@@ -190,6 +188,23 @@ function ExerciseDetail() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this exercise? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDelete()} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

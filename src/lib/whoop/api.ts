@@ -231,7 +231,6 @@ export class WhoopApiClient {
       startDate,
       endDate,
       maxRecords,
-      (page) => console.log('[whoop-api] sleeps page:', page)
     );
   }
 

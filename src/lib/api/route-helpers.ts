@@ -27,7 +27,8 @@ export async function validateBody<T>(
       return parsed.data;
     }
     return null;
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse request body:', err);
     return null;
   }
 }

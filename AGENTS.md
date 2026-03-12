@@ -102,6 +102,33 @@ src/lib/db/
 - **File-based routing** - Routes in `src/routes/`
 - **WorkOS hosted UI** - Auth at `/auth/callback`
 
+## Naming Conventions
+
+### Internal vs External APIs
+
+The codebase uses `camelCase` for internal TypeScript/React code. However, external APIs and analytics services often require `snake_case`.
+
+| Context | Convention | Example |
+|---------|------------|---------|
+| Internal app code | `camelCase` | `templateId`, `workoutId` |
+| Analytics/Posthog | `snake_case` | `template_id`, `workout_id` |
+| OAuth params (Whoop, WorkOS) | `snake_case` | `client_id`, `response_type` |
+
+**Rule:** Keep `snake_case` for external APIs and analytics. Use `camelCase` internally.
+
+When the mix of conventions is confusing, add a mapping layer at the API boundary:
+
+```typescript
+// External API (snake_case)
+const payload = { template_id: templateId, workout_id: workoutId };
+trackEvent('workout_started', payload);
+
+// Internal conversion helper if needed
+const toExternalFormat = (data: { templateId: string }) => ({
+  template_id: data.templateId,
+});
+```
+
 ## External Resources
 - [TanStack Start](https://tanstack.com/start)
 - [Drizzle ORM](https://orm.drizzle.team)

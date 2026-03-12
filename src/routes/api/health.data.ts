@@ -31,11 +31,6 @@ export const Route = createFileRoute('/api/health/data')({
           whoopRepository.getWorkouts(d1Db, workosId, startDate, endDate),
         ]);
 
-        console.log('[health-data] query:', { workosId, startDate, endDate, sleepCount: sleeps.length, cycleCount: cycles.length });
-        if (sleeps.length > 0) {
-          console.log('[health-data] sleep date range:', sleeps[0].sleepDate, 'to', sleeps[sleeps.length - 1].sleepDate);
-        }
-
         return Response.json({
           recoveries: recoveries.map(r => ({
             id: r.id,

@@ -86,7 +86,10 @@ export function useOfflineSync() {
     if (!user) return;
 
     const handleSyncRequest = () => {
-      void sync().then(() => updatePendingCount());
+      void (async () => {
+        await sync();
+        await updatePendingCount();
+      })();
     };
 
     window.addEventListener('sw-sync-request', handleSyncRequest);

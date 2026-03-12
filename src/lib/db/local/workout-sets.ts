@@ -21,6 +21,8 @@ export async function addSetToWorkoutExercise(workoutExerciseLocalId: string, da
 
   await withTransaction(localDB.workoutSets, localDB.offlineQueue, async () => {
     await localDB.workoutSets.add(workoutSet);
+    // queueOperation expects Record<string, unknown> - the 'id' field is excluded since it's auto-generated
+    // and not relevant for sync operations
     await queueOperation('create', 'workout_set', localId, workoutSet as unknown as Record<string, unknown>);
   });
 
@@ -47,6 +49,8 @@ export async function updateSet(localId: string, data: Partial<Omit<LocalWorkout
 
   await withTransaction(localDB.workoutSets, localDB.offlineQueue, async () => {
     await localDB.workoutSets.update(id, updated);
+    // queueOperation expects Record<string, unknown> - the 'id' field is excluded since it's auto-generated
+    // and not relevant for sync operations
     await queueOperation('update', 'workout_set', localId, updated as unknown as Record<string, unknown>);
   });
 }

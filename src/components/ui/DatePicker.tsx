@@ -42,7 +42,7 @@ export function DatePicker({
 
   const formatDisplayDate = (dateStr: string | null) => {
     if (!dateStr) return '';
-    if (dateFormatLoading) return dateStr; // Return ISO date while loading
+    if (dateFormatLoading) return dateStr;
     return formatDate(dateStr);
   };
 

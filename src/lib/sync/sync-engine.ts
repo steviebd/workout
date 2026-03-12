@@ -5,6 +5,112 @@ import { createEntityItem } from './entity-mappers';
 import { createUpdateFields } from './field-mappers';
 import type { SyncResult, ServerEntity, ServerSyncResponse, LocalEntity, TableType, CreateEntityResponse } from './types';
 
+async function resolveWorkoutExerciseIds(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const resolved = { ...data };
+
+  if (data.workoutId) {
+    const workout = await localDB.workouts.where('localId').equals(data.workoutId as string).first();
+    if (workout?.serverId) {
+      resolved.workoutId = workout.serverId;
+    }
+  }
+  if (data.exerciseId) {
+    const exercise = await localDB.exercises.where('localId').equals(data.exerciseId as string).first();
+    if (exercise?.serverId) {
+      resolved.exerciseId = exercise.serverId;
+    }
+  }
+
+  return resolved;
+}
+
+async function resolveWorkoutSetIds(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const resolved = { ...data };
+
+  if (data.workoutExerciseId) {
+    const workoutExercise = await localDB.workoutExercises.where('localId').equals(data.workoutExerciseId as string).first();
+    if (workoutExercise?.serverId) {
+      resolved.workoutExerciseId = workoutExercise.serverId;
+    }
+  }
+
+  return resolved;
+}
+
+function getEntityApiUrl(entity: string): string {
+  const urlMap: Record<string, string> = {
+    exercise: '/api/exercises',
+    template: '/api/templates',
+    workout: '/api/workouts',
+    workout_exercise: '/api/workout-exercises',
+    workout_set: '/api/workout-sets',
+  };
+  return urlMap[entity] ?? '';
+}
+
+function getEntityHttpMethod(operationType: string): 'POST' | 'PUT' | 'DELETE' {
+  if (operationType === 'update') return 'PUT';
+  if (operationType === 'delete') return 'DELETE';
+  return 'POST';
+}
+
+async function updateEntityByLocalId(
+  tableName: TableType,
+  localId: string,
+  fields: Record<string, unknown>
+): Promise<void> {
+  const table = localDB[tableName];
+  const item = await table.where('localId').equals(localId).first();
+  if (item?.id !== undefined) {
+    // Dexie update expects a partial entity type, but createUpdateFields returns Record<string, unknown>
+    // The fields are validated by createUpdateFields to match the table schema at runtime
+    // Using any cast is required due to dynamic table access by string name
+    // This is inherent to the offline sync pattern with dynamic Dexie table access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await table.update(item.id, fields as any);
+  }
+}
+
+async function deleteEntityByLocalId(tableName: TableType, localId: string): Promise<void> {
+  const table = localDB[tableName];
+  const item = await table.where('localId').equals(localId).first();
+  if (item?.id !== undefined) {
+    await table.delete(item.id);
+  }
+}
+
+function getTableNameFromEntity(entity: string): TableType | null {
+  const tableMap: Record<string, TableType> = {
+    exercise: 'exercises',
+    template: 'templates',
+    workout: 'workouts',
+    workout_exercise: 'workoutExercises',
+    workout_set: 'workoutSets',
+  };
+  return tableMap[entity] ?? null;
+}
+
+function getUpdatedAtTimestamp(item: LocalEntity): number {
+  if ('updatedAt' in item && item.updatedAt instanceof Date) {
+    return item.updatedAt.getTime();
+  }
+  if ('startedAt' in item && item.startedAt instanceof Date) {
+    return item.startedAt.getTime();
+  }
+  return 0;
+}
+
+async function resolveEntityServerIds(entity: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  switch (entity) {
+    case 'workout_exercise':
+      return resolveWorkoutExerciseIds(data);
+    case 'workout_set':
+      return resolveWorkoutSetIds(data);
+    default:
+      return { ...data };
+  }
+}
+
 class SyncEngine {
   private syncInProgress: Promise<SyncResult> | null = null;
 
@@ -87,36 +193,12 @@ class SyncEngine {
   }
 
   async executeOperation(op: OfflineOperation): Promise<boolean> {
-    let url = '';
-    let method: 'POST' | 'PUT' | 'DELETE' = 'POST';
+    const url = getEntityApiUrl(op.entity);
+    if (!url) return false;
 
-    switch (op.entity) {
-      case 'exercise':
-        url = '/api/exercises';
-        break;
-      case 'template':
-        url = '/api/templates';
-        break;
-      case 'workout':
-        url = '/api/workouts';
-        break;
-      case 'workout_exercise':
-        url = '/api/workout-exercises';
-        break;
-      case 'workout_set':
-        url = '/api/workout-sets';
-        break;
-      default:
-        return false;
-    }
+    const method = getEntityHttpMethod(op.type);
 
-    if (op.type === 'update') {
-      method = 'PUT';
-    } else if (op.type === 'delete') {
-      method = 'DELETE';
-    }
-
-    const resolvedData = await this.resolveServerIds(op.entity, op.data);
+    const resolvedData = await resolveEntityServerIds(op.entity, op.data);
     const requestBody = {
       ...resolvedData,
       localId: op.localId,
@@ -161,63 +243,35 @@ class SyncEngine {
     serverId: string,
     serverUpdatedAt: string
   ): Promise<void> {
-    const tableName = this.getTableName(entity);
+    const tableName = getTableNameFromEntity(entity);
     if (!tableName) return;
 
-    const table = this.getTable(tableName);
-
-    const item = await table.where('localId').equals(localId).first();
-    if (item?.id !== undefined) {
-      await table.update(item.id, {
-        serverId,
-        serverUpdatedAt: new Date(serverUpdatedAt),
-        syncStatus: 'synced' as const,
-        needsSync: false,
-      });
-    }
+    await updateEntityByLocalId(tableName, localId, {
+      serverId,
+      serverUpdatedAt: new Date(serverUpdatedAt),
+      syncStatus: 'synced' as const,
+      needsSync: false,
+    });
   }
 
   private async markEntitySynced(entity: string, localId: string): Promise<void> {
-    const tableName = this.getTableName(entity);
+    const tableName = getTableNameFromEntity(entity);
     if (!tableName) return;
 
-    const table = this.getTable(tableName);
-    const item = await table.where('localId').equals(localId).first();
-
-    if (item?.id !== undefined) {
-      await table.update(item.id, {
-        syncStatus: 'synced' as const,
-        needsSync: false,
-      });
-    }
+    await updateEntityByLocalId(tableName, localId, {
+      syncStatus: 'synced' as const,
+      needsSync: false,
+    });
   }
 
   private async removeLocalEntity(entity: string, localId: string): Promise<void> {
-    const tableName = this.getTableName(entity);
+    const tableName = getTableNameFromEntity(entity);
     if (!tableName) return;
 
-    const table = this.getTable(tableName);
-    const item = await table.where('localId').equals(localId).first();
-
-    if (item?.id !== undefined) {
-      await table.delete(item.id);
-    }
-  }
-
-  private getTableName(entity: string): TableType | null {
-    const tableMap: Record<string, TableType> = {
-      exercise: 'exercises',
-      template: 'templates',
-      workout: 'workouts',
-      workout_exercise: 'workoutExercises',
-      workout_set: 'workoutSets',
-    };
-    return tableMap[entity] ?? null;
+    await deleteEntityByLocalId(tableName, localId);
   }
 
   private getTable<T extends LocalEntity>(tableName: TableType): DexieLib.Table<T> {
-    // Map table names to their actual Dexie table instances
-    // Using a type-safe record that returns the correct table type
     const tables: Record<TableType, DexieLib.Table<LocalEntity>> = {
       exercises: localDB.exercises,
       templates: localDB.templates,
@@ -225,36 +279,7 @@ class SyncEngine {
       workoutExercises: localDB.workoutExercises,
       workoutSets: localDB.workoutSets,
     };
-    // Cast through unknown since we're changing the generic type parameter
-    return tables[tableName] as unknown as DexieLib.Table<T>;
-  }
-
-  private async resolveServerIds(entity: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const resolved = { ...data };
-
-    if (entity === 'workout_exercise') {
-      if (data.workoutId) {
-        const workout = await localDB.workouts.where('localId').equals(data.workoutId as string).first();
-        if (workout?.serverId) {
-          resolved.workoutId = workout.serverId;
-        }
-      }
-      if (data.exerciseId) {
-        const exercise = await localDB.exercises.where('localId').equals(data.exerciseId as string).first();
-        if (exercise?.serverId) {
-          resolved.exerciseId = exercise.serverId;
-        }
-      }
-    } else if (entity === 'workout_set') {
-      if (data.workoutExerciseId) {
-        const workoutExercise = await localDB.workoutExercises.where('localId').equals(data.workoutExerciseId as string).first();
-        if (workoutExercise?.serverId) {
-          resolved.workoutExerciseId = workoutExercise.serverId;
-        }
-      }
-    }
-
-    return resolved;
+    return tables[tableName] as DexieLib.Table<T>;
   }
 
   private async pullUpdates(result: SyncResult): Promise<void> {
@@ -286,6 +311,7 @@ class SyncEngine {
         await setLastSyncTime('lastFullSync', data.lastSync);
       }
     } catch (error) {
+      // Pull failures are non-blocking; next sync will retry
       console.error('Error pulling updates:', error);
     }
   }
@@ -331,14 +357,7 @@ class SyncEngine {
         }
 
         const serverUpdatedAt = new Date(serverData.updatedAt).getTime();
-        let localUpdatedAt: number;
-        if ('updatedAt' in localItem && localItem.updatedAt instanceof Date) {
-          localUpdatedAt = localItem.updatedAt.getTime();
-        } else if ('startedAt' in localItem && localItem.startedAt instanceof Date) {
-          localUpdatedAt = localItem.startedAt.getTime();
-        } else {
-          localUpdatedAt = 0;
-        }
+        const localUpdatedAt = getUpdatedAtTimestamp(localItem);
 
         if (serverUpdatedAt > localUpdatedAt && localItem.id !== undefined) {
           const updateFields = createUpdateFields(table, serverData);
@@ -396,15 +415,7 @@ class SyncEngine {
     }
 
     const serverUpdatedAt = new Date(serverData.updatedAt).getTime();
-
-    let localUpdatedAt: number;
-    if ('updatedAt' in localItem && localItem.updatedAt instanceof Date) {
-      localUpdatedAt = localItem.updatedAt.getTime();
-    } else if ('startedAt' in localItem && localItem.startedAt instanceof Date) {
-      localUpdatedAt = localItem.startedAt.getTime();
-    } else {
-      localUpdatedAt = 0;
-    }
+    const localUpdatedAt = getUpdatedAtTimestamp(localItem);
 
     if (serverUpdatedAt > localUpdatedAt && localItem.id !== undefined) {
       const updateFields = createUpdateFields(tableName, serverData);

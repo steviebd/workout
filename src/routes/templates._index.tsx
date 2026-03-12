@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,7 +14,7 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { IconButton } from '~/components/ui/IconButton';
 
-type Template = {
+interface Template {
   id: string;
   name: string;
   description: string | null;
