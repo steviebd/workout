@@ -25,30 +25,30 @@ export function PageLayout({
   return (
     <main 
       className={cn(
-        "mx-auto w-full max-w-lg px-5 py-8 pb-24 min-h-[calc(100vh-3.5rem-4rem)]",
+        "mx-auto w-full max-w-lg px-4 py-6 pb-24 min-h-[calc(100vh-3.5rem-4rem)]",
         extraPadding && "sm:pb-32 pb-28",
         className
       )}
     >
-      <header className={cn("mb-6", size === 'compact' && "mb-4")}>
+      <header className={cn("mb-8", size === 'compact' && "mb-6")}>
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+          <div className="flex-1">
+            <h1 className="text-3xl font-semibold text-foreground tracking-tight text-pretty">
               {title}
             </h1>
             {subtitle ? (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-base text-muted-foreground mt-2">
                 {subtitle}
               </p>
             ) : null}
           </div>
           {action ? (
-            <div className="flex-shrink-0 pt-1">
+            <div className="flex-shrink-0">
               {action}
             </div>
           ) : null}
         </div>
-        <div className={cn("mt-4 h-px bg-border", size === 'compact' && "mt-3")} />
+        {size !== 'compact' && <div className="mt-6 h-px bg-border/50" />}
       </header>
 
       <div className="flex-1">

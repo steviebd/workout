@@ -22,8 +22,8 @@ export function RecentPRs({ records }: RecentPRsProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between p-5 pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+      <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <Trophy className="h-5 w-5 text-streak" />
           Recent PRs
         </CardTitle>
@@ -35,11 +35,11 @@ export function RecentPRs({ records }: RecentPRsProps) {
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </CardHeader>
-      <CardContent className="p-5 pt-0 space-y-3">
+      <CardContent className="p-6 pt-0 space-y-3">
         {records.slice(0, 3).map((record) => (
           <div 
             key={record.id}
-            className="flex items-center justify-between rounded-lg bg-secondary/50 p-3"
+            className="flex items-center justify-between rounded-md bg-secondary/50 p-3"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/20">

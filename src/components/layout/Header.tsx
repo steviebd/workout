@@ -74,16 +74,16 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4 relative">
-          <div className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <Flame className="h-5 w-5 text-primary" />
+    <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-sm border-b border-border/50">
+      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4 relative">
+          <div className="flex items-center gap-2 group">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+              <Flame className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold tracking-tight text-foreground">Fit Workout</span>
+            <span className="text-base font-semibold tracking-tight text-foreground">Workout</span>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {!isOnline && (
               <div className="flex sm:hidden items-center justify-center" title="Offline">
                 <div className="h-2 w-2 rounded-full bg-warning" />
@@ -91,33 +91,33 @@ export function Header() {
             )}
 
             {streakLoading ? (
-              <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
+              <div className="hidden sm:flex items-center gap-2 rounded-md bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary animate-pulse" />
-                <span className="text-sm font-semibold text-muted-foreground">...</span>
+                <span className="text-sm font-medium text-muted-foreground">...</span>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5">
+              <div className="hidden sm:flex items-center gap-2 rounded-md bg-secondary border border-border px-3 py-1.5">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">{weeklyCount}/{weeklyTarget}</span>
+                <span className="text-sm font-medium">{weeklyCount}/{weeklyTarget}</span>
               </div>
             )}
 
           {!isOnline && (
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-1 text-warning">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-warning/10 border border-warning/30 px-2.5 py-1.5 text-warning">
               <WifiOff className="h-3.5 w-3.5" />
-              <span className="text-xs font-semibold">Offline</span>
+              <span className="text-xs font-medium">Offline</span>
             </div>
           )}
 
           {isSyncing ? (
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-primary">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/30 px-2.5 py-1.5 text-primary">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span className="text-xs font-semibold">Syncing...</span>
+              <span className="text-xs font-medium">Syncing...</span>
             </div>
           ) : null}
 
             {isOnline && pendingCount > 0 ? (
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground transition-colors">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-secondary border border-border px-2.5 py-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <CloudUpload className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">{pendingCount} pending</span>
             </div>
@@ -127,7 +127,7 @@ export function Header() {
 
           <a
               href="/health"
-              className="hidden md:flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm"
+              className="hidden md:flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
           >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Health</span>
@@ -136,17 +136,17 @@ export function Header() {
           <div className="relative" ref={settingsRef}>
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-200 hover:shadow-sm pressable"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200 pressable"
               >
                 <Settings className={`h-5 w-5 transition-transform duration-300 ${showSettings ? 'rotate-90' : ''}`} />
               </button>
 
             {showSettings ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-popover border border-border py-2 shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
-                <div className="px-4 py-3 border-b border-border/60">
-                  <p className="font-semibold text-foreground">Settings</p>
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-lg bg-popover border border-border py-2 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <div className="px-4 py-3 border-b border-border/50">
+                  <p className="font-semibold text-foreground text-sm">Settings</p>
                 </div>
-                <div className="px-4 py-3 border-b border-border/60">
+                <div className="px-4 py-3 border-b border-border/50">
                   <p className="text-sm text-muted-foreground mb-2.5">Weight Unit</p>
                   <div className="flex gap-2">
                     <button
@@ -241,16 +241,16 @@ export function Header() {
 
           <div className="relative" ref={menuRef}>
             {authLoading ? (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/80 border border-border/50">
-                <div className="h-5 w-5 animate-pulse rounded-full bg-muted skeleton-shimmer" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary border border-border">
+                <div className="h-5 w-5 animate-pulse rounded-md bg-muted skeleton-shimmer" />
               </div>
             ) : user ? (
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-150"
+                className="relative flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200"
               >
                 {user.name ? (
-                  <span className="text-sm font-semibold">
+                  <span className="text-xs font-semibold">
                     {getUserInitials(user.name)}
                   </span>
                 ) : (
@@ -269,10 +269,10 @@ export function Header() {
             )}
 
             {showMenu && user ? (
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-popover border border-border py-2 shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
-                <div className="px-4 py-3 border-b border-border/60">
-                  <p className="font-semibold text-foreground truncate">{user.name || 'User'}</p>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-lg bg-popover border border-border py-2 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200">
+                <div className="px-4 py-3 border-b border-border/50">
+                  <p className="font-semibold text-foreground text-sm truncate">{user.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
                 <button
                   onClick={handleSignOut}

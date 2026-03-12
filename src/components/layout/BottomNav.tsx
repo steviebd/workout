@@ -16,7 +16,7 @@ export function BottomNav() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb bg-background/95 backdrop-blur-sm border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb bg-background/98 backdrop-blur-sm border-t border-border/50">
       <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
@@ -26,21 +26,20 @@ export function BottomNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-2 text-[11px] leading-none min-w-[60px]',
-                'transition-colors duration-150',
+                'flex flex-col items-center justify-center gap-1 rounded-md px-2 py-2 text-xs leading-none min-w-[56px] transition-all duration-200',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <item.icon className={cn(
-                'h-5 w-5',
+                'h-5 w-5 transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground'
               )}
               />
               <span className={cn(
                 'font-medium truncate max-w-full',
-                isActive ? 'text-primary' : ''
+                isActive ? 'text-primary font-semibold' : ''
               )}
               >
                 {item.label}
