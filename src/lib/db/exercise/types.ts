@@ -16,12 +16,6 @@ export interface UpdateExerciseInput {
   description?: string;
 }
 
-/** @deprecated Use CreateExerciseInput instead */
-export type CreateExerciseData = CreateExerciseInput;
-
-/** @deprecated Use UpdateExerciseInput instead */
-export type UpdateExerciseData = UpdateExerciseInput;
-
 export interface GetExercisesOptions {
   search?: string;
   muscleGroup?: string;

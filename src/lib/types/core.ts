@@ -105,8 +105,6 @@ export interface UserOwned {
 export type {
   CreateExerciseInput,
   UpdateExerciseInput,
-  CreateExerciseData,
-  UpdateExerciseData,
   GetExercisesOptions,
   LibraryExercise,
 } from '../db/exercise/types';

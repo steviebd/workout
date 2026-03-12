@@ -2,7 +2,6 @@ import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useAuth } from './__root';
-import { ExerciseSelector } from '~/components/progress/ExerciseSelector';
 import { PRBoard } from '~/components/progress/PRBoard';
 import { DateRangeSelector, type DateRange } from '~/components/progress/DateRangeSelector';
 import { VolumeScopeToggle, type VolumeScope } from '~/components/progress/VolumeScopeToggle';
@@ -454,11 +453,18 @@ function ProgressPage() {
         />
       ) : (
         <>
-          <ExerciseSelector
-            exercises={exercises}
-            selectedId={selectedExerciseId}
-            onSelect={handleExerciseSelect}
-          />
+          <Select value={selectedExerciseId} onValueChange={handleExerciseSelect}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an exercise" />
+            </SelectTrigger>
+            <SelectContent>
+              {exercises.map((exercise) => (
+                <SelectItem key={exercise.id} value={exercise.id}>
+                  {exercise.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="mt-6 space-y-6">
             {isLoadingStrength ? (

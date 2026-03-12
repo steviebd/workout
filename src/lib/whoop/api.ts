@@ -162,12 +162,15 @@ export class WhoopApiClient {
     return this.fetchWithAuth<WhoopUser>('/developer/v2/user/profile/basic');
   }
 
-  async getCyclesWithPagination(
+  private async fetchPaginated<T extends { records: unknown[]; next_token: string | null }>(
+    endpoint: string,
+    schema: { parse: (data: unknown) => T },
     startDate: string,
     endDate: string,
-    maxRecords = MAX_SYNC_RECORDS
-  ): Promise<WhoopCycle[]> {
-    const allRecords: WhoopCycle[] = [];
+    maxRecords: number,
+    logFn?: (page: { count: number; hasNextToken: boolean; firstDate?: string; lastDate?: string }) => void
+  ): Promise<T['records']> {
+    const allRecords: unknown[] = [];
     let nextToken: string | null = null;
 
     do {
@@ -180,18 +183,41 @@ export class WhoopApiClient {
         params.set('nextToken', nextToken);
       }
 
-      const response = whoopCyclesResponseSchema.parse(
-        await this.fetchWithAuth(`/developer/v2/cycle?${params}`)
+      const response = schema.parse(
+        await this.fetchWithAuth(`${endpoint}?${params}`)
       );
+
+      if (logFn) {
+        logFn({
+          count: response.records.length,
+          hasNextToken: !!response.next_token,
+          firstDate: (response.records[0] as { start?: string })?.start,
+          lastDate: (response.records[response.records.length - 1] as { start?: string })?.start,
+        });
+      }
 
       allRecords.push(...response.records);
       if (allRecords.length >= maxRecords) {
-        return allRecords.slice(0, maxRecords);
+        return allRecords.slice(0, maxRecords) as T['records'];
       }
       nextToken = response.next_token ?? null;
     } while (nextToken);
 
-    return allRecords;
+    return allRecords as T['records'];
+  }
+
+  async getCyclesWithPagination(
+    startDate: string,
+    endDate: string,
+    maxRecords = MAX_SYNC_RECORDS
+  ): Promise<WhoopCycle[]> {
+    return this.fetchPaginated(
+      '/developer/v2/cycle',
+      whoopCyclesResponseSchema,
+      startDate,
+      endDate,
+      maxRecords
+    );
   }
 
   async getSleepsWithPagination(
@@ -199,38 +225,14 @@ export class WhoopApiClient {
     endDate: string,
     maxRecords = MAX_SYNC_RECORDS
   ): Promise<WhoopSleep[]> {
-    const allRecords: WhoopSleep[] = [];
-    let nextToken: string | null = null;
-
-    do {
-      const params = new URLSearchParams({
-        start: startDate,
-        end: endDate,
-        limit: '25',
-      });
-      if (nextToken) {
-        params.set('nextToken', nextToken);
-      }
-
-      const response = whoopSleepsResponseSchema.parse(
-        await this.fetchWithAuth(`/developer/v2/activity/sleep?${params}`)
-      );
-
-      console.log('[whoop-api] sleeps page:', {
-        count: response.records.length,
-        hasNextToken: !!response.next_token,
-        firstDate: response.records[0]?.start,
-        lastDate: response.records[response.records.length - 1]?.start,
-      });
-
-      allRecords.push(...response.records);
-      if (allRecords.length >= maxRecords) {
-        return allRecords.slice(0, maxRecords);
-      }
-      nextToken = response.next_token ?? null;
-    } while (nextToken);
-
-    return allRecords;
+    return this.fetchPaginated(
+      '/developer/v2/activity/sleep',
+      whoopSleepsResponseSchema,
+      startDate,
+      endDate,
+      maxRecords,
+      (page) => console.log('[whoop-api] sleeps page:', page)
+    );
   }
 
   async getRecoveriesWithPagination(
@@ -238,31 +240,13 @@ export class WhoopApiClient {
     endDate: string,
     maxRecords = MAX_SYNC_RECORDS
   ): Promise<WhoopRecovery[]> {
-    const allRecords: WhoopRecovery[] = [];
-    let nextToken: string | null = null;
-
-    do {
-      const params = new URLSearchParams({
-        start: startDate,
-        end: endDate,
-        limit: '25',
-      });
-      if (nextToken) {
-        params.set('nextToken', nextToken);
-      }
-
-      const response = whoopRecoveriesResponseSchema.parse(
-        await this.fetchWithAuth(`/developer/v2/recovery?${params}`)
-      );
-
-      allRecords.push(...response.records);
-      if (allRecords.length >= maxRecords) {
-        return allRecords.slice(0, maxRecords);
-      }
-      nextToken = response.next_token ?? null;
-    } while (nextToken);
-
-    return allRecords;
+    return this.fetchPaginated(
+      '/developer/v2/recovery',
+      whoopRecoveriesResponseSchema,
+      startDate,
+      endDate,
+      maxRecords
+    );
   }
 
   async getWorkoutsWithPagination(
@@ -270,107 +254,13 @@ export class WhoopApiClient {
     endDate: string,
     maxRecords = MAX_SYNC_RECORDS
   ): Promise<WhoopWorkout[]> {
-    const allRecords: WhoopWorkout[] = [];
-    let nextToken: string | null = null;
-
-    do {
-      const params = new URLSearchParams({
-        start: startDate,
-        end: endDate,
-        limit: '25',
-      });
-      if (nextToken) {
-        params.set('nextToken', nextToken);
-      }
-
-      const response = whoopWorkoutsResponseSchema.parse(
-        await this.fetchWithAuth(`/developer/v2/activity/workout?${params}`)
-      );
-
-      allRecords.push(...response.records);
-      if (allRecords.length >= maxRecords) {
-        return allRecords.slice(0, maxRecords);
-      }
-      nextToken = response.next_token ?? null;
-    } while (nextToken);
-
-    return allRecords;
-  }
-
-  async getCycles(
-    startDate: string,
-    endDate: string
-  ): Promise<{ nextToken: string | null; records: WhoopCycle[] }> {
-    const params = new URLSearchParams({
-      start: startDate,
-      end: endDate,
-    });
-
-    const response = whoopCyclesResponseSchema.parse(
-      await this.fetchWithAuth(`/developer/v2/cycle?${params}`)
+    return this.fetchPaginated(
+      '/developer/v2/activity/workout',
+      whoopWorkoutsResponseSchema,
+      startDate,
+      endDate,
+      maxRecords
     );
-
-    return {
-      nextToken: response.next_token ?? null,
-      records: response.records,
-    };
-  }
-
-  async getSleeps(
-    startDate: string,
-    endDate: string
-  ): Promise<{ nextToken: string | null; records: WhoopSleep[] }> {
-    const params = new URLSearchParams({
-      start: startDate,
-      end: endDate,
-    });
-
-    const response = whoopSleepsResponseSchema.parse(
-      await this.fetchWithAuth(`/developer/v2/activity/sleep?${params}`)
-    );
-
-    return {
-      nextToken: response.next_token ?? null,
-      records: response.records,
-    };
-  }
-
-  async getRecoveries(
-    startDate: string,
-    endDate: string
-  ): Promise<{ nextToken: string | null; records: WhoopRecovery[] }> {
-    const params = new URLSearchParams({
-      start: startDate,
-      end: endDate,
-    });
-
-    const response = whoopRecoveriesResponseSchema.parse(
-      await this.fetchWithAuth(`/developer/v2/recovery?${params}`)
-    );
-
-    return {
-      nextToken: response.next_token ?? null,
-      records: response.records,
-    };
-  }
-
-  async getWorkouts(
-    startDate: string,
-    endDate: string
-  ): Promise<{ nextToken: string | null; records: WhoopWorkout[] }> {
-    const params = new URLSearchParams({
-      start: startDate,
-      end: endDate,
-    });
-
-    const response = whoopWorkoutsResponseSchema.parse(
-      await this.fetchWithAuth(`/developer/v2/activity/workout?${params}`)
-    );
-
-    return {
-      nextToken: response.next_token ?? null,
-      records: response.records,
-    };
   }
 
   async getWorkoutById(uuid: string): Promise<WhoopWorkout> {

@@ -370,6 +370,7 @@ async function performLogin(
 	try {
 		await page.locator(passwordSelector).fill(password);
 		await page.locator(submitSelector).click({ timeout: 10000 });
+		console.log('Clicked sign in button, waiting for navigation...');
 	} catch (error) {
 		console.log('Could not submit password:', error instanceof Error ? error.message : error);
 		return false;
@@ -377,11 +378,20 @@ async function performLogin(
 
 	try {
 		await page.waitForURL((url: URL) => url.origin === baseUrl, { timeout: 30000 });
+		console.log('Successfully returned to app');
 	} catch {
 		await page.waitForLoadState('domcontentloaded');
 		console.log('Did not return to app, checking current URL...');
 		const currentUrl = page.url();
 		console.log('Current URL:', currentUrl);
+		
+		const passwordField = page.locator(passwordSelector);
+		const passwordVisible = await passwordField.isVisible().catch(() => false);
+		if (passwordVisible) {
+			console.log('Still on password page, trying alternative click...');
+			await page.keyboard.press('Enter');
+			await page.waitForTimeout(3000);
+		}
 	}
 
 	await page.waitForTimeout(5000);
@@ -477,7 +487,7 @@ async function globalSetup() {
 
 		const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
 		const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
-		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[name="intent"]:not([data-method])';
+		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button:has-text("Sign in")';
 		const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
 
 		console.log('Starting full login flow...');

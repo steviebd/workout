@@ -1,11 +1,13 @@
 
 import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Loader2, Plus, Save, Search, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
 import { useToast } from '@/components/app/ToastProvider';
+import { ExerciseSelector } from '@/components/exercise/ExerciseSelector';
+import { ExerciseList } from '@/components/templates/ExerciseList';
 
 interface SelectedExercise {
   id: string;
@@ -61,17 +63,7 @@ function EditTemplate() {
      setFormData(prev => ({ ...prev, notes: e.target.value }));
    }, []);
 
-
-
-   const handleCloseExerciseSelector = useCallback(() => {
-    setShowExerciseSelector(false);
-    setExerciseSearch('');
-  }, []);
-
-   const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseSearch(e.target.value);
-  }, []);
-
+ 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       setRedirecting(true);
@@ -139,10 +131,6 @@ function EditTemplate() {
     }
   }, [auth.loading, auth.user, id, fetchData]);
 
-  const filteredExercises = allExercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase())
-  );
-
     const handleAddExercise = useCallback((exercise: Exercise) => {
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       setSelectedExercises([
@@ -168,36 +156,12 @@ function EditTemplate() {
 
      if (newIndex >= 0 && newIndex < selectedExercises.length) {
        [newExercises[index], newExercises[newIndex]] = [
-         newExercises[newIndex],
-         newExercises[index],
-       ];
-       setSelectedExercises(newExercises);
-     }
+          newExercises[newIndex],
+          newExercises[index],
+        ];
+        setSelectedExercises(newExercises);
+      }
    }, [selectedExercises]);
-
-     const handleMoveClick = useCallback((e: React.MouseEvent) => {
-       const indexStr = (e.currentTarget as HTMLElement).getAttribute('data-index');
-       const direction = (e.currentTarget as HTMLElement).getAttribute('data-direction') as 'up' | 'down';
-       if (indexStr) {
-         const index = parseInt(indexStr);
-         handleMoveExercise(index, direction);
-       }
-     }, [handleMoveExercise]);
-
-     const handleRemoveClick = useCallback((e: React.MouseEvent) => {
-       const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-id');
-       if (exerciseId) {
-         handleRemoveExercise(exerciseId);
-       }
-     }, [handleRemoveExercise]);
-
-      const handleAddExerciseClick = useCallback((e: React.MouseEvent) => {
-        const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-id');
-        const exercise = filteredExercises.find(ex => ex.id === exerciseId);
-        if (exercise) {
-          void handleAddExercise(exercise);
-        }
-      }, [filteredExercises, handleAddExercise]);
 
    const handleAddExerciseButtonClick = useCallback(() => {
      setShowExerciseSelector(true);
@@ -452,43 +416,12 @@ function EditTemplate() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {selectedExercises.map((exercise, index) => (
-                  <div
-                    className="flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border"
-                    key={exercise.id}
-                  >
-                    <span className="flex items-center justify-center w-6 h-6 bg-primary/20 text-primary text-sm font-medium rounded">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{exercise.name}</p>
-                      {exercise.muscleGroup ? <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p> : null}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                        data-direction="down"
-                        data-index={index}
-                        disabled={index === selectedExercises.length - 1}
-                        onClick={handleMoveClick}
-                        type="button"
-                      >
-                        ↓
-                      </button>
-
-                      <button
-                        className="p-1 text-muted-foreground hover:text-red-600"
-                        data-id={exercise.id}
-                        onClick={handleRemoveClick}
-                        type="button"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ExerciseList
+                exercises={selectedExercises}
+                onMoveDown={(index) => handleMoveExercise(index, 'down')}
+                onMoveUp={(index) => handleMoveExercise(index, 'up')}
+                onRemove={handleRemoveExercise}
+              />
             )}
           </div>
 
@@ -521,66 +454,15 @@ function EditTemplate() {
         </form>
       </div>
 
-      {showExerciseSelector ? <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Add Exercise</h2>
-            <button
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
-              onClick={handleCloseExerciseSelector}
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="p-4 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input
-                autoFocus={true}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                onChange={handleExerciseSearchChange}
-                placeholder="Search exercises..."
-                type="text"
-                value={exerciseSearch}
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {filteredExercises.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No exercises found</div>
-            ) : (
-              <div className="space-y-2">
-                {filteredExercises.map((exercise) => {
-                  const isSelected = selectedExercises.some(
-                    (se) => se.exerciseId === exercise.id
-                  );
-                  return (
-                    <button
-                      className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      data-id={exercise.id}
-                      disabled={isSelected}
-                      key={exercise.id}
-                      onClick={handleAddExerciseClick}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-foreground">{exercise.name}</h3>
-                          {exercise.muscleGroup ? <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/20 rounded-full">
-                            {exercise.muscleGroup}
-                                                  </span> : null}
-                        </div>
-                        {isSelected ? <span className="text-green-600 text-sm font-medium">Added</span> : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-                              </div> : null}
+      <ExerciseSelector
+        exercises={allExercises}
+        onAddExercise={handleAddExercise}
+        onOpenChange={setShowExerciseSelector}
+        open={showExerciseSelector}
+        searchValue={exerciseSearch}
+        onSearchChange={setExerciseSearch}
+        selectedExerciseIds={selectedExercises.map((se) => se.exerciseId)}
+      />
     </main>
   );
 }

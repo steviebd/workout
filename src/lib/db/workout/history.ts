@@ -15,6 +15,7 @@ import type {
 } from './types';
 import { calculateE1RM } from '~/lib/domain/stats/calculations';
 import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
+import { getWeekStart, getMonthStart } from '~/lib/utils/date';
 
 /**
  * Retrieves the exercise history for a user
@@ -173,16 +174,8 @@ export async function getWorkoutHistoryStats(
 ): Promise<WorkoutHistoryStats> {
   const db = getDb(dbOrTx);
 
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-  const monday = new Date(now.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
-  const weekStart = monday.toISOString();
-
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  firstDay.setHours(0, 0, 0, 0);
-  const monthStart = firstDay.toISOString();
+  const weekStart = getWeekStart().toISOString();
+  const monthStart = getMonthStart().toISOString();
 
   const [totalWorkouts, thisWeek, thisMonth, volumeResult, setsResult] = await Promise.all([
     db
