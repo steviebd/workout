@@ -1,21 +1,22 @@
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
 
-export function formatDuration(startTime: string, endTime: string): string {
-  try {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  } catch {
-    return '0m';
+export function formatDuration(start: string | number, end?: string): string {
+  let minutes: number;
+  if (typeof start === 'number') {
+    minutes = start;
+  } else {
+    const startDate = new Date(start);
+    const endDate = end ? new Date(end) : new Date();
+    minutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
   }
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
 }
 
 export function calculateTotalVolume(exercises: WorkoutExerciseWithDetails[]): number {

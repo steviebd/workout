@@ -7,6 +7,7 @@ import { type Workout } from '@/lib/db/schema';
 import { trackEvent } from '@/lib/analytics';
 import { useToast } from '@/components/app/ToastProvider';
 import { UI } from '~/lib/constants';
+import { formatDuration } from '~/lib/workout-summary';
 
 export interface WorkoutExercise {
   id: string;
@@ -307,20 +308,6 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
     ), [availableExercises, exercises]);
 
   const totalSetsCount = exercises.reduce((acc, e) => acc + e.sets.length, 0);
-
-  const formatDuration = useCallback((startTime: string) => {
-    const start = new Date(startTime);
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  }, []);
 
   return {
     workout,

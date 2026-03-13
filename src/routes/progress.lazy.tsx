@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { SectionHeader } from '~/components/ui/SectionHeader';
+import { formatDuration } from '~/lib/workout-summary';
 
 const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
 const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
@@ -74,16 +75,6 @@ interface WorkoutStats {
   totalVolume: number;
   totalSets: number;
 }
-
-const formatDuration = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${mins}m`;
-  }
-  return `${mins}m`;
-};
 
 const getThisWeekRange = () => {
   const now = new Date();
