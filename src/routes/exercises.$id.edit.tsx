@@ -2,6 +2,7 @@ import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-r
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
 import { useToast } from '@/components/app/ToastProvider';
 
 const MUSCLE_GROUPS = [
@@ -24,15 +25,7 @@ const MUSCLE_GROUPS = [
 
 type MuscleGroup = typeof MUSCLE_GROUPS[number];
 
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  workosId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup' | 'description'>;
 
 interface ExerciseResponse {
   id: string;

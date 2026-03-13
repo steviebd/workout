@@ -8,7 +8,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '~/components/ui/Button';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
-import { ExerciseList, ExerciseSearch, ExerciseForm, ExerciseItemProps } from '@/components/exercises';
+import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm, ExerciseItemProps } from '@/components/exercises';
 
 function Exercises() {
   const auth = useAuth();
@@ -93,7 +93,7 @@ function Exercises() {
         <ExerciseForm onCancel={handleCancelCreate} onSuccess={handleCreateSuccess} />
       ) : null}
 
-      <ExerciseSearch value={search} onChange={setSearch} />
+      <ExerciseSearchSimple value={search} onChange={setSearch} />
 
       <PullToRefresh onRefresh={fetchExercises}>
         {loading ? (
@@ -101,7 +101,7 @@ function Exercises() {
         ) : exercises.length === 0 ? (
           <EmptyExercises onCreate={handleCreateClick} />
         ) : (
-          <ExerciseList exercises={exercises} />
+          <ExerciseListSimple exercises={exercises} />
         )}
       </PullToRefresh>
     </PageLayout>

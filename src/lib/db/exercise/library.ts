@@ -95,7 +95,8 @@ export const exerciseLibrary: ExerciseLibraryItem[] = [
   { id: 'ab-wheel', name: 'Ab Wheel', muscleGroup: 'Core', description: 'Rolling wheel exercise extending and contracting the core for intense abdominal work.' },
 ];
 
-export function getVideoTutorialByName(exerciseName: string): VideoTutorial | undefined {
+export function getVideoTutorialByName(exerciseName: string | undefined | null): VideoTutorial | undefined {
+  if (!exerciseName) return undefined;
   const normalizedName = exerciseName.toLowerCase().trim();
   const match = exerciseLibrary.find(
     (ex) => ex.name.toLowerCase() === normalizedName

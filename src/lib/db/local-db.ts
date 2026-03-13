@@ -176,4 +176,6 @@ export const localDB = {
   get syncMetadata() {
     return getLocalDB().syncMetadata;
   },
+  // The database proxy wraps Dexie tables and doesn't fully implement the interface at compile time
+  // Cast needed because the proxy dynamically accesses table properties
 } as unknown as FitWorkoutDatabase;

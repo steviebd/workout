@@ -4,30 +4,21 @@ import { useState, useCallback } from 'react'
 import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import { SetLogger } from './SetLogger'
 import type { VideoTutorial } from '~/lib/db/exercise/library'
+import type { Exercise as ExerciseType } from '~/lib/db/exercise/types'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
 import { VideoTutorialModal } from '~/components/workouts/VideoTutorialModal'
 
-interface WorkoutSet {
-  id: string
-  reps: number
-  weight: number
-  completed: boolean
-}
+interface WorkoutSetData { id: string; reps: number; weight: number; completed: boolean }
 
-interface Exercise {
-  id: string
-  name: string
-  muscleGroup: string
-  isAmrap?: boolean
-}
+type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup'> & { isAmrap?: boolean }
 
 interface ExerciseLoggerProps {
   exercise: Exercise
-  sets: WorkoutSet[]
-  onSetsUpdate: (sets: WorkoutSet[]) => void
-  onAddSet?: (exerciseId: string, currentSets: WorkoutSet[]) => Promise<void>
+  sets: WorkoutSetData[]
+  onSetsUpdate: (sets: WorkoutSetData[]) => void
+  onAddSet?: (exerciseId: string, currentSets: WorkoutSetData[]) => Promise<void>
   onDeleteSet?: (exerciseId: string, setId: string) => Promise<void>
   videoTutorial?: VideoTutorial | null
 }
@@ -49,7 +40,7 @@ export function ExerciseLogger({
 
   const isAmrapSet = exercise.isAmrap ?? exercise.name.endsWith('3+')
 
-  const handleSetUpdate = useCallback((index: number, updatedSet: WorkoutSet) => {
+  const handleSetUpdate = useCallback((index: number, updatedSet: WorkoutSetData) => {
     const newSets = [...sets]
     newSets[index] = updatedSet
     onSetsUpdate(newSets)
@@ -57,7 +48,7 @@ export function ExerciseLogger({
 
   const addSet = async () => {
     const lastSet = sets[sets.length - 1]
-    const newSet: WorkoutSet = {
+    const newSet: WorkoutSetData = {
       id: crypto.randomUUID(),
       reps: lastSet.reps,
       weight: lastSet.weight,

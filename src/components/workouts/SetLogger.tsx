@@ -2,22 +2,18 @@
 
 import { useCallback } from 'react'
 import { Check, Minus, Plus, Trash2 } from 'lucide-react'
+import type { WorkoutSet } from '~/lib/db/workout/types'
 import { Button } from '~/components/ui/Button'
 import { cn } from '~/lib/cn'
 import { useUnit } from '@/lib/context/UserPreferencesContext'
-import { useSetLoggerState } from '~/lib/hooks/use-set-logger-state'
+import { useSetLoggerState } from '~/hooks/use-set-logger-state'
 
-interface WorkoutSet {
-  id: string
-  reps: number
-  weight: number
-  completed: boolean
-}
+type SetLoggerSet = Pick<WorkoutSet, 'id'> & { reps: number; weight: number; completed: boolean }
 
 interface SetLoggerProps {
   setNumber: number
-  set: WorkoutSet
-  onUpdate: (set: WorkoutSet) => void
+  set: SetLoggerSet
+  onUpdate: (set: SetLoggerSet) => void
   onDelete?: () => void
 }
 
@@ -295,7 +291,7 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
     <div
       ref={containerRef}
       className={cn(
-        'rounded-xl border p-2 sm:p-3 transition-all relative overflow-hidden',
+        'rounded-xl border p-2 sm:p-3 transition-all relative',
         set.completed
           ? 'border-success/50 bg-gradient-to-br from-success/14 to-transparent'
           : 'border-border/70 bg-surface-1/40',
@@ -308,63 +304,69 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
       }}
       {...swipeHandlers}
     >
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+      <div className="flex items-center justify-between gap-1 sm:gap-2 min-w-0">
         <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold shrink-0">
           {setNumber}
         </div>
 
-        <div className="flex items-end gap-0.5 sm:gap-1">
-          <WeightInput
-            weight={weight}
-            weightUnit={weightUnit}
-            isEditing={isEditingWeight}
-            onDecrease={handleWeightDecrease}
-            onIncrease={handleWeightIncrease}
-            onStartEditing={startEditingWeight}
-            onBlur={handleWeightBlurWrapper}
-            onChange={handleWeightChange}
-            onKeyDown={handleWeightKeyDown}
-            inputRef={weightInputRef}
-          />
+        <div className="flex items-end gap-0.5 sm:gap-1 shrink min-w-0">
+          <div className="shrink-0">
+            <WeightInput
+              weight={weight}
+              weightUnit={weightUnit}
+              isEditing={isEditingWeight}
+              onDecrease={handleWeightDecrease}
+              onIncrease={handleWeightIncrease}
+              onStartEditing={startEditingWeight}
+              onBlur={handleWeightBlurWrapper}
+              onChange={handleWeightChange}
+              onKeyDown={handleWeightKeyDown}
+              inputRef={weightInputRef}
+            />
+          </div>
 
-          <span className="text-muted-foreground font-bold text-xs sm:text-lg mb-0.5">×</span>
+          <span className="text-muted-foreground font-bold text-xs sm:text-lg mb-0.5 shrink-0">×</span>
 
-          <RepsInput
-            reps={reps}
-            isEditing={isEditingReps}
-            onDecrease={handleRepsDecrease}
-            onIncrease={handleRepsIncrease}
-            onStartEditing={startEditingReps}
-            onBlur={handleRepsBlurWrapper}
-            onChange={handleRepsChange}
-            onKeyDown={handleRepsKeyDown}
-            inputRef={repsInputRef}
-          />
+          <div className="shrink-0">
+            <RepsInput
+              reps={reps}
+              isEditing={isEditingReps}
+              onDecrease={handleRepsDecrease}
+              onIncrease={handleRepsIncrease}
+              onStartEditing={startEditingReps}
+              onBlur={handleRepsBlurWrapper}
+              onChange={handleRepsChange}
+              onKeyDown={handleRepsKeyDown}
+              inputRef={repsInputRef}
+            />
+          </div>
         </div>
 
-        <Button
-          size="icon"
-          variant={set.completed ? 'default' : 'outline'}
-          onClick={handleToggleComplete}
-          className={cn(
-            'h-8 w-8 sm:h-10 sm:w-10 rounded-full',
-            set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
-          )}
-        >
-          <Check className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
-
-        {onDelete ? (
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Button
             size="icon"
-            variant="ghost"
-            onClick={onDelete}
-            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            aria-label="Delete set"
+            variant={set.completed ? 'default' : 'outline'}
+            onClick={handleToggleComplete}
+            className={cn(
+              'h-8 w-8 sm:h-10 sm:w-10 rounded-full',
+              set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
+            )}
           >
-            <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Check className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-        ) : null}
+
+          {onDelete ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onDelete}
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              aria-label="Delete set"
+            >
+              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   )

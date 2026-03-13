@@ -1,12 +1,12 @@
 import { Search } from 'lucide-react';
 import { Input } from '../ui/Input';
 
-export interface ExerciseSearchProps {
+export interface ExerciseSearchSimpleProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
+export function ExerciseSearchSimple({ value, onChange }: ExerciseSearchSimpleProps) {
   return (
     <div className="flex gap-3 mb-6">
       <div className="relative flex-1">

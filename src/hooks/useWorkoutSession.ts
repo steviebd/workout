@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/routes/__root';
 import { type Workout } from '@/lib/db/schema';
-import { type WorkoutExerciseWithDetails } from '@/lib/db/workout';
 import { trackEvent } from '@/lib/analytics';
 import { useToast } from '@/components/app/ToastProvider';
 import { UI } from '~/lib/constants';
@@ -18,6 +17,10 @@ export interface WorkoutExercise {
   sets: WorkoutSet[];
   notes: string | null;
   isAmrap: boolean;
+  exercise?: {
+    name: string;
+    muscleGroup: string | null;
+  };
 }
 
 export interface WorkoutSet {
@@ -73,15 +76,15 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       if (!workoutId) return [];
       const res = await fetch(`/api/workouts/${workoutId}/exercises`, { credentials: 'include' });
       if (!res.ok) return [];
-      const data: WorkoutExerciseWithDetails[] = await res.json();
+      const data = await res.json() as WorkoutExercise[];
       return data.map((e) => ({
         id: e.id,
         exerciseId: e.exerciseId,
         orderIndex: e.orderIndex,
         notes: e.notes,
-        name: e.exercise?.name ?? '',
-        muscleGroup: e.exercise?.muscleGroup ?? null,
-        sets: e.sets as WorkoutSet[],
+        name: e.exercise?.name ?? e.name,
+        muscleGroup: e.exercise?.muscleGroup ?? e.muscleGroup,
+        sets: e.sets,
         isAmrap: e.isAmrap,
       }));
     },

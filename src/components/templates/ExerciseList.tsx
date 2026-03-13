@@ -1,13 +1,12 @@
 'use client';
 
 import { X } from 'lucide-react';
+import type { TemplateExerciseWithDetails } from '~/lib/db/template/types';
 
-interface Exercise {
-  id: string;
-  exerciseId: string;
+type Exercise = Pick<TemplateExerciseWithDetails, 'id' | 'exerciseId'> & {
   name: string;
   muscleGroup: string | null;
-}
+};
 
 interface ExerciseListProps {
   exercises: Exercise[];

@@ -108,6 +108,8 @@ function WorkoutSummary() {
         const data: Workout = await res.json();
         setWorkout(data);
 
+        // 1RM Test workouts have additional fields (squat1rm, bench1rm, etc.) that are not in the base Workout type
+        // Cast needed to access these conditional fields for null check
         if (data.name === '1RM Test' && data.programCycleId && (data as unknown as { squat1rm?: number | null }).squat1rm === null) {
           try {
             const cycleRes = await fetch(`/api/program-cycles/${data.programCycleId}`, {
@@ -168,16 +170,19 @@ function WorkoutSummary() {
 
   const totalVolume = useMemo(() => {
     if (!workout) return 0;
+    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
     return calculateTotalVolume(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
   }, [workout]);
 
   const tested1RMs = useMemo(() => {
     if (!workout) return { squat: 0, bench: 0, deadlift: 0, ohp: 0 } as Tested1RMs;
+    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
     return getTested1RMs(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
   }, [workout]);
 
   const workoutMaxes = useMemo(() => {
     if (!workout) return [];
+    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
     return getWorkoutMaxes(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
   }, [workout]);
 
@@ -254,6 +259,7 @@ function WorkoutSummary() {
           />
         ) : null}
 
+        {/* The API returns exercises with sets inline but ExerciseSummary expects full WorkoutExerciseWithDetails structure */}
         <ExerciseSummary exercises={workout.exercises as unknown as WorkoutExerciseWithDetails[]} />
 
         <PRComparisonCard comparisonData={comparisonData} />

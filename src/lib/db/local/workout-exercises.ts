@@ -26,7 +26,7 @@ export async function addExerciseToWorkout(workoutLocalId: string, exerciseLocal
 
   await withTransaction(localDB.workoutExercises, localDB.offlineQueue, async () => {
     await localDB.workoutExercises.add(workoutExercise);
-    await queueOperation('create', 'workout_exercise', localId, workoutExercise as unknown as Record<string, unknown>);
+    await queueOperation('create', 'workout_exercise', localId, workoutExercise);
   });
 
   return localId;

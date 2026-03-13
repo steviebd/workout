@@ -23,7 +23,7 @@ export async function createTemplate(workosId: string, data: Omit<LocalTemplate,
 
   await withTransaction(localDB.templates, localDB.offlineQueue, async () => {
     await localDB.templates.add(template);
-    await queueOperation('create', 'template', localId, template as unknown as Record<string, unknown>);
+    await queueOperation('create', 'template', localId, template);
   });
 
   return localId;
@@ -50,7 +50,7 @@ export async function updateTemplate(localId: string, data: Partial<Omit<LocalTe
 
   await withTransaction(localDB.templates, localDB.offlineQueue, async () => {
     await localDB.templates.update(id, updated);
-    await queueOperation('update', 'template', localId, updated as unknown as Record<string, unknown>);
+    await queueOperation('update', 'template', localId, updated);
   });
 }
 

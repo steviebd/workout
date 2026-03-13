@@ -3,6 +3,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ChevronRight, Dumbbell, Plus, Search, Trophy } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useAuth } from './__root';
+import type { Template as TemplateType } from '~/lib/db/template/types';
+import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
 import { Input } from '~/components/ui/Input';
@@ -12,18 +14,8 @@ import { SkeletonWorkoutsPage } from '~/components/ui/Skeleton';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { SectionHeader } from '~/components/ui/SectionHeader';
 
-interface Template {
-  id: string;
-  name: string;
-  description: string | null;
-  exerciseCount: number;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-}
+type Template = Pick<TemplateType, 'id' | 'name' | 'description'> & { exerciseCount: number };
+type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup'>;
 
 interface ProgramCycle {
   id: string;

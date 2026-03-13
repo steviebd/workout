@@ -102,36 +102,8 @@ export interface UserOwned {
 // RE-EXPORTS FROM DOMAIN TYPES
 // ============================================
 
-export type {
-  CreateExerciseInput,
-  UpdateExerciseInput,
-  GetExercisesOptions,
-  LibraryExercise,
-} from '../db/exercise/types';
-
-export type {
-  DbOrTx as WorkoutDbOrTx,
-  CreateWorkoutData,
-  UpdateWorkoutData,
-  GetWorkoutsOptions,
-  LastWorkoutData,
-  WorkoutWithExerciseCount,
-  ExerciseOrder,
-  LastWorkoutSetData,
-  WorkoutHistoryStats,
-  ExerciseHistoryItem,
-  ExerciseHistoryStats,
-  GetExerciseHistoryOptions,
-  WeeklyVolumeData,
-  GetWeeklyVolumeOptions,
-  StrengthDataPoint,
-  GetStrengthHistoryOptions,
-  PersonalRecord,
-} from '../db/workout/types';
-
-export type {
-  CreateTemplateData,
-  UpdateTemplateData,
-  GetTemplatesOptions,
-  TemplateWithExerciseCount,
-} from '../db/template/types';
+// Note: Import types directly from their canonical sources:
+// - ~/lib/db/exercise/types for exercise types
+// - ~/lib/db/workout/types for workout types  
+// - ~/lib/db/template/types for template types
+// - ~/lib/domain/stats/types for stats types

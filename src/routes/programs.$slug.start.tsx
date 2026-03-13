@@ -302,6 +302,11 @@ function ProgramStart() {
     />
   );
 
+  const handleSubmitWrapper = () => {
+    // Native DOM Event needs to be cast to React FormEvent for the onSubmit handler type
+    void handleSubmit(new Event('submit') as unknown as React.FormEvent);
+  };
+
   const renderStep3 = () => (
     <ProgramReview
       program={program}
@@ -312,7 +317,7 @@ function ProgramStart() {
       formatDate={formatDate}
       onStartModeChange={setStartMode}
       onBack={handleBack}
-      onSubmit={() => { void handleSubmit(new Event('submit') as unknown as React.FormEvent); }}
+      onSubmit={handleSubmitWrapper}
       isSubmitting={isLoading}
       isValid={Boolean(isStep1Valid && canStartProgram)}
     />

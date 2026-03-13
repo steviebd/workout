@@ -22,7 +22,7 @@ export async function createWorkout(workosId: string, data: Omit<LocalWorkout, '
 
   await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.add(workout);
-    await queueOperation('create', 'workout', localId, workout as unknown as Record<string, unknown>);
+    await queueOperation('create', 'workout', localId, workout);
   });
 
   return localId;
@@ -48,7 +48,7 @@ export async function updateWorkout(localId: string, data: Partial<Omit<LocalWor
 
   await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.update(id, updated);
-    await queueOperation('update', 'workout', localId, updated as unknown as Record<string, unknown>);
+    await queueOperation('update', 'workout', localId, updated);
   });
 }
 
@@ -72,7 +72,7 @@ export async function completeWorkout(localId: string): Promise<void> {
 
   await withTransaction(localDB.workouts, localDB.offlineQueue, async () => {
     await localDB.workouts.update(id, updated);
-    await queueOperation('update', 'workout', localId, updated as unknown as Record<string, unknown>);
+    await queueOperation('update', 'workout', localId, updated);
   });
 }
 

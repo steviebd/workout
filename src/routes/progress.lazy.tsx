@@ -2,6 +2,8 @@ import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useAuth } from './__root';
+import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
+import type { PersonalRecord } from '~/lib/domain/stats/types';
 import { PRBoard } from '~/components/progress/PRBoard';
 import { DateRangeSelector, type DateRange } from '~/components/progress/DateRangeSelector';
 import { VolumeScopeToggle, type VolumeScope } from '~/components/progress/VolumeScopeToggle';
@@ -21,10 +23,7 @@ import { SectionHeader } from '~/components/ui/SectionHeader';
 const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
 const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
 
-interface Exercise {
-  id: string;
-  name: string;
-}
+type Exercise = Pick<ExerciseType, 'id' | 'name'>;
 
 interface ProgressDataPoint {
   date: string;
@@ -34,15 +33,6 @@ interface ProgressDataPoint {
 interface WeeklyVolume {
   week: string;
   volume: number;
-}
-
-interface PersonalRecord {
-  id: string;
-  exerciseName: string;
-  date: string;
-  weight: number;
-  reps: number;
-  previousRecord?: number;
 }
 
 interface WorkoutHistoryItem {

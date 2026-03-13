@@ -1,20 +1,12 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Exercise } from '~/lib/db/exercise/types';
 import { Button, Card, CardContent } from '~/components/ui';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { useToast } from '@/components/app/ToastProvider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function ExerciseDetail() {
   const { id } = useParams({ from: '/exercises/$id' });
@@ -176,13 +168,13 @@ function ExerciseDetail() {
             <div>
               <span className="block text-sm font-medium text-muted-foreground">Created</span>
               <p className="text-foreground text-sm">
-                {formatDateLong(exercise.createdAt)}
+                {formatDateLong(exercise.createdAt ?? '')}
               </p>
             </div>
             <div>
               <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
               <p className="text-foreground text-sm">
-                {formatDateLong(exercise.updatedAt)}
+                {formatDateLong(exercise.updatedAt ?? '')}
               </p>
             </div>
           </div>

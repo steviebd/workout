@@ -165,7 +165,7 @@ export async function completeWorkout(
     sets: ex.sets,
   }));
 
-  return {
+  const result: CompleteWorkoutResult = {
     ...workout,
     exercises,
     ...(shouldUpdate1RMs
@@ -180,5 +180,8 @@ export async function completeWorkout(
           startingOhp1rm,
         }
       : {}),
-  } as unknown as CompleteWorkoutResult;
+  };
+  // The result is built conditionally - some fields are only present for 1RM Test workouts
+  // Cast is necessary because TypeScript cannot verify all conditional branches are covered
+  return result as unknown as CompleteWorkoutResult;
 }
