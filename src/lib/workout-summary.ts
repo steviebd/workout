@@ -1,5 +1,6 @@
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
 import { calculateE1RM } from '~/lib/domain/stats/calculations';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
 export function formatDuration(start: string | number, end?: string): string {
   let minutes: number;
@@ -52,16 +53,16 @@ export function getTested1RMs(exercises: WorkoutExerciseWithDetails[]): Tested1R
   };
   
   for (const exercise of exercises) {
-    const name = (exercise.exercise?.name ?? '').toLowerCase();
+    const name = exercise.exercise?.name ?? '';
     for (const set of exercise.sets) {
       if (set.isComplete && set.weight) {
-        if (name.includes('squat') && set.weight > tested.squat) {
+        if (isSquat(name) && set.weight > tested.squat) {
           tested.squat = set.weight;
-        } else if ((name.includes('bench') || name === 'bench press') && set.weight > tested.bench) {
+        } else if (isBench(name) && set.weight > tested.bench) {
           tested.bench = set.weight;
-        } else if (name.includes('deadlift') && set.weight > tested.deadlift) {
+        } else if (isDeadlift(name) && set.weight > tested.deadlift) {
           tested.deadlift = set.weight;
-        } else if ((name.includes('overhead') || name.includes('ohp') || name === 'overhead press') && set.weight > tested.ohp) {
+        } else if (isOverheadPress(name) && set.weight > tested.ohp) {
           tested.ohp = set.weight;
         }
       }
