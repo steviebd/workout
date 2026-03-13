@@ -1,4 +1,5 @@
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
+import { calculateE1RM } from '~/lib/domain/stats/calculations';
 
 export function formatDuration(start: string | number, end?: string): string {
   let minutes: number;
@@ -33,11 +34,6 @@ export function calculateTotalVolume(exercises: WorkoutExerciseWithDetails[]): n
   } catch {
     return 0;
   }
-}
-
-export function calculateE1RM(weight: number, reps: number): number {
-  if (reps === 1) return weight;
-  return Math.round(weight * (1 + reps / 30));
 }
 
 export interface Tested1RMs {
