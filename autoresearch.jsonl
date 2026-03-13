@@ -1,0 +1,1 @@
+{"type":"config","name":"Reduce Lines of Code and Complexity","metricName":"loc","metricUnit":"lines","bestDirection":"lower"}
