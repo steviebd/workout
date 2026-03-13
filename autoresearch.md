@@ -25,4 +25,8 @@ Reduce the total lines of code (LOC) and complexity in the codebase. The goal is
 - No new dependencies
 
 ## What's Been Tried
-- (Baseline to be established)
+- **formatDuration consolidation**: Merged 3 duplicate formatDuration functions (in workout-summary.ts, progress.lazy.tsx, useWorkoutSession.ts) into 1 universal function - saved ~21 LOC
+- **calculateE1RM deduplication**: Removed duplicate calculateE1RM from workout-summary.ts, imported from calculations.ts - saved ~4 LOC
+- **Date range utilities**: Consolidated getThisWeekRange and getThisMonthRange in progress.lazy.tsx to use date utilities - saved ~16 LOC
+
+Total saved: ~41 LOC (35,782 → 35,741)
