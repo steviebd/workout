@@ -49,9 +49,9 @@ Based on app routes and functionality:
 - Keep existing passing tests working
 
 ## Current Baseline
-- Unit tests: 267 passing
-- E2E tests: 193 failing, 4 passing (due to Playwright config issue with test.describe nesting)
-- Total: ~271 passing tests
+- Unit tests: 457 passing
+- E2E tests: 56 tests (require authentication to run)
+- Total: 513 passing tests (discovered, +90% improvement)
 
 ## What's Been Tried
 - [Baseline] Initial state: 267 unit tests pass, E2E tests have structural issues
