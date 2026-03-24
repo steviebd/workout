@@ -70,7 +70,8 @@ Based on app routes and functionality:
 - [+12 tests] Added exercise validators
 - [+20 tests] Added template validators
 - [+20 tests] Added workout validators
-- **Current: 436 unit tests passing (439 total including E2E) - 62% improvement!**
+- **Current: 457 unit tests passing (460 total including E2E) - 70% improvement!**
+- **Note: 2 pre-existing failing tests in badges.test.ts (mock setup issue)**
 - **Remaining: 2 failing tests in badges.test.ts (pre-existing issue)**
 
 ## What's Broken
