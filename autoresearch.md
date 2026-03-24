@@ -70,8 +70,8 @@ Based on app routes and functionality:
 - [+12 tests] Added exercise validators
 - [+20 tests] Added template validators
 - [+20 tests] Added workout validators
-- **Current: 513 total tests (457 unit + 56 E2E discovered) - 90% improvement!**
-- **Note: 2 pre-existing failing tests in badges.test.ts (mock setup issue)**
+- **Current: 528 total tests (472 unit + 56 E2E discovered) - 95.6% improvement!**
+- **Note: 2 pre-existing failing tests in badges.test.ts (mock setup issue - not from our changes)**
 
 ## What's Broken
 1. **program-flow.spec.ts** - Has `test.describe` nested incorrectly at line 222
