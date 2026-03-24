@@ -30,8 +30,8 @@ export async function getWorkoutsInDateRange(
       eq(workouts.workosId, workosId),
       eq(workouts.isDeleted, false),
       isNotNull(workouts.completedAt),
-      sql`date(${workouts.completedAt}) >= ${startDate}`,
-      sql`date(${workouts.completedAt}) <= ${endDate}`
+      sql`${workouts.completedDate} >= ${startDate}`,
+      sql`${workouts.completedDate} <= ${endDate}`
     ));
 
   const dates = new Set<string>();
@@ -58,8 +58,8 @@ export async function countWorkoutsInRange(
       eq(workouts.workosId, workosId),
       eq(workouts.isDeleted, false),
       isNotNull(workouts.completedAt),
-      sql`date(${workouts.completedAt}) >= ${startDate}`,
-      sql`date(${workouts.completedAt}) <= ${endDate}`
+      sql`${workouts.completedDate} >= ${startDate}`,
+      sql`${workouts.completedDate} <= ${endDate}`
     ));
 
   return result[0]?.count ?? 0;
@@ -91,7 +91,7 @@ export async function getWorkoutsPerWeek(
       eq(workouts.workosId, workosId),
       eq(workouts.isDeleted, false),
       isNotNull(workouts.completedAt),
-      sql`date(${workouts.completedAt}) >= ${startDateStr}`
+      sql`${workouts.completedDate} >= ${startDateStr}`
     ))
     .groupBy(sql`date(${workouts.completedAt}, 'weekday 0', '-6 days')`)
     .orderBy(sql`date(${workouts.completedAt}, 'weekday 0', '-6 days')`)
@@ -311,7 +311,7 @@ export async function calculateMonthlyStreak(
       eq(workouts.workosId, workosId),
       eq(workouts.isDeleted, false),
       isNotNull(workouts.completedAt),
-      sql`date(${workouts.completedAt}) >= ${startDateStr}`
+      sql`${workouts.completedDate} >= ${startDateStr}`
     ))
     .groupBy(sql`strftime('%Y-%m', ${workouts.completedAt})`)
     .orderBy(sql`strftime('%Y-%m', ${workouts.completedAt})`)

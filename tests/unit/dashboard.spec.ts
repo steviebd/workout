@@ -42,6 +42,10 @@ const mockWorkouts: Workout[] = [
     startingBench1rm: null,
     startingDeadlift1rm: null,
     startingOhp1rm: null,
+    completedDate: '2024-01-15',
+    totalVolume: 10000,
+    totalSets: 15,
+    durationMinutes: 60,
   },
   {
     id: 'workout-2',
@@ -64,6 +68,10 @@ const mockWorkouts: Workout[] = [
     startingBench1rm: null,
     startingDeadlift1rm: null,
     startingOhp1rm: null,
+    completedDate: '2024-01-12',
+    totalVolume: 12000,
+    totalSets: 18,
+    durationMinutes: 60,
   },
   {
     id: 'workout-3',
@@ -86,6 +94,10 @@ const mockWorkouts: Workout[] = [
     startingBench1rm: null,
     startingDeadlift1rm: null,
     startingOhp1rm: null,
+    completedDate: '2024-01-10',
+    totalVolume: 0,
+    totalSets: 0,
+    durationMinutes: 30,
   },
 ];
 

@@ -73,6 +73,7 @@ import { Route as ApiTemplatesIdExercisesRouteImport } from './routes/api/templa
 import { Route as ApiTemplatesIdCopyRouteImport } from './routes/api/templates.$id.copy'
 import { Route as ApiProgramCyclesIdWorkoutsRouteImport } from './routes/api/program-cycles.$id.workouts'
 import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api/program-cycles.$id.start-workout'
+import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
 import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
 import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
 import { Route as ApiIntegrationsWhoopSyncRouteImport } from './routes/api/integrations.whoop.sync'
@@ -408,6 +409,12 @@ const ApiProgramCyclesIdStartWorkoutRoute =
     path: '/start-workout',
     getParentRoute: () => ApiProgramCyclesIdRoute,
   } as any)
+const ApiProgramCyclesIdCurrentWorkoutRoute =
+  ApiProgramCyclesIdCurrentWorkoutRouteImport.update({
+    id: '/current-workout',
+    path: '/current-workout',
+    getParentRoute: () => ApiProgramCyclesIdRoute,
+  } as any)
 const ApiProgramCyclesIdCreate1rmTestWorkoutRoute =
   ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport.update({
     id: '/create-1rm-test-workout',
@@ -524,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -599,6 +607,7 @@ export interface FileRoutesByTo {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -675,6 +684,7 @@ export interface FileRoutesById {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -827,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -902,6 +914,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -1422,6 +1435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesIdStartWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesIdRoute
     }
+    '/api/program-cycles/$id/current-workout': {
+      id: '/api/program-cycles/$id/current-workout'
+      path: '/current-workout'
+      fullPath: '/api/program-cycles/$id/current-workout'
+      preLoaderRoute: typeof ApiProgramCyclesIdCurrentWorkoutRouteImport
+      parentRoute: typeof ApiProgramCyclesIdRoute
+    }
     '/api/program-cycles/$id/create-1rm-test-workout': {
       id: '/api/program-cycles/$id/create-1rm-test-workout'
       path: '/create-1rm-test-workout'
@@ -1504,6 +1524,7 @@ const ApiExercisesRouteWithChildren = ApiExercisesRoute._addFileChildren(
 
 interface ApiProgramCyclesIdRouteChildren {
   ApiProgramCyclesIdCreate1rmTestWorkoutRoute: typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  ApiProgramCyclesIdCurrentWorkoutRoute: typeof ApiProgramCyclesIdCurrentWorkoutRoute
   ApiProgramCyclesIdStartWorkoutRoute: typeof ApiProgramCyclesIdStartWorkoutRoute
   ApiProgramCyclesIdWorkoutsRoute: typeof ApiProgramCyclesIdWorkoutsRoute
 }
@@ -1511,6 +1532,7 @@ interface ApiProgramCyclesIdRouteChildren {
 const ApiProgramCyclesIdRouteChildren: ApiProgramCyclesIdRouteChildren = {
   ApiProgramCyclesIdCreate1rmTestWorkoutRoute:
     ApiProgramCyclesIdCreate1rmTestWorkoutRoute,
+  ApiProgramCyclesIdCurrentWorkoutRoute: ApiProgramCyclesIdCurrentWorkoutRoute,
   ApiProgramCyclesIdStartWorkoutRoute: ApiProgramCyclesIdStartWorkoutRoute,
   ApiProgramCyclesIdWorkoutsRoute: ApiProgramCyclesIdWorkoutsRoute,
 }

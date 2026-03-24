@@ -305,7 +305,7 @@ export async function reorderTemplateExercises(
     return false;
   }
 
-  const updates = exerciseOrders.map(order =>
+  const statements = exerciseOrders.map(order =>
     db
       .update(templateExercises)
       .set({ orderIndex: order.orderIndex })
@@ -316,7 +316,7 @@ export async function reorderTemplateExercises(
       .run()
   );
 
-  await Promise.all(updates);
+  await db.batch(statements as any);
 
   return true;
 }

@@ -5,3 +5,4 @@
 {"run":4,"commit":"577facb","metric":35741,"metrics":{},"status":"keep","description":"Consolidated getThisWeekRange and getThisMonthRange to use date utilities","timestamp":1773416539113,"segment":0}
 {"run":5,"commit":"3b95a45","metric":35741,"metrics":{},"status":"keep","description":"Summary: Consolidated duplicate utilities (formatDuration, calculateE1RM, date range functions). Total: 41 LOC reduced.","timestamp":1773417133243,"segment":0}
 {"run":6,"commit":"102300f","metric":35742,"metrics":{},"status":"keep","description":"Consolidated exercise category checks in getTested1RMs to use helper functions from categories.ts","timestamp":1773417642753,"segment":0}
+{"run":7,"commit":"56b1b94","metric":35742,"metrics":{},"status":"keep","description":"Additional consolidation: getTested1RMs now uses exercise category helpers from categories.ts","timestamp":1773418033086,"segment":0}

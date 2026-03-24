@@ -44,6 +44,10 @@ const mockWorkoutData: Workout = {
   startingBench1rm: null,
   startingDeadlift1rm: null,
   startingOhp1rm: null,
+  completedDate: null,
+  totalVolume: null,
+  totalSets: null,
+  durationMinutes: null,
 };
 
 const mockWorkoutSetData: WorkoutSet = {
@@ -170,7 +174,27 @@ describe('Workout CRUD Operations', () => {
 
   describe('completeWorkout', () => {
     it('completes workout with timestamp', async () => {
-      const completedWorkout = { ...mockWorkoutData, completedAt: '2024-01-01T11:00:00.000Z' };
+      const completedWorkout = { 
+        ...mockWorkoutData, 
+        completedAt: '2024-01-01T11:00:00.000Z',
+        completedDate: '2024-01-01',
+        totalVolume: 1000,
+        totalSets: 10,
+        durationMinutes: 60,
+      };
+
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue({ startedAt: '2024-01-01T10:00:00.000Z' }),
+          }),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue({ totalSets: 10, totalVolume: 1000 }),
+            }),
+          }),
+        }),
+      });
 
       mockDrizzleDb.update.mockReturnValue({
         set: vi.fn().mockReturnValue({

@@ -16,6 +16,11 @@ import {
   type NewWhoopWebhookEvent,
 } from '~/lib/db/schema';
 
+type WhoopSleepWithoutJson = Omit<typeof whoopSleeps.$inferSelect, 'rawJson'>;
+type WhoopRecoveryWithoutJson = Omit<typeof whoopRecoveries.$inferSelect, 'rawJson'>;
+type WhoopCycleWithoutJson = Omit<typeof whoopCycles.$inferSelect, 'rawJson'>;
+type WhoopWorkoutWithoutJson = Omit<typeof whoopWorkouts.$inferSelect, 'rawJson'>;
+
 const SYNC_LOCK_TIMEOUT_MS = API.TIMEOUTS.SYNC_LOCK_TIMEOUT_MS;
 
 export const whoopRepository = {
@@ -290,11 +295,38 @@ export const whoopRepository = {
     workosId: string,
     startDate: string,
     endDate: string
-  ): Promise<Array<typeof whoopSleeps.$inferSelect>> {
+  ): Promise<WhoopSleepWithoutJson[]> {
     const drizzleDb = createDb(db);
 
     return drizzleDb
-      .select()
+      .select({
+        id: whoopSleeps.id,
+        workosId: whoopSleeps.workosId,
+        sleepDate: whoopSleeps.sleepDate,
+        startTime: whoopSleeps.startTime,
+        endTime: whoopSleeps.endTime,
+        timezoneOffset: whoopSleeps.timezoneOffset,
+        isNap: whoopSleeps.isNap,
+        cycleId: whoopSleeps.cycleId,
+        qualityScore: whoopSleeps.qualityScore,
+        needBase: whoopSleeps.needBase,
+        needStrain: whoopSleeps.needStrain,
+        needDebt: whoopSleeps.needDebt,
+        inBedDurationMs: whoopSleeps.inBedDurationMs,
+        awakeDurationMs: whoopSleeps.awakeDurationMs,
+        asleepDurationMs: whoopSleeps.asleepDurationMs,
+        lightSleepDurationMs: whoopSleeps.lightSleepDurationMs,
+        remSleepDurationMs: whoopSleeps.remSleepDurationMs,
+        slowWaveSleepDurationMs: whoopSleeps.slowWaveSleepDurationMs,
+        disruptions: whoopSleeps.disruptions,
+        efficiency: whoopSleeps.efficiency,
+        respiratoryRate: whoopSleeps.respiratoryRate,
+        whoopCreatedAt: whoopSleeps.whoopCreatedAt,
+        whoopUpdatedAt: whoopSleeps.whoopUpdatedAt,
+        deletedAt: whoopSleeps.deletedAt,
+        createdAt: whoopSleeps.createdAt,
+        updatedAt: whoopSleeps.updatedAt,
+      })
       .from(whoopSleeps)
       .where(
         and(
@@ -312,11 +344,30 @@ export const whoopRepository = {
     workosId: string,
     startDate: string,
     endDate: string
-  ): Promise<Array<typeof whoopRecoveries.$inferSelect>> {
+  ): Promise<WhoopRecoveryWithoutJson[]> {
     const drizzleDb = createDb(db);
 
     return drizzleDb
-      .select()
+      .select({
+        id: whoopRecoveries.id,
+        workosId: whoopRecoveries.workosId,
+        sleepId: whoopRecoveries.sleepId,
+        cycleId: whoopRecoveries.cycleId,
+        date: whoopRecoveries.date,
+        score: whoopRecoveries.score,
+        status: whoopRecoveries.status,
+        restingHeartRate: whoopRecoveries.restingHeartRate,
+        hrv: whoopRecoveries.hrv,
+        spo2: whoopRecoveries.spo2,
+        skinTemp: whoopRecoveries.skinTemp,
+        cardiovascularLoad: whoopRecoveries.cardiovascularLoad,
+        musculoskeletalLoad: whoopRecoveries.musculoskeletalLoad,
+        whoopCreatedAt: whoopRecoveries.whoopCreatedAt,
+        whoopUpdatedAt: whoopRecoveries.whoopUpdatedAt,
+        deletedAt: whoopRecoveries.deletedAt,
+        createdAt: whoopRecoveries.createdAt,
+        updatedAt: whoopRecoveries.updatedAt,
+      })
       .from(whoopRecoveries)
       .where(
         and(
@@ -334,11 +385,35 @@ export const whoopRepository = {
     workosId: string,
     startDate: string,
     endDate: string
-  ): Promise<Array<typeof whoopCycles.$inferSelect>> {
+  ): Promise<WhoopCycleWithoutJson[]> {
     const drizzleDb = createDb(db);
 
     return drizzleDb
-      .select()
+      .select({
+        id: whoopCycles.id,
+        workosId: whoopCycles.workosId,
+        date: whoopCycles.date,
+        startTime: whoopCycles.startTime,
+        endTime: whoopCycles.endTime,
+        score: whoopCycles.score,
+        effort: whoopCycles.effort,
+        totalStrain: whoopCycles.totalStrain,
+        averageHeartRate: whoopCycles.averageHeartRate,
+        maxHeartRate: whoopCycles.maxHeartRate,
+        caloriesBurned: whoopCycles.caloriesBurned,
+        distance: whoopCycles.distance,
+        steps: whoopCycles.steps,
+        timeAwakeMs: whoopCycles.timeAwakeMs,
+        zone1Ms: whoopCycles.zone1Ms,
+        zone2Ms: whoopCycles.zone2Ms,
+        zone3Ms: whoopCycles.zone3Ms,
+        zone4Ms: whoopCycles.zone4Ms,
+        zone5Ms: whoopCycles.zone5Ms,
+        whoopCreatedAt: whoopCycles.whoopCreatedAt,
+        whoopUpdatedAt: whoopCycles.whoopUpdatedAt,
+        createdAt: whoopCycles.createdAt,
+        updatedAt: whoopCycles.updatedAt,
+      })
       .from(whoopCycles)
       .where(
         and(
@@ -355,11 +430,35 @@ export const whoopRepository = {
     workosId: string,
     startDate: string,
     endDate: string
-  ): Promise<Array<typeof whoopWorkouts.$inferSelect>> {
+  ): Promise<WhoopWorkoutWithoutJson[]> {
     const drizzleDb = createDb(db);
 
     return drizzleDb
-      .select()
+      .select({
+        id: whoopWorkouts.id,
+        workosId: whoopWorkouts.workosId,
+        name: whoopWorkouts.name,
+        sportId: whoopWorkouts.sportId,
+        sportName: whoopWorkouts.sportName,
+        startTime: whoopWorkouts.startTime,
+        endTime: whoopWorkouts.endTime,
+        durationMs: whoopWorkouts.durationMs,
+        strain: whoopWorkouts.strain,
+        averageHeartRate: whoopWorkouts.averageHeartRate,
+        maxHeartRate: whoopWorkouts.maxHeartRate,
+        calories: whoopWorkouts.calories,
+        distance: whoopWorkouts.distance,
+        zone1Ms: whoopWorkouts.zone1Ms,
+        zone2Ms: whoopWorkouts.zone2Ms,
+        zone3Ms: whoopWorkouts.zone3Ms,
+        zone4Ms: whoopWorkouts.zone4Ms,
+        zone5Ms: whoopWorkouts.zone5Ms,
+        whoopCreatedAt: whoopWorkouts.whoopCreatedAt,
+        whoopUpdatedAt: whoopWorkouts.whoopUpdatedAt,
+        deletedAt: whoopWorkouts.deletedAt,
+        createdAt: whoopWorkouts.createdAt,
+        updatedAt: whoopWorkouts.updatedAt,
+      })
       .from(whoopWorkouts)
       .where(
         and(

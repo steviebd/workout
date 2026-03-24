@@ -20,7 +20,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { SectionHeader } from '~/components/ui/SectionHeader';
 import { formatDuration } from '~/lib/workout-summary';
-import { getWeekStart, getWeekEnd, getMonthStart } from '~/lib/utils/date';
+import { getWeekStart, getWeekEnd, getMonthStart, getMonthEnd } from '~/lib/utils/date';
 
 const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
 const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
@@ -82,15 +82,10 @@ const getThisWeekRange = () => ({
   to: getWeekEnd().toISOString(),
 });
 
-const getThisMonthRange = () => {
-  const monthStart = getMonthStart();
-  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-  monthEnd.setHours(23, 59, 59, 999);
-  return {
-    from: monthStart.toISOString(),
-    to: monthEnd.toISOString(),
-  };
-};
+const getThisMonthRange = () => ({
+  from: getMonthStart().toISOString(),
+  to: getMonthEnd().toISOString(),
+});
 
 function ProgressPage() {
   const auth = useAuth();

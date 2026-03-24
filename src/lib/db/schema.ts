@@ -103,6 +103,7 @@ export const workouts = sqliteTable('workouts', {
   name: text('name').notNull(),
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
+  completedDate: text('completed_date'),
   notes: text('notes'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').$defaultFn(() => nowISO()),
@@ -115,6 +116,9 @@ export const workouts = sqliteTable('workouts', {
   startingBench1rm: real('starting_bench_1rm'),
   startingDeadlift1rm: real('starting_deadlift_1rm'),
   startingOhp1rm: real('starting_ohp_1rm'),
+  totalVolume: real('total_volume'),
+  totalSets: integer('total_sets'),
+  durationMinutes: integer('duration_minutes'),
 });
 
 export const workoutExercises = sqliteTable('workout_exercises', {
@@ -230,6 +234,10 @@ export const _workoutsStartedAtIdx = index('idx_workouts_started_at').on(workout
 export const _workoutsCompletedAtIdx = index('idx_workouts_completed_at').on(workouts.completedAt);
 export const _workoutsLocalIdIdx = index('idx_workouts_local_id').on(workouts.localId);
 export const _workoutsIsDeletedIdx = index('idx_workouts_is_deleted').on(workouts.isDeleted);
+
+// Composite indexes for common queries
+export const _workoutsWorkosIdIsDeletedCompletedAtIdx = index('idx_workouts_workos_id_is_deleted_completed_at').on(workouts.workosId, workouts.isDeleted, workouts.completedAt);
+export const _workoutsWorkosIdIsDeletedUpdatedAtIdx = index('idx_workouts_workos_id_is_deleted_updated_at').on(workouts.workosId, workouts.isDeleted, workouts.updatedAt);
 
 export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
 export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
