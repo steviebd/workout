@@ -59,10 +59,19 @@ Based on app routes and functionality:
 - [+17 tests] Added helper and utility unit tests for pagination, sort, chunking
 - [+15 tests] Added preferences and ownership validation unit tests
 - [+11 tests] Added UI component tests for Button, Badge, Card, Input
+- [+10 tests] Added more UI component tests (Spinner, Progress, Checkbox, Label, Separator)
 - [+7 tests] Added cn utility tests
 - [+5 tests] Added user function tests
 - [+6 tests] Added program progress tests
-- **Current: 340 unit tests passing (343 total including E2E) - 27% improvement!**
+- [+5 tests] Added base-repository tests
+- [+8 tests] Added exercise category tests
+- [+17 tests] Added stats calculations tests
+- [+3 tests] Added local utils tests
+- [+12 tests] Added exercise validators
+- [+20 tests] Added template validators
+- [+20 tests] Added workout validators
+- **Current: 436 unit tests passing (439 total including E2E) - 62% improvement!**
+- **Remaining: 2 failing tests in badges.test.ts (pre-existing issue)**
 
 ## What's Broken
 1. **program-flow.spec.ts** - Has `test.describe` nested incorrectly at line 222
