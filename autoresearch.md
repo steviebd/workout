@@ -1,33 +1,67 @@
-# Autoresearch: Reduce Lines of Code and Complexity
+# Autoresearch: Test Coverage for Vital Features
 
 ## Objective
-Reduce the total lines of code (LOC) and complexity in the codebase. The goal is to simplify the code while maintaining all functionality.
+Improve test coverage for vital features in the workout app. Fix broken E2E tests and add tests for key features that lack coverage.
 
 ## Metrics
-- **Primary**: Total Lines of Code in src/ (lower is better)
-- **Secondary**: Number of files, Average lines per file
+- **Primary**: passing_tests (count, higher is better) - total number of passing tests
+- **Secondary**: e2e_passing (count), unit_passing (count), test_coverage (%)
 
 ## How to Run
-`./autoresearch.sh` — outputs `METRIC loc=number` lines.
+```bash
+# Run all tests
+bun test
+
+# Run unit tests only
+bun run test
+
+# Run E2E tests only
+bun run test:e2e
+```
 
 ## Files in Scope
-- All `.ts` and `.tsx` files in `src/`
-- Focus areas: components, routes, lib utilities
+- `tests/unit/*.spec.ts` - Unit tests (already passing)
+- `tests/e2e/*.spec.ts` - E2E tests (some broken)
+- `tests/components/*.test.tsx` - Component tests
+- `playwright.config.ts` - E2E test configuration
 
-## Off Limits
-- Don't remove functionality - only simplify/DRY up code
-- Don't break tests
-- Keep type safety
+## Vital Features to Cover
+Based on app routes and functionality:
+
+| Feature | Unit Tests | E2E Tests | Status |
+|---------|------------|-----------|--------|
+| Dashboard | ✅ (dashboard.spec.ts) | ❌ | Needs E2E |
+| Exercises CRUD | ✅ (exercise.spec.ts) | ❌ | Needs E2E |
+| Templates CRUD | ✅ (template.spec.ts) | ❌ | Needs E2E |
+| Workouts CRUD | ✅ (workout.spec.ts) | ⚠️ (3 tests) | Partial |
+| Programs/Cycles | ❌ | ❌ | Needs tests |
+| 1RM Tests | ❌ | ❌ | Needs tests |
+| Progress/Charts | ❌ | ❌ | Needs tests |
+| Calendar/Schedule | ❌ | ⚠️ (22 tests, broken) | Needs fix |
+| Achievements | ❌ | ❌ | Needs tests |
+| Health Tracking | ❌ | ❌ | Needs tests |
+| Offline Sync | ✅ (sync-engine.spec.ts) | ❌ | Needs E2E |
+| Auth Flow | ❌ | ⚠️ (implicit) | Needs tests |
 
 ## Constraints
-- Tests must pass (`bun run test`)
-- Type checking must pass (`bun run typecheck`)
-- No new dependencies
+- Tests must pass after changes
+- No breaking changes to app functionality
+- Keep existing passing tests working
+
+## Current Baseline
+- Unit tests: 267 passing
+- E2E tests: 193 failing, 4 passing (due to Playwright config issue with test.describe nesting)
+- Total: ~271 passing tests
 
 ## What's Been Tried
-- **formatDuration consolidation**: Merged 3 duplicate formatDuration functions (in workout-summary.ts, progress.lazy.tsx, useWorkoutSession.ts) into 1 universal function - saved ~21 LOC
-- **calculateE1RM deduplication**: Removed duplicate calculateE1RM from workout-summary.ts, imported from calculations.ts - saved ~4 LOC
-- **Date range utilities**: Consolidated getThisWeekRange and getThisMonthRange in progress.lazy.tsx to use date utilities - saved ~16 LOC
-- **Exercise category helpers**: Consolidated getTested1RMs to use isSquat, isBench, isDeadlift, isOverheadPress helper functions from categories.ts - saved ~1 LOC
+- [Baseline] Initial state: 267 unit tests pass, E2E tests have structural issues
 
-Total saved: ~40 LOC (35,782 → 35,742)
+## What's Broken
+1. **program-flow.spec.ts** - Has `test.describe` nested incorrectly at line 222
+2. **E2E tests** - Playwright configuration issue with test.describe being called incorrectly
+
+## Strategy
+1. Fix the Playwright test.describe nesting issue in program-flow.spec.ts
+2. Run E2E tests to see which features work
+3. Add missing E2E tests for key features
+4. Consider adding component tests for UI elements

@@ -1,8 +1,1 @@
-{"type":"config","name":"Reduce Lines of Code and Complexity","metricName":"loc","metricUnit":"lines","bestDirection":"lower"}
-{"run":1,"commit":"77cd200","metric":35782,"metrics":{},"status":"keep","description":"Baseline: 35,782 lines of code in src/","timestamp":1773415945611,"segment":0}
-{"run":2,"commit":"1307617","metric":35761,"metrics":{},"status":"keep","description":"Consolidated 3 formatDuration functions into 1 universal function in workout-summary.ts","timestamp":1773416233244,"segment":0}
-{"run":3,"commit":"65a8540","metric":35757,"metrics":{},"status":"keep","description":"Removed duplicate calculateE1RM from workout-summary.ts, imported from calculations.ts","timestamp":1773416368982,"segment":0}
-{"run":4,"commit":"577facb","metric":35741,"metrics":{},"status":"keep","description":"Consolidated getThisWeekRange and getThisMonthRange to use date utilities","timestamp":1773416539113,"segment":0}
-{"run":5,"commit":"3b95a45","metric":35741,"metrics":{},"status":"keep","description":"Summary: Consolidated duplicate utilities (formatDuration, calculateE1RM, date range functions). Total: 41 LOC reduced.","timestamp":1773417133243,"segment":0}
-{"run":6,"commit":"102300f","metric":35742,"metrics":{},"status":"keep","description":"Consolidated exercise category checks in getTested1RMs to use helper functions from categories.ts","timestamp":1773417642753,"segment":0}
-{"run":7,"commit":"56b1b94","metric":35742,"metrics":{},"status":"keep","description":"Additional consolidation: getTested1RMs now uses exercise category helpers from categories.ts","timestamp":1773418033086,"segment":0}
+{"type":"config","name":"Test Coverage for Vital Features","metricName":"passing_tests","metricUnit":"count","bestDirection":"higher"}
