@@ -6,7 +6,8 @@ cd /Users/steven/workout
 # Run unit tests with vitest
 echo "Running unit tests..."
 UNIT_OUTPUT=$(bun run test 2>&1) || true
-UNIT_PASS=$(echo "$UNIT_OUTPUT" | grep -E 'Tests.*passed' | grep -oE '[0-9]+' | head -1 || echo "0")
+# Get the number from "329 passed (331)" - last occurrence is the test count
+UNIT_PASS=$(echo "$UNIT_OUTPUT" | grep -oE "[0-9]+ passed \([0-9]+\)" | grep -oE "^[0-9]+" | tail -1 || echo "0")
 
 # Try to run E2E tests (may fail due to config issues)
 echo "Checking E2E test files..."
