@@ -58,9 +58,10 @@ Based on app routes and functionality:
 - [+11 tests] Added program cycle unit tests for 1RM and scheduling functions
 - [+17 tests] Added helper and utility unit tests for pagination, sort, chunking
 - [+15 tests] Added preferences and ownership validation unit tests
-- [+17 tests] Added UI component tests for Button, Badge, Card, Input
+- [+11 tests] Added UI component tests for Button, Badge, Card, Input
 - [+7 tests] Added cn utility tests
-- **Current: 329 unit tests passing (332 total including E2E)**
+- [+5 tests] Added user function tests
+- **Current: 334 unit tests passing (337 total including E2E)**
 
 ## What's Broken
 1. **program-flow.spec.ts** - Has `test.describe` nested incorrectly at line 222
