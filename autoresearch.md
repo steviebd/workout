@@ -55,6 +55,10 @@ Based on app routes and functionality:
 
 ## What's Been Tried
 - [Baseline] Initial state: 267 unit tests pass, E2E tests have structural issues
+- [+11 tests] Added program cycle unit tests for 1RM and scheduling functions
+- [+17 tests] Added helper and utility unit tests for pagination, sort, chunking
+- [+15 tests] Added preferences and ownership validation unit tests
+- **Current: 310 unit tests passing**
 
 ## What's Broken
 1. **program-flow.spec.ts** - Has `test.describe` nested incorrectly at line 222
