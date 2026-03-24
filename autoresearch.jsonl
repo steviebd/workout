@@ -1,1 +1,2 @@
 {"type":"config","name":"Test Coverage for Vital Features","metricName":"passing_tests","metricUnit":"count","bestDirection":"higher"}
+{"run":1,"commit":"0d467c3","metric":270,"metrics":{"unit_passing":267,"e2e_passing":3},"status":"keep","description":"Baseline: 267 unit tests + 3 E2E tests passing","timestamp":1774325502723,"segment":0}
