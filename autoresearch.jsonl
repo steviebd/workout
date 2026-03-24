@@ -18,3 +18,4 @@
 {"run":17,"commit":"86dd33b","metric":448,"metrics":{"unit_passing":445,"e2e_passing":3},"status":"keep","description":"Added 9 API error tests","timestamp":1774327487468,"segment":0}
 {"run":18,"commit":"7f3d116","metric":460,"metrics":{"unit_passing":457,"e2e_passing":3},"status":"keep","description":"Added 12 constants tests","timestamp":1774327558327,"segment":0}
 {"run":19,"commit":"fefe6bd","metric":513,"metrics":{"unit_passing":457,"e2e_passing":56},"status":"keep","description":"Fixed E2E test counting - found 56 E2E tests (require auth to run)","timestamp":1774333099272,"segment":0}
+{"run":20,"commit":"12591a0","metric":519,"metrics":{"unit_passing":463,"e2e_passing":56},"status":"keep","description":"Added 6 exercise library tests","timestamp":1774333273347,"segment":0}
