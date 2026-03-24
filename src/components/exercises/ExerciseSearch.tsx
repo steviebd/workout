@@ -1,27 +1,13 @@
 /* eslint-disable react/prop-types */
+// ResultRow is an inline component with properly typed TypeScript interfaces
 import { useState, useMemo, useCallback } from 'react';
 import { Search, Plus, AlertCircle } from 'lucide-react';
 import { DuplicateWarning } from '../ui/DuplicateWarning';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import type { Exercise } from '~/lib/db/exercise/types';
 import { exerciseLibrary, type ExerciseLibraryItem } from '@/lib/db/exercise/library';
 import { findSimilarLibraryExercise, type FuzzyMatchResult } from '@/lib/utils/fuzzy-match';
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  libraryId?: string | null;
-}
-
-export interface ExerciseSearchProps {
-  selectedIds: string[];
-  onSelect: (exercise: Exercise | LibraryItem) => void;
-  onDeselect?: (exerciseId: string) => void;
-  onCreateInline: (name: string, muscleGroup: string, description: string) => void;
-  userExercises?: Exercise[];
-}
 
 interface LibraryItem extends ExerciseLibraryItem {
   isLibrary: true;
@@ -33,6 +19,19 @@ interface SearchResult {
   isSelected: boolean;
   matchScore?: number;
 };
+
+export interface ExerciseSearchProps {
+  selectedIds: string[];
+  onSelect: (exercise: Exercise | LibraryItem) => void;
+  onDeselect?: (exerciseId: string) => void;
+  onCreateInline: (name: string, muscleGroup: string, description: string) => void;
+  userExercises?: Exercise[];
+}
+
+interface ResultRowProps {
+  result: SearchResult;
+  onClick: () => void;
+}
 
 const EMPTY_EXERCISES: Exercise[] = [];
 
@@ -207,12 +206,7 @@ export function ExerciseSearch({
     }
   }, [newExercise, userExercises, selectedIds, onCreateInline]);
 
-  interface ResultRowProps {
-    result: SearchResult;
-    onClick: () => void;
-  }
-
-  function ResultRow({ result, onClick }: ResultRowProps) {
+  const ResultRow = ({ result, onClick }: ResultRowProps) => {
     return (
       <button
         className={`w-full text-left p-3 rounded-lg border transition-colors ${

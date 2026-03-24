@@ -2,16 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { apiRoute, parseQueryParams } from '~/lib/api/handler';
 import { whoopRepository } from '~/lib/whoop/repository';
 import { WhoopApiClient, mapWhoopSleepToDb, mapWhoopRecoveryToDb, mapWhoopCycleToDb, mapWhoopWorkoutToDb } from '~/lib/whoop/api';
-
-function formatDate(date: Date): string {
-  return date.toISOString();
-}
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
+import { addDays } from '~/lib/programs/scheduler';
 
 export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
   server: {
@@ -32,7 +23,7 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
         try {
           const whoopClient = new WhoopApiClient(workosId, d1Db);
           const now = new Date();
-          const endDate = formatDate(now);
+          const endDate = now.toISOString();
 
           const url = new URL(request.url);
           const { forceFullSync } = parseQueryParams<{
@@ -43,10 +34,10 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
 
           let startDate: string;
           if (forceFullSyncBool || isFirstSync) {
-            startDate = formatDate(addDays(now, -200));
+            startDate = addDays(now, -200).toISOString();
           } else {
             const lastSyncAt = connection.lastSyncAt ? new Date(connection.lastSyncAt) : new Date();
-            startDate = formatDate(addDays(lastSyncAt, -1));
+            startDate = addDays(lastSyncAt, -1).toISOString();
           }
 
           const debugInfo = {

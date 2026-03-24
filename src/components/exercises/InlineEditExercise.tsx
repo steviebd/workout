@@ -2,18 +2,13 @@ import { useState, useCallback } from 'react';
 import { X, Check } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import type { Exercise } from '~/lib/db/exercise/types';
 
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  isAmrap?: boolean;
-}
+type InlineExercise = Pick<Exercise, 'id' | 'name' | 'muscleGroup' | 'description'> & { isAmrap?: boolean };
 
 interface InlineEditExerciseProps {
-  exercise: Exercise;
-  onSave: (updates: Partial<Exercise>) => void;
+  exercise: InlineExercise;
+  onSave: (updates: Partial<InlineExercise>) => void;
   onCancel: () => void;
 }
 

@@ -13,10 +13,7 @@ export function handleApiError(err: unknown, operation: string): Response {
   return createApiError('Server error', 500, API_ERROR_CODES.SERVER_ERROR);
 }
 
-export function parseQueryParams<T extends Record<string, unknown>>(
-  url: URL,
-  defaults?: Partial<T>
-): T {
+export function parseQueryParams<T>(url: URL, defaults?: Partial<T>): T {
   const params: Record<string, string> = {};
   url.searchParams.forEach((value, key) => {
     params[key] = value;
@@ -29,7 +26,7 @@ export function parseQueryParams<T extends Record<string, unknown>>(
   return params as T;
 }
 
-export function parseAndValidateQueryParams<T extends Record<string, unknown>>(
+export function parseAndValidateQueryParams<T>(
   url: URL,
   schema: ZodSchema<T>
 ): { data: T; error: Response | null } {

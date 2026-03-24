@@ -138,11 +138,6 @@ export function getWeekDateRange(weekNumber: number, schedule: WorkoutScheduleEn
   return { start, end, days };
 }
 
-export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(`${date}T00:00:00`) : date;
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
 export function formatTime(time: string): string {
   const [hours] = time.split(':');
   const hour = parseInt(hours, 10);

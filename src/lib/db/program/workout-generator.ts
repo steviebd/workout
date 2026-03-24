@@ -7,13 +7,6 @@ function getBaseExerciseName(name: string): string {
   return name.replace(/\s+\d+$/, '').replace(/\s+\d+\+$/, '');
 }
 
-/**
- * Creates new workouts for a program cycle with target lift data
- * @param db - D1 database instance
- * @param cycleId - The program cycle ID
- * @param cycleWorkouts - Array of workout definitions with target lifts
- * @param defaultScheduledDate - Optional default date for scheduled workouts
- */
 export async function createProgramCycleWorkouts(
   dbOrTx: DbOrTx,
   cycleId: string,
@@ -76,8 +69,6 @@ export async function generateTemplateFromWorkout(
 ): Promise<string> {
   const db = getDb(dbOrTx);
 
-  console.log('generateTemplateFromWorkout - cycleWorkout.targetLifts:', cycleWorkout.targetLifts, 'type:', typeof cycleWorkout.targetLifts);
-  
   let targetLifts: TargetLift[] = [];
   if (cycleWorkout.targetLifts) {
     let parsed: unknown;

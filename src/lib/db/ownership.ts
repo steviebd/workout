@@ -94,9 +94,15 @@ export async function validateNestedOwnership<TEntity extends SQLiteTable, TPare
 ): Promise<OwnershipValidationResult> {
   const db = getDb(dbOrTx);
   
-  // Use provided parentIdColumn or default to 'id' column from parent table
-  const parentIdCol = parentIdColumn ?? (parentTable as unknown as Record<string, Column>).id;
-  const parentWorkosIdCol = (parentTable as unknown as Record<string, Column>).workosId;
+  // Drizzle tables don't expose columns as properties at runtime - need type assertion
+  // to access the column references for dynamic query building. The 'id' and 'workosId'
+  // columns are standard on all tables with ownership.
+  interface TableWithStandardColumns {
+    id: Column;
+    workosId: Column;
+  }
+  const parentIdCol = parentIdColumn ?? (parentTable as unknown as TableWithStandardColumns).id;
+  const parentWorkosIdCol = (parentTable as unknown as TableWithStandardColumns).workosId;
 
   const entity = await db
     .select({ id: entityIdColumn })
@@ -308,6 +314,8 @@ export async function assertOwnership(
   if (!validationResult.isValid) {
     throw new Error(validationResult.error ?? 'Entity not found or access denied');
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return validationResult.entityId!;
+  if (validationResult.entityId === null || validationResult.entityId === undefined) {
+    throw new Error('Entity ID is missing');
+  }
+  return validationResult.entityId;
 }

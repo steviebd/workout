@@ -1,17 +1,9 @@
 'use client'
 
 import { Trophy, TrendingUp, Calendar } from 'lucide-react'
+import type { PersonalRecord } from '~/lib/domain/stats/types'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UserPreferencesContext'
-
-export interface PersonalRecord {
-  id: string
-  exerciseName: string
-  date: string
-  weight: number
-  reps: number
-  previousRecord?: number
-}
 
 interface PRBoardProps {
   records: PersonalRecord[]

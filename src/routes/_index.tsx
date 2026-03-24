@@ -4,6 +4,7 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import { useEffect, useState } from 'react'
 import { useAuth } from './__root'
+import type { PersonalRecord as PersonalRecordType } from '~/lib/domain/stats/types'
 import { getSession } from '~/lib/auth'
 import { DashboardWidgets } from '~/components/dashboard/DashboardWidgets'
 import { DashboardCustomizer } from '~/components/dashboard/DashboardCustomizer'
@@ -33,13 +34,7 @@ interface Workout {
   createdAt: string
 }
 
-interface PersonalRecord {
-  id: string
-  exerciseName: string
-  weight: number
-  date: string
-  improvement: number
-}
+type PersonalRecord = Pick<PersonalRecordType, 'id' | 'exerciseName' | 'weight' | 'date'> & { improvement: number }
 
 interface WorkoutTemplate {
   id: string
@@ -184,6 +179,8 @@ export const Route = createFileRoute('/_index')({
   loader: async () => {
     const session = await getSessionServerFn()
     if (!session?.sub) {
+      // TanStack Start's redirect() returns a special redirect object, not an Error
+      // This is the standard pattern for route guards in TanStack Start
       // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw redirect({ to: '/auth/signin' })
     }

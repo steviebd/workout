@@ -17,7 +17,7 @@ export const Route = createFileRoute('/auth/signin')({
         }
 
         const url = new URL(request.url);
-        const redirectUri = `${url.origin}/api/auth/callback`;
+        const redirectUri = `${url.origin}/auth/callback`;
         const state = crypto.randomUUID();
         const isDev = isLocalhost(request);
 

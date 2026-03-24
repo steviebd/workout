@@ -21,7 +21,7 @@ import {
 } from '../db/workout';
 import { getTemplateExercises } from '../db/template';
 import { markWorkoutComplete, getProgramCycleById } from '../db/program';
-import { extractTested1RMs } from '../utils/workout-calculations';
+import { getTested1RMs } from '../workout-summary';
 import type { WorkoutWithExercises, CreateWorkoutData } from '../db/workout/types';
 import { updateUserLastWorkout } from '~/lib/gamification';
 
@@ -109,16 +109,7 @@ export async function completeWorkout(
 
   if (workout.name === '1RM Test') {
     is1RMTest = true;
-    const exercises = workout.exercises.map((ex) => ({
-      id: ex.id,
-      exerciseId: ex.exerciseId,
-      name: ex.exercise?.name ?? 'Unknown Exercise',
-      muscleGroup: ex.exercise?.muscleGroup ?? null,
-      orderIndex: ex.orderIndex,
-      notes: ex.notes,
-      sets: ex.sets,
-    }));
-    tested1RMs = extractTested1RMs(exercises);
+    tested1RMs = getTested1RMs(workout.exercises);
   }
 
   const shouldUpdate1RMs = is1RMTest && (tested1RMs.squat || tested1RMs.bench || tested1RMs.deadlift || tested1RMs.ohp);
@@ -174,7 +165,7 @@ export async function completeWorkout(
     sets: ex.sets,
   }));
 
-  return {
+  const result: CompleteWorkoutResult = {
     ...workout,
     exercises,
     ...(shouldUpdate1RMs
@@ -189,5 +180,8 @@ export async function completeWorkout(
           startingOhp1rm,
         }
       : {}),
-  } as unknown as CompleteWorkoutResult;
+  };
+  // The result is built conditionally - some fields are only present for 1RM Test workouts
+  // Cast is necessary because TypeScript cannot verify all conditional branches are covered
+  return result as unknown as CompleteWorkoutResult;
 }

@@ -17,14 +17,17 @@ export const Route = createFileRoute('/api/progress/volume')({
         const validDateRanges = ['1m', '3m', '6m', '1y', 'all'] as const;
         const validVolumeScopes = ['all', 'selected'] as const;
 
-        let dateRange: typeof validDateRanges[number] | undefined;
-        if (dateRangeParam && validDateRanges.includes(dateRangeParam as typeof validDateRanges[number])) {
-          dateRange = dateRangeParam;
+        type DateRange = typeof validDateRanges[number];
+        type VolumeScope = typeof validVolumeScopes[number];
+
+        let dateRange: DateRange | undefined;
+        if (dateRangeParam && validDateRanges.includes(dateRangeParam as DateRange)) {
+          dateRange = dateRangeParam as DateRange;
         }
 
-        let volumeScope: typeof validVolumeScopes[number] | undefined;
-        if (volumeScopeParam && validVolumeScopes.includes(volumeScopeParam as typeof validVolumeScopes[number])) {
-          volumeScope = volumeScopeParam;
+        let volumeScope: VolumeScope | undefined;
+        if (volumeScopeParam && validVolumeScopes.includes(volumeScopeParam as VolumeScope)) {
+          volumeScope = volumeScopeParam as VolumeScope;
         }
 
         const exerciseId = exerciseIdParam ?? undefined;

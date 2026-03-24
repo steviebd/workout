@@ -1,4 +1,5 @@
 /* eslint-disable import/no-unassigned-import */
+// CSS import is required for global styles - no way to assign to a variable in TanStack Start
 import { HeadContent, Outlet, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
@@ -237,6 +238,8 @@ function AppLayout() {
           <head>
             <HeadContent />
             <script
+              // Inline theme script is required to prevent flash of wrong theme on page load
+              // This must run before React hydrates to avoid FOUC (flash of unstyled content)
               // eslint-disable-next-line react/no-danger
               dangerouslySetInnerHTML={{
                 __html: `
@@ -252,7 +255,9 @@ function AppLayout() {
                         resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                       }
                       document.documentElement.classList.add(resolved);
-                    } catch (e) {}
+                    } catch (e) {
+                      // Theme is non-critical, defaulting to system preference is acceptable
+                    }
                   })();
                 `,
               }}
@@ -263,14 +268,14 @@ function AppLayout() {
               <AppProviders userId={user?.id}>
                 <Header />
                 <main className="flex-1 overflow-auto">
-                  <div className="mx-auto max-w-lg">
-                  <ErrorBoundary>
-                    <ToastProvider>
-                      <TooltipProvider>
-                        <Outlet />
-                      </TooltipProvider>
-                    </ToastProvider>
-                  </ErrorBoundary>
+                  <div className="mx-auto w-full max-w-lg px-4">
+                    <ErrorBoundary>
+                      <ToastProvider>
+                        <TooltipProvider>
+                          <Outlet />
+                        </TooltipProvider>
+                      </ToastProvider>
+                    </ErrorBoundary>
                   </div>
                 </main>
                 {!location.pathname.startsWith('/workouts/') && <BottomNav />}

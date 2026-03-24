@@ -20,14 +20,6 @@ export const Route = createFileRoute('/api/workouts/sets/$setId')({
         }
         const { weight, reps, rpe, isComplete } = body;
 
-        console.log('Update set request:', {
-          setId: params.setId,
-          weight,
-          reps,
-          rpe,
-          isComplete,
-        });
-
         const updateData: Record<string, unknown> = {};
 
         if (weight !== undefined && weight !== null) {

@@ -344,56 +344,58 @@ export async function getAllTimeBestPRs(
 
   const oneRmData = oneRmMaxes[0];
   if (oneRmData) {
+    const allOneRmWorkouts = await db
+      .select({
+        startedAt: workouts.startedAt,
+        squat1rm: workouts.squat1rm,
+        bench1rm: workouts.bench1rm,
+        deadlift1rm: workouts.deadlift1rm,
+        ohp1rm: workouts.ohp1rm,
+      })
+      .from(workouts)
+      .where(and(
+        eq(workouts.workosId, workosId),
+        sql`(${workouts.squat1rm} IS NOT NULL OR ${workouts.bench1rm} IS NOT NULL OR ${workouts.deadlift1rm} IS NOT NULL OR ${workouts.ohp1rm} IS NOT NULL)`,
+      ))
+      .orderBy(desc(workouts.startedAt))
+      .all();
+
+    const categoryDateMap: Record<string, string> = {};
+    for (const w of allOneRmWorkouts) {
+      if (w.squat1rm && !categoryDateMap.squat) categoryDateMap.squat = w.startedAt.split('T')[0];
+      if (w.bench1rm && !categoryDateMap.bench) categoryDateMap.bench = w.startedAt.split('T')[0];
+      if (w.deadlift1rm && !categoryDateMap.deadlift) categoryDateMap.deadlift = w.startedAt.split('T')[0];
+      if (w.ohp1rm && !categoryDateMap.ohp) categoryDateMap.ohp = w.startedAt.split('T')[0];
+    }
+
     const categoryMap: Array<{
       category: string;
       value: number | null;
-      column: typeof workouts.squat1rm;
     }> = [
-      { category: 'squat', value: oneRmData.maxSquat, column: workouts.squat1rm },
-      { category: 'bench', value: oneRmData.maxBench, column: workouts.bench1rm },
-      { category: 'deadlift', value: oneRmData.maxDeadlift, column: workouts.deadlift1rm },
-      { category: 'ohp', value: oneRmData.maxOhp, column: workouts.ohp1rm },
+      { category: 'squat', value: oneRmData.maxSquat },
+      { category: 'bench', value: oneRmData.maxBench },
+      { category: 'deadlift', value: oneRmData.maxDeadlift },
+      { category: 'ohp', value: oneRmData.maxOhp },
     ];
 
-    for (const { category, value, column } of categoryMap) {
+    for (const { category, value } of categoryMap) {
       if (!value || !exerciseCategories[category]) continue;
 
       const cat = exerciseCategories[category];
       const existing = results.find(r => r.exerciseId === cat.id);
+      const date = categoryDateMap[category] ?? '';
 
       if (existing && value > existing.weight) {
-        const dateRow = await db
-          .select({ workoutDate: workouts.startedAt })
-          .from(workouts)
-          .where(and(
-            eq(workouts.workosId, workosId),
-            eq(column, value),
-          ))
-          .orderBy(desc(workouts.startedAt))
-          .limit(1)
-          .all();
-
         existing.weight = value;
         existing.reps = 1;
         existing.est1rm = value;
-        existing.date = dateRow[0]?.workoutDate?.split('T')[0] ?? existing.date;
+        existing.date = date || existing.date;
       } else if (!existing) {
-        const dateRow = await db
-          .select({ workoutDate: workouts.startedAt })
-          .from(workouts)
-          .where(and(
-            eq(workouts.workosId, workosId),
-            eq(column, value),
-          ))
-          .orderBy(desc(workouts.startedAt))
-          .limit(1)
-          .all();
-
         results.push({
           id: `best-1rm-${category}`,
           exerciseId: cat.id,
           exerciseName: cat.name,
-          date: dateRow[0]?.workoutDate?.split('T')[0] ?? '',
+          date,
           weight: value,
           reps: 1,
           est1rm: value,

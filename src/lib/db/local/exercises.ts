@@ -23,7 +23,7 @@ export async function createExercise(workosId: string, data: Omit<LocalExercise,
 
   await withTransaction(localDB.exercises, localDB.offlineQueue, async () => {
     await localDB.exercises.add(exercise);
-    await queueOperation('create', 'exercise', localId, exercise as unknown as Record<string, unknown>);
+    await queueOperation('create', 'exercise', localId, exercise);
   });
 
   return localId;
@@ -50,7 +50,7 @@ export async function updateExercise(localId: string, data: Partial<Omit<LocalEx
 
   await withTransaction(localDB.exercises, localDB.offlineQueue, async () => {
     await localDB.exercises.update(id, updated);
-    await queueOperation('update', 'exercise', localId, updated as unknown as Record<string, unknown>);
+    await queueOperation('update', 'exercise', localId, updated);
   });
 }
 

@@ -1,17 +1,13 @@
 import { type JWTPayload, SignJWT, jwtVerify } from 'jose';
+import { env } from 'cloudflare:workers';
 import { AUTH } from '../constants';
 
-let jwtSecret: Uint8Array | null = null;
-
 function getJwtSecret(): Uint8Array {
-  if (!jwtSecret) {
-    const secret = process.env.SESSION_JWT_SECRET;
-    if (!secret) {
-      throw new Error('AUTH_CONFIG_ERROR: SESSION_JWT_SECRET not configured');
-    }
-    jwtSecret = new TextEncoder().encode(secret);
+  const secret = (env as Record<string, string>).SESSION_JWT_SECRET;
+  if (!secret) {
+    throw new Error('AUTH_CONFIG_ERROR: SESSION_JWT_SECRET not configured');
   }
-  return jwtSecret;
+  return new TextEncoder().encode(secret);
 }
 
 export type SessionPayload = JWTPayload & {

@@ -46,18 +46,14 @@ export function QuickActions({ templates }: QuickActionsProps) {
           name: templateData.name,
           templateId: template.id,
         }),
-      })
-
-      console.log('QuickActions: Create workout response status:', createResponse.status)
+      }      )
 
       if (!createResponse.ok) {
         const errorData = await createResponse.json() as { error?: string }
-        console.error('QuickActions: Create workout error:', errorData)
         throw new Error(errorData.error ?? 'Failed to create workout')
       }
 
       const workout = await createResponse.json() as { id: string }
-      console.log('QuickActions: Workout created with ID:', workout.id)
       void router.navigate({ to: '/workouts/$id', params: { id: workout.id } })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
@@ -77,16 +73,16 @@ export function QuickActions({ templates }: QuickActionsProps) {
   if (!hasTemplates) {
     return (
       <Card className="overflow-hidden">
-        <CardHeader className="p-5 pb-3">
-          <CardTitle className="flex items-center gap-2.5 text-base">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Play className="h-4 w-4 text-primary" />
+        <CardHeader className="p-6 pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
+              <Play className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span>Start Session</span>
+            <span>Quick Start</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-5 pt-0 space-y-3">
-          <div className="relative rounded-xl border border-dashed border-border-strong bg-surface-2 p-5 text-center">
+        <CardContent className="p-6 pt-0 space-y-3">
+          <div className="relative rounded-lg border border-dashed border-border/50 bg-surface-2 p-6 text-center">
             <div className="mb-4 flex justify-center">
               <div className="relative">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
@@ -99,7 +95,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
             <p className="mb-5 text-sm text-muted-foreground">
               Choose a program or create your first workout
             </p>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-3">
               <Button asChild={true} className="group w-full">
                 <Link to="/programs">
                   <Calendar className="mr-2 h-4 w-4" />
@@ -115,6 +111,21 @@ export function QuickActions({ templates }: QuickActionsProps) {
                 </Link>
               </Button>
             </div>
+
+          <div className="flex gap-3">
+            <Button asChild={true} variant="ghost" className="flex-1 hover:bg-surface-2">
+              <Link to="/workouts">
+                <Plus className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">New Workout</span>
+              </Link>
+            </Button>
+            <Button asChild={true} variant="ghost" className="flex-1 hover:bg-surface-2">
+              <Link to="/progress">
+                <History className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">History</span>
+              </Link>
+            </Button>
+          </div>
           </div>
 
           <div className="flex gap-2.5">
@@ -153,9 +164,9 @@ export function QuickActions({ templates }: QuickActionsProps) {
             data-template-id={template.id}
             onClick={handleTemplateClick}
             disabled={loadingTemplateId === template.id}
-            className="pressable relative flex w-full items-center gap-3 rounded-xl border border-border bg-surface-1 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="pressable relative flex w-full items-center gap-3 rounded-lg border border-border bg-surface-1 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 transition-colors group-hover:bg-primary/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-2 transition-colors group-hover:bg-primary/10">
               {loadingTemplateId === template.id ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
               ) : (
@@ -179,7 +190,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
           </button>
         ))}
 
-        <div className="flex gap-2 pt-3">
+        <div className="flex gap-3 pt-4">
           <Button asChild={true} variant="outline" className="flex-1 bg-surface-1 hover:bg-surface-2">
             <Link to="/workouts">
               <Plus className="mr-2 h-4 w-4" />

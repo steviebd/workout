@@ -6,9 +6,14 @@ import { generateLocalId, now } from './utils';
  * @param type - The operation type (create, update, delete)
  * @param entity - The entity type being operated on
  * @param localId - The local identifier of the entity
- * @param data - The operation data
+ * @param data - The operation data - will be cast to Record<string, unknown> for storage
  */
-export async function queueOperation(type: 'create' | 'update' | 'delete', entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set', localId: string, data: Record<string, unknown>): Promise<void> {
+export async function queueOperation<T extends object>(
+  type: 'create' | 'update' | 'delete',
+  entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set',
+  localId: string,
+  data: T
+): Promise<void> {
   const existing = await localDB.offlineQueue
     .where({ entity, localId })
     .first();
@@ -22,7 +27,7 @@ export async function queueOperation(type: 'create' | 'update' | 'delete', entit
       type,
       entity,
       localId,
-      data,
+      data: data as unknown as Record<string, unknown>,
       timestamp: now(),
       retryCount: 0,
       maxRetries: 3,
@@ -30,14 +35,14 @@ export async function queueOperation(type: 'create' | 'update' | 'delete', entit
   } else if (type === 'update' && existing) {
     if (existing.id) {
       await localDB.offlineQueue.update(existing.id, {
-        data: { ...existing.data, ...data },
+        data: { ...existing.data, ...(data as unknown as Record<string, unknown>) },
         timestamp: now(),
       });
     }
   } else if (type === 'create' && existing?.type === 'create') {
     if (existing.id) {
       await localDB.offlineQueue.update(existing.id, {
-        data: { ...existing.data, ...data },
+        data: { ...existing.data, ...(data as unknown as Record<string, unknown>) },
         timestamp: now(),
       });
     }
@@ -47,7 +52,7 @@ export async function queueOperation(type: 'create' | 'update' | 'delete', entit
       type,
       entity,
       localId,
-      data,
+      data: data as unknown as Record<string, unknown>,
       timestamp: now(),
       retryCount: 0,
       maxRetries: 3,
@@ -62,7 +67,12 @@ export async function queueOperation(type: 'create' | 'update' | 'delete', entit
  * @param localId - The local identifier of the entity
  * @param data - The operation data
  */
-export async function queueOperationOp(type: 'create' | 'update' | 'delete', entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set', localId: string, data: Record<string, unknown>): Promise<void> {
+export async function queueOperationOp<T extends object>(
+  type: 'create' | 'update' | 'delete',
+  entity: 'exercise' | 'template' | 'workout' | 'workout_exercise' | 'workout_set',
+  localId: string,
+  data: T
+): Promise<void> {
   await queueOperation(type, entity, localId, data);
 }
 

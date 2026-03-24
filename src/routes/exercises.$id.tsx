@@ -1,19 +1,12 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Exercise } from '~/lib/db/exercise/types';
 import { Button, Card, CardContent } from '~/components/ui';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { useToast } from '@/components/app/ToastProvider';
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 
 function ExerciseDetail() {
   const { id } = useParams({ from: '/exercises/$id' });
@@ -24,6 +17,7 @@ function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const exerciseId = id;
 
@@ -64,11 +58,6 @@ function ExerciseDetail() {
   }, [auth.loading, auth.user, exerciseId]);
 
    const handleDelete = useCallback(async () => {
-     // eslint-disable-next-line no-alert
-     if (!confirm('Are you sure you want to delete this exercise?')) {
-       return;
-     }
-
      setDeleting(true);
 
      try {
@@ -86,12 +75,13 @@ function ExerciseDetail() {
        toast.error('Failed to delete exercise');
      } finally {
        setDeleting(false);
+       setShowDeleteDialog(false);
      }
    }, [exerciseId, toast]);
 
    const handleDeleteClick = useCallback(() => {
-     void handleDelete();
-   }, [handleDelete]);
+     setShowDeleteDialog(true);
+   }, []);
 
    useEffect(() => {
      if (!auth.loading && !auth.user) {
@@ -178,18 +168,35 @@ function ExerciseDetail() {
             <div>
               <span className="block text-sm font-medium text-muted-foreground">Created</span>
               <p className="text-foreground text-sm">
-                {formatDateLong(exercise.createdAt)}
+                {formatDateLong(exercise.createdAt ?? '')}
               </p>
             </div>
             <div>
               <span className="block text-sm font-medium text-muted-foreground">Last Updated</span>
               <p className="text-foreground text-sm">
-                {formatDateLong(exercise.updatedAt)}
+                {formatDateLong(exercise.updatedAt ?? '')}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this exercise? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDelete()} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

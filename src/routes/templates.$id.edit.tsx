@@ -1,11 +1,12 @@
-
 import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Loader2, Plus, Save, Search, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, Loader2, Plus, Save } from 'lucide-react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { useAuth } from './__root';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
 import { useToast } from '@/components/app/ToastProvider';
+import { ExerciseSelector } from '@/components/exercise/ExerciseSelector';
+import { ExerciseList } from '~/components/templates/ExerciseList';
 
 interface SelectedExercise {
   id: string;
@@ -20,8 +21,110 @@ interface FormErrors {
   submit?: string;
 }
 
-interface ApiError {
-  message?: string;
+interface TemplateEditState {
+  template: Template | null;
+  templateExercises: TemplateExerciseWithDetails[];
+  allExercises: Exercise[];
+  loading: boolean;
+  submitting: boolean;
+  redirecting: boolean;
+  formData: {
+    name: string;
+    description: string;
+    notes: string;
+  };
+  selectedExercises: SelectedExercise[];
+  showExerciseSelector: boolean;
+  exerciseSearch: string;
+  errors: FormErrors;
+}
+
+type TemplateEditAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_TEMPLATE'; payload: { template: Template; formData: { name: string; description: string; notes: string } } }
+  | { type: 'SET_TEMPLATE_EXERCISES'; payload: { templateExercises: TemplateExerciseWithDetails[]; selectedExercises: SelectedExercise[] } }
+  | { type: 'SET_ALL_EXERCISES'; payload: Exercise[] }
+  | { type: 'SET_SUBMITTING'; payload: boolean }
+  | { type: 'SET_REDIRECTING'; payload: boolean }
+  | { type: 'SET_FORM_DATA'; payload: Partial<{ name: string; description: string; notes: string }> }
+  | { type: 'ADD_EXERCISE'; payload: SelectedExercise }
+  | { type: 'REMOVE_EXERCISE'; payload: string }
+  | { type: 'REORDER_EXERCISES'; payload: { index: number; direction: 'up' | 'down' } }
+  | { type: 'SET_SHOW_EXERCISE_SELECTOR'; payload: boolean }
+  | { type: 'SET_EXERCISE_SEARCH'; payload: string }
+  | { type: 'SET_ERRORS'; payload: FormErrors }
+  | { type: 'RESET' };
+
+const initialState: TemplateEditState = {
+  template: null,
+  templateExercises: [],
+  allExercises: [],
+  loading: true,
+  submitting: false,
+  redirecting: false,
+  formData: {
+    name: '',
+    description: '',
+    notes: '',
+  },
+  selectedExercises: [],
+  showExerciseSelector: false,
+  exerciseSearch: '',
+  errors: {},
+};
+
+function templateEditReducer(state: TemplateEditState, action: TemplateEditAction): TemplateEditState {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_TEMPLATE':
+      return {
+        ...state,
+        template: action.payload.template,
+        formData: action.payload.formData,
+        loading: false,
+      };
+    case 'SET_TEMPLATE_EXERCISES':
+      return {
+        ...state,
+        templateExercises: action.payload.templateExercises,
+        selectedExercises: action.payload.selectedExercises,
+      };
+    case 'SET_ALL_EXERCISES':
+      return { ...state, allExercises: action.payload };
+    case 'SET_SUBMITTING':
+      return { ...state, submitting: action.payload };
+    case 'SET_REDIRECTING':
+      return { ...state, redirecting: action.payload };
+    case 'SET_FORM_DATA':
+      return { ...state, formData: { ...state.formData, ...action.payload } };
+    case 'ADD_EXERCISE':
+      return { ...state, selectedExercises: [...state.selectedExercises, action.payload], showExerciseSelector: false, exerciseSearch: '' };
+    case 'REMOVE_EXERCISE':
+      return { ...state, selectedExercises: state.selectedExercises.filter((se) => se.id !== action.payload) };
+    case 'REORDER_EXERCISES': {
+      const newExercises = [...state.selectedExercises];
+      const newIndex = action.payload.direction === 'up' ? action.payload.index - 1 : action.payload.index + 1;
+      if (newIndex >= 0 && newIndex < newExercises.length) {
+        [newExercises[action.payload.index], newExercises[newIndex]] = [
+          newExercises[newIndex],
+          newExercises[action.payload.index],
+        ];
+        return { ...state, selectedExercises: newExercises };
+      }
+      return state;
+    }
+    case 'SET_SHOW_EXERCISE_SELECTOR':
+      return { ...state, showExerciseSelector: action.payload };
+    case 'SET_EXERCISE_SEARCH':
+      return { ...state, exerciseSearch: action.payload };
+    case 'SET_ERRORS':
+      return { ...state, errors: action.payload };
+    case 'RESET':
+      return initialState;
+    default:
+      return state;
+  }
 }
 
 function EditTemplate() {
@@ -30,58 +133,18 @@ function EditTemplate() {
   const auth = useAuth();
   const toast = useToast();
 
-  const [template, setTemplate] = useState<Template | null>(null);
-  const [templateExercises, setTemplateExercises] = useState<TemplateExerciseWithDetails[]>([]);
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    notes: '',
-  });
-
-  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
-  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [exerciseSearch, setExerciseSearch] = useState('');
-
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, name: e.target.value });
-  }, [formData]);
-
-   const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-     setFormData(prev => ({ ...prev, description: e.target.value }));
-   }, []);
-
-   const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-     setFormData(prev => ({ ...prev, notes: e.target.value }));
-   }, []);
-
-
-
-   const handleCloseExerciseSelector = useCallback(() => {
-    setShowExerciseSelector(false);
-    setExerciseSearch('');
-  }, []);
-
-   const handleExerciseSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseSearch(e.target.value);
-  }, []);
+  const [state, dispatch] = useReducer(templateEditReducer, initialState);
 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
-      setRedirecting(true);
+      dispatch({ type: 'SET_REDIRECTING', payload: true });
       window.location.href = '/auth/signin';
     }
   }, [auth.loading, auth.user]);
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      dispatch({ type: 'SET_LOADING', payload: true });
 
       const [templateRes, exercisesRes, allExercisesRes] = await Promise.all([
         fetch(`/api/templates/${id}`, { credentials: 'include' }),
@@ -96,40 +159,46 @@ function EditTemplate() {
 
       if (!templateRes.ok) {
         console.error('Failed to fetch template:', templateRes.status);
-        setErrors({ submit: 'Failed to load template' });
+        dispatch({ type: 'SET_ERRORS', payload: { submit: 'Failed to load template' } });
         return;
       }
 
       const templateData: Template = await templateRes.json();
-      setTemplate(templateData);
-      setFormData({
-        name: templateData.name,
-        description: templateData.description ?? '',
-        notes: templateData.notes ?? '',
+      dispatch({
+        type: 'SET_TEMPLATE',
+        payload: {
+          template: templateData,
+          formData: {
+            name: templateData.name,
+            description: templateData.description ?? '',
+            notes: templateData.notes ?? '',
+          },
+        },
       });
 
       if (exercisesRes.ok) {
         const exercisesData: TemplateExerciseWithDetails[] = await exercisesRes.json();
-        setTemplateExercises(exercisesData);
-        setSelectedExercises(
-          exercisesData.map((te) => ({
-            id: te.id,
-            exerciseId: te.exerciseId,
-            name: te.exercise?.name ?? 'Unknown',
-            muscleGroup: te.exercise?.muscleGroup ?? null,
-          }))
-        );
+        dispatch({
+          type: 'SET_TEMPLATE_EXERCISES',
+          payload: {
+            templateExercises: exercisesData,
+            selectedExercises: exercisesData.map((te) => ({
+              id: te.id,
+              exerciseId: te.exerciseId,
+              name: te.exercise?.name ?? 'Unknown',
+              muscleGroup: te.exercise?.muscleGroup ?? null,
+            })),
+          },
+        });
       }
 
       if (allExercisesRes.ok) {
         const allExercisesData: Exercise[] = await allExercisesRes.json();
-        setAllExercises(allExercisesData);
+        dispatch({ type: 'SET_ALL_EXERCISES', payload: allExercisesData });
       }
     } catch (error) {
       console.error('Failed to fetch template:', error);
-      setErrors({ submit: 'Failed to load template' });
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_ERRORS', payload: { submit: 'Failed to load template' } });
     }
   }, [id, navigate]);
 
@@ -139,221 +208,184 @@ function EditTemplate() {
     }
   }, [auth.loading, auth.user, id, fetchData]);
 
-  const filteredExercises = allExercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase())
-  );
+  const handleAddExercise = useCallback((exercise: Exercise) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    dispatch({
+      type: 'ADD_EXERCISE',
+      payload: {
+        id: tempId,
+        exerciseId: exercise.id,
+        name: exercise.name,
+        muscleGroup: exercise.muscleGroup,
+      },
+    });
+  }, []);
 
-    const handleAddExercise = useCallback((exercise: Exercise) => {
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      setSelectedExercises([
-        ...selectedExercises,
-        {
-          id: tempId,
-          exerciseId: exercise.id,
-          name: exercise.name,
-          muscleGroup: exercise.muscleGroup,
-        },
-      ]);
-      setShowExerciseSelector(false);
-      setExerciseSearch('');
-    }, [selectedExercises]);
+  const handleRemoveExercise = useCallback((exerciseId: string) => {
+    dispatch({ type: 'REMOVE_EXERCISE', payload: exerciseId });
+  }, []);
 
-   const handleRemoveExercise = useCallback((exerciseId: string) => {
-      setSelectedExercises(selectedExercises.filter((se) => se.id !== exerciseId));
-    }, [selectedExercises]);
+  const handleMoveExercise = useCallback((index: number, direction: 'down' | 'up') => {
+    dispatch({ type: 'REORDER_EXERCISES', payload: { index, direction } });
+  }, []);
 
-   const handleMoveExercise = useCallback((index: number, direction: 'down' | 'up') => {
-     const newExercises = [...selectedExercises];
-     const newIndex = direction === 'up' ? index - 1 : index + 1;
+  const validateForm = useCallback((): boolean => {
+    const newErrors: FormErrors = {};
 
-     if (newIndex >= 0 && newIndex < selectedExercises.length) {
-       [newExercises[index], newExercises[newIndex]] = [
-         newExercises[newIndex],
-         newExercises[index],
-       ];
-       setSelectedExercises(newExercises);
-     }
-   }, [selectedExercises]);
+    if (!state.formData.name.trim()) {
+      newErrors.name = 'Template name is required';
+    } else if (state.formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    }
 
-     const handleMoveClick = useCallback((e: React.MouseEvent) => {
-       const indexStr = (e.currentTarget as HTMLElement).getAttribute('data-index');
-       const direction = (e.currentTarget as HTMLElement).getAttribute('data-direction') as 'up' | 'down';
-       if (indexStr) {
-         const index = parseInt(indexStr);
-         handleMoveExercise(index, direction);
-       }
-     }, [handleMoveExercise]);
+    dispatch({ type: 'SET_ERRORS', payload: newErrors });
+    return Object.keys(newErrors).length === 0;
+  }, [state.formData]);
 
-     const handleRemoveClick = useCallback((e: React.MouseEvent) => {
-       const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-id');
-       if (exerciseId) {
-         handleRemoveExercise(exerciseId);
-       }
-     }, [handleRemoveExercise]);
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatch({ type: 'SET_ERRORS', payload: {} });
 
-      const handleAddExerciseClick = useCallback((e: React.MouseEvent) => {
-        const exerciseId = (e.currentTarget as HTMLElement).getAttribute('data-id');
-        const exercise = filteredExercises.find(ex => ex.id === exerciseId);
-        if (exercise) {
-          void handleAddExercise(exercise);
-        }
-      }, [filteredExercises, handleAddExercise]);
+    if (!validateForm()) {
+      return;
+    }
 
-   const handleAddExerciseButtonClick = useCallback(() => {
-     setShowExerciseSelector(true);
-   }, []);
+    if (state.selectedExercises.length === 0) {
+      dispatch({ type: 'SET_ERRORS', payload: { exercises: 'Add at least one exercise to the template' } });
+      return;
+    }
 
-    const validateForm = useCallback((): boolean => {
-      const newErrors: FormErrors = {};
+    dispatch({ type: 'SET_SUBMITTING', payload: true });
 
-      if (!formData.name.trim()) {
-        newErrors.name = 'Template name is required';
-      } else if (formData.name.trim().length < 2) {
-        newErrors.name = 'Name must be at least 2 characters';
-      }
+    try {
+      const templateRes = await fetch(`/api/templates/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: state.formData.name.trim(),
+          description: state.formData.description.trim() || undefined,
+          notes: state.formData.notes.trim() || undefined,
+        }),
+      });
 
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    }, [formData, setErrors]);
-
-     const handleSubmit = useCallback(async (e: React.FormEvent) => {
-      e.preventDefault();
-      setErrors({});
-
-      if (!validateForm()) {
+      if (templateRes.status === 404) {
+        const errorMsg = 'Template not found';
+        dispatch({ type: 'SET_ERRORS', payload: { submit: errorMsg } });
+        toast.error(errorMsg);
         return;
       }
 
-      if (selectedExercises.length === 0) {
-        setErrors({ exercises: 'Add at least one exercise to the template' });
+      if (templateRes.status === 403) {
+        const errorMsg = 'You do not have permission to edit this template';
+        dispatch({ type: 'SET_ERRORS', payload: { submit: errorMsg } });
+        toast.error(errorMsg);
         return;
       }
 
-      setSubmitting(true);
+      if (!templateRes.ok) {
+        const errorData = await templateRes.json().catch(() => ({})) as { message?: string };
+        const errorMsg = errorData.message ?? 'Failed to update template';
+        dispatch({ type: 'SET_ERRORS', payload: { submit: errorMsg } });
+        toast.error(errorMsg);
+        return;
+      }
 
-      try {
-        const templateRes = await fetch(`/api/templates/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+      const newExerciseIds = new Set(state.selectedExercises.map((se) => se.exerciseId));
+
+      const exercisesToRemove = state.templateExercises.filter(
+        (te) => !newExerciseIds.has(te.exerciseId)
+      );
+
+      for (const te of exercisesToRemove) {
+        await fetch(`/api/templates/${id}/exercises/${te.exerciseId}`, {
+          method: 'DELETE',
           credentials: 'include',
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            description: formData.description.trim() || undefined,
-            notes: formData.notes.trim() || undefined,
-          }),
         });
+      }
 
-        if (templateRes.status === 404) {
-          const errorMsg = 'Template not found';
-          setErrors({ submit: errorMsg });
-          toast.error(errorMsg);
-          return;
-        }
+      for (let i = 0; i < state.selectedExercises.length; i++) {
+        const se = state.selectedExercises[i];
+        const exerciseInOriginal = state.templateExercises.find((te) => te.exerciseId === se.exerciseId);
 
-        if (templateRes.status === 403) {
-          const errorMsg = 'You do not have permission to edit this template';
-          setErrors({ submit: errorMsg });
-          toast.error(errorMsg);
-          return;
-        }
-
-        if (!templateRes.ok) {
-          const errorData = await templateRes.json().catch((): ApiError => ({})) as ApiError;
-          const errorMsg = errorData.message ?? 'Failed to update template';
-          setErrors({ submit: errorMsg });
-          toast.error(errorMsg);
-          return;
-        }
-
-        const newExerciseIds = new Set(selectedExercises.map((se) => se.exerciseId));
-
-        const exercisesToRemove = templateExercises.filter(
-          (te) => !newExerciseIds.has(te.exerciseId)
-        );
-
-        for (const te of exercisesToRemove) {
-          await fetch(`/api/templates/${id}/exercises/${te.exerciseId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-          });
-        }
-
-        for (let i = 0; i < selectedExercises.length; i++) {
-          const se = selectedExercises[i];
-          const exerciseInOriginal = templateExercises.find((te) => te.exerciseId === se.exerciseId);
-
-          if (exerciseInOriginal) {
-            if (exerciseInOriginal.orderIndex !== i) {
-              await fetch(`/api/templates/${id}/exercises/reorder`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  exerciseOrders: selectedExercises.map((se2, idx) => ({
-                    exerciseId: se2.exerciseId,
-                    orderIndex: idx,
-                  })),
-                }),
-              });
-            }
-          } else {
-            await fetch(`/api/templates/${id}/exercises`, {
-              method: 'POST',
+        if (exerciseInOriginal) {
+          if (exerciseInOriginal.orderIndex !== i) {
+            await fetch(`/api/templates/${id}/exercises/reorder`, {
+              method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify({
-                exerciseId: se.exerciseId,
-                orderIndex: i,
+                exerciseOrders: state.selectedExercises.map((se2, idx) => ({
+                  exerciseId: se2.exerciseId,
+                  orderIndex: idx,
+                })),
               }),
             });
           }
+        } else {
+          await fetch(`/api/templates/${id}/exercises`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              exerciseId: se.exerciseId,
+              orderIndex: i,
+            }),
+          });
         }
-
-        void navigate({ to: '/templates/$id', params: { id } });
-      } catch {
-        const errorMsg = 'An error occurred. Please try again.';
-        setErrors({ submit: errorMsg });
-        toast.error(errorMsg);
-      } finally {
-        setSubmitting(false);
       }
-    }, [formData, id, navigate, selectedExercises, setErrors, setSubmitting, templateExercises, validateForm, toast]);
 
-     const handleFormSubmit = useCallback((e: React.FormEvent) => {
-       e.preventDefault();
-       void handleSubmit(e);
-     }, [handleSubmit]);
-
-    if (auth.loading || redirecting || loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
-              <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-            </div>
-            <p className="text-muted-foreground">Loading template...</p>
-          </div>
-        </div>
-      );
+      void navigate({ to: '/templates/$id', params: { id } });
+    } catch {
+      const errorMsg = 'An error occurred. Please try again.';
+      dispatch({ type: 'SET_ERRORS', payload: { submit: errorMsg } });
+      toast.error(errorMsg);
+    } finally {
+      dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
+  }, [state.formData, id, navigate, state.selectedExercises, state.templateExercises, validateForm, toast]);
 
-   if (!template) {
-     return (
-       <main className="mx-auto max-w-lg px-4 py-6">
-         <div className="rounded-lg border border-border p-8 text-center">
-           <p className="text-muted-foreground">Template not found</p>
-           <Link
-             className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
-             to="/templates"
-           >
-             <ArrowLeft size={16} />
-             Back to templates
-           </Link>
-         </div>
-       </main>
-     );
-   }
+  const handleFormSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    void handleSubmit(e);
+  }, [handleSubmit]);
+
+  const handleInputChange = useCallback((field: 'name' | 'description' | 'notes') => 
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      dispatch({ type: 'SET_FORM_DATA', payload: { [field]: e.target.value } });
+    }, []
+  );
+
+  if (auth.loading || state.redirecting || state.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+            <div className="relative w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+          </div>
+          <p className="text-muted-foreground">Loading template...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!state.template) {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-6">
+        <div className="rounded-lg border border-border p-8 text-center">
+          <p className="text-muted-foreground">Template not found</p>
+          <Link
+            className="mt-4 inline-flex items-center gap-2 text-primary hover:text-primary/80"
+            to="/templates"
+          >
+            <ArrowLeft size={16} />
+            Back to templates
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-lg px-4 py-6">
@@ -374,9 +406,9 @@ function EditTemplate() {
         </div>
 
         <form className="p-6 space-y-6" onSubmit={handleFormSubmit}>
-          {errors.submit ? <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
-            <span>{errors.submit}</span>
-                           </div> : null}
+          {state.errors.submit ? <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+            <span>{state.errors.submit}</span>
+                                 </div> : null}
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
@@ -385,15 +417,15 @@ function EditTemplate() {
             </label>
             <input
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
-                errors.name ? 'border-red-500' : 'border-border'
+                state.errors.name ? 'border-red-500' : 'border-border'
               }`}
               id="name"
-              onChange={handleNameChange}
+              onChange={handleInputChange('name')}
               placeholder="e.g., Upper Body Workout"
               type="text"
-              value={formData.name}
+              value={state.formData.name}
             />
-            {errors.name ? <p className="mt-1 text-sm text-red-600">{errors.name}</p> : null}
+            {state.errors.name ? <p className="mt-1 text-sm text-red-600">{state.errors.name}</p> : null}
           </div>
 
           <div>
@@ -404,10 +436,10 @@ function EditTemplate() {
             <textarea
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
               id="description"
-              onChange={handleDescriptionChange}
+              onChange={handleInputChange('description')}
               placeholder="Brief description of this template..."
               rows={2}
-              value={formData.description}
+              value={state.formData.description}
             />
           </div>
 
@@ -419,10 +451,10 @@ function EditTemplate() {
             <textarea
               className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow resize-none"
               id="notes"
-              onChange={handleNotesChange}
+              onChange={handleInputChange('notes')}
               placeholder="Additional notes or instructions..."
               rows={3}
-              value={formData.notes}
+              value={state.formData.notes}
             />
           </div>
 
@@ -434,7 +466,7 @@ function EditTemplate() {
               </label>
               <button
                 className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
-                onClick={handleAddExerciseButtonClick}
+                onClick={() => dispatch({ type: 'SET_SHOW_EXERCISE_SELECTOR', payload: true })}
                 type="button"
               >
                 <Plus size={16} />
@@ -442,9 +474,9 @@ function EditTemplate() {
               </button>
             </div>
 
-            {errors.exercises ? <p className="mb-2 text-sm text-red-500">{errors.exercises}</p> : null}
+            {state.errors.exercises ? <p className="mb-2 text-sm text-red-500">{state.errors.exercises}</p> : null}
 
-            {selectedExercises.length === 0 ? (
+            {state.selectedExercises.length === 0 ? (
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                 <p className="text-muted-foreground">No exercises added yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -452,43 +484,12 @@ function EditTemplate() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {selectedExercises.map((exercise, index) => (
-                  <div
-                    className="flex items-center gap-3 p-3 bg-secondary rounded-lg border border-border"
-                    key={exercise.id}
-                  >
-                    <span className="flex items-center justify-center w-6 h-6 bg-primary/20 text-primary text-sm font-medium rounded">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{exercise.name}</p>
-                      {exercise.muscleGroup ? <p className="text-sm text-muted-foreground">{exercise.muscleGroup}</p> : null}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                        data-direction="down"
-                        data-index={index}
-                        disabled={index === selectedExercises.length - 1}
-                        onClick={handleMoveClick}
-                        type="button"
-                      >
-                        ↓
-                      </button>
-
-                      <button
-                        className="p-1 text-muted-foreground hover:text-red-600"
-                        data-id={exercise.id}
-                        onClick={handleRemoveClick}
-                        type="button"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ExerciseList
+                exercises={state.selectedExercises}
+                onMoveDown={(index) => handleMoveExercise(index, 'down')}
+                onMoveUp={(index) => handleMoveExercise(index, 'up')}
+                onRemove={handleRemoveExercise}
+              />
             )}
           </div>
 
@@ -502,10 +503,10 @@ function EditTemplate() {
             </Link>
             <button
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={submitting}
+              disabled={state.submitting}
               type="submit"
             >
-              {submitting ? (
+              {state.submitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
                   Saving...
@@ -521,66 +522,15 @@ function EditTemplate() {
         </form>
       </div>
 
-      {showExerciseSelector ? <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Add Exercise</h2>
-            <button
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
-              onClick={handleCloseExerciseSelector}
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="p-4 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input
-                autoFocus={true}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                onChange={handleExerciseSearchChange}
-                placeholder="Search exercises..."
-                type="text"
-                value={exerciseSearch}
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {filteredExercises.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No exercises found</div>
-            ) : (
-              <div className="space-y-2">
-                {filteredExercises.map((exercise) => {
-                  const isSelected = selectedExercises.some(
-                    (se) => se.exerciseId === exercise.id
-                  );
-                  return (
-                    <button
-                      className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      data-id={exercise.id}
-                      disabled={isSelected}
-                      key={exercise.id}
-                      onClick={handleAddExerciseClick}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-foreground">{exercise.name}</h3>
-                          {exercise.muscleGroup ? <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-primary bg-primary/20 rounded-full">
-                            {exercise.muscleGroup}
-                                                  </span> : null}
-                        </div>
-                        {isSelected ? <span className="text-green-600 text-sm font-medium">Added</span> : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-                              </div> : null}
+      <ExerciseSelector
+        exercises={state.allExercises}
+        onAddExercise={handleAddExercise}
+        onOpenChange={(open) => dispatch({ type: 'SET_SHOW_EXERCISE_SELECTOR', payload: open })}
+        open={state.showExerciseSelector}
+        searchValue={state.exerciseSearch}
+        onSearchChange={(search) => dispatch({ type: 'SET_EXERCISE_SEARCH', payload: search })}
+        selectedExerciseIds={state.selectedExercises.map((se) => se.exerciseId)}
+      />
     </main>
   );
 }

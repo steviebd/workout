@@ -61,10 +61,15 @@ export function TemplateEditor({
   });
 
   useEffect(() => {
+    const loadExercises = async () => {
+      await fetchExercises();
+      setLoading(false);
+    };
+
     if (!loading && initialData && mode === 'edit' && templateId) {
-      void fetchExercises().then(() => setLoading(false));
+      void loadExercises();
     } else if (!loading && !initialData) {
-      void fetchExercises().then(() => setLoading(false));
+      void loadExercises();
     }
   }, [initialData, mode, templateId, fetchExercises, loading, setLoading]);
 
@@ -465,32 +470,30 @@ export function TemplateEditor({
                 selectedIds={selectedExercises.map(se => se.exerciseId)}
                 onSelect={(exercise) => void handleAddExercise(exercise)}
                 onDeselect={(exerciseId) => handleRemoveExercise(exerciseId)}
-                onCreateInline={(name: string, muscleGroup: string | null, description: string | null) => {
-                  return void fetch('/api/exercises', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ name, muscleGroup, description }),
-                  })
-                    .then(response => {
-                      if (!response.ok) throw new Error('Failed to create exercise');
-                      return response.json();
-                    })
-                    .then((created) => {
-                      const data = created as { id: string; name: string; muscleGroup: string; description: string };
-                      void handleAddExercise({
-                        id: data.id,
-                        name: data.name,
-                        muscleGroup: data.muscleGroup,
-                        description: data.description,
-                      });
-                      toast.success(`Created "${name}"`);
-                      void fetchExercises();
-                    })
-                    .catch(() => {
-                      toast.error('Failed to create exercise');
+                onCreateInline={(name: string, muscleGroup: string | null, description: string | null) => { void (async () => {
+                  try {
+                    const response = await fetch('/api/exercises', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ name, muscleGroup, description }),
                     });
-                }}
+
+                    if (!response.ok) throw new Error('Failed to create exercise');
+
+                    const created = await response.json() as { id: string; name: string; muscleGroup: string; description: string };
+                    void handleAddExercise({
+                      id: created.id,
+                      name: created.name,
+                      muscleGroup: created.muscleGroup,
+                      description: created.description,
+                    });
+                    toast.success(`Created "${name}"`);
+                    void fetchExercises();
+                  } catch {
+                    toast.error('Failed to create exercise');
+                  }
+                })(); }}
                 userExercises={exercises}
               />
             </div>

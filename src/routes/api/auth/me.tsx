@@ -6,11 +6,7 @@ export const Route = createFileRoute('/api/auth/me')({
     handlers: {
       GET: async ({ request }) => {
         try {
-          const cookieHeader = request.headers.get('Cookie');
-          console.log('[/api/auth/me] Cookie header:', cookieHeader);
-          
           const session = await requireAuth(request);
-          console.log('[/api/auth/me] Session result:', session);
           
           if (!session) {
             return Response.json({ error: 'Not authenticated' }, { status: 401 });

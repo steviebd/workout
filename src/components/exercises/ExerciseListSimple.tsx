@@ -1,10 +1,10 @@
 import { ExerciseItem, ExerciseItemProps } from './ExerciseItem';
 
-export interface ExerciseListProps {
+export interface ExerciseListSimpleProps {
   exercises: ExerciseItemProps[];
 }
 
-export function ExerciseList({ exercises }: ExerciseListProps) {
+export function ExerciseListSimple({ exercises }: ExerciseListSimpleProps) {
   return (
     <div className="space-y-3">
       {exercises.map((exercise) => (

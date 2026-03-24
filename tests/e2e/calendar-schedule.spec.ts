@@ -52,6 +52,8 @@ async function loginUser(page: Page) {
 		await passwordInput.fill(TEST_PASSWORD);
 		const signInBtn = page.locator('button:has-text("Sign in")').first();
 		await signInBtn.click();
+		await page.waitForTimeout(3000);
+		await page.keyboard.press('Enter');
 	} else {
 		const signInBtn = page.locator('button:has-text("Sign in")').first();
 		if (await signInBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -61,11 +63,22 @@ async function loginUser(page: Page) {
 				await passwordInput.fill(TEST_PASSWORD);
 				const finalSignInBtn = page.locator('button:has-text("Sign in")').first();
 				await finalSignInBtn.click();
+				await page.waitForTimeout(3000);
+				await page.keyboard.press('Enter');
 			}
 		}
 	}
 
-	await page.waitForURL(BASE_URL, { timeout: 60000 });
+	try {
+		await page.waitForURL(BASE_URL, { timeout: 60000 });
+	} catch {
+		console.log('waitForURL timed out, checking if signed in...');
+		const signOutBtn = page.locator('text=Sign Out').first();
+		const userIsSignedIn = await signOutBtn.isVisible({ timeout: 5000 }).catch(() => false);
+		if (!userIsSignedIn) {
+			throw new Error('Login failed - could not sign in');
+		}
+	}
 }
 
 async function fill1RMsAndContinue(page: Page) {

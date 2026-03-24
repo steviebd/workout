@@ -12,13 +12,6 @@ import type {
   ExerciseOrder,
 } from './types';
 
-/**
- * Counts the number of times an exercise appears in a template
- * @param dbOrTx - D1 database instance or transaction
- * @param templateId - The template ID to check
- * @param exerciseId - The exercise ID to count occurrences of
- * @returns The number of times the exercise appears in the template
- */
 export async function getTemplateExerciseSetCount(
   dbOrTx: DbOrTx,
   templateId: string,
@@ -37,12 +30,6 @@ export async function getTemplateExerciseSetCount(
   return result?.count ?? 0;
 }
 
-/**
- * Creates a new workout template for a user
- * @param db - D1 database instance
- * @param data - Template creation data including workosId
- * @returns The newly created template
- */
 export async function createTemplate(
   dbOrTx: DbOrTx,
   data: CreateTemplateData & { workosId: string }
@@ -65,13 +52,6 @@ export async function createTemplate(
   return template;
 }
 
-/**
- * Retrieves a template by ID with ownership validation
- * @param dbOrTx - D1 database instance or transaction
- * @param templateId - The template ID to look up
- * @param workosId - The user's WorkOS ID for ownership validation
- * @returns The template if found, or null
- */
 export async function getTemplateById(
   dbOrTx: DbOrTx,
   templateId: string,
@@ -187,14 +167,6 @@ export async function softDeleteTemplate(
   return result.success;
 }
 
-/**
- * Removes an exercise from a template
- * @param db - D1 database instance
- * @param templateId - The template to modify
- * @param exerciseId - The exercise to remove
- * @param workosId - The user's WorkOS ID for ownership validation
- * @returns True if the exercise was removed, false if template not found
- */
 export async function removeExerciseFromTemplate(
   dbOrTx: DbOrTx,
   templateId: string,
@@ -370,7 +342,6 @@ export async function deleteAllTemplateExercises(
     .get();
 
   if (!template) {
-    console.log('deleteAllTemplateExercises: Template not found or does not belong to user');
     return false;
   }
 

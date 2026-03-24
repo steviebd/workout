@@ -2,16 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { apiRoute } from '~/lib/api/api-route';
 import { whoopRepository } from '~/lib/whoop';
 import { parseQueryParams } from '~/lib/api/handler';
-
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
+import { getTodayStr, getDaysAgoStr } from '~/lib/utils/date';
 
 export const Route = createFileRoute('/api/health/data')({
   server: {
@@ -30,9 +21,8 @@ export const Route = createFileRoute('/api/health/data')({
         }>(url);
         const days = daysParam ? Math.min(Math.max(parseInt(daysParam, 10) || 30, 1), 365) : 30;
 
-        const now = new Date();
-        const endDate = formatDate(now);
-        const startDate = startDateParam ?? formatDate(addDays(now, -days));
+        const endDate = getTodayStr();
+        const startDate = startDateParam ?? getDaysAgoStr(days);
 
         const [recoveries, sleeps, cycles, workouts] = await Promise.all([
           whoopRepository.getRecoveries(d1Db, workosId, startDate, endDate),
@@ -40,11 +30,6 @@ export const Route = createFileRoute('/api/health/data')({
           whoopRepository.getCycles(d1Db, workosId, startDate, endDate),
           whoopRepository.getWorkouts(d1Db, workosId, startDate, endDate),
         ]);
-
-        console.log('[health-data] query:', { workosId, startDate, endDate, sleepCount: sleeps.length, cycleCount: cycles.length });
-        if (sleeps.length > 0) {
-          console.log('[health-data] sleep date range:', sleeps[0].sleepDate, 'to', sleeps[sleeps.length - 1].sleepDate);
-        }
 
         return Response.json({
           recoveries: recoveries.map(r => ({

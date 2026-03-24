@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Template } from '~/lib/db/template/types';
 import { EmptyTemplates } from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { InlineError } from '@/components/ui/ErrorState';
@@ -15,21 +15,13 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { IconButton } from '~/components/ui/IconButton';
 
-type Template = {
-  id: string;
-  name: string;
-  description: string | null;
-  notes: string | null;
-  exerciseCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+type TemplateData = Pick<Template, 'id' | 'name' | 'description' | 'notes' | 'createdAt' | 'updatedAt'> & { exerciseCount: number };
 
 function Templates() {
   const auth = useAuth();
   const { formatDate } = useDateFormat();
   const [redirecting, setRedirecting] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templates, setTemplates] = useState<TemplateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +42,7 @@ function Templates() {
 
        if (response.ok) {
          const data = await response.json();
-         setTemplates(data as Template[]);
+         setTemplates(data as TemplateData[]);
        }
     } catch (err) {
       console.error('Failed to fetch templates:', err);

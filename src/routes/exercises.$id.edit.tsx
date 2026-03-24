@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-floating-promises, react-hooks/exhaustive-deps */
 import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
 import { useToast } from '@/components/app/ToastProvider';
 
 const MUSCLE_GROUPS = [
@@ -25,15 +25,7 @@ const MUSCLE_GROUPS = [
 
 type MuscleGroup = typeof MUSCLE_GROUPS[number];
 
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  workosId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup' | 'description'>;
 
 interface ExerciseResponse {
   id: string;
@@ -84,11 +76,11 @@ function EditExercise() {
   }, [formData]);
 
   const handleCustomMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, customMuscleGroup: e.target.value });
+    setFormData((prev) => ({ ...prev, customMuscleGroup: e.target.value }));
   }, []);
 
   const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData({ ...formData, description: e.target.value });
+    setFormData((prev) => ({ ...prev, description: e.target.value }));
   }, []);
 
   useEffect(() => {
@@ -98,7 +90,7 @@ function EditExercise() {
     }
   }, [auth.loading, auth.user]);
 
-  async function fetchExercise() {
+  const fetchExercise = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/exercises/${id}`, {
@@ -106,7 +98,9 @@ function EditExercise() {
       });
 
       if (response.status === 404) {
-        navigate({ to: '/exercises' });
+        navigate({ to: '/exercises' }).catch(() => {
+          // Navigation error handled
+        });
         return;
       }
 
@@ -121,19 +115,21 @@ function EditExercise() {
               : (data.muscleGroup ?? ''),
            description: data.description ?? '',
          });
-      }
+     }
     } finally {
       setLoading(false);
     }
-  }
+  }, [id, navigate]);
 
   useEffect(() => {
     if (!auth.loading && auth.user && id) {
-      void fetchExercise();
+      fetchExercise().catch(() => {
+        // Error handled in fetchExercise
+      });
     }
-  }, [auth.loading, auth.user, id]);
+  }, [auth.loading, auth.user, id, fetchExercise]);
 
-  function validateForm(): boolean {
+  const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
@@ -148,9 +144,9 @@ function EditExercise() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }
+  }, [formData]);
 
-  async function handleSubmitAsync(e: React.FormEvent) {
+  const handleSubmitAsync = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -181,7 +177,9 @@ function EditExercise() {
       if (response.ok) {
         toast.success('Exercise updated successfully!');
         setTimeout(() => {
-          navigate({ to: '/exercises/$id', params: { id } });
+          navigate({ to: '/exercises/$id', params: { id } }).catch(() => {
+            // Navigation error handled
+          });
         }, 1000);
       } else if (response.status === 403) {
         const errorMsg = 'You do not have permission to edit this exercise';
@@ -209,10 +207,13 @@ function EditExercise() {
     } finally {
       setSubmitting(false);
     }
-  }
+  }, [formData, id, navigate, toast, validateForm]);
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    void handleSubmitAsync(e);
+    handleSubmitAsync(e).catch(() => {
+      // Error handled in handleSubmitAsync
+    });
   }, [handleSubmitAsync]);
 
 

@@ -1,23 +1,14 @@
 import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { X, HelpCircle, Calendar, Clock, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProgramBySlug } from '~/lib/programs';
 import { DayOfWeek, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
-import { Card } from '~/components/ui/Card';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Label } from '~/components/ui/Label';
 import { useToast } from '@/components/app/ToastProvider';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
-import { DatePicker } from '@/components/ui/DatePicker';
-
-const DAYS_DISPLAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const TIME_OPTIONS = [
-  { value: 'morning' as const, label: 'Morning', icon: '🌅' },
-  { value: 'afternoon' as const, label: 'Afternoon', icon: '☀️' },
-  { value: 'evening' as const, label: 'Evening', icon: '🌙' },
-];
+import { OneRMInput } from '@/components/programs/OneRMInput';
+import { ScheduleSelector } from '@/components/programs/ScheduleSelector';
+import { ProgramReview } from '@/components/programs/ProgramReview';
 
 function getFirstGymDayInWeek(startDate: Date, preferredGymDays: DayOfWeek[]): Date {
   if (preferredGymDays.length === 0) return startDate;
@@ -189,16 +180,11 @@ function ProgramStart() {
     });
   };
 
-  const isStep1Valid = formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm;
+  const isStep1Valid = !!(formData.squat1rm && formData.bench1rm && formData.deadlift1rm && formData.ohp1rm);
   const isStep2Valid = preferredGymDays.length === program.daysPerWeek && preferredTimeOfDay !== null && programStartDate !== null;
 
   const showStartMode = programStartDate ? shouldShowStartModeToggle(programStartDate, preferredGymDays) : false;
   const canStartProgram = !showStartMode || startMode !== null;
-
-  const getTotalSessions = () => {
-    if (!program) return 0;
-    return program.estimatedWeeks * program.daysPerWeek;
-  };
 
   const handleContinue = () => {
     if (step === 1 && isStep1Valid) {
@@ -289,551 +275,52 @@ function ProgramStart() {
   const stepSubtitle = step === 1 ? 'Enter your current 1 Rep Maxes' : step === 2 ? 'Configure your workout schedule' : 'Review your program details';
 
   const renderStep1 = () => (
-    <>
-      <Card className="p-4 bg-muted/30">
-        <div className="flex items-start gap-3">
-          <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="font-medium text-sm">What is 1RM?</h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              Your One-Rep Max (1RM) is the maximum weight you can lift for a single rep with proper form.
-            </p>
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-medium">Not sure what to enter?</p>
-              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                <li>
-                  <Link to="/1rm-test" search={{ returnTo: `/programs/${params.slug}/start` }} className="text-primary hover:underline">
-                    Test it first
-                  </Link>
-                  {' '}— Complete our guided 1RM test
-                </li>
-                <li>
-                  Estimate — If you can lift X for 5 reps, your 1RM is roughly X × 1.2
-                </li>
-                <li>
-                  Starting out? Use a weight that feels challenging for 5 reps
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Use your best single rep (not training max). Update these after each cycle.
-          </p>
-
-          <div className="space-y-2">
-            <Label htmlFor="squat1rm">Squat 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="squat1rm"
-                name="squat1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.squat1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.squat1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.squat1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.squat1rm && !prefilled.squat1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('squat1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bench1rm">Bench Press 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="bench1rm"
-                name="bench1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.bench1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.bench1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.bench1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.bench1rm && !prefilled.bench1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('bench1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="deadlift1rm">Deadlift 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="deadlift1rm"
-                name="deadlift1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.deadlift1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.deadlift1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.deadlift1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.deadlift1rm && !prefilled.deadlift1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('deadlift1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ohp1rm">Overhead Press 1RM ({weightUnit})</Label>
-            <div className="relative">
-              <Input
-                id="ohp1rm"
-                name="ohp1rm"
-                type="number"
-                step="0.5"
-                placeholder="Enter weight"
-                value={formData.ohp1rm}
-                onChange={handleChange}
-                required={true}
-                className={prefilled.ohp1rm ? 'pr-20' : ''}
-              />
-              {!!prefilled.ohp1rm && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-success/20 text-success px-2 py-1 rounded">
-                  Previous
-                </span>
-              )}
-              {!!formData.ohp1rm && !prefilled.ohp1rm && (
-                <button
-                  type="button"
-                  onClick={() => handleClear('ohp1rm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="flex flex-col gap-3 px-4">
-        <Button
-          onClick={handleContinue}
-          disabled={!isStep1Valid}
-          className="w-full"
-        >
-          Continue <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
-
-        <Link to="/programs">
-          <Button type="button" variant="outline" className="w-full">
-            Cancel
-          </Button>
-        </Link>
-      </div>
-    </>
+    <OneRMInput
+      formData={formData}
+      prefilled={prefilled}
+      weightUnit={weightUnit}
+      isValid={isStep1Valid}
+      onChange={handleChange}
+      onClear={handleClear}
+      onContinue={handleContinue}
+    />
   );
 
   const renderStep2 = () => (
-    <>
-      <Card className="p-6" overflow="visible">
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <Label className="text-base">Select Training Days</Label>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Choose exactly <span className="font-medium">{program.daysPerWeek}</span> days per week for your workouts
-            </p>
-            <div className="flex gap-2">
-              {DAYS_DISPLAY.map((day, index) => {
-                const dayName = DAYS_OF_WEEK[index];
-                const isSelected = preferredGymDays.includes(dayName);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleDay(index)}
-                    className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            <p className={`text-sm ${preferredGymDays.length === program.daysPerWeek ? 'text-success' : 'text-muted-foreground'}`}>
-              {preferredGymDays.length}/{program.daysPerWeek} days selected
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <Label className="text-base">Preferred Time of Day</Label>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setPreferredTimeOfDay(option.value)}
-                  className={`py-3 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                    preferredTimeOfDay === option.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  <span className="text-lg">{option.icon}</span>
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <Label className="text-base">Program Start Date</Label>
-            </div>
-            <DatePicker
-              value={programStartDate}
-              onChange={setProgramStartDate}
-              min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
-            />
-            {programStartDate !== null && (
-              <p className="text-sm text-muted-foreground">
-                Starting on {formatDate(programStartDate)}
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
-      <div className="flex flex-col gap-3">
-        <div className="flex gap-3">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            className="flex-1"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
-          <Button
-            onClick={handleContinue}
-            disabled={!isStep2Valid}
-            className="flex-1"
-          >
-            Review <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-        <Link to="/programs">
-          <Button type="button" variant="outline" className="w-full">
-            Cancel
-          </Button>
-        </Link>
-      </div>
-    </>
+    <ScheduleSelector
+      daysPerWeek={program.daysPerWeek}
+      preferredGymDays={preferredGymDays}
+      preferredTimeOfDay={preferredTimeOfDay}
+      programStartDate={programStartDate}
+      isValid={isStep2Valid}
+      formatDate={formatDate}
+      onToggleDay={toggleDay}
+      onTimeChange={setPreferredTimeOfDay}
+      onDateChange={setProgramStartDate}
+      onBack={handleBack}
+      onContinue={handleContinue}
+    />
   );
 
+  const handleSubmitWrapper = () => {
+    // Native DOM Event needs to be cast to React FormEvent for the onSubmit handler type
+    void handleSubmit(new Event('submit') as unknown as React.FormEvent);
+  };
+
   const renderStep3 = () => (
-    <>
-      {showStartMode ? (
-        <Card className="p-4 bg-primary/5 border-primary/20">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-medium text-sm">How would you like to start?</h4>
-              <p className="text-xs text-muted-foreground mt-1 mb-3">
-                Your selected start date is different from your first training day.
-              </p>
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setStartMode('smart')}
-                  className={`w-full p-3 rounded-lg text-left text-sm transition-all ${
-                    startMode === 'smart'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background border border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className="font-medium">Smart Start</div>
-                  <div className="text-xs opacity-80 mt-1">
-                    {programStartDate ? `Start on your selected date (${formatDate(programStartDate)}). The first week will be adjusted to start then.` : 'Start on your selected date.'}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStartMode('strict')}
-                  className={`w-full p-3 rounded-lg text-left text-sm transition-all ${
-                    startMode === 'strict'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background border border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className="font-medium">Strict Start</div>
-                  <div className="text-xs opacity-80 mt-1">
-                    Start from the beginning of the cycle. Your first scheduled day will show as skipped.
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      ) : null}
-
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-medium text-lg mb-3">Program Details</h3>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Program</dt>
-                <dd className="font-medium">{program.name}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Duration</dt>
-                <dd className="font-medium">{program.estimatedWeeks} weeks</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Sessions</dt>
-                <dd className="font-medium">{getTotalSessions()} total</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Frequency</dt>
-                <dd className="font-medium">{program.daysPerWeek} days/week</dd>
-              </div>
-            </dl>
-          </div>
-
-          {showStartMode && startMode === 'strict' ? (
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-sm mb-3">First Week Preview</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    const firstDate = programStartDate
-                      ? getFirstSessionDate(new Date(`${programStartDate}T00:00:00Z`), preferredGymDays, 'strict')
-                      : null;
-                    const isFirstDateSkipped = showStartMode && startMode === 'strict' && firstDate && programStartDate
-                      ? new Date(`${programStartDate}T00:00:00Z`) > firstDate
-                      : false;
-
-                    return DAYS_DISPLAY.map((day, index) => {
-                      const dayName = DAYS_OF_WEEK[index];
-                      const isSelected = preferredGymDays.includes(dayName);
-
-                      if (!isSelected) return null;
-
-                       const baseDate = firstDate ?? new Date();
-                         const dayDate = new Date(baseDate);
-                         dayDate.setDate(baseDate.getDate() - baseDate.getDay() + index);
-                         const dayDateStr = dayDate.toISOString().split('T')[0];
-                         const isFirstGymDay = firstDate?.toDateString() === dayDate.toDateString();
-                        const skipped = isFirstGymDay && isFirstDateSkipped;
-
-                      return (
-                        <div
-                          key={day}
-                          className={`flex-1 py-3 px-2 rounded-lg text-center text-sm font-medium flex flex-col items-center gap-1 ${
-                            isSelected
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-muted/50 text-muted-foreground'
-                          } ${skipped ? 'border-2 border-red-300 dark:border-red-700' : ''}`}
-                        >
-                          <span>{day}</span>
-                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
-                          {skipped ? (
-                            <span className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded">
-                              (Skipped)
-                            </span>
-                          ) : null}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-            ) : null}
-
-            {showStartMode && startMode === 'smart' && programStartDate ? (
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-sm mb-3">Your Schedule</h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Based on your Smart Start, workouts will begin on your preferred days starting from {formatDate(programStartDate)}.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    const startDate = new Date(`${programStartDate}T00:00:00Z`);
-                    const scheduledDates: Array<{ date: Date; day: string }> = [];
-                    
-                    scheduledDates.push({
-                      date: startDate,
-                      day: DAYS_DISPLAY[startDate.getDay()],
-                    });
-
-                    const currentDate = new Date(startDate);
-                    currentDate.setDate(startDate.getDate() + 1);
-
-                    for (let i = 1; scheduledDates.length < 7; i++) {
-                      const dateToCheck = new Date(currentDate);
-                      dateToCheck.setDate(startDate.getDate() + i);
-                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
-                      if (preferredGymDays.includes(dayName)) {
-                        scheduledDates.push({
-                          date: dateToCheck,
-                          day: DAYS_DISPLAY[dateToCheck.getDay()],
-                        });
-                      }
-                    }
-
-                    return scheduledDates.slice(0, 7).map((item, idx) => {
-                      const dayDateStr = item.date.toISOString().split('T')[0];
-                      const isFirstSession = idx === 0;
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex-1 py-3 px-2 rounded-lg text-center text-sm font-medium flex flex-col items-center gap-1 ${
-                            isFirstSession
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 text-primary'
-                          }`}
-                        >
-                          <span>{item.day}</span>
-                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
-                          {isFirstSession ? (
-                            <span className="text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded">
-                              First
-                            </span>
-                          ) : null}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-            ) : null}
-
-            {!showStartMode && programStartDate ? (
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-sm mb-3">Your Schedule</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    const startDate = new Date(`${programStartDate}T00:00:00Z`);
-                    const firstSessionDate = getFirstSessionDate(startDate, preferredGymDays, 'smart');
-                    const scheduledDates: Array<{ date: Date; day: string }> = [];
-
-                    for (let i = 0; i < 14 && scheduledDates.length < 7; i++) {
-                      const dateToCheck = new Date(firstSessionDate);
-                      dateToCheck.setDate(firstSessionDate.getDate() + i);
-                      const dayName = DAYS_OF_WEEK[dateToCheck.getDay()];
-                      if (preferredGymDays.includes(dayName)) {
-                        scheduledDates.push({
-                          date: dateToCheck,
-                          day: DAYS_DISPLAY[dateToCheck.getDay()],
-                        });
-                      }
-                    }
-
-                    return scheduledDates.slice(0, 7).map((item, idx) => {
-                      const dayDateStr = item.date.toISOString().split('T')[0];
-                      const isFirstSession = idx === 0;
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex-1 py-3 px-2 rounded-lg text-center text-sm font-medium flex flex-col items-center gap-1 ${
-                            isFirstSession
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-primary/10 text-primary'
-                          }`}
-                        >
-                          <span>{item.day}</span>
-                          <span className="text-xs opacity-80">{formatDate(dayDateStr)}</span>
-                          {isFirstSession ? (
-                            <span className="text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded">
-                              First
-                            </span>
-                          ) : null}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                A personalized workout schedule will be generated based on your preferences.
-              </p>
-            </div>
-        </div>
-      </Card>
-
-      <div className="px-4 flex flex-col gap-3">
-        <div className="flex gap-3">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            className="flex-1"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
-          <Button
-            onClick={(e) => { void handleSubmit(e); }}
-            disabled={!isStep1Valid || !canStartProgram || isLoading}
-            className="flex-1"
-          >
-            {isLoading ? 'Creating...' : 'Start Program'}
-          </Button>
-        </div>
-
-        <Link to="/programs">
-          <Button type="button" variant="outline" className="w-full">
-            Cancel
-          </Button>
-        </Link>
-      </div>
-    </>
+    <ProgramReview
+      program={program}
+      preferredGymDays={preferredGymDays}
+      programStartDate={programStartDate}
+      showStartMode={showStartMode}
+      startMode={startMode}
+      formatDate={formatDate}
+      onStartModeChange={setStartMode}
+      onBack={handleBack}
+      onSubmit={handleSubmitWrapper}
+      isSubmitting={isLoading}
+      isValid={Boolean(isStep1Valid && canStartProgram)}
+    />
   );
 
   return (

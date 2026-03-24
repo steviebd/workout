@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect, memo } from 'react';
-import { X, Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '~/lib/cn';
 
@@ -41,7 +41,6 @@ export function ExerciseList({
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
 
-  // Add drop indicator element
   useEffect(() => {
     if (!listRef.current) return;
 
@@ -285,58 +284,3 @@ export function ExerciseList({
   );
 }
 
-interface ExerciseListRowProps {
-  exercise: ExerciseListItem;
-  index: number;
-  isDragging: boolean;
-  onRemove: () => void;
-  onEdit: () => void;
-}
-
-export const ExerciseListRow = memo(function ExerciseListRow({
-  exercise,
-  index,
-  isDragging,
-  onRemove,
-  onEdit,
-}: ExerciseListRowProps) {
-  return (
-    <div
-      className={`flex items-center gap-3 p-3.5 bg-secondary/50 rounded-lg border border-border/60 transition-all duration-200 hover:bg-secondary hover:shadow-sm ${
-        isDragging ? 'opacity-50 shadow-xl scale-[1.02] z-20 border-primary' : ''
-      }`}
-    >
-      <span className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary text-xs font-semibold rounded shrink-0">
-        {index + 1}
-      </span>
-
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate text-sm">{exercise.name}</p>
-        {exercise.muscleGroup !== null && exercise.muscleGroup !== undefined && (
-          <p className="text-xs text-muted-foreground mt-0.5">{exercise.muscleGroup}</p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1">
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          className="text-muted-foreground hover:text-foreground"
-          onClick={onEdit}
-          type="button"
-        >
-          <Pencil size={16} />
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={onRemove}
-          type="button"
-        >
-          <X size={18} />
-        </Button>
-      </div>
-    </div>
-  );
-});

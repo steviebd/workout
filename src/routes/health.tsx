@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { Heart, Moon, Activity, Zap, RefreshCw, Loader2, Link, Link2Off } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog'
 
 interface WhoopStatus {
   connected: boolean
@@ -50,6 +51,7 @@ function HealthPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'strain' | 'workouts'>('overview')
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
 
   async function fetchWhoopData() {
     try {
@@ -94,15 +96,16 @@ function HealthPage() {
   }
 
   const handleDisconnect = async () => {
-    // eslint-disable-next-line no-alert
-    if (!confirm('Are you sure you want to disconnect Whoop?')) return
-
     try {
       await fetch('/api/integrations/whoop/disconnect', { method: 'POST' })
       await fetchWhoopData()
     } catch (error) {
       console.error('Disconnect failed:', error)
     }
+  }
+
+  const handleDisconnectClick = () => {
+    setShowDisconnectDialog(true)
   }
 
   if (loading) {
@@ -136,39 +139,40 @@ function HealthPage() {
   const todayCycle = data?.cycles[0]
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-32 max-w-md">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Health</h1>
-        <Button
-          onClick={() => void handleSync()}
-          disabled={syncing}
-          variant="outline"
-          size="sm"
-        >
-          {syncing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="ml-2">{syncing ? 'Syncing...' : 'Sync'}</span>
-        </Button>
-      </div>
-
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {(['overview', 'sleep', 'recovery', 'strain', 'workouts'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
+    <>
+      <div className="container mx-auto px-4 py-6 pb-32 max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Health</h1>
+          <Button
+            onClick={() => void handleSync()}
+            disabled={syncing}
+            variant="outline"
+            size="sm"
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            <span className="ml-2">{syncing ? 'Syncing...' : 'Sync'}</span>
+          </Button>
+        </div>
+
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {(['overview', 'sleep', 'recovery', 'strain', 'workouts'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === tab
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
 
       {activeTab === 'overview' && (
         <div className="space-y-4">
@@ -237,7 +241,7 @@ function HealthPage() {
             </div>
           </div>
 
-          <Button onClick={() => void handleDisconnect()} variant="outline" className="w-full" size="lg">
+          <Button onClick={handleDisconnectClick} variant="outline" className="w-full" size="lg">
             <Link2Off className="h-4 w-4 mr-2" />
             Disconnect Whoop
           </Button>
@@ -345,7 +349,25 @@ function HealthPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+
+      <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Whoop</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to disconnect Whoop? Your data will remain but will stop syncing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDisconnect()}>
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 

@@ -1,50 +1,12 @@
 import { TRAINING_MAX_PERCENTAGE, roundToPlate } from './utils';
 import { generateWorkoutAccessories } from './accessory-data';
-import type { LiftType, OneRMValues, ProgramConfig, ProgramWorkout, ProgramAccessory } from './types';
-
-const nuckolsInfo = {
-  slug: 'nuckols-28-programs',
-  name: 'Greg Nuckols 28 Programs',
-  description: 'Science-backed programming with 4-week wave periodization. Evidence-based progression for intermediate lifters.',
-  difficulty: 'intermediate' as const,
-  daysPerWeek: 4,
-  estimatedWeeks: 8,
-  totalSessions: 32,
-  mainLifts: ['squat', 'bench', 'deadlift', 'ohp'] as LiftType[],
-  category: 'general-strength' as const,
-};
-
-const WAVE_1 = {
-  week1: { t1: [0.70, 0.80, 0.90], t2: [0.60, 0.70, 0.80] },
-  week2: { t1: [0.725, 0.825, 0.925], t2: [0.625, 0.725, 0.825] },
-  week3: { t1: [0.75, 0.85, 0.95], t2: [0.65, 0.75, 0.85] },
-  week4: { t1: [0.60, 0.70, 0.80], t2: [0.50, 0.60, 0.70] },
-};
-
-const WAVE_2 = {
-  week1: { t1: [0.725, 0.825, 0.925], t2: [0.625, 0.725, 0.825] },
-  week2: { t1: [0.75, 0.85, 0.95], t2: [0.65, 0.75, 0.85] },
-  week3: { t1: [0.775, 0.875, 0.975], t2: [0.675, 0.775, 0.875] },
-  week4: { t1: [0.625, 0.725, 0.825], t2: [0.525, 0.625, 0.725] },
-};
-
-export const nuckolsSuggestedAccessories: ProgramAccessory[] = [
-  { accessoryId: 'dips', sets: 3, reps: '8-12', isRequired: false },
-  { accessoryId: 'pushups', sets: 3, reps: '15-20', isRequired: false },
-  { accessoryId: 'tricep-pushdowns', sets: 3, reps: '10-15', isRequired: false },
-  { accessoryId: 'pullups', sets: 3, reps: 'AMRAP', isRequired: false },
-  { accessoryId: 'rows', sets: 3, reps: '8-12', isRequired: false },
-  { accessoryId: 'face-pulls', sets: 3, reps: '15-20', isRequired: false },
-  { accessoryId: 'romanian-dl', sets: 3, reps: '8-12', isRequired: false },
-  { accessoryId: 'leg-curls', sets: 3, reps: '10-15', isRequired: false },
-  { accessoryId: 'leg-extensions', sets: 3, reps: '10-15', isRequired: false },
-  { accessoryId: 'planks', sets: 3, reps: '30-60sec', isRequired: false },
-  { accessoryId: 'hanging-leg-raises', sets: 3, reps: '10-15', isRequired: false },
-];
-
-export function getNuckolsAccessories(_week: number, _session: number): ProgramAccessory[] {
-  return [];
-}
+import {
+  nuckolsInfo,
+  WAVE_1,
+  WAVE_2,
+  getNuckolsAccessories,
+} from './config/nuckols';
+import type { OneRMValues, ProgramConfig, ProgramWorkout } from './types';
 
 function calculateTargetWeight(
   estimatedOneRM: number,

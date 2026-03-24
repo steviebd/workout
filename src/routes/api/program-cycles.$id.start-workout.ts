@@ -23,7 +23,6 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
         const actualDate = requestBody.actualDate ? new Date(requestBody.actualDate).toISOString() : new Date().toISOString();
         const actualDateOnly = actualDate.split('T')[0];
 
-        console.log('Start workout - params.id:', params.id, 'session.sub:', session.sub, 'programCycleWorkoutId:', requestBody.programCycleWorkoutId);
         const [cycle, currentWorkout] = await Promise.all([
           getProgramCycleById(d1Db, params.id, session.sub),
           requestBody.programCycleWorkoutId 
@@ -31,31 +30,21 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
             : getCurrentWorkout(d1Db, params.id, session.sub),
         ]);
 
-        console.log('Start workout - cycle:', cycle?.id, 'currentWorkout:', currentWorkout?.id);
-
         if (!cycle) {
-          console.log('Start workout - Cycle not found');
           return Response.json({ error: 'Program cycle not found' }, { status: 404 });
         }
 
         if (cycle.status === 'completed') {
-          console.log('Start workout - Cycle is completed');
           return Response.json({ error: 'Program cycle is already completed' }, { status: 400 });
         }
 
         if (!currentWorkout) {
-          console.log('Start workout - No current workout found');
           return Response.json({ error: 'No pending workouts found for this cycle. The cycle may not have any workouts assigned.' }, { status: 404 });
         }
 
         let templateId: string = currentWorkout.templateId ?? '';
-        console.log('Start workout - currentWorkout id:', currentWorkout.id, 'templateId:', currentWorkout.templateId);
         if (!templateId) {
-          console.log('Start workout - calling generateTemplateFromWorkout');
           templateId = await generateTemplateFromWorkout(d1Db, session.sub, currentWorkout, cycle);
-          console.log('Start workout - generateTemplateFromWorkout returned:', templateId);
-        } else {
-          console.log('Start workout - using existing templateId:', templateId);
         }
 
         const [templateResult, templateExercises] = await Promise.all([
@@ -63,10 +52,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           getTemplateExercises(d1Db, templateId, session.sub),
         ]);
 
-        console.log('Start workout - templateResult:', templateResult?.id, 'templateExercises count:', templateExercises.length);
-
         if (!templateResult) {
-          console.log('Start workout - Template not found');
           return Response.json({ error: 'Template not found' }, { status: 404 });
         }
 
@@ -78,7 +64,6 @@ export const Route = createFileRoute('/api/program-cycles/$id/start-workout')({
           programCycleId: template.programCycleId ?? undefined,
           name: template.name,
         }, actualDate);
-        console.log('Start workout - created workout:', workout.id);
 
         const workoutExerciseInserts = templateExercises.map((te) => ({
           id: generateId(),

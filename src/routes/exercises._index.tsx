@@ -2,25 +2,18 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './__root';
+import type { Exercise } from '~/lib/db/exercise/types';
 import { EmptyExercises } from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '~/components/ui/Button';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
-import { ExerciseList, ExerciseSearch, ExerciseForm } from '@/components/exercises';
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscleGroup: string | null;
-  description: string | null;
-  createdAt: string;
-}
+import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm, ExerciseItemProps } from '@/components/exercises';
 
 function Exercises() {
   const auth = useAuth();
   const [redirecting] = useState(false);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exercises, setExercises] = useState<ExerciseItemProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -36,8 +29,14 @@ function Exercises() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setExercises(data as Exercise[]);
+        const data: Exercise[] = await response.json();
+        setExercises(data.map(e => ({
+          id: e.id,
+          name: e.name,
+          muscleGroup: e.muscleGroup,
+          description: e.description,
+          createdAt: e.createdAt ?? '',
+        })));
       }
     } catch (error) {
       console.error('Failed to fetch exercises:', error);
@@ -94,7 +93,7 @@ function Exercises() {
         <ExerciseForm onCancel={handleCancelCreate} onSuccess={handleCreateSuccess} />
       ) : null}
 
-      <ExerciseSearch value={search} onChange={setSearch} />
+      <ExerciseSearchSimple value={search} onChange={setSearch} />
 
       <PullToRefresh onRefresh={fetchExercises}>
         {loading ? (
@@ -102,7 +101,7 @@ function Exercises() {
         ) : exercises.length === 0 ? (
           <EmptyExercises onCreate={handleCreateClick} />
         ) : (
-          <ExerciseList exercises={exercises} />
+          <ExerciseListSimple exercises={exercises} />
         )}
       </PullToRefresh>
     </PageLayout>

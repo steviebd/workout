@@ -244,7 +244,6 @@ export function useTemplateApi({
     delay: 1500,
     onSuccess: () => {
       setError(null);
-      console.log('Auto-saved');
     },
     onError: (saveError) => {
       console.error('Auto-save failed:', saveError);

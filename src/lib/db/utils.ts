@@ -1,10 +1,9 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 export const MAX_SQL_VARS = 900;
 export const SAFE_MAX_SQL_VARS = 500;
 
-// Type for our Drizzle database instance
-// Using a generic database type since the exact schema type is complex
 export type AppDatabase = DrizzleD1Database<Record<string, unknown>>;
 
 export function calculateChunkSize(rowVariableCount: number, maxVars = SAFE_MAX_SQL_VARS): number {
@@ -13,21 +12,14 @@ export function calculateChunkSize(rowVariableCount: number, maxVars = SAFE_MAX_
 
 const BATCH_SIZE_SEQUENCE = [90, 60, 45, 30, 20, 15, 10, 7, 5, 3, 1];
 
-/**
- * Inserts records with automatic batching to avoid SQLite variable limits
- * @param db - Drizzle database instance
- * @param table - Table to insert into
- * @param records - Records to insert
- * @param options - Optional settings
- * @returns Array of inserted record IDs if returning is enabled
- *
- * Note: Type assertions are needed because this is a generic utility function that works
- * with any table type. Drizzle's insert() requires specific table types at compile time,
- * but we only know the table at runtime. The actual type safety is enforced by the caller.
- */
-export async function insertWithAutoBatching<T>(
+interface InsertValuesResult {
+  returning<TRet extends { id: string }>(sel: { id: true }): Promise<TRet[]>;
+  run(): Promise<{ success: boolean }>;
+}
+
+export async function insertWithAutoBatching<T extends Record<string, unknown>>(
   db: AppDatabase,
-  table: unknown,
+  table: SQLiteTable,
   records: T[],
   options?: { returning?: boolean }
 ): Promise<Array<{ id: string }>> {
@@ -38,13 +30,9 @@ export async function insertWithAutoBatching<T>(
       const results: Array<{ id: string }> = [];
       for (let i = 0; i < records.length; i += batchSize) {
         const batch = records.slice(i, i + batchSize);
-        // Type assertion needed: table parameter is generic, but Drizzle requires specific table type
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const insertQuery = (db as AppDatabase).insert(table as any).values(batch as any);
+        const insertQuery = db.insert(table).values(batch) as InsertValuesResult;
         if (options?.returning) {
-          // Type assertion needed: returning() needs specific column selection type
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const inserted = await insertQuery.returning({ id: '' as any }) as unknown as Array<{ id: string }>;
+          const inserted = await insertQuery.returning({ id: true });
           results.push(...inserted);
         } else {
           await insertQuery.run();
@@ -62,19 +50,9 @@ export async function insertWithAutoBatching<T>(
   return [];
 }
 
-/**
- * Inserts records with automatic batching (raw version without returning)
- * @param db - Drizzle database instance
- * @param table - Table to insert into
- * @param records - Records to insert
- *
- * Note: Type assertions are needed because this is a generic utility function that works
- * with any table type. Drizzle's insert() requires specific table types at compile time,
- * but we only know the table at runtime. The actual type safety is enforced by the caller.
- */
-export async function insertWithAutoBatchingRaw<T>(
+export async function insertWithAutoBatchingRaw<T extends Record<string, unknown>>(
   db: AppDatabase,
-  table: unknown,
+  table: SQLiteTable,
   records: T[]
 ): Promise<void> {
   if (records.length === 0) return;
@@ -83,9 +61,8 @@ export async function insertWithAutoBatchingRaw<T>(
     try {
       for (let i = 0; i < records.length; i += batchSize) {
         const batch = records.slice(i, i + batchSize);
-        // Type assertion needed: table and batch parameters are generic, but Drizzle requires specific types
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (db as AppDatabase).insert(table as any).values(batch as any).run();
+        // Drizzle insert returns a builder that must be cast for dynamic table access
+        await (db.insert(table).values(batch) as InsertValuesResult).run();
       }
       break;
     } catch (err) {

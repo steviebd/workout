@@ -11,7 +11,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useReducer } from 'react';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getVideoTutorialByName, type VideoTutorial } from '@/lib/db/exercise/library';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
@@ -25,18 +25,65 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 import { Input } from '@/components/ui/Input';
 
+interface WorkoutUIState {
+  showExerciseSelector: boolean;
+  exerciseSearch: string;
+  editingNotes: boolean;
+  notes: string;
+  showDiscardConfirm: boolean;
+  showIncompleteSetsConfirm: boolean;
+  selectedTutorial: { tutorial: VideoTutorial; exerciseName: string } | null;
+}
+
+type WorkoutUIAction =
+  | { type: 'SET_EXERCISE_SELECTOR'; payload: boolean }
+  | { type: 'SET_EXERCISE_SEARCH'; payload: string }
+  | { type: 'SET_EDITING_NOTES'; payload: boolean }
+  | { type: 'SET_NOTES'; payload: string }
+  | { type: 'SET_DISCARD_CONFIRM'; payload: boolean }
+  | { type: 'SET_INCOMPLETE_SETS_CONFIRM'; payload: boolean }
+  | { type: 'SET_SELECTED_TUTORIAL'; payload: { tutorial: VideoTutorial; exerciseName: string } | null }
+  | { type: 'RESET_EXERCISE_SELECTOR' };
+
+const initialUIState: WorkoutUIState = {
+  showExerciseSelector: false,
+  exerciseSearch: '',
+  editingNotes: false,
+  notes: '',
+  showDiscardConfirm: false,
+  showIncompleteSetsConfirm: false,
+  selectedTutorial: null,
+};
+
+function workoutUIReducer(state: WorkoutUIState, action: WorkoutUIAction): WorkoutUIState {
+  switch (action.type) {
+    case 'SET_EXERCISE_SELECTOR':
+      return { ...state, showExerciseSelector: action.payload };
+    case 'SET_EXERCISE_SEARCH':
+      return { ...state, exerciseSearch: action.payload };
+    case 'SET_EDITING_NOTES':
+      return { ...state, editingNotes: action.payload };
+    case 'SET_NOTES':
+      return { ...state, notes: action.payload };
+    case 'SET_DISCARD_CONFIRM':
+      return { ...state, showDiscardConfirm: action.payload };
+    case 'SET_INCOMPLETE_SETS_CONFIRM':
+      return { ...state, showIncompleteSetsConfirm: action.payload };
+    case 'SET_SELECTED_TUTORIAL':
+      return { ...state, selectedTutorial: action.payload };
+    case 'RESET_EXERCISE_SELECTOR':
+      return { ...state, showExerciseSelector: false, exerciseSearch: '' };
+    default:
+      return state;
+  }
+}
+
 function WorkoutSession() {
   const params = useParams({ from: '/workouts/$id' });
   const workoutId = params.id;
   const { formatDate } = useDateFormat();
 
-  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [exerciseSearch, setExerciseSearch] = useState('');
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const [showIncompleteSetsConfirm, setShowIncompleteSetsConfirm] = useState(false);
-  const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
+  const [ui, dispatch] = useReducer(workoutUIReducer, initialUIState);
 
   const {
     workout,
@@ -60,12 +107,12 @@ function WorkoutSession() {
 
   const filteredExercises = useMemo(() =>
     availableExercises.filter((exercise) =>
-      exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()) &&
+      exercise.name.toLowerCase().includes(ui.exerciseSearch.toLowerCase()) &&
       !exercises.some((e) => e.exerciseId === exercise.id)
-    ), [availableExercises, exerciseSearch, exercises]);
+    ), [availableExercises, ui.exerciseSearch, exercises]);
 
   const handleAddExerciseClick = () => {
-    setShowExerciseSelector(true);
+    dispatch({ type: 'SET_EXERCISE_SELECTOR', payload: true });
   };
 
   const handleAddExerciseClickShared = (e: React.MouseEvent) => {
@@ -73,26 +120,25 @@ function WorkoutSession() {
     const exercise = filteredExercises.find(ex => ex.id === id);
     if (exercise) {
       handleAddExercise(exercise);
-      setShowExerciseSelector(false);
-      setExerciseSearch('');
+      dispatch({ type: 'RESET_EXERCISE_SELECTOR' });
     }
   };
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNotes(e.target.value);
+    dispatch({ type: 'SET_NOTES', payload: e.target.value });
   };
 
   const handleExerciseSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseSearch(e.target.value);
+    dispatch({ type: 'SET_EXERCISE_SEARCH', payload: e.target.value });
   };
 
   const handleNotesSave = () => {
-    handleSaveNotes(notes);
-    setEditingNotes(false);
+    handleSaveNotes(ui.notes);
+    dispatch({ type: 'SET_EDITING_NOTES', payload: false });
   };
 
   const handleIncompleteSetsContinue = () => {
-    setShowIncompleteSetsConfirm(false);
+    dispatch({ type: 'SET_INCOMPLETE_SETS_CONFIRM', payload: false });
     completeWorkoutMutation.mutate(undefined, {
       onSuccess: () => {
         const is1RMTest = workout?.name === '1RM Test' && workout?.programCycleId;
@@ -243,11 +289,11 @@ function WorkoutSession() {
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-foreground">Workout Notes</span>
-              {editingNotes ? (
+              {ui.editingNotes ? (
                 <div className="flex items-center gap-2">
                   <button
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => setEditingNotes(false)}
+                    onClick={() => dispatch({ type: 'SET_EDITING_NOTES', payload: false })}
                   >
                     Cancel
                   </button>
@@ -261,30 +307,30 @@ function WorkoutSession() {
               ) : (
                 <button
                   className="text-sm text-primary hover:text-primary"
-                  onClick={() => setEditingNotes(true)}
+                  onClick={() => dispatch({ type: 'SET_EDITING_NOTES', payload: true })}
                 >
                   Edit
                 </button>
               )}
             </div>
-            {editingNotes ? (
+            {ui.editingNotes ? (
               <textarea
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
                 onChange={handleNotesChange}
                 placeholder="Add notes about this workout..."
                 rows={3}
-                value={notes}
+                value={ui.notes}
               />
             ) : (
               <p className="text-muted-foreground text-sm">
-                {notes ?? workout.notes ?? 'No notes added'}
+                {ui.notes ?? workout.notes ?? 'No notes added'}
               </p>
             )}
           </div>
         </div>
       </main>
 
-      <Drawer open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
+      <Drawer open={ui.showExerciseSelector} onOpenChange={(open) => dispatch({ type: 'SET_EXERCISE_SELECTOR', payload: open })}>
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>Add Exercise</DrawerTitle>
@@ -298,7 +344,7 @@ function WorkoutSession() {
                 onChange={handleExerciseSearchChange}
                 placeholder="Search exercises..."
                 type="text"
-                value={exerciseSearch}
+                value={ui.exerciseSearch}
               />
             </div>
           </div>
@@ -338,7 +384,7 @@ function WorkoutSession() {
         </DrawerContent>
       </Drawer>
 
-      <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+      <AlertDialog open={ui.showDiscardConfirm} onOpenChange={(open) => dispatch({ type: 'SET_DISCARD_CONFIRM', payload: open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard Workout?</AlertDialogTitle>
@@ -347,7 +393,7 @@ function WorkoutSession() {
             This will permanently delete this workout. This action cannot be undone.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDiscardConfirm(false)}>
+            <AlertDialogCancel onClick={() => dispatch({ type: 'SET_DISCARD_CONFIRM', payload: false })}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -360,7 +406,7 @@ function WorkoutSession() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showIncompleteSetsConfirm} onOpenChange={setShowIncompleteSetsConfirm}>
+      <AlertDialog open={ui.showIncompleteSetsConfirm} onOpenChange={(open) => dispatch({ type: 'SET_INCOMPLETE_SETS_CONFIRM', payload: open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Incomplete Sets</AlertDialogTitle>
@@ -369,7 +415,7 @@ function WorkoutSession() {
             You have sets that haven&apos;t been marked as complete. Are you sure you want to continue?
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowIncompleteSetsConfirm(false)}>
+            <AlertDialogCancel onClick={() => dispatch({ type: 'SET_INCOMPLETE_SETS_CONFIRM', payload: false })}>
               Go Back
             </AlertDialogCancel>
             <AlertDialogAction
@@ -382,12 +428,12 @@ function WorkoutSession() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {selectedTutorial ? (
+      {ui.selectedTutorial ? (
         <VideoTutorialModal
-          videoTutorial={selectedTutorial.tutorial}
-          exerciseName={selectedTutorial.exerciseName}
-          open={!!selectedTutorial}
-          onOpenChange={() => setSelectedTutorial(null)}
+          videoTutorial={ui.selectedTutorial.tutorial}
+          exerciseName={ui.selectedTutorial.exerciseName}
+          open={!!ui.selectedTutorial}
+          onOpenChange={() => dispatch({ type: 'SET_SELECTED_TUTORIAL', payload: null })}
         />
       ) : null}
 
@@ -396,7 +442,7 @@ function WorkoutSession() {
           <Button
             variant="destructive"
             className="flex-1"
-            onClick={() => setShowDiscardConfirm(true)}
+            onClick={() => dispatch({ type: 'SET_DISCARD_CONFIRM', payload: true })}
           >
             <X className="h-4 w-4" />
             Discard
@@ -410,7 +456,7 @@ function WorkoutSession() {
               }, 0);
 
               if (incompleteSetsCount > 0) {
-                setShowIncompleteSetsConfirm(true);
+                dispatch({ type: 'SET_INCOMPLETE_SETS_CONFIRM', payload: true });
                 return;
               }
 
