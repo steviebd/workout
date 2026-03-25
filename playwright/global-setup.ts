@@ -511,7 +511,7 @@ async function globalSetup() {
 
 		const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"], input[type="email"]';
 		const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"], input[type="password"]';
-		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[type="submit"]:not([value]), button[name="intent"]:not([value="magic-code"])';
+		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[type="submit"]:not([value="magic-code"])';
 		const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
 
 		console.log('Starting full login flow...');

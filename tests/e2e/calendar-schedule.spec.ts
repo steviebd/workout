@@ -7,16 +7,23 @@ const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'Jul
 async function loginUser(page: Page) {
 	await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-	await page.waitForFunction(() => {
-		const loading = document.querySelector('.animate-spin, .animate-pulse');
-		const hasUser = document.querySelector('button.rounded-full');
-		const hasSignIn = document.querySelector('button:has-text("Sign In")');
-		return (!loading?.closest('.min-h-screen')) && (hasUser ?? hasSignIn);
-	}, { timeout: 15000 }).catch(() => {});
-
-	await page.waitForTimeout(2000);
-
 	const userAvatar = page.locator('button.rounded-full').first();
+	const signInBtn = page.locator('button:has-text("Sign In")').first();
+
+	try {
+		await expect(userAvatar).toBeVisible({ timeout: 30000 });
+		console.log('User is already signed in');
+		return;
+	} catch {
+	}
+
+	try {
+		await expect(signInBtn).toBeVisible({ timeout: 5000 });
+		console.log('User is not signed in, proceeding with login...');
+	} catch {
+		console.log('Neither avatar nor sign-in button visible after timeout');
+	}
+
 	const isSignedIn = await userAvatar.isVisible({ timeout: 5000 }).catch(() => false);
 	if (isSignedIn) {
 		return;
@@ -24,7 +31,7 @@ async function loginUser(page: Page) {
 
 	await page.goto(`${BASE_URL}/auth/signin`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-	await expect(page).toHaveURL((url: URL) => url.hostname.includes('authkit.app'), { timeout: 15000 });
+	await page.waitForURL((url: URL) => url.hostname.includes('authkit.app'), { timeout: 30000 });
 
 	const emailInput = page.locator('input[name="email"]');
 	await expect(emailInput).toBeVisible({ timeout: 10000 });
