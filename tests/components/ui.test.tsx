@@ -4,7 +4,6 @@ import { Button } from '../../src/components/ui/Button';
 import { Badge } from '../../src/components/ui/Badge';
 import { Card } from '../../src/components/ui/Card';
 import { Input } from '../../src/components/ui/Input';
-import React from 'react';
 
 describe('Button Component', () => {
   it('renders button without crashing', () => {
@@ -33,7 +32,7 @@ describe('Button Component', () => {
   });
 
   it('renders as disabled when disabled prop is true', () => {
-    const { container } = render(<Button disabled>Disabled</Button>);
+    const { container } = render(<Button disabled={true}>Disabled</Button>);
     const button = container.querySelector('button');
     expect(button?.hasAttribute('disabled')).toBe(true);
   });
@@ -83,7 +82,7 @@ describe('Input Component', () => {
   });
 
   it('renders input with value', () => {
-    const { container } = render(<Input value="Test value" readOnly />);
+    const { container } = render(<Input value="Test value" readOnly={true} />);
     const input = container.querySelector('input');
     expect(input?.value).toBe('Test value');
   });

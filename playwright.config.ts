@@ -6,12 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-	webServer: {
-		command: 'infisical run --env dev -- sh -c "bun x tsx scripts/generate-wrangler-config.ts --env dev && vite dev --port 8787"',
-		url: 'http://localhost:8787',
-		reuseExistingServer: !process.env.CI,
-		timeout: 60000,
-	},
+	// webServer: {
+	// 	command: 'infisical run --env dev -- sh -c "bun x tsx scripts/generate-wrangler-config.ts --env dev && npx vite dev --port 8787"',
+	// 	url: 'http://localhost:8787',
+	// 	reuseExistingServer: !process.env.CI,
+	// 	timeout: 120000,
+	// 	stderr: 'pipe',
+	// },
 	testDir: './tests/e2e',
 	outputDir: './test-results/',
 	snapshotDir: './tests/snapshots/',
@@ -28,12 +29,15 @@ export default defineConfig({
 		baseURL: 'http://localhost:8787',
 		storageState: 'playwright/.auth/state.json',
 		actionTimeout: 15000,
-		navigationTimeout: 45000,
+		navigationTimeout: 60000,
 	},
 	projects: [
 		{
 			name: 'chromium',
-			use: { ...devices['Desktop Chrome'] },
+			use: { 
+				...devices['Desktop Chrome'],
+				channel: 'chrome',
+			},
 		},
 	],
 });

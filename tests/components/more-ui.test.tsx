@@ -5,7 +5,6 @@ import { Progress } from '../../src/components/ui/Progress';
 import { Checkbox } from '../../src/components/ui/Checkbox';
 import { Label } from '../../src/components/ui/Label';
 import { Separator } from '../../src/components/ui/Separator';
-import React from 'react';
 
 describe('Spinner Component', () => {
   it('renders without crashing', () => {
@@ -43,7 +42,7 @@ describe('Checkbox Component', () => {
   });
 
   it('renders checked', () => {
-    const { container } = render(<Checkbox checked />);
+    const { container } = render(<Checkbox checked={true} />);
     expect(container.querySelector('button[type="button"]')).not.toBeNull();
   });
 });

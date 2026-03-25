@@ -50,7 +50,7 @@ describe('API Errors', () => {
 
     it('should include error message and code in response body', async () => {
       const response = createApiError('Validation failed', 400, API_ERROR_CODES.VALIDATION_ERROR);
-      const body = await response.json();
+      const body = await response.json() as { error: string; code: string };
       
       expect(body.error).toBe('Validation failed');
       expect(body.code).toBe('VALIDATION_ERROR');

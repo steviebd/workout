@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createExerciseSchema, updateExerciseSchema, copyExerciseFromLibrarySchema } from '../../src/lib/validators/exercise.schema';
-import { z } from 'zod';
 
 describe('Exercise Validators', () => {
   describe('createExerciseSchema', () => {

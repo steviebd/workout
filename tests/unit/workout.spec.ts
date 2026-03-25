@@ -79,7 +79,6 @@ describe('Workout CRUD Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -309,7 +308,6 @@ describe('User Preferences Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -419,7 +417,6 @@ describe('Workout History - getWorkoutsByUserId', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -682,8 +679,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
 describe('Workout History - getWorkoutHistoryStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.useFakeTimers();
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1034,7 +1030,6 @@ describe('getLastWorkoutForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1199,7 +1194,6 @@ describe('getLastWorkoutSetsForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1413,7 +1407,7 @@ describe('Exercise History', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
   afterEach(() => {

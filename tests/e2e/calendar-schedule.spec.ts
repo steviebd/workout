@@ -5,7 +5,7 @@ const PROGRAM_SLUG = 'stronglifts-5x5';
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 async function loginUser(page: Page) {
-	await page.goto(`${BASE_URL}/`, { waitUntil: 'load', timeout: 60000 });
+	await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
 	await page.waitForFunction(() => {
 		const loading = document.querySelector('.animate-spin, .animate-pulse');

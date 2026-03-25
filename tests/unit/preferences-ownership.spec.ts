@@ -186,7 +186,7 @@ describe('User Preferences Functions', () => {
 
   describe('updateWeightUnit', () => {
     it('should call upsertUserPreferences with weightUnit', async () => {
-      const { updateWeightUnit, upsertUserPreferences } = await import('../../src/lib/db/preferences');
+      const { updateWeightUnit } = await import('../../src/lib/db/preferences');
       
       mockSelect.mockReturnValue({
         from: vi.fn().mockReturnValue({

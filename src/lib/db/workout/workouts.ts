@@ -460,7 +460,7 @@ export async function createWorkoutWithDetails(
       const chunk = setsToInsert.slice(i, i + CHUNK_SIZE);
       statements.push(db.insert(workoutSets).values(chunk).run());
     }
-    await db.batch(statements as any);
+    await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
   }
 
   const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);

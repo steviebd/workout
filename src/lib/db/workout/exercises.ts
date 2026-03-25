@@ -195,7 +195,7 @@ export async function reorderWorkoutExercises(
       .run()
   );
 
-  await db.batch(statements as any);
+  await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
 
   return true;
 }
