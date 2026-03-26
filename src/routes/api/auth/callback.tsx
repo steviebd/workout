@@ -32,6 +32,7 @@ export const Route = createFileRoute('/api/auth/callback')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        console.log('[auth/callback] Handler invoked:', request.url);
         const { WORKOS_API_KEY, WORKOS_CLIENT_ID } = env as typeof env & {
           WORKOS_API_KEY?: string;
           WORKOS_CLIENT_ID?: string;
@@ -63,6 +64,7 @@ export const Route = createFileRoute('/api/auth/callback')({
             return createErrorRedirect('config_missing');
           }
 
+          console.log('[auth/callback] Exchanging code with WorkOS...');
           const authResponse = await fetch('https://api.workos.com/user_management/authenticate', {
             method: 'POST',
             headers: {
@@ -77,6 +79,7 @@ export const Route = createFileRoute('/api/auth/callback')({
             }),
           });
 
+          console.log('[auth/callback] WorkOS response status:', authResponse.status);
           if (!authResponse.ok) {
             const errorText = await authResponse.text();
             console.error('WorkOS authenticate failed:', authResponse.status, errorText);

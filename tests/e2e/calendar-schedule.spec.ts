@@ -57,14 +57,13 @@ async function loginUser(page: Page) {
 
 	if (isPasswordVisible) {
 		await passwordInput.fill(TEST_PASSWORD);
-		const signInBtn = page.locator('button:has-text("Sign in")').first();
 		await signInBtn.click();
 		await page.waitForTimeout(3000);
 		await page.keyboard.press('Enter');
 	} else {
-		const signInBtn = page.locator('button:has-text("Sign in")').first();
-		if (await signInBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await signInBtn.click();
+		const signInBtnAlt = page.locator('button:has-text("Sign in")').first();
+		if (await signInBtnAlt.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await signInBtnAlt.click();
 			await page.waitForTimeout(2000);
 			if (await passwordInput.isVisible({ timeout: 5000 }).catch(() => false)) {
 				await passwordInput.fill(TEST_PASSWORD);

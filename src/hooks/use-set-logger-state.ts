@@ -36,8 +36,8 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
 
   const handleWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    if (value === '' || /^\d+$/.test(value)) {
-      setWeight(value === '' ? 0 : parseInt(value, 10))
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setWeight(value === '' ? 0 : parseFloat(value))
     }
   }, [])
 

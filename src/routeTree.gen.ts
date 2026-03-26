@@ -25,7 +25,6 @@ import { Route as ExercisesNewRouteImport } from './routes/exercises.new'
 import { Route as ExercisesIndexRouteImport } from './routes/exercises._index'
 import { Route as ExercisesIdRouteImport } from './routes/exercises.$id'
 import { Route as AuthSigninRouteImport } from './routes/auth.signin'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
 import { Route as ApiWorkoutSetsRouteImport } from './routes/api/workout-sets'
 import { Route as ApiWorkoutExercisesRouteImport } from './routes/api/workout-exercises'
@@ -161,11 +160,6 @@ const ExercisesIdRoute = ExercisesIdRouteImport.update({
 const AuthSigninRoute = AuthSigninRouteImport.update({
   id: '/auth/signin',
   path: '/auth/signin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWorkoutsRoute = ApiWorkoutsRouteImport.update({
@@ -487,7 +481,6 @@ export interface FileRoutesByFullPath {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
@@ -563,7 +556,6 @@ export interface FileRoutesByTo {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
@@ -640,7 +632,6 @@ export interface FileRoutesById {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises/_index': typeof ExercisesIndexRoute
@@ -718,7 +709,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises'
@@ -794,7 +784,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises'
@@ -870,7 +859,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises/_index'
@@ -947,7 +935,6 @@ export interface RootRouteChildren {
   ApiWorkoutExercisesRoute: typeof ApiWorkoutExercisesRoute
   ApiWorkoutSetsRoute: typeof ApiWorkoutSetsRoute
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
-  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSigninRoute: typeof AuthSigninRoute
   ExercisesIdRoute: typeof ExercisesIdRouteWithChildren
   ExercisesIndexRoute: typeof ExercisesIndexRoute
@@ -1097,13 +1084,6 @@ declare module '@tanstack/react-router' {
       path: '/auth/signin'
       fullPath: '/auth/signin'
       preLoaderRoute: typeof AuthSigninRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/workouts': {
@@ -1694,7 +1674,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkoutExercisesRoute: ApiWorkoutExercisesRoute,
   ApiWorkoutSetsRoute: ApiWorkoutSetsRoute,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,
-  AuthCallbackRoute: AuthCallbackRoute,
   AuthSigninRoute: AuthSigninRoute,
   ExercisesIdRoute: ExercisesIdRouteWithChildren,
   ExercisesIndexRoute: ExercisesIndexRoute,

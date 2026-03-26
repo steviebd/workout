@@ -6,7 +6,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
 const PROJECT_ROOT = process.cwd();
@@ -23,7 +23,6 @@ function measureBundleSize(): number {
   let totalBytes = 0;
 
   function walkDir(dir: string) {
-    const { readdirSync, statSync } = require('fs') as typeof import('fs');
     const files = readdirSync(dir);
     for (const file of files) {
       const fullPath = join(dir, file);
