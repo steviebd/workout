@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { SectionHeader } from '~/components/ui/SectionHeader';
+import { formatDuration } from '~/lib/workout-summary';
+import { getWeekStart, getWeekEnd, getMonthStart, getMonthEnd } from '~/lib/utils/date';
 
 const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
 const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
@@ -75,47 +77,15 @@ interface WorkoutStats {
   totalSets: number;
 }
 
-const formatDuration = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+const getThisWeekRange = () => ({
+  from: getWeekStart().toISOString(),
+  to: getWeekEnd().toISOString(),
+});
 
-  if (hours > 0) {
-    return `${hours}h ${mins}m`;
-  }
-  return `${mins}m`;
-};
-
-const getThisWeekRange = () => {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-  const monday = new Date(now);
-  monday.setDate(diff);
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(sunday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return {
-    from: monday.toISOString(),
-    to: sunday.toISOString(),
-  };
-};
-
-const getThisMonthRange = () => {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  firstDay.setHours(0, 0, 0, 0);
-
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  lastDay.setHours(23, 59, 59, 999);
-
-  return {
-    from: firstDay.toISOString(),
-    to: lastDay.toISOString(),
-  };
-};
+const getThisMonthRange = () => ({
+  from: getMonthStart().toISOString(),
+  to: getMonthEnd().toISOString(),
+});
 
 function ProgressPage() {
   const auth = useAuth();

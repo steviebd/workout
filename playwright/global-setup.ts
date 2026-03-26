@@ -394,10 +394,34 @@ async function performLogin(
 		}
 	}
 
-	await page.waitForTimeout(5000);
-	await page.waitForLoadState('domcontentloaded');
+	const finalUrl = page.url();
+	console.log('Final URL after login:', finalUrl);
 	
-	console.log('Final URL after login:', page.url());
+	if (finalUrl.includes('/auth/callback')) {
+		console.log('On callback page - extracting code for API call...');
+		const url = new URL(finalUrl);
+		const code = url.searchParams.get('code');
+		const state = url.searchParams.get('state');
+		
+		if (code) {
+			const apiUrl = `${baseUrl}/api/auth/callback?code=${code}${state ? `&state=${  state}` : ''}`;
+			console.log('Calling auth API directly...');
+			try {
+				const response = await context.request.get(apiUrl);
+				console.log('Auth API response status:', response.status());
+				
+				if (response.status() === 302) {
+					const headers = response.headers() as Record<string, string>;
+					const setCookie = headers['set-cookie'];
+					console.log('Got session cookie:', setCookie ? 'yes' : 'no');
+				}
+			} catch (e) {
+				console.log('Auth API call error:', e instanceof Error ? e.message : 'unknown');
+			}
+		}
+	}
+
+	await page.waitForTimeout(2000);
 	
 	const signOutButton = page.locator('text=Sign Out').first();
 	const isSignedIn = await signOutButton.isVisible({ timeout: 10000 }).catch(() => false);
@@ -485,9 +509,9 @@ async function globalSetup() {
 			process.exit(1);
 		}
 
-		const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"]';
-		const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"]';
-		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button:has-text("Sign in")';
+		const emailSelector = process.env.PLAYWRIGHT_AUTH_EMAIL_SELECTOR ?? 'input[name="email"], input[type="email"]';
+		const passwordSelector = process.env.PLAYWRIGHT_AUTH_PASSWORD_SELECTOR ?? 'input[name="password"], input[type="password"]';
+		const submitSelector = process.env.PLAYWRIGHT_AUTH_SUBMIT_SELECTOR ?? 'button[type="submit"]:not([value="magic-code"])';
 		const continueSelector = process.env.PLAYWRIGHT_AUTH_CONTINUE_SELECTOR ?? 'button:has-text("Continue")';
 
 		console.log('Starting full login flow...');

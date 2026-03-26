@@ -1,4 +1,4 @@
-import { desc, eq, gt, and, inArray } from 'drizzle-orm';
+import { desc, eq, gt, and, inArray, exists } from 'drizzle-orm';
 import {
   exercises as exercisesTable,
   templates as templatesTable,
@@ -234,56 +234,75 @@ export async function syncPull(
       )
     : inArray(workoutExercisesTable.workoutId, workoutIds);
 
-  const workoutExercises = await db
-    .select({
-      id: workoutExercisesTable.id,
-      localId: workoutExercisesTable.localId,
-      workoutId: workoutExercisesTable.workoutId,
-      exerciseId: workoutExercisesTable.exerciseId,
-      orderIndex: workoutExercisesTable.orderIndex,
-      notes: workoutExercisesTable.notes,
-      isAmrap: workoutExercisesTable.isAmrap,
-      setNumber: workoutExercisesTable.setNumber,
-      isDeleted: workoutExercisesTable.isDeleted,
-      updatedAt: workoutExercisesTable.updatedAt,
-    })
-    .from(workoutExercisesTable)
-    .where(workoutExerciseWhere)
-    .orderBy(workoutExercisesTable.workoutId, workoutExercisesTable.orderIndex)
-    .limit(2000);
+  const workoutSetsWhere = sinceParam
+    ? and(
+        exists(
+          db
+            .select({ id: workoutExercisesTable.id })
+            .from(workoutExercisesTable)
+            .where(and(
+              eq(workoutExercisesTable.id, workoutSetsTable.workoutExerciseId),
+              inArray(workoutExercisesTable.workoutId, workoutIds)
+            ))
+        ),
+        gt(workoutSetsTable.updatedAt, sinceParam)
+      )
+    : exists(
+        db
+          .select({ id: workoutExercisesTable.id })
+          .from(workoutExercisesTable)
+          .where(and(
+            eq(workoutExercisesTable.id, workoutSetsTable.workoutExerciseId),
+            inArray(workoutExercisesTable.workoutId, workoutIds)
+          ))
+      );
 
+  const [workoutExercisesResult, workoutSetsResult] = await db.batch([
+    db
+      .select({
+        id: workoutExercisesTable.id,
+        localId: workoutExercisesTable.localId,
+        workoutId: workoutExercisesTable.workoutId,
+        exerciseId: workoutExercisesTable.exerciseId,
+        orderIndex: workoutExercisesTable.orderIndex,
+        notes: workoutExercisesTable.notes,
+        isAmrap: workoutExercisesTable.isAmrap,
+        setNumber: workoutExercisesTable.setNumber,
+        isDeleted: workoutExercisesTable.isDeleted,
+        updatedAt: workoutExercisesTable.updatedAt,
+      })
+      .from(workoutExercisesTable)
+      .where(workoutExerciseWhere)
+      .orderBy(workoutExercisesTable.workoutId, workoutExercisesTable.orderIndex)
+      .limit(2000),
+    db
+      .select({
+        id: workoutSetsTable.id,
+        localId: workoutSetsTable.localId,
+        workoutExerciseId: workoutSetsTable.workoutExerciseId,
+        setNumber: workoutSetsTable.setNumber,
+        weight: workoutSetsTable.weight,
+        reps: workoutSetsTable.reps,
+        rpe: workoutSetsTable.rpe,
+        isComplete: workoutSetsTable.isComplete,
+        completedAt: workoutSetsTable.completedAt,
+        createdAt: workoutSetsTable.createdAt,
+        isDeleted: workoutSetsTable.isDeleted,
+        updatedAt: workoutSetsTable.updatedAt,
+      })
+      .from(workoutSetsTable)
+      .where(workoutSetsWhere)
+      .orderBy(workoutSetsTable.workoutExerciseId, workoutSetsTable.setNumber)
+      .limit(5000),
+  ]);
+
+  const workoutExercises = workoutExercisesResult;
+  const workoutSets = workoutSetsResult;
   const workoutExerciseIds = workoutExercises.map(we => we.id);
 
   if (workoutExerciseIds.length === 0) {
     return buildSyncResponse(lastSync, exercises, templates, workouts, workoutExercises, []);
   }
-
-  const workoutSetWhere = sinceParam
-    ? and(
-        inArray(workoutSetsTable.workoutExerciseId, workoutExerciseIds),
-        gt(workoutSetsTable.updatedAt, sinceParam)
-      )
-    : inArray(workoutSetsTable.workoutExerciseId, workoutExerciseIds);
-
-  const workoutSets = await db
-    .select({
-      id: workoutSetsTable.id,
-      localId: workoutSetsTable.localId,
-      workoutExerciseId: workoutSetsTable.workoutExerciseId,
-      setNumber: workoutSetsTable.setNumber,
-      weight: workoutSetsTable.weight,
-      reps: workoutSetsTable.reps,
-      rpe: workoutSetsTable.rpe,
-      isComplete: workoutSetsTable.isComplete,
-      completedAt: workoutSetsTable.completedAt,
-      createdAt: workoutSetsTable.createdAt,
-      isDeleted: workoutSetsTable.isDeleted,
-      updatedAt: workoutSetsTable.updatedAt,
-    })
-    .from(workoutSetsTable)
-    .where(workoutSetWhere)
-    .orderBy(workoutSetsTable.workoutExerciseId, workoutSetsTable.setNumber)
-    .limit(5000);
 
   return buildSyncResponse(lastSync, exercises, templates, workouts, workoutExercises, workoutSets);
 }

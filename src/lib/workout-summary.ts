@@ -1,21 +1,24 @@
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
+import { calculateE1RM } from '~/lib/domain/stats/calculations';
+import { isSquat, isBench, isDeadlift, isOverheadPress } from '~/lib/db/exercise/categories';
 
-export function formatDuration(startTime: string, endTime: string): string {
-  try {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  } catch {
-    return '0m';
+export function formatDuration(start: string | number, end?: string): string {
+  let minutes: number;
+  if (typeof start === 'number') {
+    minutes = start;
+  } else {
+    const startDate = new Date(start);
+    const endDate = end ? new Date(end) : new Date();
+    minutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
   }
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
 }
 
 export function calculateTotalVolume(exercises: WorkoutExerciseWithDetails[]): number {
@@ -34,11 +37,6 @@ export function calculateTotalVolume(exercises: WorkoutExerciseWithDetails[]): n
   }
 }
 
-export function calculateE1RM(weight: number, reps: number): number {
-  if (reps === 1) return weight;
-  return Math.round(weight * (1 + reps / 30));
-}
-
 export interface Tested1RMs {
   squat: number;
   bench: number;
@@ -55,16 +53,16 @@ export function getTested1RMs(exercises: WorkoutExerciseWithDetails[]): Tested1R
   };
   
   for (const exercise of exercises) {
-    const name = (exercise.exercise?.name ?? '').toLowerCase();
+    const name = exercise.exercise?.name ?? '';
     for (const set of exercise.sets) {
       if (set.isComplete && set.weight) {
-        if (name.includes('squat') && set.weight > tested.squat) {
+        if (isSquat(name) && set.weight > tested.squat) {
           tested.squat = set.weight;
-        } else if ((name.includes('bench') || name === 'bench press') && set.weight > tested.bench) {
+        } else if (isBench(name) && set.weight > tested.bench) {
           tested.bench = set.weight;
-        } else if (name.includes('deadlift') && set.weight > tested.deadlift) {
+        } else if (isDeadlift(name) && set.weight > tested.deadlift) {
           tested.deadlift = set.weight;
-        } else if ((name.includes('overhead') || name.includes('ohp') || name === 'overhead press') && set.weight > tested.ohp) {
+        } else if (isOverheadPress(name) && set.weight > tested.ohp) {
           tested.ohp = set.weight;
         }
       }

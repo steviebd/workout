@@ -44,6 +44,10 @@ const mockWorkoutData: Workout = {
   startingBench1rm: null,
   startingDeadlift1rm: null,
   startingOhp1rm: null,
+  completedDate: null,
+  totalVolume: null,
+  totalSets: null,
+  durationMinutes: null,
 };
 
 const mockWorkoutSetData: WorkoutSet = {
@@ -75,7 +79,6 @@ describe('Workout CRUD Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -170,7 +173,27 @@ describe('Workout CRUD Operations', () => {
 
   describe('completeWorkout', () => {
     it('completes workout with timestamp', async () => {
-      const completedWorkout = { ...mockWorkoutData, completedAt: '2024-01-01T11:00:00.000Z' };
+      const completedWorkout = { 
+        ...mockWorkoutData, 
+        completedAt: '2024-01-01T11:00:00.000Z',
+        completedDate: '2024-01-01',
+        totalVolume: 1000,
+        totalSets: 10,
+        durationMinutes: 60,
+      };
+
+      mockDrizzleDb.select.mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue({ startedAt: '2024-01-01T10:00:00.000Z' }),
+          }),
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue({ totalSets: 10, totalVolume: 1000 }),
+            }),
+          }),
+        }),
+      });
 
       mockDrizzleDb.update.mockReturnValue({
         set: vi.fn().mockReturnValue({
@@ -285,7 +308,6 @@ describe('User Preferences Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -395,7 +417,6 @@ describe('Workout History - getWorkoutsByUserId', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -658,8 +679,7 @@ describe('Workout History - getWorkoutsByUserId', () => {
 describe('Workout History - getWorkoutHistoryStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.useFakeTimers();
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1010,7 +1030,6 @@ describe('getLastWorkoutForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1175,7 +1194,6 @@ describe('getLastWorkoutSetsForExercise', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
@@ -1389,7 +1407,7 @@ describe('Exercise History', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    vi.mocked(createDb).mockReturnValue(mockDrizzleDb as any);
   });
 
   afterEach(() => {

@@ -25,7 +25,6 @@ import { Route as ExercisesNewRouteImport } from './routes/exercises.new'
 import { Route as ExercisesIndexRouteImport } from './routes/exercises._index'
 import { Route as ExercisesIdRouteImport } from './routes/exercises.$id'
 import { Route as AuthSigninRouteImport } from './routes/auth.signin'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiWorkoutsRouteImport } from './routes/api/workouts'
 import { Route as ApiWorkoutSetsRouteImport } from './routes/api/workout-sets'
 import { Route as ApiWorkoutExercisesRouteImport } from './routes/api/workout-exercises'
@@ -73,6 +72,7 @@ import { Route as ApiTemplatesIdExercisesRouteImport } from './routes/api/templa
 import { Route as ApiTemplatesIdCopyRouteImport } from './routes/api/templates.$id.copy'
 import { Route as ApiProgramCyclesIdWorkoutsRouteImport } from './routes/api/program-cycles.$id.workouts'
 import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api/program-cycles.$id.start-workout'
+import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
 import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
 import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
 import { Route as ApiIntegrationsWhoopSyncRouteImport } from './routes/api/integrations.whoop.sync'
@@ -160,11 +160,6 @@ const ExercisesIdRoute = ExercisesIdRouteImport.update({
 const AuthSigninRoute = AuthSigninRouteImport.update({
   id: '/auth/signin',
   path: '/auth/signin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWorkoutsRoute = ApiWorkoutsRouteImport.update({
@@ -408,6 +403,12 @@ const ApiProgramCyclesIdStartWorkoutRoute =
     path: '/start-workout',
     getParentRoute: () => ApiProgramCyclesIdRoute,
   } as any)
+const ApiProgramCyclesIdCurrentWorkoutRoute =
+  ApiProgramCyclesIdCurrentWorkoutRouteImport.update({
+    id: '/current-workout',
+    path: '/current-workout',
+    getParentRoute: () => ApiProgramCyclesIdRoute,
+  } as any)
 const ApiProgramCyclesIdCreate1rmTestWorkoutRoute =
   ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport.update({
     id: '/create-1rm-test-workout',
@@ -480,7 +481,6 @@ export interface FileRoutesByFullPath {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
@@ -524,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -555,7 +556,6 @@ export interface FileRoutesByTo {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
@@ -599,6 +599,7 @@ export interface FileRoutesByTo {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -631,7 +632,6 @@ export interface FileRoutesById {
   '/api/workout-exercises': typeof ApiWorkoutExercisesRoute
   '/api/workout-sets': typeof ApiWorkoutSetsRoute
   '/api/workouts': typeof ApiWorkoutsRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/auth/signin': typeof AuthSigninRoute
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises/_index': typeof ExercisesIndexRoute
@@ -675,6 +675,7 @@ export interface FileRoutesById {
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
   '/api/program-cycles/$id/start-workout': typeof ApiProgramCyclesIdStartWorkoutRoute
   '/api/program-cycles/$id/workouts': typeof ApiProgramCyclesIdWorkoutsRoute
   '/api/templates/$id/copy': typeof ApiTemplatesIdCopyRoute
@@ -708,7 +709,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises'
@@ -752,6 +752,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -783,7 +784,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises'
@@ -827,6 +827,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -858,7 +859,6 @@ export interface FileRouteTypes {
     | '/api/workout-exercises'
     | '/api/workout-sets'
     | '/api/workouts'
-    | '/auth/callback'
     | '/auth/signin'
     | '/exercises/$id'
     | '/exercises/_index'
@@ -902,6 +902,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/sync'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
+    | '/api/program-cycles/$id/current-workout'
     | '/api/program-cycles/$id/start-workout'
     | '/api/program-cycles/$id/workouts'
     | '/api/templates/$id/copy'
@@ -934,7 +935,6 @@ export interface RootRouteChildren {
   ApiWorkoutExercisesRoute: typeof ApiWorkoutExercisesRoute
   ApiWorkoutSetsRoute: typeof ApiWorkoutSetsRoute
   ApiWorkoutsRoute: typeof ApiWorkoutsRouteWithChildren
-  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSigninRoute: typeof AuthSigninRoute
   ExercisesIdRoute: typeof ExercisesIdRouteWithChildren
   ExercisesIndexRoute: typeof ExercisesIndexRoute
@@ -1084,13 +1084,6 @@ declare module '@tanstack/react-router' {
       path: '/auth/signin'
       fullPath: '/auth/signin'
       preLoaderRoute: typeof AuthSigninRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/workouts': {
@@ -1422,6 +1415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesIdStartWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesIdRoute
     }
+    '/api/program-cycles/$id/current-workout': {
+      id: '/api/program-cycles/$id/current-workout'
+      path: '/current-workout'
+      fullPath: '/api/program-cycles/$id/current-workout'
+      preLoaderRoute: typeof ApiProgramCyclesIdCurrentWorkoutRouteImport
+      parentRoute: typeof ApiProgramCyclesIdRoute
+    }
     '/api/program-cycles/$id/create-1rm-test-workout': {
       id: '/api/program-cycles/$id/create-1rm-test-workout'
       path: '/create-1rm-test-workout'
@@ -1504,6 +1504,7 @@ const ApiExercisesRouteWithChildren = ApiExercisesRoute._addFileChildren(
 
 interface ApiProgramCyclesIdRouteChildren {
   ApiProgramCyclesIdCreate1rmTestWorkoutRoute: typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
+  ApiProgramCyclesIdCurrentWorkoutRoute: typeof ApiProgramCyclesIdCurrentWorkoutRoute
   ApiProgramCyclesIdStartWorkoutRoute: typeof ApiProgramCyclesIdStartWorkoutRoute
   ApiProgramCyclesIdWorkoutsRoute: typeof ApiProgramCyclesIdWorkoutsRoute
 }
@@ -1511,6 +1512,7 @@ interface ApiProgramCyclesIdRouteChildren {
 const ApiProgramCyclesIdRouteChildren: ApiProgramCyclesIdRouteChildren = {
   ApiProgramCyclesIdCreate1rmTestWorkoutRoute:
     ApiProgramCyclesIdCreate1rmTestWorkoutRoute,
+  ApiProgramCyclesIdCurrentWorkoutRoute: ApiProgramCyclesIdCurrentWorkoutRoute,
   ApiProgramCyclesIdStartWorkoutRoute: ApiProgramCyclesIdStartWorkoutRoute,
   ApiProgramCyclesIdWorkoutsRoute: ApiProgramCyclesIdWorkoutsRoute,
 }
@@ -1672,7 +1674,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkoutExercisesRoute: ApiWorkoutExercisesRoute,
   ApiWorkoutSetsRoute: ApiWorkoutSetsRoute,
   ApiWorkoutsRoute: ApiWorkoutsRouteWithChildren,
-  AuthCallbackRoute: AuthCallbackRoute,
   AuthSigninRoute: AuthSigninRoute,
   ExercisesIdRoute: ExercisesIdRouteWithChildren,
   ExercisesIndexRoute: ExercisesIndexRoute,

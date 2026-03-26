@@ -5,18 +5,25 @@ const PROGRAM_SLUG = 'stronglifts-5x5';
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 async function loginUser(page: Page) {
-	await page.goto(`${BASE_URL}/`, { waitUntil: 'load', timeout: 60000 });
-
-	await page.waitForFunction(() => {
-		const loading = document.querySelector('.animate-spin, .animate-pulse');
-		const hasUser = document.querySelector('button.rounded-full');
-		const hasSignIn = document.querySelector('button:has-text("Sign In")');
-		return (!loading?.closest('.min-h-screen')) && (hasUser ?? hasSignIn);
-	}, { timeout: 15000 }).catch(() => {});
-
-	await page.waitForTimeout(2000);
+	await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
 	const userAvatar = page.locator('button.rounded-full').first();
+	const signInBtn = page.locator('button:has-text("Sign In")').first();
+
+	try {
+		await expect(userAvatar).toBeVisible({ timeout: 30000 });
+		console.log('User is already signed in');
+		return;
+	} catch {
+	}
+
+	try {
+		await expect(signInBtn).toBeVisible({ timeout: 5000 });
+		console.log('User is not signed in, proceeding with login...');
+	} catch {
+		console.log('Neither avatar nor sign-in button visible after timeout');
+	}
+
 	const isSignedIn = await userAvatar.isVisible({ timeout: 5000 }).catch(() => false);
 	if (isSignedIn) {
 		return;
@@ -24,7 +31,7 @@ async function loginUser(page: Page) {
 
 	await page.goto(`${BASE_URL}/auth/signin`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-	await expect(page).toHaveURL((url: URL) => url.hostname.includes('authkit.app'), { timeout: 15000 });
+	await page.waitForURL((url: URL) => url.hostname.includes('authkit.app'), { timeout: 30000 });
 
 	const emailInput = page.locator('input[name="email"]');
 	await expect(emailInput).toBeVisible({ timeout: 10000 });
@@ -50,14 +57,13 @@ async function loginUser(page: Page) {
 
 	if (isPasswordVisible) {
 		await passwordInput.fill(TEST_PASSWORD);
-		const signInBtn = page.locator('button:has-text("Sign in")').first();
 		await signInBtn.click();
 		await page.waitForTimeout(3000);
 		await page.keyboard.press('Enter');
 	} else {
-		const signInBtn = page.locator('button:has-text("Sign in")').first();
-		if (await signInBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await signInBtn.click();
+		const signInBtnAlt = page.locator('button:has-text("Sign in")').first();
+		if (await signInBtnAlt.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await signInBtnAlt.click();
 			await page.waitForTimeout(2000);
 			if (await passwordInput.isVisible({ timeout: 5000 }).catch(() => false)) {
 				await passwordInput.fill(TEST_PASSWORD);

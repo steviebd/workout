@@ -7,6 +7,7 @@ describe('Template DB Operations', () => {
     select: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    batch: ReturnType<typeof vi.fn>;
   };
   let createDbMock: ReturnType<typeof vi.fn>;
 
@@ -18,6 +19,7 @@ describe('Template DB Operations', () => {
       select: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      batch: vi.fn().mockResolvedValue([]),
     };
 
     createDbMock = vi.fn(() => mockDrizzleDb);

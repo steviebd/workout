@@ -1,0 +1,12 @@
+ALTER TABLE `workouts` ADD `completed_date` text;
+ALTER TABLE `workouts` ADD `total_volume` real;
+ALTER TABLE `workouts` ADD `total_sets` integer;
+ALTER TABLE `workouts` ADD `duration_minutes` integer;
+ALTER TABLE `workouts` ADD `squat_1rm` real;
+ALTER TABLE `workouts` ADD `bench_1rm` real;
+ALTER TABLE `workouts` ADD `deadlift_1rm` real;
+ALTER TABLE `workouts` ADD `ohp_1rm` real;
+ALTER TABLE `workouts` ADD `starting_squat_1rm` real;
+ALTER TABLE `workouts` ADD `starting_bench_1rm` real;
+ALTER TABLE `workouts` ADD `starting_deadlift_1rm` real;
+ALTER TABLE `workouts` ADD `starting_ohp_1rm` real;

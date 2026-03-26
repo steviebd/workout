@@ -298,7 +298,7 @@ export async function updateWorkout(
 }
 
 /**
- * Completes a workout by setting its completion timestamp
+ * Completes a workout by setting its completion timestamp and computing aggregates
  * @param db - D1 database instance
  * @param workoutId - The workout ID to complete
  * @param workosId - The user's WorkOS ID for ownership validation
@@ -309,8 +309,40 @@ export async function completeWorkout(
   workoutId: string,
   workosId: string
 ): Promise<Workout | null> {
+  const db = getDb(dbOrTx);
+
+  const workout = await db
+    .select({ startedAt: workouts.startedAt })
+    .from(workouts)
+    .where(and(eq(workouts.id, workoutId), eq(workouts.workosId, workosId)))
+    .get();
+
+  if (!workout) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+
+  const aggregates = await db
+    .select({
+      totalSets: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 THEN 1 ELSE 0 END), 0)`,
+      totalVolume: sql<number>`COALESCE(SUM(CASE WHEN ${workoutSets.isComplete} = 1 AND ${workoutSets.weight} > 0 THEN ${workoutSets.weight} * ${workoutSets.reps} ELSE 0 END), 0)`,
+    })
+    .from(workoutExercises)
+    .leftJoin(workoutSets, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+    .where(eq(workoutExercises.workoutId, workoutId))
+    .get();
+
+  const durationMinutes = workout.startedAt
+    ? Math.round((new Date(now).getTime() - new Date(workout.startedAt).getTime()) / 60000)
+    : 0;
+
   return updateWorkout(dbOrTx, workoutId, workosId, {
-    completedAt: new Date().toISOString(),
+    completedAt: now,
+    completedDate: now.split('T')[0],
+    totalVolume: aggregates?.totalVolume ?? 0,
+    totalSets: aggregates?.totalSets ?? 0,
+    durationMinutes,
   });
 }
 
@@ -353,6 +385,7 @@ export async function createWorkoutWithDetails(
       notes: data.notes,
       startedAt: startedAt ?? new Date().toISOString(),
       localId: data.localId,
+      completedDate: null,
     })
     .returning()
     .get();
@@ -422,10 +455,12 @@ export async function createWorkoutWithDetails(
 
   if (setsToInsert.length > 0) {
     const CHUNK_SIZE = calculateChunkSize(7);
+    const statements = [];
     for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
-      const batch = setsToInsert.slice(i, i + CHUNK_SIZE);
-      await db.insert(workoutSets).values(batch);
+      const chunk = setsToInsert.slice(i, i + CHUNK_SIZE);
+      statements.push(db.insert(workoutSets).values(chunk).run());
     }
+    await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
   }
 
   const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);

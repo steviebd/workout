@@ -3,6 +3,7 @@
 import { HeadContent, Outlet, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { Agentation } from "agentation"
 
 import '../styles.css'
 import { ErrorBoundary } from '@/components/app/ErrorBoundary'
@@ -283,6 +284,7 @@ function AppLayout() {
             </div>
 
             <Scripts />
+            {process.env.NODE_ENV === "development" && <Agentation />}
           </body>
         </html>
       </AuthContext.Provider>
