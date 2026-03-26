@@ -34,6 +34,13 @@ export function getMonthStartStr(date: Date = new Date()): string {
   return new Date(monthStart.getTime() - monthStart.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 }
 
+export function getMonthEnd(date: Date = new Date()): Date {
+  const monthStart = getMonthStart(date);
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+  monthEnd.setHours(23, 59, 59, 999);
+  return monthEnd;
+}
+
 export function getMonthsAgo(months: number, date: Date = new Date()): Date {
   const result = new Date(date);
   result.setMonth(date.getMonth() - months);

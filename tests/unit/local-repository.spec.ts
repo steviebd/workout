@@ -605,7 +605,6 @@ describe('Local Repository - Offline Queue Operations', () => {
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(1);
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await removeOperation(ops[0].id!);
 
       const remainingOps = await getPendingOperations();
@@ -620,7 +619,6 @@ describe('Local Repository - Offline Queue Operations', () => {
       const ops = await getPendingOperations();
       expect(ops).toHaveLength(2);
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await removeOperation(ops[0].id!);
 
       const remainingOps = await getPendingOperations();
@@ -635,7 +633,6 @@ describe('Local Repository - Offline Queue Operations', () => {
       const ops = await getPendingOperations();
       expect(ops[0].retryCount).toBe(0);
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await incrementRetry(ops[0].id!);
 
       const updatedOps = await getPendingOperations();
@@ -646,11 +643,8 @@ describe('Local Repository - Offline Queue Operations', () => {
       await createExercise('user-1', { name: 'Exercise', muscleGroup: 'Chest' });
       const ops = await getPendingOperations();
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await incrementRetry(ops[0].id!);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await incrementRetry(ops[0].id!);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await incrementRetry(ops[0].id!);
 
       const updatedOps = await getPendingOperations();

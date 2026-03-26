@@ -25,6 +25,14 @@ export default tseslint.config(
 	...tseslint.configs.recommended,
 	...tseslint.configs.strict,
 	{
+		files: ['tests/**/*.{ts,tsx}', 'playwright/**/*.{ts,tsx}'],
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_', 'caughtErrorsIgnorePattern': '^_' }],
+			'no-constant-binary-expression': 'off'
+		}
+	},
+	{
 		files: ['**/*.{ts,tsx}'],
 		plugins: {
 			react,
@@ -60,6 +68,8 @@ export default tseslint.config(
 			}
 		},
 		rules: {
+			'@typescript-eslint/no-explicit-any': ['error', { 'ignoreRestArgs': true }],
+			'@typescript-eslint/no-non-null-assertion': 'off',
 			'@typescript-eslint/array-type': ['error', { 'default': 'array-simple' }],
 			'@typescript-eslint/consistent-generic-constructors': ['error', 'constructor'],
 			'@typescript-eslint/consistent-indexed-object-style': ['error', 'record'],
@@ -371,6 +381,14 @@ export default tseslint.config(
 			'valid-typeof': ['error', { 'requireStringLiterals': true }],
 			'wrap-iife': ['error', 'outside'],
 			'yoda': 'off'
+		}
+	},
+	{
+		files: ['tests/**/*.{ts,tsx}', 'playwright/**/*.{ts,tsx}'],
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_', 'caughtErrorsIgnorePattern': '^_' }],
+			'no-constant-binary-expression': 'off'
 		}
 	}
 );

@@ -201,8 +201,8 @@ describe('SetLogger', () => {
       />
     )
 
-    const setRow = container.querySelector('.rounded-xl') as HTMLElement
-    const deleteButton = container.querySelector('[aria-label="Delete set"]') as HTMLElement
+    const setRow = container.querySelector('.rounded-xl')!
+    const deleteButton = container.querySelector('[aria-label="Delete set"]')!
 
     expect(setRow).not.toBeNull()
     expect(deleteButton).not.toBeNull()

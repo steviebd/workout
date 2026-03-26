@@ -1,20 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
+import { useEffect, useState, useRef, memo } from 'react'
 import { Dumbbell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { useUnit } from '@/lib/context/UserPreferencesContext'
-
-const BarShape = (props: React.SVGProps<SVGRectElement> & { weekStart?: unknown; stackedBarStart?: unknown; tooltipPosition?: unknown; parentViewBox?: unknown; isActive?: unknown; dataKey?: unknown }) => {
-  const { weekStart: _weekStart, stackedBarStart: _stackedBarStart, tooltipPosition: _tooltipPosition, parentViewBox: _parentViewBox, isActive: _isActive, dataKey: _dataKey, ...restProps } = props
-  return (
-    <rect
-      {...restProps}
-      fill="url(#barGradient)"
-    />
-  )
-}
 
 interface WeeklyVolume {
   week: string
@@ -25,8 +14,127 @@ interface WeeklyVolumeChartProps {
   data: WeeklyVolume[]
 }
 
+// Lightweight SVG bar chart - ~2KB vs recharts 735KB
+function SimpleBarChart({ 
+  data, 
+  width, 
+  height,
+  barColor = 'var(--volume)'
+}: { 
+  data: WeeklyVolume[]
+  width: number
+  height: number
+  barColor?: string
+}) {
+  if (data.length === 0 || width <= 0 || height <= 0) return null
+
+  const padding = { top: 10, right: 10, bottom: 30, left: 45 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+
+  const volumes = data.map(d => d.volume)
+  const maxVolume = Math.max(...volumes)
+
+  const barWidth = Math.min(40, (chartWidth / data.length) * 0.7)
+  const barGap = (chartWidth - barWidth * data.length) / (data.length + 1)
+
+  const xScale = (i: number) => padding.left + barGap + i * (barWidth + barGap)
+  const yScale = (v: number) => (v / maxVolume) * chartHeight
+
+  // Y-axis ticks
+  const yTicks = 5
+  const yTickValues = Array.from({ length: yTicks }, (_, i) => 
+    (maxVolume * i) / (yTicks - 1)
+  )
+
+  // Format volume in thousands
+  const formatVolume = (v: number) => {
+    if (v >= 1000) return `${(v / 1000).toFixed(0)}k`
+    return v.toString()
+  }
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <defs>
+        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={barColor} stopOpacity={1} />
+          <stop offset="100%" stopColor={barColor} stopOpacity={0.6} />
+        </linearGradient>
+      </defs>
+      
+      {/* Grid lines */}
+      {yTickValues.map((tick, i) => (
+        <line
+          key={`grid-${i}`}
+          x1={padding.left}
+          y1={padding.top + chartHeight - yScale(tick)}
+          x2={width - padding.right}
+          y2={padding.top + chartHeight - yScale(tick)}
+          stroke="var(--border)"
+          strokeDasharray="3 3"
+        />
+      ))}
+      
+      {/* Bars */}
+      {data.map((d, i) => {
+        const barHeight = yScale(d.volume)
+        const barY = padding.top + chartHeight - barHeight
+        return (
+          <g key={`bar-${i}`}>
+            <rect
+              x={xScale(i)}
+              y={barY}
+              width={barWidth}
+              height={barHeight}
+              fill="url(#barGradient)"
+              rx={4}
+              ry={4}
+            />
+          </g>
+        )
+      })}
+      
+      {/* Y-axis labels */}
+      {yTickValues.map((tick, i) => (
+        <text
+          key={`y-${i}`}
+          x={padding.left - 8}
+          y={padding.top + chartHeight - yScale(tick)}
+          textAnchor="end"
+          dominantBaseline="middle"
+          fill="var(--muted-foreground)"
+          fontSize={10}
+        >
+          {formatVolume(tick)}
+        </text>
+      ))}
+      
+      {/* X-axis labels (show subset if many) */}
+      {data.map((d, i) => {
+        // Only show label for first and every ~4th item
+        if (data.length > 8 && i % 4 !== 0 && i !== data.length - 1) return null
+        const weekNum = d.week.replace('Week of ', '')
+        return (
+          <text
+            key={`x-${i}`}
+            x={xScale(i) + barWidth / 2}
+            y={height - 8}
+            textAnchor="middle"
+            fill="var(--muted-foreground)"
+            fontSize={10}
+          >
+            {weekNum}
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
+const MemoizedBarChart = memo(SimpleBarChart)
+
 function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
-  const { weightUnit, formatVolume } = useUnit()
+  const { formatVolume } = useUnit()
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 1, height: 1 })
 
@@ -54,19 +162,6 @@ function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
   const totalVolume = data.reduce((acc, week) => acc + week.volume, 0)
   const avgVolume = Math.round(totalVolume / data.length)
 
-  function formatWeek(value: string): string {
-    const datePart = value.replace('Week of ', '')
-    const date = new Date(datePart)
-    const month = date.toLocaleDateString('en-US', { month: 'short' })
-    const day = date.getDate()
-    return `Week of ${month} ${day}`
-  }
-
-  function formatVolumeTick(value: number): string {
-    const converted = weightUnit === 'lbs' ? value * 2.20462 : value
-    return `${Math.round(converted / 1000)}k`
-  }
-
   return (
     <Card className="overflow-hidden min-w-0">
       <CardHeader className="pb-2 space-y-1">
@@ -90,56 +185,11 @@ function WeeklyVolumeChart({ data }: WeeklyVolumeChartProps) {
           </div>
         ) : (
           <div ref={containerRef} className="h-[180px] sm:h-[220px] w-full min-w-0">
-            <ResponsiveContainer width={dimensions.width} height={dimensions.height}>
-              <BarChart
-                data={data}
-                margin={{ top: 5, right: 8, left: -15, bottom: 5 }}
-              >
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--volume)" stopOpacity={1} />
-                    <stop offset="100%" stopColor="var(--volume)" stopOpacity={0.6} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis
-                  dataKey="week"
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
-                  tickLine={{ stroke: 'var(--border)' }}
-                  axisLine={{ stroke: 'var(--border)' }}
-                  tickFormatter={formatWeek}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
-                  tickLine={{ stroke: 'var(--border)' }}
-                  axisLine={{ stroke: 'var(--border)' }}
-                  tickFormatter={formatVolumeTick}
-                  width={35}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                    color: 'var(--foreground)',
-                    boxShadow: '0 4px 6px -1px oklch(0 0 0 / 0.15), 0 2px 4px -2px oklch(0 0 0 / 0.1)',
-                  }}
-                  labelFormatter={(value) => `Week ${value}`}
-                  formatter={(value: number | undefined) => [formatVolume(value ?? 0), 'Volume']}
-                  labelStyle={{ color: 'var(--muted-foreground)', fontSize: 11 }}
-                  itemStyle={{ color: 'var(--foreground)' }}
-                />
-                <Bar
-                  dataKey="volume"
-                  shape={<BarShape />}
-                  radius={[6, 6, 0, 0]}
-                  animationDuration={500}
-                  isAnimationActive={false}
-                  activeBar={{ fill: 'url(#barGradient)' }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <MemoizedBarChart
+              data={data}
+              width={dimensions.width}
+              height={dimensions.height}
+            />
           </div>
         )}
       </CardContent>

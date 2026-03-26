@@ -70,6 +70,15 @@ interface WorkoutForWeekCalculation {
 }
 
 const FETCH_TIMEOUT_MS = 10000;
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 500;
+
+const delay = (ms: number) => new Promise<void>((resolve) => {
+  const id = setTimeout(() => {
+    clearTimeout(id);
+    resolve();
+  }, ms);
+});
 
 function calculateCurrentWeekFromWorkouts(
   workouts: WorkoutForWeekCalculation[],
@@ -158,10 +167,22 @@ function ProgramDashboard() {
 
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
 
     async function loadCycle() {
       try {
         const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
+        
+        if (!response.ok && response.status === 404 && retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(`Cycle not found, retrying (${retryCount}/${MAX_RETRIES})...`);
+          await delay(RETRY_DELAY_MS * retryCount);
+          if (isMounted) {
+            void loadCycle();
+          }
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json() as CycleData;
           if (isMounted) {
@@ -170,6 +191,11 @@ function ProgramDashboard() {
         }
       } catch (error) {
         console.error('Error loading cycle:', error);
+        if (retryCount < MAX_RETRIES && isMounted) {
+          retryCount++;
+          await delay(RETRY_DELAY_MS * retryCount);
+          void loadCycle();
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -186,10 +212,22 @@ function ProgramDashboard() {
 
   useEffect(() => {
     let isMounted = true;
+    let currentWorkoutRetryCount = 0;
 
     async function loadCurrentWorkout() {
       try {
         const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
+        
+        if (!response.ok && response.status === 404 && currentWorkoutRetryCount < MAX_RETRIES) {
+          currentWorkoutRetryCount++;
+          console.log(`Current workout not found, retrying (${currentWorkoutRetryCount}/${MAX_RETRIES})...`);
+          await delay(RETRY_DELAY_MS * currentWorkoutRetryCount);
+          if (isMounted) {
+            void loadCurrentWorkout();
+          }
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json() as CurrentWorkoutData;
           if (isMounted) {
@@ -208,23 +246,28 @@ function ProgramDashboard() {
         }
       } catch (error) {
         console.error('Error loading current workout:', error);
+        if (currentWorkoutRetryCount < MAX_RETRIES && isMounted) {
+          currentWorkoutRetryCount++;
+          await delay(RETRY_DELAY_MS * currentWorkoutRetryCount);
+          void loadCurrentWorkout();
+        }
       }
     }
 
-      async function loadAllWorkoutsForWeekCalculation() {
-        try {
-          const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
-          if (response.ok) {
-            const workouts = await response.json() as WorkoutForWeekCalculation[];
-            if (isMounted && workouts.length > 0) {
-              const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
-              setCalculatedCurrentWeek(calculatedWeek);
-            }
+    async function loadAllWorkoutsForWeekCalculation() {
+      try {
+        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+        if (response.ok) {
+          const workouts = await response.json() as WorkoutForWeekCalculation[];
+          if (isMounted && workouts.length > 0) {
+            const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
+            setCalculatedCurrentWeek(calculatedWeek);
           }
-        } catch (error) {
-          console.error('Error loading workouts for week calculation:', error);
         }
+      } catch (error) {
+        console.error('Error loading workouts for week calculation:', error);
       }
+    }
 
     void loadCurrentWorkout();
     void loadAllWorkoutsForWeekCalculation();
