@@ -76,8 +76,7 @@ function WeightInput({
             onKeyDown={onKeyDown}
             type="text"
             value={weight}
-            inputMode="numeric"
-            pattern="[0-9]*"
+            inputMode="decimal"
           />
         ) : (
           <>
@@ -202,11 +201,11 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
   })
 
   const handleWeightDecrease = useCallback(() => {
-    adjustWeight(-5)
+    adjustWeight(-2.5)
   }, [adjustWeight])
 
   const handleWeightIncrease = useCallback(() => {
-    adjustWeight(5)
+    adjustWeight(2.5)
   }, [adjustWeight])
 
   const handleRepsDecrease = useCallback((e: React.MouseEvent) => {
