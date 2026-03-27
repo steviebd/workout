@@ -46,14 +46,14 @@ function WeightInput({
     <div className="flex items-center gap-0.5">
       <button
         onClick={onDecrease}
-        className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
+        className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
         aria-label="Decrease weight"
       >
-        <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+        <Minus className="h-4 w-4" />
       </button>
       <div
         className={cn(
-          'w-11 sm:w-14 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background/70 border border-border/70',
+          'flex-1 min-w-16 sm:min-w-20 text-center cursor-pointer rounded-lg px-1.5 py-1.5 sm:px-2 sm:py-2 transition-colors h-8 sm:h-10 flex items-center justify-center bg-background/70 border border-border/70',
           isEditing ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'
         )}
         onClick={onStartEditing}
@@ -87,10 +87,10 @@ function WeightInput({
       </div>
       <button
         onClick={onIncrease}
-        className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
+        className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
         aria-label="Increase weight"
       >
-        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+        <Plus className="h-4 w-4" />
       </button>
     </div>
   )
@@ -123,10 +123,10 @@ function RepsInput({
     <div className="flex items-center gap-0.5">
       <button
         onClick={onDecrease}
-        className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
+        className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
         aria-label="Decrease reps"
       >
-        <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+        <Minus className="h-4 w-4" />
       </button>
       <div
         className={cn(
@@ -162,10 +162,10 @@ function RepsInput({
       </div>
       <button
         onClick={onIncrease}
-        className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
+        className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary/70 border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
         aria-label="Increase reps"
       >
-        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+        <Plus className="h-4 w-4" />
       </button>
     </div>
   )
@@ -304,39 +304,41 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
       }}
       {...swipeHandlers}
     >
-      <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 flex-wrap">
-        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold shrink-0">
-          {setNumber}
-        </div>
+      <div className="flex flex-col gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold shrink-0">
+            {setNumber}
+          </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-          <WeightInput
-            weight={weight}
-            weightInputValue={weightInput}
-            weightUnit={weightUnit}
-            isEditing={isEditingWeight}
-            onDecrease={handleWeightDecrease}
-            onIncrease={handleWeightIncrease}
-            onStartEditing={startEditingWeight}
-            onBlur={handleWeightBlurWrapper}
-            onChange={handleWeightChange}
-            onKeyDown={handleWeightKeyDown}
-            inputRef={weightInputRef}
-          />
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-1 min-w-0 justify-center">
+            <WeightInput
+              weight={weight}
+              weightInputValue={weightInput}
+              weightUnit={weightUnit}
+              isEditing={isEditingWeight}
+              onDecrease={handleWeightDecrease}
+              onIncrease={handleWeightIncrease}
+              onStartEditing={startEditingWeight}
+              onBlur={handleWeightBlurWrapper}
+              onChange={handleWeightChange}
+              onKeyDown={handleWeightKeyDown}
+              inputRef={weightInputRef}
+            />
 
-          <span className="text-muted-foreground font-bold text-xs sm:text-lg shrink-0">×</span>
+            <span className="text-muted-foreground font-bold text-xs sm:text-lg shrink-0">×</span>
 
-          <RepsInput
-            reps={reps}
-            isEditing={isEditingReps}
-            onDecrease={handleRepsDecrease}
-            onIncrease={handleRepsIncrease}
-            onStartEditing={startEditingReps}
-            onBlur={handleRepsBlurWrapper}
-            onChange={handleRepsChange}
-            onKeyDown={handleRepsKeyDown}
-            inputRef={repsInputRef}
-          />
+            <RepsInput
+              reps={reps}
+              isEditing={isEditingReps}
+              onDecrease={handleRepsDecrease}
+              onIncrease={handleRepsIncrease}
+              onStartEditing={startEditingReps}
+              onBlur={handleRepsBlurWrapper}
+              onChange={handleRepsChange}
+              onKeyDown={handleRepsKeyDown}
+              inputRef={repsInputRef}
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 w-full">
