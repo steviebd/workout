@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Plus } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from './__root';
 import type { Exercise } from '~/lib/db/exercise/types';
 import { getSession } from '~/lib/auth';
@@ -12,7 +12,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '~/components/ui/Button';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
-import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm, ExerciseItemProps } from '@/components/exercises';
+import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm } from '@/components/exercises';
 
 const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
   const request = await getRequest();
@@ -22,8 +22,8 @@ const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () =>
 
 function Exercises() {
   const auth = useAuth();
-  const [exercises, setExercises] = useState<ExerciseItemProps[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -50,48 +50,25 @@ function Exercises() {
   }, []);
 
   const handleCreateSuccess = useCallback((id: string) => {
-    window.location.href = `/exercises/${id}`;
-  }, []);
+    void navigate({ to: '/exercises/$id', params: { id } });
+  }, [navigate]);
 
   const handleRefresh = useCallback(async () => {
     if (!auth.loading && auth.user) {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        const response = await fetch(`/api/exercises?${params.toString()}`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data: Exercise[] = await response.json();
-          setExercises(data.map(e => ({
-            id: e.id,
-            name: e.name,
-            muscleGroup: e.muscleGroup,
-            description: e.description,
-            createdAt: e.createdAt ?? '',
-          })));
-        }
-      } catch (error) {
-        console.error('Failed to fetch exercises:', error);
-      } finally {
-        setLoading(false);
-      }
+      await queryClient.invalidateQueries({ queryKey: ['exercises'] });
     }
-  }, [auth.loading, auth.user, search]);
+  }, [auth.loading, auth.user, queryClient]);
 
-  if (exercisesData) {
-    const mapped = exercisesData.map(e => ({
+  const exercises = useMemo(() =>
+    exercisesData?.map(e => ({
       id: e.id,
       name: e.name,
       muscleGroup: e.muscleGroup,
       description: e.description,
       createdAt: e.createdAt ?? '',
-    }));
-    if (JSON.stringify(mapped) !== JSON.stringify(exercises)) {
-      setExercises(mapped);
-    }
-  }
+    })) ?? [],
+    [exercisesData]
+  );
 
   if (auth.loading) {
     return (
@@ -120,7 +97,7 @@ function Exercises() {
       <ExerciseSearchSimple value={search} onChange={setSearch} />
 
       <PullToRefresh onRefresh={handleRefresh}>
-        {isLoading || loading ? (
+        {isLoading ? (
           <SkeletonList count={6} />
         ) : exercises.length === 0 ? (
           <EmptyExercises onCreate={handleCreateClick} />

@@ -18,6 +18,15 @@ export const addExerciseToTemplateSchema = z.object({
   exerciseId: z.string(),
   orderIndex: z.number().int().min(0).optional(),
   localId: z.string().optional(),
+  targetWeight: z.number().min(0).nullable().optional(),
+  addedWeight: z.number().min(0).nullable().optional(),
+  sets: z.number().int().min(1).nullable().optional(),
+  reps: z.number().int().min(0).nullable().optional(),
+  repsRaw: z.string().nullable().optional(),
+  isAmrap: z.boolean().nullable().optional(),
+  isAccessory: z.boolean().nullable().optional(),
+  isRequired: z.boolean().nullable().optional(),
+  setNumber: z.number().int().min(1).nullable().optional(),
 });
 
 export const exerciseOrderSchema = z.object({

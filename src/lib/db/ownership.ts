@@ -101,6 +101,7 @@ export async function validateNestedOwnership<TEntity extends SQLiteTable, TPare
     id: Column;
     workosId: Column;
   }
+  // Drizzle tables don't expose columns as properties at runtime - need type assertion
   const parentIdCol = parentIdColumn ?? (parentTable as unknown as TableWithStandardColumns).id;
   const parentWorkosIdCol = (parentTable as unknown as TableWithStandardColumns).workosId;
 

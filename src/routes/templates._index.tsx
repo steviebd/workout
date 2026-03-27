@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Calendar, Copy, Edit, Plus, Search, Trash2 } from 'lucide-react';
@@ -29,6 +29,7 @@ type TemplateData = Pick<Template, 'id' | 'name' | 'description' | 'notes' | 'cr
 
 function Templates() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const { formatDate } = useDateFormat();
   const [templates, setTemplates] = useState<TemplateData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,8 +124,8 @@ function Templates() {
    }, [handleDuplicate]);
 
    const handleCreateTemplate = useCallback(() => {
-     window.location.href = '/templates/new';
-   }, []);
+     void navigate({ to: '/templates/new' });
+   }, [navigate]);
 
    if (auth.loading) {
      return (

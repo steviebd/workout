@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, redirect, useNavigate, useParams } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from './__root';
 import { getProgramBySlug } from '~/lib/programs';
 import { getSession } from '~/lib/auth';
@@ -75,7 +75,6 @@ function ProgramStart() {
   const [programStartDate, setProgramStartDate] = useState<string | null>(null);
   const [startMode, setStartMode] = useState<'smart' | 'strict' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [weightUnit, setWeightUnit] = useState('kg');
 
   const { data: preferencesData } = useQuery<{ weightUnit?: string }>({
     queryKey: ['user-preferences'],
@@ -87,6 +86,8 @@ function ProgramStart() {
     enabled: !!auth.user,
   });
 
+  const weightUnit = useMemo(() => preferencesData?.weightUnit ?? 'kg', [preferencesData?.weightUnit]);
+
   const { data: oneRmData } = useQuery<{ squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number }>({
     queryKey: ['user-1rm'],
     queryFn: async () => {
@@ -97,42 +98,40 @@ function ProgramStart() {
     enabled: !!auth.user && !preferencesData,
   });
 
-  if (preferencesData?.weightUnit && weightUnit !== preferencesData.weightUnit) {
-    setWeightUnit(preferencesData.weightUnit);
-  }
+  useEffect(() => {
+    if (oneRmData && !prefilled.squat1rm && !prefilled.bench1rm && !prefilled.deadlift1rm && !prefilled.ohp1rm) {
+      const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
+      const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+      let hasAnyValues = false;
 
-  if (oneRmData && !prefilled.squat1rm && !prefilled.bench1rm && !prefilled.deadlift1rm && !prefilled.ohp1rm) {
-    const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
-    const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
-    let hasAnyValues = false;
+      if (oneRmData.squat1rm) {
+        newValues.squat1rm = oneRmData.squat1rm.toString();
+        prefilledValues.squat1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.bench1rm) {
+        newValues.bench1rm = oneRmData.bench1rm.toString();
+        prefilledValues.bench1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.deadlift1rm) {
+        newValues.deadlift1rm = oneRmData.deadlift1rm.toString();
+        prefilledValues.deadlift1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.ohp1rm) {
+        newValues.ohp1rm = oneRmData.ohp1rm.toString();
+        prefilledValues.ohp1rm = true;
+        hasAnyValues = true;
+      }
 
-    if (oneRmData.squat1rm) {
-      newValues.squat1rm = oneRmData.squat1rm.toString();
-      prefilledValues.squat1rm = true;
-      hasAnyValues = true;
+      if (hasAnyValues) {
+        setFormData(newValues);
+        setPrefilled(prefilledValues);
+        toast.info('Loaded 1RMs from your previous cycle');
+      }
     }
-    if (oneRmData.bench1rm) {
-      newValues.bench1rm = oneRmData.bench1rm.toString();
-      prefilledValues.bench1rm = true;
-      hasAnyValues = true;
-    }
-    if (oneRmData.deadlift1rm) {
-      newValues.deadlift1rm = oneRmData.deadlift1rm.toString();
-      prefilledValues.deadlift1rm = true;
-      hasAnyValues = true;
-    }
-    if (oneRmData.ohp1rm) {
-      newValues.ohp1rm = oneRmData.ohp1rm.toString();
-      prefilledValues.ohp1rm = true;
-      hasAnyValues = true;
-    }
-
-    if (hasAnyValues) {
-      setFormData(newValues);
-      setPrefilled(prefilledValues);
-      toast.info('Loaded 1RMs from your previous cycle');
-    }
-  }
+  }, [oneRmData, prefilled.squat1rm, prefilled.bench1rm, prefilled.deadlift1rm, prefilled.ohp1rm, toast]);
 
   if (!program) {
     return (

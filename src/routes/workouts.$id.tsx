@@ -1,6 +1,4 @@
-'use client';
-
-import { createFileRoute, useParams } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router';
 import {
   Calendar,
   Check,
@@ -11,7 +9,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { getVideoTutorialByName, type VideoTutorial } from '@/lib/db/exercise/library';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
@@ -81,9 +79,11 @@ function workoutUIReducer(state: WorkoutUIState, action: WorkoutUIAction): Worko
 function WorkoutSession() {
   const params = useParams({ from: '/workouts/$id' });
   const workoutId = params.id;
+  const navigate = useNavigate();
   const { formatDate } = useDateFormat();
 
   const [ui, dispatch] = useReducer(workoutUIReducer, initialUIState);
+  const redirectTimeoutRef = useRef<number | null>(null);
 
   const {
     workout,
@@ -104,6 +104,12 @@ function WorkoutSession() {
     handleDiscardWorkout,
     handleSaveNotes,
   } = useWorkoutSession({ workoutId });
+
+  useEffect(() => {
+    if (workout?.notes !== undefined) {
+      dispatch({ type: 'SET_NOTES', payload: workout.notes ?? '' });
+    }
+  }, [workout?.notes]);
 
   const filteredExercises = useMemo(() =>
     availableExercises.filter((exercise) =>
@@ -142,16 +148,28 @@ function WorkoutSession() {
     completeWorkoutMutation.mutate(undefined, {
       onSuccess: () => {
         const is1RMTest = workout?.name === '1RM Test' && workout?.programCycleId;
-        const redirectUrl = is1RMTest
-          ? `/programs/cycle/${workout?.programCycleId}/1rm-test`
-          : `/workouts/${workoutId}/summary`;
 
-        setTimeout(() => {
-          window.location.href = redirectUrl;
+        if (redirectTimeoutRef.current) {
+          clearTimeout(redirectTimeoutRef.current);
+        }
+        redirectTimeoutRef.current = window.setTimeout(() => {
+          if (is1RMTest) {
+            void navigate({ to: '/programs/cycle/$cycleId/1rm-test', params: { cycleId: workout?.programCycleId ?? '' } });
+          } else {
+            void navigate({ to: '/workouts/$id/summary', params: { id: workoutId } });
+          }
         }, 1000);
       },
     });
   };
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (workoutLoading) {
     return (
@@ -189,7 +207,7 @@ function WorkoutSession() {
         <ErrorState
           title="Workout Not Found"
           description={workoutError instanceof Error ? workoutError.message : 'Workout not found'}
-          onGoHome={() => { window.location.href = '/'; }}
+          onGoHome={() => { void navigate({ to: '/' }); }}
           onGoBack={() => { window.history.back(); }}
         />
       </main>

@@ -1,5 +1,3 @@
-'use client';
-
 import { Dumbbell, Layers } from 'lucide-react';
 import { cn } from '@/lib/cn';
 

@@ -1,5 +1,3 @@
-'use client';
-
 import { ChevronRight, HelpCircle, X } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Card } from '~/components/ui/Card';

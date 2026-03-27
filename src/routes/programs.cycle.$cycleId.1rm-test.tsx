@@ -11,6 +11,7 @@ import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { LoadingForm } from '~/components/ui/LoadingSkeleton';
+import { useToast } from '@/components/app/ToastProvider';
 
 const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
   const request = await getRequest()
@@ -49,6 +50,7 @@ function OneRMTest() {
   const params = useParams({ from: '/programs/cycle/$cycleId/1rm-test' });
   const navigate = useNavigate();
   const auth = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     squat1rm: '',
     bench1rm: '',
@@ -136,34 +138,48 @@ function OneRMTest() {
       }
       const cycleFromServer: CycleData = await cycleRes.json();
 
-      await fetch(`/api/program-cycles/${params.cycleId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          squat1rm: parseFloat(formData.squat1rm),
-          bench1rm: parseFloat(formData.bench1rm),
-          deadlift1rm: parseFloat(formData.deadlift1rm),
-          ohp1rm: parseFloat(formData.ohp1rm),
+      const [cycleUpdateRes, workoutUpdateRes] = await Promise.all([
+        fetch(`/api/program-cycles/${params.cycleId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            squat1rm: parseFloat(formData.squat1rm),
+            bench1rm: parseFloat(formData.bench1rm),
+            deadlift1rm: parseFloat(formData.deadlift1rm),
+            ohp1rm: parseFloat(formData.ohp1rm),
+          }),
         }),
-      });
+        fetch(`/api/program-cycles/${params.cycleId}/1rm-test-workout`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            squat1rm: parseFloat(formData.squat1rm),
+            bench1rm: parseFloat(formData.bench1rm),
+            deadlift1rm: parseFloat(formData.deadlift1rm),
+            ohp1rm: parseFloat(formData.ohp1rm),
+            startingSquat1rm: cycleFromServer.startingSquat1rm ?? cycleFromServer.squat1rm,
+            startingBench1rm: cycleFromServer.startingBench1rm ?? cycleFromServer.bench1rm,
+            startingDeadlift1rm: cycleFromServer.startingDeadlift1rm ?? cycleFromServer.deadlift1rm,
+            startingOhp1rm: cycleFromServer.startingOhp1rm ?? cycleFromServer.ohp1rm,
+          }),
+        }),
+      ]);
 
-      await fetch(`/api/program-cycles/${params.cycleId}/1rm-test-workout`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          squat1rm: parseFloat(formData.squat1rm),
-          bench1rm: parseFloat(formData.bench1rm),
-          deadlift1rm: parseFloat(formData.deadlift1rm),
-          ohp1rm: parseFloat(formData.ohp1rm),
-          startingSquat1rm: cycleFromServer.startingSquat1rm ?? cycleFromServer.squat1rm,
-          startingBench1rm: cycleFromServer.startingBench1rm ?? cycleFromServer.bench1rm,
-          startingDeadlift1rm: cycleFromServer.startingDeadlift1rm ?? cycleFromServer.deadlift1rm,
-          startingOhp1rm: cycleFromServer.startingOhp1rm ?? cycleFromServer.ohp1rm,
-        }),
-      });
+      if (!cycleUpdateRes.ok) {
+        toast.error('Failed to update cycle');
+        setIsSaving(false);
+        return;
+      }
+
+      if (!workoutUpdateRes.ok) {
+        toast.error('Failed to update workout');
+        setIsSaving(false);
+        return;
+      }
 
       void navigate({ to: '/programs/cycle/$cycleId/complete', params: { cycleId: params.cycleId } });
     } catch (error) {
+      toast.error('Failed to save 1RM test results');
       console.error('Error saving 1RM test results:', error);
     } finally {
       setIsSaving(false);

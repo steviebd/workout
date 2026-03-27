@@ -69,7 +69,7 @@ function StartWorkoutPage() {
 
     const userId = auth.user?.id
     if (!userId) {
-      window.location.href = '/auth/signin'
+      void router.navigate({ to: '/auth/signin' })
       return
     }
 

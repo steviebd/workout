@@ -1,6 +1,4 @@
-'use client';
-
-import { createFileRoute, useParams } from '@tanstack/react-router';
+import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
 import {
   Calendar,
   ChevronLeft,
@@ -9,7 +7,7 @@ import {
   Plus,
   Save,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { cn } from '@/lib/cn';
@@ -20,6 +18,7 @@ import { Card } from '@/components/ui/Card';
 
 function EditWorkout() {
   const params = useParams({ from: '/workouts/$id_/edit' });
+  const navigate = useNavigate();
   const workoutId = params.id;
   const { formatDate } = useDateFormat();
 
@@ -27,7 +26,6 @@ function EditWorkout() {
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const {
     workout,
@@ -43,6 +41,12 @@ function EditWorkout() {
     handleAddExercise,
     handleSaveNotes,
   } = useWorkoutSession({ workoutId });
+
+  useEffect(() => {
+    if (workout?.notes !== undefined) {
+      setNotes(workout.notes ?? '');
+    }
+  }, [workout?.notes]);
 
   const filteredExercises = useMemo(() =>
     availableExercises.filter((exercise) =>
@@ -78,8 +82,7 @@ function EditWorkout() {
   };
 
   const handleSaveWorkout = () => {
-    setSaving(true);
-    window.location.href = '/progress';
+    void navigate({ to: '/progress' });
   };
 
   if (workoutLoading) {
@@ -132,20 +135,10 @@ function EditWorkout() {
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed'
               )}
-              disabled={saving}
               onClick={handleSaveWorkout}
             >
-              {saving ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Save
-                </>
-              )}
+              <Save size={18} />
+              Save
             </button>
           </div>
         </div>

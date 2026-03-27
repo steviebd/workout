@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { formatTime, addDays, isSameDate } from '~/lib/programs/scheduler';

@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createLazyFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
@@ -90,6 +90,7 @@ const getThisMonthRange = () => ({
 function ProgressPage() {
   const auth = useAuth();
   const router = useRouter();
+  const navigate = useNavigate();
   const { formatVolume } = useUnit();
   const { formatDate } = useDateFormat();
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
@@ -342,8 +343,8 @@ function ProgressPage() {
   }, [handleQuickFilter]);
 
   const handleStartWorkout = useCallback(() => {
-    window.location.href = '/workouts';
-  }, []);
+    void navigate({ to: '/workouts' });
+  }, [navigate]);
 
   const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
 
@@ -379,7 +380,7 @@ function ProgressPage() {
           title="No exercises yet"
           description="Create your first exercise to track progress."
           actionLabel="Add Exercise"
-          onAction={() => { window.location.href = '/exercises/new'; }}
+          onAction={() => { void navigate({ to: '/exercises/new' }); }}
         />
       ) : (
         <>

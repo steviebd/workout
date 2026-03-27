@@ -83,14 +83,17 @@ export function useTemplateApi({
     });
     const existingExercises: Array<{ exerciseId: string; orderIndex: number }> = await existingRes.json();
 
-    for (const existing of existingExercises) {
-      if (!newExerciseIds.has(existing.exerciseId)) {
-        await fetch(`/api/templates/${currentTemplateId}/exercises/${existing.exerciseId}`, {
+    const deletePromises = existingExercises
+      .filter((existing) => !newExerciseIds.has(existing.exerciseId))
+      .map((existing) =>
+        fetch(`/api/templates/${currentTemplateId}/exercises/${existing.exerciseId}`, {
           method: 'DELETE',
           credentials: 'include',
-        });
-      }
-    }
+        })
+      );
+
+    const addPromises: Array<Promise<Response>> = [];
+    let needsReorder = false;
 
     for (let i = 0; i < selectedExercises.length; i++) {
       const se = selectedExercises[i];
@@ -98,20 +101,10 @@ export function useTemplateApi({
 
       if (existing) {
         if (existing.orderIndex !== i) {
-          await fetch(`/api/templates/${currentTemplateId}/exercises/reorder`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              exerciseOrders: selectedExercises.map((se2, idx) => ({
-                exerciseId: se2.exerciseId,
-                orderIndex: idx,
-              })),
-            }),
-          });
+          needsReorder = true;
         }
       } else {
-        await fetch(`/api/templates/${currentTemplateId}/exercises`, {
+        addPromises.push(fetch(`/api/templates/${currentTemplateId}/exercises`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -124,13 +117,31 @@ export function useTemplateApi({
             reps: se.reps,
             repsRaw: se.repsRaw,
             targetWeight: se.targetWeight,
-            addedWeight: se.isAccessory 
+            addedWeight: se.isAccessory
               ? (accessoryAddedWeights[se.exerciseId] ?? se.addedWeight ?? 0)
               : 0,
           }),
-        });
+        }));
       }
     }
+
+    await Promise.all(deletePromises);
+
+    if (needsReorder) {
+      await fetch(`/api/templates/${currentTemplateId}/exercises/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          exerciseOrders: selectedExercises.map((se2, idx) => ({
+            exerciseId: se2.exerciseId,
+            orderIndex: idx,
+          })),
+        }),
+      });
+    }
+
+    await Promise.all(addPromises);
   }, [selectedExercises, accessoryAddedWeights]);
 
   const handleSubmit = useCallback(async () => {

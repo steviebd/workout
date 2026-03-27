@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Dumbbell, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from './__root'
 import { Card } from '~/components/ui/Card'
@@ -37,7 +37,6 @@ function OneRMTest() {
   const navigate = useNavigate()
   const toast = useToast()
   const auth = useAuth()
-  const [weightUnit, setWeightUnit] = useState('kg')
   const [lifts, setLifts] = useState<LiftTest[]>(() =>
     LIFTS.map((lift) => ({
       ...lift,
@@ -61,9 +60,7 @@ function OneRMTest() {
     enabled: !!auth.user,
   });
 
-  if (preferencesData?.weightUnit && weightUnit !== preferencesData.weightUnit) {
-    setWeightUnit(preferencesData.weightUnit);
-  }
+  const weightUnit = useMemo(() => preferencesData?.weightUnit ?? 'kg', [preferencesData?.weightUnit]);
 
   const handleLiftToggle = (key: string) => {
     setSelectedLifts((prev) => {
@@ -111,19 +108,27 @@ function OneRMTest() {
 
       const workout = await workoutResponse.json() as { id: string };
 
-      for (const lift of testedLifts) {
+      const failedLifts: string[] = [];
+
+      await Promise.all(testedLifts.map(async (lift) => {
         const weight = parseFloat(lift.weight)
-        if (isNaN(weight)) continue
+        if (isNaN(weight)) return
 
         const exerciseRes = await fetch(`/api/exercises?search=${encodeURIComponent(lift.name)}`, {
           method: 'GET',
           credentials: 'include',
         })
 
-        if (!exerciseRes.ok) continue
+        if (!exerciseRes.ok) {
+          failedLifts.push(lift.name);
+          return;
+        }
 
         const exercises = await exerciseRes.json() as Array<{ id: string }>;
-        if (exercises.length === 0) continue;
+        if (exercises.length === 0) {
+          failedLifts.push(lift.name);
+          return;
+        }
 
         const exerciseId = exercises[0].id
 
@@ -139,8 +144,12 @@ function OneRMTest() {
         })
 
         if (!exerciseRes2.ok) {
-          console.error(`Failed to add ${lift.name} to workout`)
+          failedLifts.push(lift.name);
         }
+      }));
+
+      if (failedLifts.length > 0) {
+        toast.warning(`Some exercises failed to save: ${failedLifts.join(', ')}`);
       }
 
       toast.success('1RM test saved!')
@@ -308,7 +317,7 @@ function OneRMTest() {
                     <p className="text-xs text-muted-foreground">{lift.description}</p>
                   </div>
                   {lift.tested ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3">

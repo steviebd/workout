@@ -1,5 +1,3 @@
-'use client'
-
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { Plus, Search, Loader2, ChevronLeft, Trash2 } from 'lucide-react'

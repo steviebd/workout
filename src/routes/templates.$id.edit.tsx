@@ -1,13 +1,23 @@
-import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, redirect, useParams, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Loader2, Plus, Save } from 'lucide-react';
 import { useCallback, useEffect, useReducer } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { useAuth } from './__root';
+import { getSession } from '~/lib/auth/session';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
 import { useToast } from '@/components/app/ToastProvider';
 import { ExerciseSelector } from '@/components/exercise/ExerciseSelector';
 import { ExerciseList } from '~/components/templates/ExerciseList';
+import { Button } from '@/components/ui/Button';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface SelectedExercise {
   id: string;
@@ -135,13 +145,6 @@ function EditTemplate() {
   const toast = useToast();
 
   const [state, dispatch] = useReducer(templateEditReducer, initialState);
-
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      dispatch({ type: 'SET_REDIRECTING', payload: true });
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
 
   const templateQuery = useQuery({
     queryKey: ['template', id],
@@ -300,12 +303,15 @@ function EditTemplate() {
         (te) => !newExerciseIds.has(te.exerciseId)
       );
 
-      for (const te of exercisesToRemove) {
-        await fetch(`/api/templates/${id}/exercises/${te.exerciseId}`, {
+      const deletePromises = exercisesToRemove.map((te) =>
+        fetch(`/api/templates/${id}/exercises/${te.exerciseId}`, {
           method: 'DELETE',
           credentials: 'include',
-        });
-      }
+        })
+      );
+
+      const addPromises: Array<Promise<Response>> = [];
+      let needsReorder = false;
 
       for (let i = 0; i < state.selectedExercises.length; i++) {
         const se = state.selectedExercises[i];
@@ -313,20 +319,10 @@ function EditTemplate() {
 
         if (exerciseInOriginal) {
           if (exerciseInOriginal.orderIndex !== i) {
-            await fetch(`/api/templates/${id}/exercises/reorder`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                exerciseOrders: state.selectedExercises.map((se2, idx) => ({
-                  exerciseId: se2.exerciseId,
-                  orderIndex: idx,
-                })),
-              }),
-            });
+            needsReorder = true;
           }
         } else {
-          await fetch(`/api/templates/${id}/exercises`, {
+          addPromises.push(fetch(`/api/templates/${id}/exercises`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -334,9 +330,27 @@ function EditTemplate() {
               exerciseId: se.exerciseId,
               orderIndex: i,
             }),
-          });
+          }));
         }
       }
+
+      await Promise.all(deletePromises);
+
+      if (needsReorder) {
+        await fetch(`/api/templates/${id}/exercises/reorder`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            exerciseOrders: state.selectedExercises.map((se2, idx) => ({
+              exerciseId: se2.exerciseId,
+              orderIndex: idx,
+            })),
+          }),
+        });
+      }
+
+      await Promise.all(addPromises);
 
       void navigate({ to: '/templates/$id', params: { id } });
     } catch {
@@ -409,18 +423,18 @@ function EditTemplate() {
         </div>
 
         <form className="p-6 space-y-6" onSubmit={handleFormSubmit}>
-          {state.errors.submit ? <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+          {state.errors.submit ? <div className="flex items-center gap-2 p-4 bg-destructive/10 dark:bg-destructive/30 border border-destructive/20 dark:border-destructive/60 rounded-lg text-destructive dark:text-destructive-foreground">
             <span>{state.errors.submit}</span>
                                  </div> : null}
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
               {'Template Name '}
-              <span className="text-red-500">*</span>
+              <span className="text-destructive">*</span>
             </label>
             <input
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-shadow ${
-                state.errors.name ? 'border-red-500' : 'border-border'
+                state.errors.name ? 'border-destructive' : 'border-border'
               }`}
               id="name"
               onChange={handleInputChange('name')}
@@ -428,7 +442,7 @@ function EditTemplate() {
               type="text"
               value={state.formData.name}
             />
-            {state.errors.name ? <p className="mt-1 text-sm text-red-600">{state.errors.name}</p> : null}
+            {state.errors.name ? <p className="mt-1 text-sm text-destructive">{state.errors.name}</p> : null}
           </div>
 
           <div>
@@ -465,19 +479,19 @@ function EditTemplate() {
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-foreground">
                 {'Exercises '}
-                <span className="text-red-500">*</span>
+                <span className="text-destructive">*</span>
               </label>
-              <button
-                className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => dispatch({ type: 'SET_SHOW_EXERCISE_SELECTOR', payload: true })}
-                type="button"
               >
                 <Plus size={16} />
                 Add Exercise
-              </button>
+              </Button>
             </div>
 
-            {state.errors.exercises ? <p className="mb-2 text-sm text-red-500">{state.errors.exercises}</p> : null}
+            {state.errors.exercises ? <p className="mb-2 text-sm text-destructive">{state.errors.exercises}</p> : null}
 
             {state.selectedExercises.length === 0 ? (
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
@@ -504,11 +518,7 @@ function EditTemplate() {
             >
               Cancel
             </Link>
-            <button
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={state.submitting}
-              type="submit"
-            >
+            <Button type="submit" disabled={state.submitting}>
               {state.submitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
@@ -520,7 +530,7 @@ function EditTemplate() {
                   Save Changes
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -539,5 +549,10 @@ function EditTemplate() {
 }
 
 export const Route = createFileRoute('/templates/$id/edit')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    if (!session?.sub) throw redirect({ to: '/auth/signin' })
+  },
   component: EditTemplate,
 });

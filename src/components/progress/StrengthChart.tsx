@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState, useRef, memo } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'

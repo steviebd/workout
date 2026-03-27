@@ -1,10 +1,8 @@
-'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Check, Clock, Dumbbell, Home, Scale, Target } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { createFileRoute, redirect, useParams, useRouter } from '@tanstack/react-router';
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
 import { getSession } from '~/lib/auth/session';
@@ -90,6 +88,38 @@ interface AllTimePR {
   reps: number;
 }
 
+function mapWorkoutExercisesToWithDetails(exercises: WorkoutExerciseLocal[]): WorkoutExerciseWithDetails[] {
+  return exercises.map((ex) => ({
+    id: ex.id,
+    localId: null,
+    workoutId: '',
+    exerciseId: ex.exerciseId,
+    orderIndex: ex.orderIndex,
+    notes: ex.notes ?? null,
+    isAmrap: false,
+    setNumber: null,
+    exercise: {
+      id: ex.exerciseId,
+      name: ex.name,
+      muscleGroup: ex.muscleGroup,
+    },
+    sets: ex.sets.map((set) => ({
+      id: set.id,
+      localId: null,
+      workoutExerciseId: ex.id,
+      setNumber: set.setNumber,
+      weight: set.weight ?? null,
+      reps: set.reps ?? null,
+      rpe: set.rpe ?? null,
+      isComplete: set.isComplete,
+      completedAt: set.completedAt ?? null,
+      createdAt: null,
+      updatedAt: null,
+      isDeleted: false,
+    })),
+  }));
+}
+
 function WorkoutSummary() {
   const params = useParams({ from: '/workouts/$id_/summary' });
   const router = useRouter();
@@ -104,19 +134,9 @@ function WorkoutSummary() {
     enabled: !!params.id,
   });
 
-  useEffect(() => {
-    const redirectIfIncomplete = async () => {
-      if (!workoutLoading && workout && !workout.completedAt) {
-        try {
-          await router.navigate({ to: '/workouts/$id', params: { id: params.id }, replace: true });
-        } catch (err) {
-          console.error('Navigation error:', err);
-        }
-      }
-    };
-
-    redirectIfIncomplete().catch(console.error);
-  }, [workout, params.id, router, workoutLoading]);
+  if (!workoutLoading && workout && !workout.completedAt) {
+    void router.navigate({ to: '/workouts/$id', params: { id: params.id }, replace: true });
+  }
 
   const { data: programCycle } = useQuery<ProgramCycle>({
     queryKey: ['programCycle', workout?.programCycleId],
@@ -144,20 +164,17 @@ function WorkoutSummary() {
 
   const totalVolume = useMemo(() => {
     if (!workout) return 0;
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return calculateTotalVolume(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return calculateTotalVolume(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const tested1RMs = useMemo(() => {
     if (!workout) return { squat: 0, bench: 0, deadlift: 0, ohp: 0 } as Tested1RMs;
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return getTested1RMs(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return getTested1RMs(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const workoutMaxes = useMemo(() => {
     if (!workout) return [];
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return getWorkoutMaxes(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return getWorkoutMaxes(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const comparisonData = useMemo(() => {
@@ -178,7 +195,7 @@ function WorkoutSummary() {
         <ErrorState
           title="Workout Not Found"
           description={workoutError instanceof Error ? workoutError.message : 'Workout not found'}
-          onGoHome={() => { window.location.href = '/'; }}
+          onGoHome={() => { void router.navigate({ to: '/' }); }}
         />
       </PageLayout>
     );
@@ -233,8 +250,7 @@ function WorkoutSummary() {
           />
         ) : null}
 
-        {/* The API returns exercises with sets inline but ExerciseSummary expects full WorkoutExerciseWithDetails structure */}
-        <ExerciseSummary exercises={workout.exercises as unknown as WorkoutExerciseWithDetails[]} />
+        <ExerciseSummary exercises={mapWorkoutExercisesToWithDetails(workout.exercises)} />
 
         <PRComparisonCard comparisonData={comparisonData} />
 

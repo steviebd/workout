@@ -34,6 +34,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
   const [error, setError] = useState<Error | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  const savedTimeoutRef = useRef<number | null>(null);
   const dataRef = useRef(data);
 
   useEffect(() => {
@@ -57,7 +58,10 @@ export function useAutoSave<T extends Record<string, unknown>>({
       setLastSaved(new Date());
       onSuccess?.();
 
-      setTimeout(() => {
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current);
+      }
+      savedTimeoutRef.current = window.setTimeout(() => {
         setSaved(false);
       }, UI.TIMING.SAVED_INDICATOR_DURATION_MS);
     } catch (err) {
@@ -96,6 +100,9 @@ export function useAutoSave<T extends Record<string, unknown>>({
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current);
       }
     };
   }, []);

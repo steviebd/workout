@@ -168,20 +168,15 @@ export async function completeWorkout(
   const result: CompleteWorkoutResult = {
     ...workout,
     exercises,
-    ...(shouldUpdate1RMs
-      ? {
-          squat1rm: tested1RMs.squat || null,
-          bench1rm: tested1RMs.bench || null,
-          deadlift1rm: tested1RMs.deadlift || null,
-          ohp1rm: tested1RMs.ohp || null,
-          startingSquat1rm,
-          startingBench1rm,
-          startingDeadlift1rm,
-          startingOhp1rm,
-        }
-      : {}),
+    squat1rm: shouldUpdate1RMs ? (tested1RMs.squat || null) : null,
+    bench1rm: shouldUpdate1RMs ? (tested1RMs.bench || null) : null,
+    deadlift1rm: shouldUpdate1RMs ? (tested1RMs.deadlift || null) : null,
+    ohp1rm: shouldUpdate1RMs ? (tested1RMs.ohp || null) : null,
+    startingSquat1rm: shouldUpdate1RMs ? startingSquat1rm : null,
+    startingBench1rm: shouldUpdate1RMs ? startingBench1rm : null,
+    startingDeadlift1rm: shouldUpdate1RMs ? startingDeadlift1rm : null,
+    startingOhp1rm: shouldUpdate1RMs ? startingOhp1rm : null,
   };
-  // The result is built conditionally - some fields are only present for 1RM Test workouts
-  // Cast is necessary because TypeScript cannot verify all conditional branches are covered
-  return result as unknown as CompleteWorkoutResult;
+
+  return result;
 }

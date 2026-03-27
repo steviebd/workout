@@ -1,6 +1,5 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { formatTime, isSameDate, addDays, getMonday } from '~/lib/programs/scheduler';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
@@ -36,9 +35,24 @@ export function WeeklySchedule({
   onStartWorkout,
   onRescheduleWorkout,
 }: WeeklyScheduleProps) {
-  const [workouts, setWorkouts] = useState<CycleWorkout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentWeek, setCurrentWeek] = useState(propCurrentWeek ?? 1);
+  const { data: workouts = [], isLoading } = useQuery<CycleWorkout[]>({
+    queryKey: ['cycle-workouts', cycleId],
+    queryFn: async () => {
+      const res = await fetch(`/api/program-cycles/${cycleId}/workouts`);
+      if (!res.ok) throw new Error('Failed to fetch workouts');
+      return res.json();
+    },
+  });
+
+  const [navigationWeek, setNavigationWeek] = useState(propCurrentWeek ?? 1);
+
+  const currentWeek = useMemo(() => {
+    if (propCurrentWeek !== undefined) {
+      return propCurrentWeek;
+    }
+    return navigationWeek;
+  }, [propCurrentWeek, navigationWeek]);
+
   const [weekStartDate, setWeekStartDate] = useState(() => {
     if (firstSessionDate) {
       return getMonday(new Date(`${firstSessionDate}T00:00:00Z`));
@@ -46,39 +60,6 @@ export function WeeklySchedule({
     return getMonday(new Date());
   });
   const { formatDateShort } = useDateFormat();
-
-  useEffect(() => {
-    async function fetchWorkouts() {
-      try {
-        const response = await fetch(`/api/program-cycles/${cycleId}/workouts`);
-        if (response.ok) {
-          const data = await response.json() as CycleWorkout[];
-          setWorkouts(data);
-
-          if (propCurrentWeek === undefined && data.length > 0) {
-            if (firstSessionDate) {
-              const firstSession = data[0];
-              if (firstSession) {
-                setCurrentWeek(firstSession.weekNumber);
-              }
-            } else {
-              const today = new Date();
-              const todayWorkout = data.find(w => isSameDate(new Date(w.scheduledDate), today));
-              if (todayWorkout) {
-                setCurrentWeek(todayWorkout.weekNumber);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching workouts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void fetchWorkouts();
-  }, [cycleId, propCurrentWeek, firstSessionDate]);
 
   useEffect(() => {
     let startDate: Date;
@@ -93,13 +74,13 @@ export function WeeklySchedule({
 
   const handlePreviousWeek = () => {
     const newWeek = currentWeek - 1;
-    setCurrentWeek(newWeek);
+    setNavigationWeek(newWeek);
     onNavigateWeek?.(newWeek);
   };
 
   const handleNextWeek = () => {
     const newWeek = currentWeek + 1;
-    setCurrentWeek(newWeek);
+    setNavigationWeek(newWeek);
     onNavigateWeek?.(newWeek);
   };
 
@@ -112,7 +93,7 @@ export function WeeklySchedule({
       return workoutUTC === todayUTC;
     });
     const targetWeek = todayWorkout?.weekNumber ?? 1;
-    setCurrentWeek(targetWeek);
+    setNavigationWeek(targetWeek);
     onNavigateWeek?.(targetWeek);
   };
 

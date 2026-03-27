@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, redirect, useParams } from '@tanstack/react-router';
+import { createFileRoute, redirect, useParams, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useCallback, useState } from 'react';
@@ -23,6 +23,7 @@ function ExerciseDetail() {
   const auth = useAuth();
   const toast = useToast();
   const { formatDateLong } = useDateFormat();
+  const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -53,7 +54,7 @@ function ExerciseDetail() {
       });
 
       if (response.ok) {
-        window.location.href = '/exercises';
+        void navigate({ to: '/exercises' });
       } else {
         toast.error('Failed to delete exercise');
       }
@@ -63,7 +64,7 @@ function ExerciseDetail() {
       setDeleting(false);
       setShowDeleteDialog(false);
     }
-  }, [exerciseId, toast]);
+  }, [exerciseId, toast, navigate]);
 
   const handleDeleteClick = useCallback(() => {
     setShowDeleteDialog(true);

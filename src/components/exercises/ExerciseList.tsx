@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '~/lib/cn';
@@ -40,19 +40,6 @@ export function ExerciseList({
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!listRef.current) return;
-
-    // Create drop indicator if it doesn't exist
-    if (!dropIndicatorRef.current) {
-      const indicator = document.createElement('div');
-      indicator.className = 'absolute left-0 right-0 h-0 border-t-2 border-primary pointer-events-none z-10';
-      indicator.style.display = 'none';
-      listRef.current.appendChild(indicator);
-      dropIndicatorRef.current = indicator;
-    }
-  }, []);
 
   const getSwipeStyles = (id: string) => {
     if (swipeState.id !== id) return {};

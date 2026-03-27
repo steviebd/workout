@@ -1,5 +1,3 @@
-'use client'
-
 import React from "react"
 
 import { Flame, Crown, Trophy, Dumbbell, Medal, Star, Zap, Footprints, Lock } from 'lucide-react'

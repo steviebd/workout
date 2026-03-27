@@ -3,7 +3,7 @@ import { Link, createFileRoute, redirect, useParams, useNavigate } from '@tansta
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
 
 import { getSession } from '~/lib/auth';
@@ -58,6 +58,7 @@ function EditExercise() {
   const toast = useToast();
 
   const [submitting, setSubmitting] = useState(false);
+  const navigateTimeoutRef = useRef<number | null>(null);
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -163,7 +164,10 @@ function EditExercise() {
 
       if (response.ok) {
         toast.success('Exercise updated successfully!');
-        setTimeout(() => {
+        if (navigateTimeoutRef.current) {
+          clearTimeout(navigateTimeoutRef.current);
+        }
+        navigateTimeoutRef.current = window.setTimeout(() => {
           navigate({ to: '/exercises/$id', params: { id } }).catch(() => {
           });
         }, 1000);
@@ -199,6 +203,14 @@ function EditExercise() {
     handleSubmitAsync(e).catch(() => {
     });
   }, [handleSubmitAsync]);
+
+  useEffect(() => {
+    return () => {
+      if (navigateTimeoutRef.current) {
+        clearTimeout(navigateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (auth.loading || isLoading) {
     return (

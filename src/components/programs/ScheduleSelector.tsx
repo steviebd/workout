@@ -1,5 +1,3 @@
-'use client';
-
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import type { DayOfWeek } from '~/lib/programs/scheduler';

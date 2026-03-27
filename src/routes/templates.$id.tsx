@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, redirect, useParams } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate, useParams } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
@@ -24,6 +24,7 @@ const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () =>
 function TemplateDetail() {
   const params = useParams({ from: '/templates/$id' });
   const auth = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const { formatDateLong } = useDateFormat();
   const [copying, setCopying] = useState(false);
@@ -71,7 +72,7 @@ function TemplateDetail() {
 
        if (response.ok) {
           const newTemplate: Template = await response.json();
-          window.location.href = `/templates/${newTemplate.id}`;
+          void navigate({ to: '/templates/$id', params: { id: newTemplate.id } });
       } else {
         toast.error('Failed to copy template');
       }
@@ -80,7 +81,7 @@ function TemplateDetail() {
     } finally {
       setCopying(false);
     }
-  }, [templateId, toast]);
+  }, [templateId, toast, navigate]);
 
   const handleDelete = useCallback(async () => {
     setDeleting(true);
@@ -92,7 +93,7 @@ function TemplateDetail() {
       });
 
       if (response.ok) {
-        window.location.href = '/templates';
+        void navigate({ to: '/templates' });
       } else {
         toast.error('Failed to delete template');
       }
@@ -102,7 +103,7 @@ function TemplateDetail() {
       setDeleting(false);
       setShowDeleteDialog(false);
     }
-  }, [templateId, toast]);
+  }, [templateId, toast, navigate]);
 
   const handleCopyClick = useCallback(() => {
     void handleCopy();
@@ -139,7 +140,7 @@ function TemplateDetail() {
           title="Failed to Load Template"
           description={error?.message ?? 'Template not found'}
           onRetry={() => window.location.reload()}
-          onGoHome={() => { window.location.href = '/templates' }}
+          onGoHome={() => { void navigate({ to: '/templates' }); }}
         />
       </PageLayout>
     );

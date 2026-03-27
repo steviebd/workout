@@ -1,5 +1,3 @@
-'use client'
-
 import { useCallback } from 'react'
 import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import type { WorkoutSet } from '~/lib/db/workout/types'
@@ -19,6 +17,7 @@ interface SetLoggerProps {
 
 interface WeightInputProps {
   weight: number
+  weightInputValue: string
   weightUnit: string
   isEditing: boolean
   onDecrease: () => void
@@ -32,6 +31,7 @@ interface WeightInputProps {
 
 function WeightInput({
   weight,
+  weightInputValue,
   weightUnit,
   isEditing,
   onDecrease,
@@ -75,7 +75,7 @@ function WeightInput({
             onChange={onChange}
             onKeyDown={onKeyDown}
             type="text"
-            value={weight}
+            value={weightInputValue}
             inputMode="decimal"
           />
         ) : (
@@ -176,6 +176,7 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
 
   const {
     weight,
+    weightInput,
     reps,
     isEditingWeight,
     isEditingReps,
@@ -303,55 +304,52 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
       }}
       {...swipeHandlers}
     >
-      <div className="flex items-center justify-between gap-1 sm:gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 flex-wrap">
         <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold shrink-0">
           {setNumber}
         </div>
 
-        <div className="flex items-end gap-0.5 sm:gap-1 shrink min-w-0">
-          <div className="shrink-0">
-            <WeightInput
-              weight={weight}
-              weightUnit={weightUnit}
-              isEditing={isEditingWeight}
-              onDecrease={handleWeightDecrease}
-              onIncrease={handleWeightIncrease}
-              onStartEditing={startEditingWeight}
-              onBlur={handleWeightBlurWrapper}
-              onChange={handleWeightChange}
-              onKeyDown={handleWeightKeyDown}
-              inputRef={weightInputRef}
-            />
-          </div>
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+          <WeightInput
+            weight={weight}
+            weightInputValue={weightInput}
+            weightUnit={weightUnit}
+            isEditing={isEditingWeight}
+            onDecrease={handleWeightDecrease}
+            onIncrease={handleWeightIncrease}
+            onStartEditing={startEditingWeight}
+            onBlur={handleWeightBlurWrapper}
+            onChange={handleWeightChange}
+            onKeyDown={handleWeightKeyDown}
+            inputRef={weightInputRef}
+          />
 
-          <span className="text-muted-foreground font-bold text-xs sm:text-lg mb-0.5 shrink-0">×</span>
+          <span className="text-muted-foreground font-bold text-xs sm:text-lg shrink-0">×</span>
 
-          <div className="shrink-0">
-            <RepsInput
-              reps={reps}
-              isEditing={isEditingReps}
-              onDecrease={handleRepsDecrease}
-              onIncrease={handleRepsIncrease}
-              onStartEditing={startEditingReps}
-              onBlur={handleRepsBlurWrapper}
-              onChange={handleRepsChange}
-              onKeyDown={handleRepsKeyDown}
-              inputRef={repsInputRef}
-            />
-          </div>
+          <RepsInput
+            reps={reps}
+            isEditing={isEditingReps}
+            onDecrease={handleRepsDecrease}
+            onIncrease={handleRepsIncrease}
+            onStartEditing={startEditingReps}
+            onBlur={handleRepsBlurWrapper}
+            onChange={handleRepsChange}
+            onKeyDown={handleRepsKeyDown}
+            inputRef={repsInputRef}
+          />
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 w-full">
           <Button
             size="icon"
             variant={set.completed ? 'default' : 'outline'}
             onClick={handleToggleComplete}
             className={cn(
-              'h-8 w-8 sm:h-10 sm:w-10 rounded-full',
+              'shadow-sm hover:shadow-md transition-all duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 h-10 sm:h-12 flex-[2]',
               set.completed && 'bg-success hover:bg-success/90 text-success-foreground'
             )}
           >
-            <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Check className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
 
           {onDelete ? (
@@ -359,10 +357,10 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
               size="icon"
               variant="ghost"
               onClick={onDelete}
-              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              className="h-8 sm:h-9 shadow-sm hover:shadow-md transition-all duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-[1]"
               aria-label="Delete set"
             >
-              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           ) : null}
         </div>

@@ -1,5 +1,3 @@
-'use client'
-
 import { Check, Calendar, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '~/components/ui/Card'
 

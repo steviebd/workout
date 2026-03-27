@@ -315,6 +315,7 @@ export async function reorderTemplateExercises(
       ))
   );
 
+  // Drizzle types don't expose .orderBy() at compile time but D1 supports it at runtime
   await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
 
   return true;
@@ -356,7 +357,16 @@ export async function addExerciseToTemplate(
   dbOrTx: DbOrTx,
   templateId: string,
   exerciseId: string,
-  orderIndex: number
+  orderIndex: number,
+  targetWeight?: number | null,
+  addedWeight?: number | null,
+  sets?: number | null,
+  reps?: number | null,
+  repsRaw?: string | null,
+  isAmrap?: boolean | null,
+  isAccessory?: boolean | null,
+  isRequired?: boolean | null,
+  setNumber?: number | null
 ): Promise<void> {
   const db = getDb(dbOrTx);
 
@@ -366,6 +376,15 @@ export async function addExerciseToTemplate(
       templateId,
       exerciseId,
       orderIndex,
+      targetWeight: targetWeight ?? null,
+      addedWeight: addedWeight ?? 0,
+      sets: sets ?? null,
+      reps: reps ?? null,
+      repsRaw: repsRaw ?? null,
+      isAmrap: isAmrap ?? false,
+      isAccessory: isAccessory ?? false,
+      isRequired: isRequired ?? true,
+      setNumber: setNumber ?? null,
     })
     .run();
 }

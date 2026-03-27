@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { StreakCard } from './StreakCard';
 import { VolumeSummary } from './VolumeSummary';

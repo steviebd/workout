@@ -1,5 +1,3 @@
-'use client';
-
 import { Check, Flame, Trophy, TrendingUp } from 'lucide-react';
 import type { ThirtyDayStreakResult } from '~/lib/context/StreakContext';
 import { Card, CardContent } from '~/components/ui/Card';
