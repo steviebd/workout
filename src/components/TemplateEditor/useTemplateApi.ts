@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormData, type SelectedExercise } from './types';
 import { useToast } from '@/components/app/ToastProvider';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -15,6 +16,7 @@ interface UseTemplateApiProps {
 
 interface UseTemplateApiReturn {
   exercises: Exercise[];
+  exercisesLoading: boolean;
   saving: boolean;
   createdTemplate: Template | null;
   error: { message: string; retry?: () => void } | null;
@@ -40,7 +42,7 @@ export function useTemplateApi({
   accessoryAddedWeights,
 }: UseTemplateApiProps): UseTemplateApiReturn {
   const toast = useToast();
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [createdTemplate, setCreatedTemplate] = useState<Template | null>(null);
   const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null);
@@ -190,43 +192,51 @@ export function useTemplateApi({
     }
   }, [selectedExercises, mode, toast, saveTemplate, syncExercises, accessoryAddedWeights, formData.name]);
 
-  const fetchExercises = useCallback(async () => {
-    try {
+  const { data: exercisesData, isLoading: exercisesLoading } = useQuery<Exercise[]>({
+    queryKey: ['template-editor-exercises'],
+    queryFn: async () => {
       const response = await fetch('/api/exercises', {
         credentials: 'include',
       });
+      if (!response.ok) throw new Error('Failed to fetch exercises');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-      if (response.ok) {
-        const data: Exercise[] = await response.json();
-        setExercises(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch exercises:', err);
-    }
-  }, []);
-
-  const fetchTemplateExercises = useCallback(async (currentTemplateId: string, onWeights?: (weights: Record<string, number>) => void) => {
-    try {
-      const response = await fetch(`/api/templates/${currentTemplateId}/exercises`, {
+  const { data: templateExercisesData } = useQuery<TemplateExercise[]>({
+    queryKey: ['template-exercises', templateId],
+    queryFn: async () => {
+      if (!templateId) throw new Error('No template ID');
+      const response = await fetch(`/api/templates/${templateId}/exercises`, {
         credentials: 'include',
       });
+      if (!response.ok) throw new Error('Failed to fetch template exercises');
+      return response.json();
+    },
+    enabled: mode === 'edit' && !!templateId,
+    staleTime: 5 * 60 * 1000,
+  });
 
-      if (response.ok) {
-        const data: TemplateExercise[] = await response.json();
-        const accessoryWeights: Record<string, number> = {};
-        data.forEach((te) => {
-          if (te.isAccessory && te.exerciseId && te.addedWeight) {
-            accessoryWeights[te.exerciseId] = te.addedWeight;
-          }
-        });
-        if (onWeights) {
-          onWeights(accessoryWeights);
+  const exercises: Exercise[] = exercisesData ?? [];
+
+  const fetchTemplateExercises = useCallback(async (_currentTemplateId: string, onWeights?: (weights: Record<string, number>) => void) => {
+    const accessoryWeights: Record<string, number> = {};
+    if (templateExercisesData) {
+      templateExercisesData.forEach((te) => {
+        if (te.isAccessory && te.exerciseId && te.addedWeight) {
+          accessoryWeights[te.exerciseId] = te.addedWeight;
         }
+      });
+      if (onWeights) {
+        onWeights(accessoryWeights);
       }
-    } catch (err) {
-      console.error('Failed to fetch template exercises:', err);
     }
-  }, []);
+  }, [templateExercisesData]);
+
+  const fetchExercises = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['template-editor-exercises'] });
+  }, [queryClient]);
 
   const autoSave = useAutoSave({
     data: {
@@ -252,14 +262,9 @@ export function useTemplateApi({
     },
   });
 
-  useEffect(() => {
-    if (mode === 'edit' && templateId) {
-      void fetchTemplateExercises(templateId);
-    }
-  }, [mode, templateId, fetchTemplateExercises]);
-
   return {
     exercises,
+    exercisesLoading,
     saving,
     createdTemplate,
     error,

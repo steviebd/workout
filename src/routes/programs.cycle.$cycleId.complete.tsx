@@ -1,9 +1,19 @@
-import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createFileRoute, Link, redirect, useParams } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { getRequest } from '@tanstack/react-start/server';
+import { createServerFn } from '@tanstack/react-start';
+import { useAuth } from './__root';
+import { getSession } from '~/lib/auth';
 import { Card } from '~/components/ui/Card';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
 import { LoadingCard } from '~/components/ui/LoadingSkeleton';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface CycleData {
   id: string;
@@ -34,40 +44,40 @@ interface CycleWorkout {
 
 function CompleteProgram() {
   const params = useParams({ from: '/programs/cycle/$cycleId/complete' });
-  const [cycle, setCycle] = useState<CycleData | null>(null);
-  const [workouts, setWorkouts] = useState<CycleWorkout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [weightUnit, setWeightUnit] = useState('kg');
+  const auth = useAuth();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const cycleResponse = await fetch(`/api/program-cycles/${params.cycleId}`);
-        if (cycleResponse.ok) {
-          const data = await cycleResponse.json() as CycleData;
-          setCycle(data);
-        }
+  const { data: cycle, isLoading: isLoadingCycle } = useQuery<CycleData | null>({
+    queryKey: ['cycle', params.cycleId],
+    queryFn: async () => {
+      const res = await fetch(`/api/program-cycles/${params.cycleId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch cycle');
+      return res.json();
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
 
-        const workoutsResponse = await fetch(`/api/program-cycles/${params.cycleId}/workouts`);
-        if (workoutsResponse.ok) {
-          const wData = await workoutsResponse.json() as CycleWorkout[];
-          setWorkouts(wData);
-        }
+  const { data: workouts = [], isLoading: isLoadingWorkouts } = useQuery<CycleWorkout[]>({
+    queryKey: ['cycle', params.cycleId, 'workouts'],
+    queryFn: async () => {
+      const res = await fetch(`/api/program-cycles/${params.cycleId}/workouts`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch workouts');
+      return res.json();
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
 
-        const prefsResponse = await fetch('/api/user/preferences');
-        if (prefsResponse.ok) {
-          const prefs = await prefsResponse.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg');
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const { data: weightUnit = 'kg' } = useQuery<string>({
+    queryKey: ['preferences'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch preferences');
+      const data = await res.json() as { weightUnit?: string };
+      return data.weightUnit ?? 'kg';
+    },
+    enabled: !!auth.user,
+  });
 
-    void loadData();
-  }, [params.cycleId]);
+  const isLoading = isLoadingCycle || isLoadingWorkouts;
 
   if (isLoading) {
     return (
@@ -167,6 +177,10 @@ function CompleteProgram() {
 }
 
 export const Route = createFileRoute('/programs/cycle/$cycleId/complete')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: CompleteProgram,
 });
 

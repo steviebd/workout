@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Heart, Moon, Activity, Zap, RefreshCw, Loader2, Link, Link2Off } from 'lucide-react'
+import { useAuth } from './__root'
 import { Button } from '@/components/ui/Button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog'
 
@@ -46,12 +48,30 @@ interface WhoopData {
 }
 
 function HealthPage() {
-  const [status, setStatus] = useState<WhoopStatus | null>(null)
-  const [data, setData] = useState<WhoopData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const auth = useAuth()
   const [syncing, setSyncing] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'strain' | 'workouts'>('overview')
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
+
+  const { data: whoopStatus, isLoading: statusLoading } = useQuery<WhoopStatus>({
+    queryKey: ['whoop-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/integrations/whoop/status', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch Whoop status');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const { data: whoopData, isLoading: dataLoading } = useQuery<WhoopData>({
+    queryKey: ['whoop-data'],
+    queryFn: async () => {
+      const res = await fetch('/api/health/data', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch Whoop data');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
   async function fetchWhoopData() {
     try {
@@ -61,21 +81,15 @@ function HealthPage() {
       ])
 
       if (statusRes.ok) {
-        setStatus(await statusRes.json())
+        void statusRes.json()
       }
       if (dataRes.ok) {
-        setData(await dataRes.json())
+        void dataRes.json()
       }
     } catch (error) {
       console.error('Failed to fetch Whoop data:', error)
-    } finally {
-      setLoading(false)
     }
   }
-
-  useEffect(() => {
-    void fetchWhoopData()
-  }, [])
 
   const handleSync = async () => {
     setSyncing(true)
@@ -108,7 +122,7 @@ function HealthPage() {
     setShowDisconnectDialog(true)
   }
 
-  if (loading) {
+  if (statusLoading || dataLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -116,7 +130,7 @@ function HealthPage() {
     )
   }
 
-  if (!status?.connected) {
+  if (!whoopStatus?.connected) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-md">
         <div className="text-center mb-8">
@@ -134,9 +148,9 @@ function HealthPage() {
     )
   }
 
-  const todayRecovery = data?.recoveries[0]
-  const todaySleep = data?.sleeps[0]
-  const todayCycle = data?.cycles[0]
+  const todayRecovery = whoopData?.recoveries[0]
+  const todaySleep = whoopData?.sleeps[0]
+  const todayCycle = whoopData?.cycles[0]
 
   return (
     <>
@@ -250,7 +264,7 @@ function HealthPage() {
 
       {activeTab === 'recovery' && (
         <div className="space-y-3">
-          {data?.recoveries.map((recovery) => (
+          {whoopData?.recoveries.map((recovery) => (
             <div key={recovery.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(recovery.date).toLocaleDateString()}</span>
@@ -281,7 +295,7 @@ function HealthPage() {
 
       {activeTab === 'sleep' && (
         <div className="space-y-3">
-          {data?.sleeps.map((sleep) => (
+          {whoopData?.sleeps.map((sleep) => (
             <div key={sleep.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(sleep.sleepDate).toLocaleDateString()}</span>
@@ -310,7 +324,7 @@ function HealthPage() {
 
       {activeTab === 'strain' && (
         <div className="space-y-3">
-          {data?.cycles.map((cycle) => (
+          {whoopData?.cycles.map((cycle) => (
             <div key={cycle.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(cycle.date).toLocaleDateString()}</span>
@@ -329,7 +343,7 @@ function HealthPage() {
 
       {activeTab === 'workouts' && (
         <div className="space-y-3">
-          {data?.workouts.map((workout) => (
+          {whoopData?.workouts.map((workout) => (
             <div key={workout.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">

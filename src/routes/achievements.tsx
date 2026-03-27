@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { StreakDisplay } from '~/components/achievements/StreakDisplay'
 import { BadgeCard } from '~/components/achievements/BadgeCard'
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout'
@@ -31,43 +32,35 @@ interface UserStats {
 type BadgeFilter = 'all' | 'unlocked' | 'locked'
 
 function AchievementsPage() {
-  const [stats, setStats] = useState<UserStats>({ weeklyCount: 0, thirtyDayStreak: { current: 0, target: 4, progress: 0 } })
-  const [badges, setBadges] = useState<Badge[]>([])
-  const [workoutDatesInWeek, setWorkoutDatesInWeek] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<BadgeFilter>('all')
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, badgesRes] = await Promise.all([
-          fetch('/api/streaks', { credentials: 'include' }),
-          fetch('/api/badges', { credentials: 'include' }),
-        ])
+  const { data: statsData, isLoading: statsLoading } = useQuery<{ weeklyCount: number; thirtyDayStreak: { current: number; target: number; progress: number } }>({
+    queryKey: ['streaks'],
+    queryFn: async () => {
+      const res = await fetch('/api/streaks', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch streaks');
+      return res.json();
+    },
+  });
 
-        if (statsRes.ok) {
-          const data: UserStats = await statsRes.json()
-          setStats({
-            weeklyCount: data.weeklyCount ?? 0,
-            thirtyDayStreak: data.thirtyDayStreak ?? { current: 0, target: 4, progress: 0 },
-          })
-        }
+  const { data: badgesData, isLoading: badgesLoading } = useQuery<{ badges: Badge[]; workoutDatesInWeek: string[] }>({
+    queryKey: ['badges'],
+    queryFn: async () => {
+      const res = await fetch('/api/badges', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch badges');
+      return res.json();
+    },
+  });
 
-        if (badgesRes.ok) {
-          const badgesData: { badges: Badge[]; workoutDatesInWeek: string[] } = await badgesRes.json()
-          setBadges(badgesData.badges ?? [])
-          setWorkoutDatesInWeek(badgesData.workoutDatesInWeek ?? [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch achievements data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const stats: UserStats = statsData ? {
+    weeklyCount: statsData.weeklyCount ?? 0,
+    thirtyDayStreak: statsData.thirtyDayStreak ?? { current: 0, target: 4, progress: 0 },
+  } : { weeklyCount: 0, thirtyDayStreak: { current: 0, target: 4, progress: 0 } };
 
-    void fetchData()
-  }, [])
+  const badges = badgesData?.badges ?? [];
+  const workoutDatesInWeek = badgesData?.workoutDatesInWeek ?? [];
 
+  const loading = statsLoading || badgesLoading;
   const unlockedCount = badges.filter((b) => b.unlocked).length
   const totalCount = badges.length
 

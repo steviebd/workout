@@ -100,9 +100,14 @@ export const Route = createFileRoute('/api/auth/callback')({
 
           const token = await createToken(user, workosSessionId);
 
-          return createSessionResponse(token, request, '/');
+          const response = createSessionResponse(token, request, '/');
+          console.log('[auth/callback] Redirect response status:', response.status);
+          console.log('[auth/callback] Redirect Location:', response.headers.get('Location'));
+          console.log('[auth/callback] Set-Cookie:', response.headers.get('Set-Cookie')?.substring(0, 80));
+          return response;
         } catch (err) {
           console.error('Auth callback error:', err);
+          console.error('[auth/callback] Error details:', err instanceof Error ? err.message : String(err));
           return createErrorRedirect('auth_failed');
         }
       },

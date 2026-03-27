@@ -101,6 +101,7 @@ src/lib/db/
 - **Use Drizzle ORM** - No raw SQL or direct D1 API
 - **File-based routing** - Routes in `src/routes/`
 - **WorkOS hosted UI** - Auth at `/auth/callback`
+- **Use TanStack Query for data fetching** - Never use `useEffect` for API calls
 
 ## Naming Conventions
 
@@ -126,6 +127,115 @@ trackEvent('workout_started', payload);
 // Internal conversion helper if needed
 const toExternalFormat = (data: { templateId: string }) => ({
   template_id: data.templateId,
+});
+```
+
+## Data Fetching with TanStack Query
+
+### When to Use TanStack Query
+Use `useQuery` for **all API data fetching**. This includes:
+- Fetching workout, exercise, template, or program data
+- Loading user preferences or settings
+- Any `fetch()` call that populates component state
+
+### When to Keep useEffect
+useEffect is appropriate for **side effects that are NOT data fetching**:
+- Event listener setup/cleanup (scroll, resize, IntersectionObserver)
+- DOM manipulation
+- Analytics tracking (page views, errors)
+- Auth state handling with complex caching
+- Auto-save debouncing
+- LocalStorage/sync state management
+
+### TanStack Query Pattern
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+
+// GOOD: useQuery for data fetching
+const { data, isLoading } = useQuery<MyData>({
+  queryKey: ['my-data', id],
+  queryFn: async () => {
+    const res = await fetch(`/api/data/${id}`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  },
+  enabled: !!auth.user && !!id, // Don't run if id is missing
+});
+```
+
+### Derived State Pattern
+
+For form state initialized from query data, use `useEffect` to sync, not `useMemo`:
+
+```typescript
+// GOOD: useState + useEffect sync from query
+const [formData, setFormData] = useState({ name: '', description: '' });
+
+useEffect(() => {
+  if (data) {
+    setFormData({ name: data.name, description: data.description });
+  }
+}, [data]);
+
+// GOOD: useMemo for computed values (not form state)
+const isValid = useMemo(() => formData.name.length > 0, [formData.name]);
+```
+
+### Infinite Scroll / Pagination
+
+Use TanStack Query with page state for infinite scroll:
+
+```typescript
+const [page, setPage] = useState(1);
+
+const { data } = useQuery({
+  queryKey: ['items', page, filters],
+  queryFn: () => fetchItems(page, filters),
+  enabled: !!auth.user,
+});
+
+// IntersectionObserver only updates page state, doesn't call fetch
+useEffect(() => {
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMore) {
+      setPage((p) => p + 1);
+    }
+  }, { rootMargin: '500px' });
+  // observer setup...
+}, [hasMore]);
+```
+
+### Query Invalidation
+
+After mutations, invalidate related queries:
+
+```typescript
+const mutation = useMutation({
+  mutationFn: createItem,
+  onSuccess: () => {
+    void queryClient.invalidateQueries({ queryKey: ['items'] });
+  },
+});
+```
+
+### Common Mistakes
+
+```typescript
+// BAD: useEffect + manual fetch for data
+useEffect(() => {
+  const fetchData = async () => {
+    const res = await fetch('/api/data');
+    setData(await res.json());
+  };
+  fetchData();
+}, [id]);
+
+// GOOD: TanStack Query
+const { data } = useQuery({
+  queryKey: ['data', id],
+  queryFn: () => fetch('/api/data').then(r => r.json()),
+  enabled: !!id,
 });
 ```
 

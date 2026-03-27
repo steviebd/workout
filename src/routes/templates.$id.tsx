@@ -1,28 +1,64 @@
-import { createFileRoute, useParams } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, redirect, useParams } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { Copy, Dumbbell, Edit, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from './__root';
 import { Template, TemplateExerciseWithDetails as TemplateExercise } from '@/lib/db/template';
+import { getSession } from '~/lib/auth';
 import { Button } from '~/components/ui/Button';
 import { Card, CardContent } from '~/components/ui/Card';
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { useToast } from '@/components/app/ToastProvider';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest();
+  const session = await getSession(request);
+  return session?.sub ? { sub: session.sub, email: session.email } : null;
+});
 
 function TemplateDetail() {
   const params = useParams({ from: '/templates/$id' });
   const auth = useAuth();
+  const toast = useToast();
   const { formatDateLong } = useDateFormat();
-  const [loading, setLoading] = useState(true);
-  const [template, setTemplate] = useState<Template | null>(null);
-  const [exercises, setExercises] = useState<TemplateExercise[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const templateId = params.id;
+
+  const { data: templateData, isLoading: templateLoading, error } = useQuery<Template>({
+    queryKey: ['template', templateId],
+    queryFn: async () => {
+      const response = await fetch(`/api/templates/${templateId}`, {
+        credentials: 'include',
+      });
+      if (response.status === 404) throw new Error('NOT_FOUND');
+      if (!response.ok) throw new Error('Failed to load template');
+      return response.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const { data: exercisesData = [], isLoading: exercisesLoading } = useQuery<TemplateExercise[]>({
+    queryKey: ['template-exercises', templateId],
+    queryFn: async () => {
+      const response = await fetch(`/api/templates/${templateId}/exercises`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to load exercises');
+      return response.json();
+    },
+    enabled: !!auth.user && !!templateData,
+  });
+
+  const template = templateData ?? null;
+  const exercises = exercisesData;
 
   const handleCopy = useCallback(async () => {
     setCopying(true);
@@ -37,14 +73,14 @@ function TemplateDetail() {
           const newTemplate: Template = await response.json();
           window.location.href = `/templates/${newTemplate.id}`;
       } else {
-        setError('Failed to copy template');
+        toast.error('Failed to copy template');
       }
     } catch {
-      setError('Failed to copy template');
+      toast.error('Failed to copy template');
     } finally {
       setCopying(false);
     }
-  }, [templateId]);
+  }, [templateId, toast]);
 
   const handleDelete = useCallback(async () => {
     setDeleting(true);
@@ -58,15 +94,15 @@ function TemplateDetail() {
       if (response.ok) {
         window.location.href = '/templates';
       } else {
-        setError('Failed to delete template');
+        toast.error('Failed to delete template');
       }
     } catch {
-      setError('Failed to delete template');
+      toast.error('Failed to delete template');
     } finally {
       setDeleting(false);
       setShowDeleteDialog(false);
     }
-  }, [templateId]);
+  }, [templateId, toast]);
 
   const handleCopyClick = useCallback(() => {
     void handleCopy();
@@ -80,60 +116,7 @@ function TemplateDetail() {
     void handleDelete();
   }, [handleDelete]);
 
-  useEffect(() => {
-    async function fetchTemplate() {
-      if (!auth.user) return;
-
-      try {
-        const [templateResponse, exercisesResponse] = await Promise.all([
-          fetch(`/api/templates/${templateId}`, {
-            credentials: 'include',
-          }),
-          fetch(`/api/templates/${templateId}/exercises`, {
-            credentials: 'include',
-          }),
-        ]);
-
-        if (!templateResponse.ok) {
-          if (templateResponse.status === 404) {
-            setTemplate(null);
-            setExercises([]);
-            setError(null);
-          } else {
-            setError('Failed to load template');
-          }
-          return;
-        }
-
-        const templateData: Template = await templateResponse.json();
-        setTemplate(templateData);
-        setError(null);
-
-        if (exercisesResponse.ok) {
-          const exercisesData: TemplateExercise[] = await exercisesResponse.json();
-          setExercises(exercisesData);
-        }
-      } catch {
-        setError('Failed to load template');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (!auth.loading && auth.user) {
-      void fetchTemplate();
-    } else if (!auth.loading && !auth.user) {
-      setLoading(false);
-    }
-   }, [auth.loading, auth.user, templateId]);
-
-   useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
-
-   if (auth.loading || !auth.user) {
+  if (auth.loading) {
     return (
       <PageLayout title="Loading">
         <PageLoading message="Loading..." />
@@ -141,7 +124,7 @@ function TemplateDetail() {
     );
   }
 
-   if (loading) {
+  if (templateLoading || exercisesLoading) {
     return (
       <PageLayout title="Template">
         <PageLoading message="Loading template..." />
@@ -149,12 +132,12 @@ function TemplateDetail() {
     );
   }
 
-   if (error) {
+  if (error || !template) {
     return (
       <PageLayout title="Error">
         <ErrorState
           title="Failed to Load Template"
-          description={error}
+          description={error?.message ?? 'Template not found'}
           onRetry={() => window.location.reload()}
           onGoHome={() => { window.location.href = '/templates' }}
         />
@@ -162,41 +145,7 @@ function TemplateDetail() {
     );
   }
 
-   if (!template) {
-    return (
-      <PageLayout title="Template Not Found">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground mb-4">
-              The template you're looking for doesn't exist or has been deleted.
-            </p>
-            <a className="text-primary hover:text-primary/80" href="/templates">
-              ← Back to Templates
-            </a>
-          </CardContent>
-        </Card>
-
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Template</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this template? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </PageLayout>
-    );
-  }
-
-   return (
+  return (
      <PageLayout
        title={template.name}
        action={
@@ -289,10 +238,31 @@ function TemplateDetail() {
            </div>
          </CardContent>
        </Card>
+
+       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Delete Template</AlertDialogTitle>
+             <AlertDialogDescription>
+               Are you sure you want to delete this template? This action cannot be undone.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel>Cancel</AlertDialogCancel>
+             <AlertDialogAction onClick={handleConfirmDelete} disabled={deleting}>
+               {deleting ? 'Deleting...' : 'Delete'}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
      </PageLayout>
-    );
-  }
+   );
+}
 
 export const Route = createFileRoute('/templates/$id')({
+  loader: async () => {
+    const session = await getSessionServerFn();
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }); // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: TemplateDetail,
 });

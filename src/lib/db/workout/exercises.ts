@@ -192,7 +192,6 @@ export async function reorderWorkoutExercises(
         eq(workoutExercises.workoutId, workoutId),
         eq(workoutExercises.exerciseId, order.exerciseId)
       ))
-      .run()
   );
 
   await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);

@@ -313,7 +313,6 @@ export async function reorderTemplateExercises(
         eq(templateExercises.templateId, templateId),
         eq(templateExercises.exerciseId, order.exerciseId)
       ))
-      .run()
   );
 
   await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);

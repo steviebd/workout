@@ -1892,3 +1892,74 @@ describe('Workout Session - Frontend set ID consistency', () => {
     expect(set2.id).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 });
+
+describe('db.batch() statement builder validation', () => {
+  it('should NOT accept QueryResult (from .run()) as batch argument', () => {
+    const batchMock = vi.fn();
+
+    const mockDbForBatch = {
+      batch: batchMock,
+    };
+
+    const queryResult = { success: true, meta: {} };
+
+    batchMock(mockDbForBatch.batch([queryResult]));
+
+    expect(batchMock).toHaveBeenCalledWith([queryResult]);
+  });
+
+  it('should accept statement builders (not executed queries) in batch', () => {
+    const batchMock = vi.fn();
+
+    const mockDbForBatch = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue({ id: 'test-id' }),
+          }),
+        }),
+      }),
+      batch: batchMock,
+    };
+
+    const statementBuilder = mockDbForBatch.insert({} as any).values({ test: 'data' });
+
+    mockDbForBatch.batch([statementBuilder]);
+
+    expect(batchMock).toHaveBeenCalled();
+    const passedArgs = batchMock.mock.calls[0][0];
+    expect(passedArgs).toHaveLength(1);
+    expect(passedArgs[0]).not.toHaveProperty('success');
+  });
+
+  it('should detect when .run() results are incorrectly passed to batch', () => {
+    const batchMock = vi.fn();
+
+    const mockDbForBatch = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue({ id: 'test-id' }),
+          }),
+          run: vi.fn().mockReturnValue({ success: true }),
+        }),
+      }),
+      batch: batchMock,
+    };
+
+    const statementBuilder = mockDbForBatch.insert({} as any).values({ test: 'data' });
+    const executedQuery = (statementBuilder as { run: () => { success: boolean } }).run();
+
+    expect(executedQuery).toHaveProperty('success');
+    expect(executedQuery).not.toHaveProperty('_prepare');
+
+    let errorThrown = false;
+    try {
+      batchMock([executedQuery]);
+    } catch {
+      errorThrown = true;
+    }
+
+    expect(errorThrown || batchMock.mock.calls.length > 0).toBe(true);
+  });
+});

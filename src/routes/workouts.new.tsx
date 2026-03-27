@@ -1,14 +1,24 @@
 'use client'
 
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { Plus, Search, Loader2, ChevronLeft, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { useAuth } from './__root'
 import type { Exercise as ExerciseType } from '~/lib/db/exercise/types'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
 import { Card, CardContent } from '~/components/ui/Card'
 import { useToast } from '~/components/app/ToastProvider'
+import { getSession } from '~/lib/auth/session'
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup'>
 
@@ -19,9 +29,7 @@ function BuildWorkoutPage() {
   
   const [workoutName, setWorkoutName] = useState('')
   const [exerciseSearch, setExerciseSearch] = useState('')
-  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([])
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([])
-  const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [showCreateExercise, setShowCreateExercise] = useState(false)
   const [newExercise, setNewExercise] = useState({ name: '', muscleGroup: '' })
@@ -33,36 +41,23 @@ function BuildWorkoutPage() {
     'Core', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Full Body', 'Cardio', 'Other'
   ] as const
 
-  const fetchExercises = useCallback(async () => {
-    try {
+  const { data: allExercises = [], isLoading } = useQuery<Exercise[]>({
+    queryKey: ['exercises', exerciseSearch],
+    queryFn: async () => {
       const url = exerciseSearch
         ? `/api/exercises?search=${encodeURIComponent(exerciseSearch)}`
         : '/api/exercises'
       const res = await fetch(url, { credentials: 'include' })
-      if (res.ok) {
-        const data: Exercise[] = await res.json()
-        setAvailableExercises(data.filter(e => !selectedExercises.some(se => se.id === e.id)))
-      }
-    } catch (error) {
-      console.error('Failed to fetch exercises:', error)
-    }
-  }, [exerciseSearch, selectedExercises])
+      if (!res.ok) throw new Error('Failed to fetch exercises')
+      return res.json()
+    },
+    enabled: !!auth.user,
+  })
 
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin'
-      return
-    }
-
-    if (auth.user) {
-      setLoading(false)
-      void fetchExercises()
-    }
-  }, [auth.loading, auth.user, fetchExercises])
+  const availableExercises = allExercises.filter(e => !selectedExercises.some(se => se.id === e.id))
 
   const handleAddExercise = useCallback((exercise: Exercise) => {
     setSelectedExercises(prev => [...prev, exercise])
-    setAvailableExercises(prev => prev.filter(e => e.id !== exercise.id))
     setExerciseSearch('')
   }, [])
 
@@ -70,7 +65,6 @@ function BuildWorkoutPage() {
     const exercise = selectedExercises.find(e => e.id === exerciseId)
     if (exercise) {
       setSelectedExercises(prev => prev.filter(e => e.id !== exerciseId))
-      setAvailableExercises(prev => [...prev, exercise])
     }
   }, [selectedExercises])
 
@@ -155,7 +149,7 @@ function BuildWorkoutPage() {
     }
   }, [workoutName, selectedExercises, router, toast])
 
-  if (loading) {
+  if (auth.loading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -226,7 +220,8 @@ function BuildWorkoutPage() {
             />
           </div>
 
-          {exerciseSearch && availableExercises.length > 0 ? <div className="mt-2 border rounded-lg divide-y max-h-60 overflow-auto">
+          {exerciseSearch && availableExercises.length > 0 ? (
+            <div className="mt-2 border rounded-lg divide-y max-h-60 overflow-auto">
               {availableExercises.slice(0, 8).map((exercise) => (
                 <button
                   key={exercise.id}
@@ -240,9 +235,11 @@ function BuildWorkoutPage() {
                   <Plus className="h-4 w-4 text-muted-foreground" />
                 </button>
               ))}
-                                                             </div> : null}
+            </div>
+          ) : null}
 
-          {exerciseSearch && availableExercises.length === 0 ? <div className="mt-2 p-4 border rounded-lg text-center">
+          {exerciseSearch && availableExercises.length === 0 ? (
+            <div className="mt-2 p-4 border rounded-lg text-center">
               <p className="text-muted-foreground mb-3">No exercises found</p>
               <Button
                 variant="outline"
@@ -252,7 +249,8 @@ function BuildWorkoutPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Create "{exerciseSearch}"
               </Button>
-                                                               </div> : null}
+            </div>
+          ) : null}
 
           {!exerciseSearch && selectedExercises.length === 0 && (
             <p className="mt-2 text-sm text-muted-foreground text-center">
@@ -335,5 +333,10 @@ function BuildWorkoutPage() {
 }
 
 export const Route = createFileRoute('/workouts/new')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    if (!session?.sub) throw redirect({ to: '/auth/signin' })
+  },
   component: BuildWorkoutPage,
 })

@@ -1,10 +1,20 @@
-import { createFileRoute, useParams, useRouter } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { Play, ChevronLeft, Loader2, RefreshCw } from 'lucide-react'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, redirect, useParams, useRouter } from '@tanstack/react-router'
 import { useAuth } from './__root'
 import { Button } from '~/components/ui/Button'
 import { useToast } from '~/components/app/ToastProvider'
 import { trackEvent } from '@/lib/analytics'
+import { getSession } from '~/lib/auth/session'
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface TemplateExercise {
   id: string;
@@ -30,49 +40,27 @@ function StartWorkoutPage() {
   const params = useParams({ from: '/workouts/start/$templateId' })
   const router = useRouter()
   const toast = useToast()
-  const [template, setTemplate] = useState<Template | null>(null)
-  const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const fetchedRef = useRef(false)
 
   const templateId = params.templateId
 
-  const fetchTemplate = useCallback(async () => {
-    if (!templateId) {
-      return
-    }
-
-      if (fetchedRef.current) {
-        return
+  const { data: template, isLoading } = useQuery<Template>({
+    queryKey: ['template', templateId],
+    queryFn: async () => {
+      const res = await fetch(`/api/templates/${templateId}`, { credentials: 'include' })
+      if (!res.ok) {
+        let errorData: { error?: string } = {}
+        try {
+          errorData = await res.json()
+        } catch {}
+        const message = errorData.error ?? 'Template not found'
+        throw new Error(message)
       }
-
-      fetchedRef.current = true
-
-      try {
-        setLoading(true)
-        setError(null)
-        const res = await fetch(`/api/templates/${templateId}`, {
-          credentials: 'include',
-        })
-
-        if (res.ok) {
-          const data: Template = await res.json()
-          setTemplate(data)
-        } else {
-          let errorData: { error?: string } = {}
-          try {
-            errorData = await res.json()
-          } catch {
-          }
-          const errorMessage = errorData.error ?? 'Template not found'
-          setError(errorMessage)
-        toast.error(errorMessage)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [templateId, toast])
+      return res.json()
+    },
+    enabled: !!templateId && !!auth.user,
+  })
 
   const handleStartWorkout = useCallback(async () => {
     if (!template) {
@@ -115,14 +103,14 @@ function StartWorkoutPage() {
         setError(errorMessage)
         toast.error(errorMessage)
       }
-      } catch {
-        const errorMessage = 'Failed to create workout'
-        setError(errorMessage)
-        toast.error(errorMessage)
-      } finally {
-        setCreating(false)
-      }
-    }, [template, auth.user?.id, router, toast])
+    } catch {
+      const errorMessage = 'Failed to create workout'
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setCreating(false)
+    }
+  }, [template, auth.user?.id, router, toast])
 
   const onStartWorkoutClick = useCallback(() => {
     if (!auth.loading) {
@@ -130,18 +118,7 @@ function StartWorkoutPage() {
     }
   }, [handleStartWorkout, auth.loading])
 
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin'
-      return
-    }
-
-    if (auth.user && templateId) {
-      void fetchTemplate()
-    }
-  }, [auth.loading, auth.user, templateId, fetchTemplate])
-
-  if (auth.loading || loading) {
+  if (auth.loading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -149,7 +126,9 @@ function StartWorkoutPage() {
     )
   }
 
-  if (error || !template) {
+  const displayError = error ?? (template === undefined ? 'Template not found' : null)
+
+  if (displayError || !template) {
     return (
       <main className="mx-auto max-w-lg px-4 py-6">
           <div className="flex items-center gap-3 mb-6">
@@ -161,13 +140,12 @@ function StartWorkoutPage() {
             </div>
           </div>
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
-            <p className="text-destructive">{error ?? 'Template not found'}</p>
+            <p className="text-destructive">{displayError ?? 'Template not found'}</p>
           </div>
           <Button
             variant="outline"
             onClick={() => {
-              fetchedRef.current = false
-              void fetchTemplate()
+              setError(null)
             }}
             className="w-full"
           >
@@ -250,5 +228,10 @@ function StartWorkoutPage() {
 }
 
 export const Route = createFileRoute('/workouts/start/$templateId')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    if (!session?.sub) throw redirect({ to: '/auth/signin' })
+  },
   component: StartWorkoutPage,
 })

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ArrowLeft, Loader2, Save, Undo, Redo, Plus } from 'lucide-react';
 import { useTemplateEditorState } from './useTemplateEditorState';
 import { useTemplateApi } from './useTemplateApi';
@@ -24,13 +24,18 @@ export function TemplateEditor({
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
 
+  const successCardRef = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
   const {
     formData,
     selectedExercises,
     accessoryAddedWeights,
     redirecting,
     loading,
-    setLoading,
     handleFormChange,
     handleUndo,
     handleRedo,
@@ -46,6 +51,7 @@ export function TemplateEditor({
 
   const {
     exercises,
+    exercisesLoading,
     saving,
     createdTemplate,
     error,
@@ -60,18 +66,7 @@ export function TemplateEditor({
     accessoryAddedWeights,
   });
 
-  useEffect(() => {
-    const loadExercises = async () => {
-      await fetchExercises();
-      setLoading(false);
-    };
-
-    if (!loading && initialData && mode === 'edit' && templateId) {
-      void loadExercises();
-    } else if (!loading && !initialData) {
-      void loadExercises();
-    }
-  }, [initialData, mode, templateId, fetchExercises, loading, setLoading]);
+  const isLoading = loading || exercisesLoading;
 
   const handleAddExercise = useCallback(async (exercise: Exercise | { id: string; name: string; muscleGroup: string | null; description: string | null; isLibrary?: boolean }) => {
     if (selectedExercises.some(se => se.name === exercise.name)) {
@@ -233,7 +228,7 @@ export function TemplateEditor({
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -442,7 +437,7 @@ export function TemplateEditor({
         </form>
 
         {createdTemplate ? (
-          <div className="mt-6 p-4 bg-success/20 border border-success/30 rounded-lg">
+          <div ref={successCardRef} className="mt-6 p-4 bg-success/20 border border-success/30 rounded-lg">
             <h3 className="font-semibold mb-2 text-success">Template Created!</h3>
             <p className="text-sm mb-4 text-success/80">Your template "{createdTemplate.name}" is ready.</p>
             <div className="flex gap-3">

@@ -12,8 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as AchievementsRouteImport } from './routes/achievements'
-import { Route as IndexRouteImport } from './routes/_index'
 import { Route as R1rmTestRouteImport } from './routes/1rm-test'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
 import { Route as WorkoutsIndexRouteImport } from './routes/workouts._index'
 import { Route as WorkoutsIdRouteImport } from './routes/workouts.$id'
@@ -98,13 +98,14 @@ const AchievementsRoute = AchievementsRouteImport.update({
   path: '/achievements',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/_index',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const R1rmTestRoute = R1rmTestRouteImport.update({
   id: '/1rm-test',
   path: '/1rm-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkoutsNewRoute = WorkoutsNewRouteImport.update({
@@ -465,8 +466,8 @@ const ApiTemplatesIdExercisesExerciseIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/1rm-test': typeof R1rmTestRoute
   '/': typeof IndexRoute
+  '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
@@ -540,8 +541,8 @@ export interface FileRoutesByFullPath {
   '/api/workouts/$id/exercises/reorder': typeof ApiWorkoutsIdExercisesReorderRoute
 }
 export interface FileRoutesByTo {
-  '/1rm-test': typeof R1rmTestRoute
   '/': typeof IndexRoute
+  '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
@@ -616,8 +617,8 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/1rm-test': typeof R1rmTestRoute
-  '/_index': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/health': typeof HealthRoute
   '/progress': typeof ProgressRoute
@@ -693,8 +694,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/1rm-test'
     | '/'
+    | '/1rm-test'
     | '/achievements'
     | '/health'
     | '/progress'
@@ -768,8 +769,8 @@ export interface FileRouteTypes {
     | '/api/workouts/$id/exercises/reorder'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/1rm-test'
     | '/'
+    | '/1rm-test'
     | '/achievements'
     | '/health'
     | '/progress'
@@ -843,8 +844,8 @@ export interface FileRouteTypes {
     | '/api/workouts/$id/exercises/reorder'
   id:
     | '__root__'
+    | '/'
     | '/1rm-test'
-    | '/_index'
     | '/achievements'
     | '/health'
     | '/progress'
@@ -919,8 +920,8 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  R1rmTestRoute: typeof R1rmTestRoute
   IndexRoute: typeof IndexRoute
+  R1rmTestRoute: typeof R1rmTestRoute
   AchievementsRoute: typeof AchievementsRoute
   HealthRoute: typeof HealthRoute
   ProgressRoute: typeof ProgressRoute
@@ -995,18 +996,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AchievementsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_index': {
-      id: '/_index'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/1rm-test': {
       id: '/1rm-test'
       path: '/1rm-test'
       fullPath: '/1rm-test'
       preLoaderRoute: typeof R1rmTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workouts/new': {
@@ -1658,8 +1659,8 @@ const TemplatesIdRouteWithChildren = TemplatesIdRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  R1rmTestRoute: R1rmTestRoute,
   IndexRoute: IndexRoute,
+  R1rmTestRoute: R1rmTestRoute,
   AchievementsRoute: AchievementsRoute,
   HealthRoute: HealthRoute,
   ProgressRoute: ProgressRoute,

@@ -1,109 +1,87 @@
-import { createFileRoute, useParams } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, redirect, useParams } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
+import { useCallback, useState } from 'react';
 import { useAuth } from './__root';
 import type { Exercise } from '~/lib/db/exercise/types';
+import { getSession } from '~/lib/auth';
 import { Button, Card, CardContent } from '~/components/ui';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { useToast } from '@/components/app/ToastProvider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog';
 
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest();
+  const session = await getSession(request);
+  return session?.sub ? { sub: session.sub, email: session.email } : null;
+});
+
 function ExerciseDetail() {
   const { id } = useParams({ from: '/exercises/$id' });
   const auth = useAuth();
   const toast = useToast();
   const { formatDateLong } = useDateFormat();
-  const [loading, setLoading] = useState(true);
-  const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const exerciseId = id;
 
-  useEffect(() => {
-    async function fetchExercise() {
-      if (!auth.user) return;
-
-      try {
-        const response = await fetch(`/api/exercises/${exerciseId}`, {
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            setExercise(null);
-            setError(null);
-          } else {
-            setError('Failed to load exercise');
-          }
-          return;
-        }
-
-        const data = await response.json() as Exercise;
-        setExercise(data);
-        setError(null);
-      } catch {
-        setError('Failed to load exercise');
-      } finally {
-        setLoading(false);
+  const { data: exercise, isLoading, error } = useQuery<Exercise | null>({
+    queryKey: ['exercise', exerciseId],
+    queryFn: async () => {
+      const response = await fetch(`/api/exercises/${exerciseId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to load exercise');
       }
+      return response.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const handleDelete = useCallback(async () => {
+    setDeleting(true);
+
+    try {
+      const response = await fetch(`/api/exercises/${exerciseId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        window.location.href = '/exercises';
+      } else {
+        toast.error('Failed to delete exercise');
+      }
+    } catch {
+      toast.error('Failed to delete exercise');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
+  }, [exerciseId, toast]);
 
-    if (!auth.loading && auth.user) {
-      void fetchExercise();
-    } else if (!auth.loading && !auth.user) {
-      setLoading(false);
-    }
-  }, [auth.loading, auth.user, exerciseId]);
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteDialog(true);
+  }, []);
 
-   const handleDelete = useCallback(async () => {
-     setDeleting(true);
-
-     try {
-       const response = await fetch(`/api/exercises/${exerciseId}`, {
-         method: 'DELETE',
-         credentials: 'include',
-       });
-
-       if (response.ok) {
-         window.location.href = '/exercises';
-       } else {
-         toast.error('Failed to delete exercise');
-       }
-     } catch {
-       toast.error('Failed to delete exercise');
-     } finally {
-       setDeleting(false);
-       setShowDeleteDialog(false);
-     }
-   }, [exerciseId, toast]);
-
-   const handleDeleteClick = useCallback(() => {
-     setShowDeleteDialog(true);
-   }, []);
-
-   useEffect(() => {
-     if (!auth.loading && !auth.user) {
-       window.location.href = '/auth/signin';
-     }
-   }, [auth.loading, auth.user]);
-
-
-
-  if (auth.loading || (!auth.user && !auth.loading)) {
+  if (auth.loading) {
     return (
-	<div className="min-h-screen flex items-center justify-center">
-		<p className="text-muted-foreground">Loading...</p>
-	</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
-	<div className="min-h-screen flex items-center justify-center">
-		<p className="text-muted-foreground">Loading exercise...</p>
-	</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading exercise...</p>
+      </div>
     );
   }
 
@@ -112,7 +90,7 @@ function ExerciseDetail() {
       <PageLayout title="Error">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-destructive">{error}</p>
+            <p className="text-destructive">{error.message}</p>
           </CardContent>
         </Card>
       </PageLayout>
@@ -202,5 +180,9 @@ function ExerciseDetail() {
 }
 
 export const Route = createFileRoute('/exercises/$id')({
+  loader: async () => {
+    const session = await getSessionServerFn();
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }); // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: ExerciseDetail,
 });

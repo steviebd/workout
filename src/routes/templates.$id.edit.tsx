@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Loader2, Plus, Save } from 'lucide-react';
 import { useCallback, useEffect, useReducer } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './__root';
 import { type Template, type Exercise } from '@/lib/db/schema';
 import { type TemplateExerciseWithDetails } from '@/lib/db/template';
@@ -142,71 +143,73 @@ function EditTemplate() {
     }
   }, [auth.loading, auth.user]);
 
-  const fetchData = useCallback(async () => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-
-      const [templateRes, exercisesRes, allExercisesRes] = await Promise.all([
-        fetch(`/api/templates/${id}`, { credentials: 'include' }),
-        fetch(`/api/templates/${id}/exercises`, { credentials: 'include' }),
-        fetch('/api/exercises', { credentials: 'include' }),
-      ]);
-
-      if (templateRes.status === 404) {
+  const templateQuery = useQuery({
+    queryKey: ['template', id],
+    queryFn: () => fetch(`/api/templates/${id}`, { credentials: 'include' }).then((res) => {
+      if (res.status === 404) {
         void navigate({ to: '/templates' });
-        return;
+        return null;
       }
+      if (!res.ok) throw new Error(`Failed to fetch template: ${res.status}`);
+      return res.json() as Promise<Template>;
+    }),
+  });
 
-      if (!templateRes.ok) {
-        console.error('Failed to fetch template:', templateRes.status);
-        dispatch({ type: 'SET_ERRORS', payload: { submit: 'Failed to load template' } });
-        return;
-      }
+  const templateExercisesQuery = useQuery({
+    queryKey: ['template-exercises', id],
+    queryFn: () => fetch(`/api/templates/${id}/exercises`, { credentials: 'include' }).then((res) => {
+      if (!res.ok) throw new Error(`Failed to fetch template exercises: ${res.status}`);
+      return res.json() as Promise<TemplateExerciseWithDetails[]>;
+    }),
+    enabled: !!id,
+  });
 
-      const templateData: Template = await templateRes.json();
+  const allExercisesQuery = useQuery({
+    queryKey: ['exercises'],
+    queryFn: () => fetch('/api/exercises', { credentials: 'include' }).then((res) => {
+      if (!res.ok) throw new Error(`Failed to fetch exercises: ${res.status}`);
+      return res.json() as Promise<Exercise[]>;
+    }),
+  });
+
+  useEffect(() => {
+    if (templateQuery.data) {
       dispatch({
         type: 'SET_TEMPLATE',
         payload: {
-          template: templateData,
+          template: templateQuery.data,
           formData: {
-            name: templateData.name,
-            description: templateData.description ?? '',
-            notes: templateData.notes ?? '',
+            name: templateQuery.data.name,
+            description: templateQuery.data.description ?? '',
+            notes: templateQuery.data.notes ?? '',
           },
         },
       });
-
-      if (exercisesRes.ok) {
-        const exercisesData: TemplateExerciseWithDetails[] = await exercisesRes.json();
-        dispatch({
-          type: 'SET_TEMPLATE_EXERCISES',
-          payload: {
-            templateExercises: exercisesData,
-            selectedExercises: exercisesData.map((te) => ({
-              id: te.id,
-              exerciseId: te.exerciseId,
-              name: te.exercise?.name ?? 'Unknown',
-              muscleGroup: te.exercise?.muscleGroup ?? null,
-            })),
-          },
-        });
-      }
-
-      if (allExercisesRes.ok) {
-        const allExercisesData: Exercise[] = await allExercisesRes.json();
-        dispatch({ type: 'SET_ALL_EXERCISES', payload: allExercisesData });
-      }
-    } catch (error) {
-      console.error('Failed to fetch template:', error);
-      dispatch({ type: 'SET_ERRORS', payload: { submit: 'Failed to load template' } });
     }
-  }, [id, navigate]);
+  }, [templateQuery.data]);
 
   useEffect(() => {
-    if (!auth.loading && auth.user && id) {
-      fetchData().catch(console.error);
+    if (templateExercisesQuery.data) {
+      dispatch({
+        type: 'SET_TEMPLATE_EXERCISES',
+        payload: {
+          templateExercises: templateExercisesQuery.data,
+          selectedExercises: templateExercisesQuery.data.map((te) => ({
+            id: te.id,
+            exerciseId: te.exerciseId,
+            name: te.exercise?.name ?? 'Unknown',
+            muscleGroup: te.exercise?.muscleGroup ?? null,
+          })),
+        },
+      });
     }
-  }, [auth.loading, auth.user, id, fetchData]);
+  }, [templateExercisesQuery.data]);
+
+  useEffect(() => {
+    if (allExercisesQuery.data) {
+      dispatch({ type: 'SET_ALL_EXERCISES', payload: allExercisesQuery.data });
+    }
+  }, [allExercisesQuery.data]);
 
   const handleAddExercise = useCallback((exercise: Exercise) => {
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;

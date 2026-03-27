@@ -1,11 +1,22 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
+import { useState } from 'react'
 import { Dumbbell, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useAuth } from './__root'
 import { Card } from '~/components/ui/Card'
 import { PageLayout } from '~/components/ui/PageLayout'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
 import { useToast } from '@/components/app/ToastProvider'
+import { getSession } from '~/lib/auth'
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 const LIFTS = [
   { key: 'squat', name: 'Squat', description: 'Back Squat' },
@@ -25,6 +36,7 @@ interface LiftTest {
 function OneRMTest() {
   const navigate = useNavigate()
   const toast = useToast()
+  const auth = useAuth()
   const [weightUnit, setWeightUnit] = useState('kg')
   const [lifts, setLifts] = useState<LiftTest[]>(() =>
     LIFTS.map((lift) => ({
@@ -39,20 +51,19 @@ function OneRMTest() {
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    async function loadPreferences() {
-      try {
-        const response = await fetch('/api/user/preferences')
-        if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg')
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error)
-      }
-    }
-    void loadPreferences()
-  }, [])
+  const { data: preferencesData } = useQuery<{ weightUnit?: string }>({
+    queryKey: ['user-preferences'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch preferences');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  if (preferencesData?.weightUnit && weightUnit !== preferencesData.weightUnit) {
+    setWeightUnit(preferencesData.weightUnit);
+  }
 
   const handleLiftToggle = (key: string) => {
     setSelectedLifts((prev) => {
@@ -340,6 +351,10 @@ function OneRMTest() {
 }
 
 export const Route = createFileRoute('/1rm-test')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: OneRMTest,
 })
 

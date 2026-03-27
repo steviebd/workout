@@ -31,6 +31,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip cross-origin requests
+  if (url.origin !== self.location.origin) return;
+
+  // API routes: network-only with offline fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() => {
@@ -43,6 +47,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Auth routes: always go to network (redirects must not be cached)
+  if (url.pathname.startsWith('/auth/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Navigation requests (HTML pages): network-first
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match(request).then((cached) => cached || caches.match('/'));
+      })
+    );
+    return;
+  }
+
+  // Static assets: cache-first
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {

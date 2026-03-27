@@ -1,5 +1,6 @@
 import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar, Clock, Dumbbell, Loader2, Pencil, Scale, Search, Trophy } from 'lucide-react';
 import { useAuth } from './__root';
 import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
@@ -21,7 +22,6 @@ import { EmptyWorkouts } from '@/components/ui/EmptyState';
 import { SectionHeader } from '~/components/ui/SectionHeader';
 import { formatDuration } from '~/lib/workout-summary';
 import { getWeekStart, getWeekEnd, getMonthStart, getMonthEnd } from '~/lib/utils/date';
-
 const StrengthChart = lazy(() => import('~/components/progress/StrengthChart'));
 const WeeklyVolumeChart = lazy(() => import('~/components/progress/WeeklyVolumeChart'));
 
@@ -92,23 +92,11 @@ function ProgressPage() {
   const router = useRouter();
   const { formatVolume } = useUnit();
   const { formatDate } = useDateFormat();
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [weeklyVolume, setWeeklyVolume] = useState<WeeklyVolume[]>([]);
-  const [strengthData, setStrengthData] = useState<ProgressDataPoint[]>([]);
-  const [recentPRs, setRecentPRs] = useState<PersonalRecord[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange>('3m');
   const [volumeScope, setVolumeScope] = useState<VolumeScope>('all');
-  const [isLoadingExercises, setIsLoadingExercises] = useState(true);
-  const [isLoadingStrength, setIsLoadingStrength] = useState(false);
-  const [isLoadingVolume, setIsLoadingVolume] = useState(false);
-  const [isLoadingPRs, setIsLoadingPRs] = useState(false);
 
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
-  const [stats, setStats] = useState<WorkoutStats | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
-  const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState('');
   const [exerciseFilter, setExerciseFilter] = useState('all');
@@ -119,139 +107,123 @@ function ProgressPage() {
   const [page, setPage] = useState(1);
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  const fetchAllData = useCallback(async (exerciseId?: string) => {
-    if (!auth.user) return;
+  const { data: exercisesData, isLoading: isLoadingExercises } = useQuery<Exercise[]>({
+    queryKey: ['exercises'],
+    queryFn: async () => {
+      const res = await fetch('/api/exercises', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch exercises');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
-    const id = exerciseId ?? selectedExerciseId;
+  const exercises = useMemo(() => exercisesData ?? [], [exercisesData]);
 
-    try {
-      setIsLoadingExercises(true);
-      setIsLoadingStrength(true);
-      setIsLoadingVolume(true);
-      setIsLoadingPRs(true);
+  const { data: strengthData = [], isLoading: isLoadingStrength } = useQuery<ProgressDataPoint[]>({
+    queryKey: ['progress', 'strength', dateRange, selectedExerciseId],
+    queryFn: async () => {
+      if (!selectedExerciseId) return [];
+      const res = await fetch(`/api/progress/strength?dateRange=${dateRange}&exerciseId=${selectedExerciseId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch strength data');
+      const jsonData = await res.json() as { strengthData: ProgressDataPoint[] };
+      return jsonData.strengthData;
+    },
+    enabled: !!auth.user && !!selectedExerciseId,
+  });
 
-      const [exercisesRes, strengthRes, volumeRes, prsRes] = await Promise.all([
-        fetch('/api/exercises', { credentials: 'include' }),
-        id ? fetch(`/api/progress/strength?dateRange=${dateRange}&exerciseId=${id}`, { credentials: 'include' }) : Promise.resolve(null),
-        fetch(`/api/progress/volume?dateRange=${dateRange}&volumeScope=${volumeScope}${selectedExerciseId ? `&exerciseId=${selectedExerciseId}` : ''}`, { credentials: 'include' }),
-        fetch('/api/progress/prs?mode=allTime&limit=20', { credentials: 'include' }),
-      ]);
+  const { data: weeklyVolume = [], isLoading: isLoadingVolume } = useQuery<WeeklyVolume[]>({
+    queryKey: ['progress', 'volume', dateRange, volumeScope, selectedExerciseId],
+    queryFn: async () => {
+      const url = `/api/progress/volume?dateRange=${dateRange}&volumeScope=${volumeScope}${selectedExerciseId ? `&exerciseId=${selectedExerciseId}` : ''}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch volume data');
+      const jsonData = await res.json() as { weeklyVolume: WeeklyVolume[] };
+      return jsonData.weeklyVolume;
+    },
+    enabled: !!auth.user,
+  });
 
-      if (exercisesRes.ok) {
-        const data: Exercise[] = await exercisesRes.json();
-        setExercises(data);
-        if (data.length > 0 && !selectedExerciseId && !id) {
-          setSelectedExerciseId(data[0].id);
-        }
-      }
+  const { data: recentPRs = [], isLoading: isLoadingPRs } = useQuery<PersonalRecord[]>({
+    queryKey: ['progress', 'prs'],
+    queryFn: async () => {
+      const res = await fetch('/api/progress/prs?mode=allTime&limit=20', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch PRs');
+      const jsonData = await res.json() as { recentPRs: PersonalRecord[] };
+      return jsonData.recentPRs;
+    },
+    enabled: !!auth.user,
+  });
 
-      if (strengthRes?.ok) {
-        const data: { strengthData: ProgressDataPoint[] } = await strengthRes.json();
-        setStrengthData(data.strengthData);
-      }
+  const { data: stats = null, isLoading: isLoadingStats } = useQuery<WorkoutStats>({
+    queryKey: ['workouts', 'stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/workouts/stats', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch stats');
+      return res.json() as Promise<WorkoutStats>;
+    },
+    enabled: !!auth.user,
+  });
 
-      if (volumeRes.ok) {
-        const data: { weeklyVolume: WeeklyVolume[] } = await volumeRes.json();
-        setWeeklyVolume(data.weeklyVolume);
-      }
-
-      if (prsRes.ok) {
-        const data: { recentPRs: PersonalRecord[] } = await prsRes.json();
-        setRecentPRs(data.recentPRs);
-      }
-    } catch (err) {
-      console.error('Failed to fetch progress data:', err);
-    } finally {
-      setIsLoadingExercises(false);
-      setIsLoadingStrength(false);
-      setIsLoadingVolume(false);
-      setIsLoadingPRs(false);
+  const fetchWorkouts = async ({ pageNum }: { pageNum: number }): Promise<WorkoutHistoryItem[]> => {
+    const params = new URLSearchParams();
+    params.set('page', pageNum.toString());
+    params.set('limit', '10');
+    if (fromDate) params.set('fromDate', fromDate);
+    if (toDate) params.set('toDate', toDate);
+    if (exerciseFilter && exerciseFilter !== 'all') params.set('exerciseId', exerciseFilter);
+    if (search) params.set('search', search);
+    if (sortBy === 'startedAt') {
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
     }
-  }, [auth.user, dateRange, volumeScope, selectedExerciseId]);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      setIsLoadingStats(true);
-      const response = await fetch('/api/workouts/stats', {
-        credentials: 'include',
-      });
+    const response = await fetch(`/api/workouts?${params.toString()}`, {
+      credentials: 'include',
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data as WorkoutStats);
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    } finally {
-      setIsLoadingStats(false);
+    if (!response.ok) throw new Error('Failed to fetch workouts');
+
+    const data = (await response.json()) as WorkoutHistoryItem[];
+
+    let sortedData = data;
+    if (sortBy === 'volume') {
+      sortedData = [...data].sort((a, b) =>
+        sortOrder === 'DESC' ? b.totalVolume - a.totalVolume : a.totalVolume - b.totalVolume
+      );
+    } else if (sortBy === 'duration') {
+      sortedData = [...data].sort((a, b) =>
+        sortOrder === 'DESC' ? b.duration - a.duration : a.duration - b.duration
+      );
     }
-  }, []);
 
-  const fetchWorkouts = useCallback(async (pageNum = 1, append = false) => {
-    try {
-      if (!append) {
-        setIsLoadingWorkouts(true);
-      } else {
-        setLoadingMore(true);
-      }
+    return sortedData;
+  };
 
-      const params = new URLSearchParams();
-      params.set('page', pageNum.toString());
-      params.set('limit', '10');
-      if (fromDate) params.set('fromDate', fromDate);
-      if (toDate) params.set('toDate', toDate);
-      if (exerciseFilter && exerciseFilter !== 'all') params.set('exerciseId', exerciseFilter);
+  const { data: currentPageData, isLoading: isLoadingWorkouts } = useQuery<WorkoutHistoryItem[]>({
+    queryKey: ['workouts', 'history', page, search, exerciseFilter, fromDate, toDate, sortBy, sortOrder],
+    queryFn: () => fetchWorkouts({ pageNum: page }),
+    enabled: !!auth.user,
+  });
 
-      if (search) params.set('search', search);
-
-      if (sortBy === 'startedAt') {
-        params.set('sortBy', sortBy);
-        params.set('sortOrder', sortOrder);
-      }
-
-      const response = await fetch(`/api/workouts?${params.toString()}`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const workoutList = data as WorkoutHistoryItem[];
-
-        let sortedWorkouts: WorkoutHistoryItem[];
-        if (sortBy === 'volume') {
-          sortedWorkouts = workoutList.toSorted((a, b) => {
-            return sortOrder === 'DESC' ? b.totalVolume - a.totalVolume : a.totalVolume - b.totalVolume;
-          });
-        } else if (sortBy === 'duration') {
-          sortedWorkouts = workoutList.toSorted((a, b) => {
-            return sortOrder === 'DESC' ? b.duration - a.duration : a.duration - b.duration;
-          });
-        } else {
-          sortedWorkouts = workoutList;
-        }
-
-        if (append) {
-          setWorkouts((prev) => [...prev, ...sortedWorkouts]);
-        } else {
-          setWorkouts(sortedWorkouts);
-        }
-
-        setHasMore(workoutList.length === 10);
-      }
-    } catch (err) {
-      console.error('Failed to fetch workouts:', err);
-    } finally {
-      setIsLoadingWorkouts(false);
-      setLoadingMore(false);
-    }
-  }, [fromDate, toDate, exerciseFilter, sortBy, sortOrder, search]);
+  const { isLoading: loadingMore } = useQuery<WorkoutHistoryItem[]>({
+    queryKey: ['workouts', 'history', page + 1, search, exerciseFilter, fromDate, toDate, sortBy, sortOrder],
+    queryFn: () => fetchWorkouts({ pageNum: page + 1 }),
+    enabled: hasMore && page > 0,
+  });
 
   useEffect(() => {
-    if (auth.user) {
-      void fetchAllData();
-      void fetchStats();
+    if (!currentPageData) return;
+    if (page === 1) {
+      setWorkouts(currentPageData);
+    } else {
+      setWorkouts((prev) => {
+        const existingIds = new Set(prev.map((w) => w.id));
+        const newWorkouts = currentPageData.filter((w) => !existingIds.has(w.id));
+        return [...prev, ...newWorkouts];
+      });
     }
-  }, [auth.user, fetchAllData, fetchStats]);
+    setHasMore(currentPageData.length === 10);
+  }, [currentPageData, page]);
 
   useEffect(() => {
     if (auth.user && exercises.length > 0 && !selectedExerciseId) {
@@ -262,15 +234,13 @@ function ProgressPage() {
   useEffect(() => {
     setPage(1);
     setWorkouts([]);
-    void fetchWorkouts(1, false);
-  }, [search, exerciseFilter, fromDate, toDate, sortBy, sortOrder, fetchWorkouts]);
+  }, [search, exerciseFilter, fromDate, toDate, sortBy, sortOrder]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingWorkouts && !loadingMore) {
+        if (entries[0].isIntersecting && hasMore) {
           setPage((prev) => prev + 1);
-          void fetchWorkouts(page + 1, true);
         }
       },
       { threshold: 0.1, rootMargin: '500px' }
@@ -286,7 +256,7 @@ function ProgressPage() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isLoadingWorkouts, loadingMore, page, fetchWorkouts]);
+  }, [hasMore]);
 
   const handleExerciseSelect = useCallback((id: string) => {
     setSelectedExerciseId(id);
