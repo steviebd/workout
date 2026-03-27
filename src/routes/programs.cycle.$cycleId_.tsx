@@ -1,6 +1,11 @@
-import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState, memo } from 'react';
+import { createFileRoute, Link, redirect, useParams, useNavigate } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, memo, useMemo } from 'react';
 import { Dumbbell, Trash2 } from 'lucide-react';
+import { getRequest } from '@tanstack/react-start/server';
+import { createServerFn } from '@tanstack/react-start';
+import { useAuth } from './__root';
+import { getSession } from '~/lib/auth';
 import { getVideoTutorialByName, type VideoTutorial } from '~/lib/db/exercise/library';
 import { Card } from '~/components/ui/Card';
 import { PageLayout } from '~/components/ui/PageLayout';
@@ -15,6 +20,12 @@ import { formatTime } from '~/lib/programs/scheduler';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { VideoTutorialButton } from '~/components/workouts/VideoTutorialButton';
 import { VideoTutorialModal } from '~/components/workouts/VideoTutorialModal';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface CycleData {
   id: string;
@@ -152,11 +163,8 @@ function ProgramDashboard() {
   const params = useParams({ from: '/programs/cycle/$cycleId_' });
   const navigate = useNavigate();
   const toast = useToast();
-  const [cycle, setCycle] = useState<CycleData | null>(null);
-  const [currentWorkout, setCurrentWorkout] = useState<CurrentWorkoutData | null>(null);
-  const [calculatedCurrentWeek, setCalculatedCurrentWeek] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [weightUnit, setWeightUnit] = useState('kg');
+  const auth = useAuth();
+  const queryClient = useQueryClient();
   const [rescheduleWorkout, setRescheduleWorkout] = useState<{ id: string; weekNumber: number; sessionNumber: number; sessionName: string; scheduledDate: string; scheduledTime?: string; isComplete: boolean; } | null>(null);
   const [selectedTutorial, setSelectedTutorial] = useState<{ tutorial: VideoTutorial; exerciseName: string } | null>(null);
   const { formatDate } = useDateFormat();
@@ -165,133 +173,104 @@ function ProgramDashboard() {
     setSelectedTutorial({ tutorial, exerciseName });
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    let retryCount = 0;
-
-    async function loadCycle() {
-      try {
-        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
-        
-        if (!response.ok && response.status === 404 && retryCount < MAX_RETRIES) {
-          retryCount++;
-          console.log(`Cycle not found, retrying (${retryCount}/${MAX_RETRIES})...`);
-          await delay(RETRY_DELAY_MS * retryCount);
-          if (isMounted) {
-            void loadCycle();
+  const { data: cycle, isLoading: isLoadingCycle } = useQuery<CycleData | null>({
+    queryKey: ['cycle', params.cycleId],
+    queryFn: async () => {
+      let retryCount = 0;
+      while (retryCount < MAX_RETRIES) {
+        try {
+          const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}`);
+          if (response.ok) {
+            return await response.json() as CycleData;
           }
-          return;
-        }
-        
-        if (response.ok) {
-          const data = await response.json() as CycleData;
-          if (isMounted) {
-            setCycle(data as CycleData);
+          if (response.status === 404) {
+            retryCount++;
+            console.log(`Cycle not found, retrying (${retryCount}/${MAX_RETRIES})...`);
+            await delay(RETRY_DELAY_MS * retryCount);
+            continue;
           }
-        }
-      } catch (error) {
-        console.error('Error loading cycle:', error);
-        if (retryCount < MAX_RETRIES && isMounted) {
-          retryCount++;
-          await delay(RETRY_DELAY_MS * retryCount);
-          void loadCycle();
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          throw new Error('Failed to fetch cycle');
+        } catch (error) {
+          if (retryCount < MAX_RETRIES - 1) {
+            retryCount++;
+            await delay(RETRY_DELAY_MS * retryCount);
+            continue;
+          }
+          throw error;
         }
       }
-    }
+      return null;
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
 
-    void loadCycle();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.cycleId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    let currentWorkoutRetryCount = 0;
-
-    async function loadCurrentWorkout() {
-      try {
-        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
-        
-        if (!response.ok && response.status === 404 && currentWorkoutRetryCount < MAX_RETRIES) {
-          currentWorkoutRetryCount++;
-          console.log(`Current workout not found, retrying (${currentWorkoutRetryCount}/${MAX_RETRIES})...`);
-          await delay(RETRY_DELAY_MS * currentWorkoutRetryCount);
-          if (isMounted) {
-            void loadCurrentWorkout();
+  const { data: currentWorkout, isLoading: isLoadingCurrentWorkout } = useQuery<CurrentWorkoutData | null>({
+    queryKey: ['cycle', params.cycleId, 'current-workout'],
+    queryFn: async () => {
+      let retryCount = 0;
+      while (retryCount < MAX_RETRIES) {
+        try {
+          const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
+          if (response.ok) {
+            return await response.json() as CurrentWorkoutData;
           }
-          return;
-        }
-        
-        if (response.ok) {
-          const data = await response.json() as CurrentWorkoutData;
-          if (isMounted) {
-            setCurrentWorkout(data);
-
-            const today = new Date();
-            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-            if (data.scheduledDate) {
-              const workoutDate = new Date(`${data.scheduledDate}T00:00:00Z`);
-              if (workoutDate.getTime() === todayDate.getTime()) {
-                setCalculatedCurrentWeek(data.weekNumber);
-              }
-            }
+          if (response.status === 404) {
+            retryCount++;
+            console.log(`Current workout not found, retrying (${retryCount}/${MAX_RETRIES})...`);
+            await delay(RETRY_DELAY_MS * retryCount);
+            continue;
           }
-        }
-      } catch (error) {
-        console.error('Error loading current workout:', error);
-        if (currentWorkoutRetryCount < MAX_RETRIES && isMounted) {
-          currentWorkoutRetryCount++;
-          await delay(RETRY_DELAY_MS * currentWorkoutRetryCount);
-          void loadCurrentWorkout();
+          throw new Error('Failed to fetch current workout');
+        } catch (error) {
+          if (retryCount < MAX_RETRIES - 1) {
+            retryCount++;
+            await delay(RETRY_DELAY_MS * retryCount);
+            continue;
+          }
+          throw error;
         }
       }
-    }
+      return null;
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
 
-    async function loadAllWorkoutsForWeekCalculation() {
-      try {
-        const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
-        if (response.ok) {
-          const workouts = await response.json() as WorkoutForWeekCalculation[];
-          if (isMounted && workouts.length > 0) {
-            const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
-            setCalculatedCurrentWeek(calculatedWeek);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading workouts for week calculation:', error);
+  const { data: allWorkouts = [] } = useQuery<WorkoutForWeekCalculation[]>({
+    queryKey: ['cycle', params.cycleId, 'workouts'],
+    queryFn: async () => {
+      const response = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
+      if (!response.ok) throw new Error('Failed to fetch workouts');
+      const data = await response.json();
+      return data as WorkoutForWeekCalculation[];
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
+
+  const { data: preferences } = useQuery<{ weightUnit?: string }>({
+    queryKey: ['preferences'],
+    queryFn: async () => {
+      const response = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch preferences');
+      return response.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const isLoading = isLoadingCycle || isLoadingCurrentWorkout;
+
+  const calculatedCurrentWeek = useMemo(() => {
+    if (currentWorkout?.scheduledDate) {
+      const today = new Date();
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const workoutDate = new Date(`${currentWorkout.scheduledDate}T00:00:00Z`);
+      if (workoutDate.getTime() === todayDate.getTime()) {
+        return currentWorkout.weekNumber;
       }
     }
+    return calculateCurrentWeekFromWorkouts(allWorkouts, 1);
+  }, [currentWorkout, allWorkouts]);
 
-    void loadCurrentWorkout();
-    void loadAllWorkoutsForWeekCalculation();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [params.cycleId]);
-
-  useEffect(() => {
-    async function loadPreferences() {
-      try {
-        const response = await fetchWithTimeout('/api/user/preferences');
-        if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg');
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-      }
-    }
-
-    void loadPreferences();
-  }, []);
+  const weightUnit = preferences?.weightUnit ?? 'kg';
 
   const handleRescheduleWorkout = async (workoutId: string, newDate: string) => {
     try {
@@ -304,18 +283,8 @@ function ProgramDashboard() {
       if (response.ok) {
         toast.success('Workout rescheduled');
 
-        const currentWorkoutResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/current-workout`);
-        if (currentWorkoutResponse.ok) {
-          const data = await currentWorkoutResponse.json() as CurrentWorkoutData;
-          setCurrentWorkout(data);
-        }
-
-        const workoutsResponse = await fetchWithTimeout(`/api/program-cycles/${params.cycleId}/workouts`);
-        if (workoutsResponse.ok) {
-          const workouts = await workoutsResponse.json() as WorkoutForWeekCalculation[];
-          const calculatedWeek = calculateCurrentWeekFromWorkouts(workouts, 1);
-          setCalculatedCurrentWeek(calculatedWeek);
-        }
+        await queryClient.invalidateQueries({ queryKey: ['cycle', params.cycleId, 'current-workout'] });
+        await queryClient.invalidateQueries({ queryKey: ['cycle', params.cycleId, 'workouts'] });
       } else {
         toast.error('Failed to reschedule workout');
       }
@@ -339,11 +308,7 @@ function ProgramDashboard() {
       
       if (response.ok) {
         const data = await response.json() as { workoutId: string };
-        try {
-          void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
-        } catch {
-          window.location.href = `/workouts/${data.workoutId}`;
-        }
+        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
       } else {
         toast.error('Failed to start workout');
       }
@@ -484,11 +449,7 @@ function ProgramDashboard() {
                     
                     if (response.ok) {
                       const data = await response.json() as { workoutId: string };
-                      try {
-                        void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
-                      } catch {
-                        window.location.href = `/workouts/${data.workoutId}`;
-                      }
+                      void navigate({ to: '/workouts/$id', params: { id: data.workoutId } });
                     } else {
                       toast.error('Failed to start workout');
                     }
@@ -578,6 +539,10 @@ function ProgramDashboard() {
 }
 
 export const Route = createFileRoute('/programs/cycle/$cycleId_')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: ProgramDashboard,
 });
 

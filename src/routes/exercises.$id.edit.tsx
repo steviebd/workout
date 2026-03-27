@@ -1,8 +1,12 @@
-import { Link, createFileRoute, useParams, useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { Link, createFileRoute, redirect, useParams, useNavigate } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './__root';
-import type { Exercise as ExerciseType } from '~/lib/db/exercise/types';
+
+import { getSession } from '~/lib/auth';
 import { useToast } from '@/components/app/ToastProvider';
 
 const MUSCLE_GROUPS = [
@@ -25,8 +29,6 @@ const MUSCLE_GROUPS = [
 
 type MuscleGroup = typeof MUSCLE_GROUPS[number];
 
-type Exercise = Pick<ExerciseType, 'id' | 'name' | 'muscleGroup' | 'description'>;
-
 interface ExerciseResponse {
   id: string;
   name: string;
@@ -43,16 +45,37 @@ interface FormErrors {
   submit?: string;
 }
 
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest();
+  const session = await getSession(request);
+  return session?.sub ? { sub: session.sub, email: session.email } : null;
+});
+
 function EditExercise() {
   const { id } = useParams({ from: '/exercises/$id/edit' });
   const navigate = useNavigate();
   const auth = useAuth();
   const toast = useToast();
 
-  const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+  const navigateTimeoutRef = useRef<number | null>(null);
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const { data: exerciseData, isLoading } = useQuery<ExerciseResponse | null>({
+    queryKey: ['exercise', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/exercises/${id}`, {
+        credentials: 'include',
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error('Failed to fetch exercise');
+      return response.json();
+    },
+    enabled: !!auth.user && !!id,
+  });
+
+  const exercise = exerciseData ?? null;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -61,19 +84,30 @@ function EditExercise() {
     description: '',
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
+  useEffect(() => {
+    if (exerciseData) {
+      setFormData({
+        name: exerciseData.name || '',
+        muscleGroup: exerciseData.muscleGroup ?? '',
+        customMuscleGroup: (exerciseData.muscleGroup && MUSCLE_GROUPS.includes(exerciseData.muscleGroup as MuscleGroup))
+          ? ''
+          : (exerciseData.muscleGroup ?? ''),
+        description: exerciseData.description ?? '',
+      });
+    }
+  }, [exerciseData]);
 
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, name: e.target.value });
-  }, [formData]);
+    setFormData((prev) => ({ ...prev, name: e.target.value }));
+  }, []);
 
   const handleMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       muscleGroup: e.target.value,
-      customMuscleGroup: e.target.value !== 'Custom' ? '' : formData.customMuscleGroup,
-    });
-  }, [formData]);
+      customMuscleGroup: e.target.value !== 'Custom' ? '' : prev.customMuscleGroup,
+    }));
+  }, []);
 
   const handleCustomMuscleGroupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, customMuscleGroup: e.target.value }));
@@ -82,52 +116,6 @@ function EditExercise() {
   const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, description: e.target.value }));
   }, []);
-
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      setRedirecting(true);
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
-
-  const fetchExercise = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/exercises/${id}`, {
-        credentials: 'include',
-      });
-
-      if (response.status === 404) {
-        navigate({ to: '/exercises' }).catch(() => {
-          // Navigation error handled
-        });
-        return;
-      }
-
-       if (response.ok) {
-         const data: ExerciseResponse = await response.json();
-         setExercise(data);
-         setFormData({
-           name: data.name || '',
-           muscleGroup: data.muscleGroup ?? '',
-           customMuscleGroup: (data.muscleGroup && MUSCLE_GROUPS.includes(data.muscleGroup as MuscleGroup))
-             ? ''
-              : (data.muscleGroup ?? ''),
-           description: data.description ?? '',
-         });
-     }
-    } finally {
-      setLoading(false);
-    }
-  }, [id, navigate]);
-
-  useEffect(() => {
-    if (!auth.loading && auth.user && id) {
-      fetchExercise().catch(() => {
-        // Error handled in fetchExercise
-      });
-    }
-  }, [auth.loading, auth.user, id, fetchExercise]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
@@ -176,9 +164,11 @@ function EditExercise() {
 
       if (response.ok) {
         toast.success('Exercise updated successfully!');
-        setTimeout(() => {
+        if (navigateTimeoutRef.current) {
+          clearTimeout(navigateTimeoutRef.current);
+        }
+        navigateTimeoutRef.current = window.setTimeout(() => {
           navigate({ to: '/exercises/$id', params: { id } }).catch(() => {
-            // Navigation error handled
           });
         }, 1000);
       } else if (response.status === 403) {
@@ -194,7 +184,6 @@ function EditExercise() {
         try {
           errorData = await response.json();
         } catch {
-          // use default
         }
         const errorMsg = errorData.message ?? 'Failed to update exercise';
         setErrors({ submit: errorMsg });
@@ -212,16 +201,22 @@ function EditExercise() {
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     handleSubmitAsync(e).catch(() => {
-      // Error handled in handleSubmitAsync
     });
   }, [handleSubmitAsync]);
 
+  useEffect(() => {
+    return () => {
+      if (navigateTimeoutRef.current) {
+        clearTimeout(navigateTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  if (auth.loading || redirecting || loading) {
+  if (auth.loading || isLoading) {
     return (
-	<div className="min-h-screen flex items-center justify-center">
-		<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-	</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
     );
   }
 
@@ -382,5 +377,9 @@ function EditExercise() {
 }
 
 export const Route = createFileRoute('/exercises/$id/edit')({
+  loader: async () => {
+    const session = await getSessionServerFn();
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }); // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: EditExercise,
 });

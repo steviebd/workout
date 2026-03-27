@@ -1,13 +1,14 @@
-'use client';
-
-import { createFileRoute, useParams, useRouter } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { Check, Clock, Dumbbell, Home, Scale, Target } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { createFileRoute, redirect, useParams, useRouter } from '@tanstack/react-router';
 import type { WorkoutExerciseWithDetails } from '~/lib/db/workout/types';
+import { getSession } from '~/lib/auth/session';
 import { PageLayout, PageLoading } from '~/components/ui/PageLayout';
 import { StatCard } from '~/components/ui/StatCard';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import {
   formatDuration,
@@ -20,6 +21,12 @@ import {
 import { OneRMProgressCard } from '~/components/workouts/OneRMProgressCard';
 import { ExerciseSummary } from '~/components/workouts/ExerciseSummary';
 import { PRComparisonCard } from '~/components/workouts/PRComparisonCard';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface WorkoutSetLocal {
   id: string;
@@ -81,88 +88,75 @@ interface AllTimePR {
   reps: number;
 }
 
+function mapWorkoutExercisesToWithDetails(exercises: WorkoutExerciseLocal[]): WorkoutExerciseWithDetails[] {
+  return exercises.map((ex) => ({
+    id: ex.id,
+    localId: null,
+    workoutId: '',
+    exerciseId: ex.exerciseId,
+    orderIndex: ex.orderIndex,
+    notes: ex.notes ?? null,
+    isAmrap: false,
+    setNumber: null,
+    exercise: {
+      id: ex.exerciseId,
+      name: ex.name,
+      muscleGroup: ex.muscleGroup,
+    },
+    sets: ex.sets.map((set) => ({
+      id: set.id,
+      localId: null,
+      workoutExerciseId: ex.id,
+      setNumber: set.setNumber,
+      weight: set.weight ?? null,
+      reps: set.reps ?? null,
+      rpe: set.rpe ?? null,
+      isComplete: set.isComplete,
+      completedAt: set.completedAt ?? null,
+      createdAt: null,
+      updatedAt: null,
+      isDeleted: false,
+    })),
+  }));
+}
+
 function WorkoutSummary() {
-  const { user, loading: authLoading } = useRequireAuth();
   const params = useParams({ from: '/workouts/$id_/summary' });
   const router = useRouter();
   const { formatDateTimeLong } = useDateFormat();
-  const [workout, setWorkout] = useState<Workout | null>(null);
-  const [programCycle, setProgramCycle] = useState<ProgramCycle | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [allTimePRs, setAllTimePRs] = useState<AllTimePR[]>([]);
+  const { data: workout, isLoading: workoutLoading, error: workoutError } = useQuery<Workout>({
+    queryKey: ['workout', params.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/workouts/${params.id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Workout not found');
+      return res.json();
+    },
+    enabled: !!params.id,
+  });
 
-  useEffect(() => {
-    const loadWorkout = async () => {
-      if (authLoading || !user || !params.id) return;
+  if (!workoutLoading && workout && !workout.completedAt) {
+    void router.navigate({ to: '/workouts/$id', params: { id: params.id }, replace: true });
+  }
 
-      try {
-        const res = await fetch(`/api/workouts/${params.id}`, {
-          credentials: 'include',
-        });
+  const { data: programCycle } = useQuery<ProgramCycle>({
+    queryKey: ['programCycle', workout?.programCycleId],
+    queryFn: async () => {
+      const res = await fetch(`/api/program-cycles/${workout!.programCycleId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch program cycle');
+      return res.json();
+    },
+    enabled: !!workout && workout.name === '1RM Test' && !!workout.programCycleId && (workout as unknown as { squat1rm?: number | null }).squat1rm === null,
+  });
 
-        if (!res.ok) {
-          throw new Error('Workout not found');
-        }
-
-        const data: Workout = await res.json();
-        setWorkout(data);
-
-        // 1RM Test workouts have additional fields (squat1rm, bench1rm, etc.) that are not in the base Workout type
-        // Cast needed to access these conditional fields for null check
-        if (data.name === '1RM Test' && data.programCycleId && (data as unknown as { squat1rm?: number | null }).squat1rm === null) {
-          try {
-            const cycleRes = await fetch(`/api/program-cycles/${data.programCycleId}`, {
-              credentials: 'include',
-            });
-            if (cycleRes.ok) {
-              const cycleData: ProgramCycle = await cycleRes.json();
-              setProgramCycle(cycleData);
-            }
-          } catch (cycleErr) {
-            console.error('Failed to load program cycle:', cycleErr);
-          }
-        }
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load workout');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadWorkout();
-  }, [authLoading, user, params.id]);
-
-  useEffect(() => {
-    const redirectIfIncomplete = async () => {
-      if (!loading && workout && !workout.completedAt) {
-        try {
-          await router.navigate({ to: '/workouts/$id', params: { id: params.id }, replace: true });
-        } catch (err) {
-          console.error('Navigation error:', err);
-        }
-      }
-    };
-
-    redirectIfIncomplete().catch(console.error);
-  }, [workout, params.id, router, loading]);
-
-  useEffect(() => {
-    const fetchPRs = async () => {
-      try {
-        const res = await fetch('/api/progress/prs?mode=allTime&limit=100', {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json() as { recentPRs: AllTimePR[] };
-          setAllTimePRs(data.recentPRs);
-        }
-      } catch (err) {
-        console.error('Failed to fetch PRs:', err);
-      }
-    };
-    void fetchPRs();
-  }, []);
+  const { data: allTimePRs = [] } = useQuery<AllTimePR[]>({
+    queryKey: ['prs', 'allTime'],
+    queryFn: async () => {
+      const res = await fetch('/api/progress/prs?mode=allTime&limit=100', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch PRs');
+      const data = await res.json() as { recentPRs: AllTimePR[] };
+      return data.recentPRs;
+    },
+  });
 
   const totalSetsCount = useMemo(() => {
     return workout?.exercises.reduce((acc, e) => acc + e.sets.length, 0) ?? 0;
@@ -170,27 +164,24 @@ function WorkoutSummary() {
 
   const totalVolume = useMemo(() => {
     if (!workout) return 0;
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return calculateTotalVolume(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return calculateTotalVolume(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const tested1RMs = useMemo(() => {
     if (!workout) return { squat: 0, bench: 0, deadlift: 0, ohp: 0 } as Tested1RMs;
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return getTested1RMs(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return getTested1RMs(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const workoutMaxes = useMemo(() => {
     if (!workout) return [];
-    // The API returns exercises with sets inline but functions expect full WorkoutExerciseWithDetails structure
-    return getWorkoutMaxes(workout.exercises as unknown as WorkoutExerciseWithDetails[]);
+    return getWorkoutMaxes(mapWorkoutExercisesToWithDetails(workout.exercises));
   }, [workout]);
 
   const comparisonData = useMemo(() => {
     return getComparisonData(workoutMaxes, allTimePRs);
   }, [workoutMaxes, allTimePRs]);
 
-  if (authLoading || loading) {
+  if (workoutLoading) {
     return (
       <PageLayout title="Loading" extraPadding={true}>
         <PageLoading variant="spinner" message="Loading workout..." />
@@ -198,13 +189,13 @@ function WorkoutSummary() {
     );
   }
 
-  if (error || !workout) {
+  if (workoutError || !workout) {
     return (
       <PageLayout title="Error" extraPadding={true}>
         <ErrorState
           title="Workout Not Found"
-          description={error ?? 'Workout not found'}
-          onGoHome={() => { window.location.href = '/'; }}
+          description={workoutError instanceof Error ? workoutError.message : 'Workout not found'}
+          onGoHome={() => { void router.navigate({ to: '/' }); }}
         />
       </PageLayout>
     );
@@ -255,12 +246,11 @@ function WorkoutSummary() {
           <OneRMProgressCard
             tested={tested1RMs}
             workout={workout}
-            programCycle={programCycle}
+            programCycle={programCycle ?? null}
           />
         ) : null}
 
-        {/* The API returns exercises with sets inline but ExerciseSummary expects full WorkoutExerciseWithDetails structure */}
-        <ExerciseSummary exercises={workout.exercises as unknown as WorkoutExerciseWithDetails[]} />
+        <ExerciseSummary exercises={mapWorkoutExercisesToWithDetails(workout.exercises)} />
 
         <PRComparisonCard comparisonData={comparisonData} />
 
@@ -283,5 +273,10 @@ function WorkoutSummary() {
 }
 
 export const Route = createFileRoute('/workouts/$id_/summary')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    if (!session?.sub) throw redirect({ to: '/auth/signin' })
+  },
   component: WorkoutSummary,
 });

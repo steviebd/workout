@@ -1,7 +1,17 @@
 import { useState, useCallback, useEffect } from 'react';
+import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { type FormData, type SelectedExercise, type UndoState } from './types';
+// eslint-disable-next-line import/extensions
+import { routeTree } from '~/routeTree.gen';
 import { useAuth } from '@/routes/__root';
 import { useUndo } from '@/hooks/useUndo';
+
+const getRouter = () =>
+  createTanStackRouter({
+    routeTree,
+    scrollRestoration: true,
+    defaultPreloadStaleTime: 0,
+  });
 
 interface UseTemplateEditorStateProps {
   mode: 'create' | 'edit';
@@ -66,7 +76,7 @@ export function useTemplateEditorState({
   useEffect(() => {
     if (!auth.loading && !auth.user) {
       setRedirecting(true);
-      window.location.href = '/auth/signin';
+      void getRouter().navigate({ to: '/auth/signin' });
     }
   }, [auth.loading, auth.user]);
 

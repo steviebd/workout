@@ -1,5 +1,3 @@
-'use client';
-
 import { ChevronLeft, Info } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import type { ProgramListItem } from '~/lib/programs/types';

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { ChevronRight, Dumbbell, Plus, Search, Trophy } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useAuth } from './__root';
@@ -32,6 +32,7 @@ interface ProgramCycle {
 function WorkoutsPage() {
   const auth = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [exerciseSearch, setExerciseSearch] = useState('');
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery<Template[]>({
@@ -141,7 +142,7 @@ function WorkoutsPage() {
 
             {templates.length === 0 ? (
               <EmptyTemplates
-                onCreate={() => { window.location.href = '/templates/new'; }}
+                onCreate={() => { void navigate({ to: '/templates/new' }); }}
               />
             ) : (
               <div className="space-y-3 max-h-[440px] overflow-y-auto -mx-4 px-4">
@@ -178,7 +179,7 @@ function WorkoutsPage() {
             <SectionHeader title="Create Workout" />
             <Button 
               className="w-full"
-              onClick={() => { window.location.href = '/workouts/new'; }}
+              onClick={() => { void navigate({ to: '/workouts/new' }); }}
             >
               <Plus className="h-4 w-4 mr-2" />
               New Custom Workout
@@ -209,7 +210,7 @@ function WorkoutsPage() {
             </div>
 
             {exercises.length === 0 ? (
-              <EmptyExercises onCreate={() => { window.location.href = '/exercises/new'; }} />
+              <EmptyExercises onCreate={() => { void navigate({ to: '/exercises/new' }); }} />
             ) : (
               <div className="grid grid-cols-1 gap-2 max-h-[380px] overflow-y-auto -mx-4 px-4">
                 {exercises.slice(0, 5).map((exercise) => (

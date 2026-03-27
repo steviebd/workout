@@ -1,10 +1,11 @@
-'use client'
-
-import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Heart, Moon, Activity, Zap, RefreshCw, Loader2, Link, Link2Off } from 'lucide-react'
+import { useAuth } from './__root'
 import { Button } from '@/components/ui/Button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/AlertDialog'
+import { toast } from '@/components/app/ToastProvider'
 
 interface WhoopStatus {
   connected: boolean
@@ -46,46 +47,42 @@ interface WhoopData {
 }
 
 function HealthPage() {
-  const [status, setStatus] = useState<WhoopStatus | null>(null)
-  const [data, setData] = useState<WhoopData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const auth = useAuth()
+  const queryClient = useQueryClient()
   const [syncing, setSyncing] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'strain' | 'workouts'>('overview')
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
 
-  async function fetchWhoopData() {
-    try {
-      const [statusRes, dataRes] = await Promise.all([
-        fetch('/api/integrations/whoop/status'),
-        fetch('/api/health/data'),
-      ])
+  const { data: whoopStatus, isLoading: statusLoading } = useQuery<WhoopStatus>({
+    queryKey: ['whoop-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/integrations/whoop/status', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch Whoop status');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
-      if (statusRes.ok) {
-        setStatus(await statusRes.json())
-      }
-      if (dataRes.ok) {
-        setData(await dataRes.json())
-      }
-    } catch (error) {
-      console.error('Failed to fetch Whoop data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void fetchWhoopData()
-  }, [])
+  const { data: whoopData, isLoading: dataLoading } = useQuery<WhoopData>({
+    queryKey: ['whoop-data'],
+    queryFn: async () => {
+      const res = await fetch('/api/health/data', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch Whoop data');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
 
   const handleSync = async () => {
     setSyncing(true)
     try {
       const response = await fetch('/api/integrations/whoop/sync', { method: 'POST' })
       if (response.ok) {
-        await fetchWhoopData()
+        await queryClient.invalidateQueries({ queryKey: ['whoop-status'] })
+        await queryClient.invalidateQueries({ queryKey: ['whoop-data'] })
       }
-    } catch (error) {
-      console.error('Sync failed:', error)
+    } catch {
+      toast.error('Failed to sync WHOOP data. Please try again.')
     } finally {
       setSyncing(false)
     }
@@ -98,9 +95,10 @@ function HealthPage() {
   const handleDisconnect = async () => {
     try {
       await fetch('/api/integrations/whoop/disconnect', { method: 'POST' })
-      await fetchWhoopData()
-    } catch (error) {
-      console.error('Disconnect failed:', error)
+      await queryClient.invalidateQueries({ queryKey: ['whoop-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['whoop-data'] })
+    } catch {
+      toast.error('Failed to disconnect WHOOP. Please try again.')
     }
   }
 
@@ -108,7 +106,7 @@ function HealthPage() {
     setShowDisconnectDialog(true)
   }
 
-  if (loading) {
+  if (statusLoading || dataLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -116,7 +114,7 @@ function HealthPage() {
     )
   }
 
-  if (!status?.connected) {
+  if (!whoopStatus?.connected) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-md">
         <div className="text-center mb-8">
@@ -134,9 +132,9 @@ function HealthPage() {
     )
   }
 
-  const todayRecovery = data?.recoveries[0]
-  const todaySleep = data?.sleeps[0]
-  const todayCycle = data?.cycles[0]
+  const todayRecovery = whoopData?.recoveries[0]
+  const todaySleep = whoopData?.sleeps[0]
+  const todayCycle = whoopData?.cycles[0]
 
   return (
     <>
@@ -160,17 +158,15 @@ function HealthPage() {
 
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {(['overview', 'sleep', 'recovery', 'strain', 'workouts'] as const).map((tab) => (
-            <button
+            <Button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground'
-              }`}
+              variant={activeTab === tab ? 'default' : 'secondary'}
+              size="sm"
+              className="whitespace-nowrap"
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -183,9 +179,9 @@ function HealthPage() {
                 <span className="text-sm text-muted-foreground">Recovery</span>
               </div>
               <div className={`text-3xl font-bold ${
-                todayRecovery?.status === 'green' ? 'text-green-500' :
-                todayRecovery?.status === 'yellow' ? 'text-yellow-500' :
-                todayRecovery?.status === 'red' ? 'text-red-500' : 'text-foreground'
+                todayRecovery?.status === 'green' ? 'text-success' :
+                todayRecovery?.status === 'yellow' ? 'text-warning' :
+                todayRecovery?.status === 'red' ? 'text-destructive' : 'text-foreground'
               }`}
               >
                 {todayRecovery?.score ?? '--'}
@@ -250,14 +246,14 @@ function HealthPage() {
 
       {activeTab === 'recovery' && (
         <div className="space-y-3">
-          {data?.recoveries.map((recovery) => (
+          {whoopData?.recoveries.map((recovery) => (
             <div key={recovery.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(recovery.date).toLocaleDateString()}</span>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  recovery.status === 'green' ? 'bg-green-500/20 text-green-500' :
-                  recovery.status === 'yellow' ? 'bg-yellow-500/20 text-yellow-500' :
-                  recovery.status === 'red' ? 'bg-red-500/20 text-red-500' : 'bg-muted text-muted-foreground'
+                  recovery.status === 'green' ? 'bg-success/20 text-success' :
+                  recovery.status === 'yellow' ? 'bg-warning/20 text-warning' :
+                  recovery.status === 'red' ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'
                 }`}
                 >
                   {recovery.status ?? 'N/A'}
@@ -281,7 +277,7 @@ function HealthPage() {
 
       {activeTab === 'sleep' && (
         <div className="space-y-3">
-          {data?.sleeps.map((sleep) => (
+          {whoopData?.sleeps.map((sleep) => (
             <div key={sleep.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(sleep.sleepDate).toLocaleDateString()}</span>
@@ -310,7 +306,7 @@ function HealthPage() {
 
       {activeTab === 'strain' && (
         <div className="space-y-3">
-          {data?.cycles.map((cycle) => (
+          {whoopData?.cycles.map((cycle) => (
             <div key={cycle.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{new Date(cycle.date).toLocaleDateString()}</span>
@@ -329,7 +325,7 @@ function HealthPage() {
 
       {activeTab === 'workouts' && (
         <div className="space-y-3">
-          {data?.workouts.map((workout) => (
+          {whoopData?.workouts.map((workout) => (
             <div key={workout.id} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">

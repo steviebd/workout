@@ -21,7 +21,7 @@ export function AccessorySection({
         <div>
           <h3 className="font-medium mb-3 flex items-center gap-2">
             Required Accessories
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
               {required.length}
             </span>
           </h3>

@@ -192,9 +192,9 @@ export async function reorderWorkoutExercises(
         eq(workoutExercises.workoutId, workoutId),
         eq(workoutExercises.exerciseId, order.exerciseId)
       ))
-      .run()
   );
 
+  // Drizzle types don't expose .orderBy() at compile time but D1 supports it at runtime
   await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
 
   return true;

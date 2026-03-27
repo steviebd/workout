@@ -458,8 +458,9 @@ export async function createWorkoutWithDetails(
     const statements = [];
     for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
       const chunk = setsToInsert.slice(i, i + CHUNK_SIZE);
-      statements.push(db.insert(workoutSets).values(chunk).run());
+      statements.push(db.insert(workoutSets).values(chunk));
     }
+    // Drizzle types don't expose .orderBy() at compile time but D1 supports it at runtime
     await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
   }
 

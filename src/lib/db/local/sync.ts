@@ -1,6 +1,10 @@
 import { localDB, type OfflineOperation } from '../local-db';
 import { generateLocalId, now } from './utils';
 
+function toRecord(data: object): Record<string, unknown> {
+  return data as Record<string, unknown>;
+}
+
 /**
  * Queues an operation for offline sync
  * @param type - The operation type (create, update, delete)
@@ -27,7 +31,7 @@ export async function queueOperation<T extends object>(
       type,
       entity,
       localId,
-      data: data as unknown as Record<string, unknown>,
+      data: toRecord(data),
       timestamp: now(),
       retryCount: 0,
       maxRetries: 3,
@@ -35,14 +39,14 @@ export async function queueOperation<T extends object>(
   } else if (type === 'update' && existing) {
     if (existing.id) {
       await localDB.offlineQueue.update(existing.id, {
-        data: { ...existing.data, ...(data as unknown as Record<string, unknown>) },
+        data: { ...existing.data, ...toRecord(data) },
         timestamp: now(),
       });
     }
   } else if (type === 'create' && existing?.type === 'create') {
     if (existing.id) {
       await localDB.offlineQueue.update(existing.id, {
-        data: { ...existing.data, ...(data as unknown as Record<string, unknown>) },
+        data: { ...existing.data, ...toRecord(data) },
         timestamp: now(),
       });
     }
@@ -52,7 +56,7 @@ export async function queueOperation<T extends object>(
       type,
       entity,
       localId,
-      data: data as unknown as Record<string, unknown>,
+      data: toRecord(data),
       timestamp: now(),
       retryCount: 0,
       maxRetries: 3,

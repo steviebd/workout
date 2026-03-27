@@ -1,13 +1,21 @@
-'use client';
-
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+// eslint-disable-next-line import/extensions
+import { routeTree } from '~/routeTree.gen';
 import { useAuth } from '@/routes/__root';
 import { type Workout } from '@/lib/db/schema';
 import { trackEvent } from '@/lib/analytics';
 import { useToast } from '@/components/app/ToastProvider';
 import { UI } from '~/lib/constants';
 import { formatDuration } from '~/lib/workout-summary';
+
+const getRouter = () =>
+  createTanStackRouter({
+    routeTree,
+    scrollRestoration: true,
+    defaultPreloadStaleTime: 0,
+  });
 
 export interface WorkoutExercise {
   id: string;
@@ -93,25 +101,24 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
   });
 
   const { data: availableExercises = [], isLoading: availableExercisesLoading } = useQuery<Exercise[]>({
-    queryKey: ['exercises'],
+    queryKey: ['exercises', 'list'],
     queryFn: async () => {
       const res = await fetch('/api/exercises', { credentials: 'include' });
       if (!res.ok) return [];
       return res.json();
     },
     enabled: !!auth.user,
-    staleTime: UI.TIMING.QUERY_STALE_TIME_MS,
   });
 
   useEffect(() => {
     if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
+      void getRouter().navigate({ to: '/auth/signin' });
     }
   }, [auth.loading, auth.user]);
 
   useEffect(() => {
     if (workout?.completedAt && workoutId) {
-      window.location.href = `/workouts/${workoutId}/summary`;
+      void getRouter().navigate({ to: '/workouts/$id/summary', params: { id: workoutId } });
     }
   }, [workout?.completedAt, workoutId]);
 
@@ -195,7 +202,7 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       if (!res.ok) throw new Error('Failed to delete workout');
     },
     onSuccess: () => {
-      window.location.href = '/workouts';
+      void getRouter().navigate({ to: '/workouts' });
     },
   });
 
@@ -277,12 +284,13 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
         toast.success('Workout completed successfully!');
 
         const is1RMTest = workout?.name === '1RM Test' && workout?.programCycleId;
-        const redirectUrl = is1RMTest
-          ? `/programs/cycle/${workout?.programCycleId}/1rm-test`
-          : `/workouts/${workoutId}/summary`;
 
         setTimeout(() => {
-          window.location.href = redirectUrl;
+          if (is1RMTest && workout?.programCycleId) {
+            void getRouter().navigate({ to: '/programs/cycle/$cycleId/1rm-test', params: { cycleId: workout.programCycleId } });
+          } else {
+            void getRouter().navigate({ to: '/workouts/$id/summary', params: { id: workoutId } });
+          }
         }, UI.TIMING.AUTOSAVE_DELAY_MS);
       },
       onError: (error) => {

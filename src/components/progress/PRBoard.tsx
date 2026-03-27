@@ -1,5 +1,3 @@
-'use client'
-
 import { Trophy, TrendingUp, Calendar } from 'lucide-react'
 import type { PersonalRecord } from '~/lib/domain/stats/types'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
@@ -15,7 +13,7 @@ export function PRBoard({ records }: PRBoardProps) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Trophy className="h-5 w-5 text-achievement" />
+          <Trophy className="h-6 w-6 text-achievement" />
           Personal Records
         </CardTitle>
       </CardHeader>

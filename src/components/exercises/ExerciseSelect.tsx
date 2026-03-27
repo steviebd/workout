@@ -1,5 +1,7 @@
 import { ChevronDown, Search } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/routes/__root';
 import { type Exercise } from '@/lib/db/schema';
 
 const ExerciseOption = ({ exercise, selectedId, onSelect }: { readonly exercise: Exercise; readonly selectedId?: string; readonly onSelect: (id: string) => void }) => (
@@ -23,36 +25,29 @@ interface ExerciseSelectProps {
 }
 
 export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const auth = useAuth();
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchExercises = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set('search', search);
-
-      const response = await fetch(`/api/exercises?${params.toString()}`, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setExercises(data as Exercise[]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch exercises:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
   useEffect(() => {
-    void fetchExercises();
-  }, [fetchExercises]);
+    const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const { data: exercises = [], isLoading: loading } = useQuery<Exercise[]>({
+    queryKey: ['exercises', debouncedSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      const res = await fetch(`/api/exercises?${params.toString()}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch exercises');
+      return res.json();
+    },
+    enabled: !!auth.user,
+    staleTime: 30 * 1000,
+  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +61,7 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
   }, []);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
+    setSearchInput(e.target.value);
   }, []);
 
   const handleToggle = useCallback(() => {
@@ -83,11 +78,11 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
 
   const selectedExercise = exercises.find((e) => e.id === selectedId);
 
-  const filteredExercises = search
+  const filteredExercises = searchInput
     ? exercises.filter(
         (e) =>
-          e.name.toLowerCase().includes(search.toLowerCase()) ||
-          (e.muscleGroup?.toLowerCase() ?? '').includes(search.toLowerCase())
+          e.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+          (e.muscleGroup?.toLowerCase() ?? '').includes(searchInput.toLowerCase())
       )
     : exercises;
 
@@ -117,7 +112,7 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
               onChange={handleSearchChange}
               placeholder="Search exercises..."
               type="text"
-              value={search}
+              value={searchInput}
             />
           </div>
 
@@ -128,7 +123,7 @@ export function ExerciseSelect({ selectedId, onChange }: ExerciseSelectProps) {
               </div>
             ) : filteredExercises.length === 0 ? (
               <div className="px-4 py-8 text-center text-muted-foreground">
-                {search ? 'No exercises found' : 'No exercises available'}
+                {searchInput ? 'No exercises found' : 'No exercises available'}
               </div>
             ) : (
               filteredExercises.map((exercise) => (

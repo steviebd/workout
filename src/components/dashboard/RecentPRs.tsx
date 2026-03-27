@@ -1,5 +1,3 @@
-'use client'
-
 import { Trophy, TrendingUp, ChevronRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
@@ -22,7 +20,7 @@ export function RecentPRs({ records }: RecentPRsProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+      <CardHeader className="flex flex-row items-center justify-between p-6 pb-5">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Trophy className="h-5 w-5 text-streak" />
           Recent PRs

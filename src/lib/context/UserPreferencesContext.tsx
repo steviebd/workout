@@ -1,5 +1,3 @@
-'use client';
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { type WeightUnit, type DateFormat, type Theme } from '../db/preferences';

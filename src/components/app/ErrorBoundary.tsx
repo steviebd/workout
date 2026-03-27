@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   readonly children: ReactNode;
@@ -45,20 +46,17 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-md w-full text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-4 mx-auto">
-              <AlertTriangle className="text-red-600" size={24} />
+            <div className="flex items-center justify-center w-12 h-12 bg-destructive/10 rounded-full mb-4 mx-auto">
+              <AlertTriangle className="text-destructive" size={24} />
             </div>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h2>
             <p className="text-gray-600 mb-4">
               {this.state.error?.message ?? 'An unexpected error occurred'}
             </p>
-            <button
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              onClick={this.handleRetry}
-            >
+            <Button onClick={this.handleRetry}>
               <RefreshCw size={18} />
               Try Again
-            </button>
+            </Button>
           </div>
         </div>
       );

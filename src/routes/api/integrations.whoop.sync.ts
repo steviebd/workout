@@ -79,33 +79,40 @@ export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
 
           const synced = { cycles: 0, sleeps: 0, recoveries: 0, workouts: 0 };
 
-          if (cyclesResult.status === 'fulfilled') {
-            for (const cycle of cyclesResult.value) {
-              await whoopRepository.upsertCycle(d1Db, workosId, mapWhoopCycleToDb(cycle, workosId));
-            }
-            synced.cycles = cyclesResult.value.length;
-          }
-
-          if (sleepsResult.status === 'fulfilled') {
-            for (const sleep of sleepsResult.value) {
-              await whoopRepository.upsertSleep(d1Db, workosId, mapWhoopSleepToDb(sleep, workosId));
-            }
-            synced.sleeps = sleepsResult.value.length;
-          }
-
-          if (recoveriesResult.status === 'fulfilled') {
-            for (const recovery of recoveriesResult.value) {
-              await whoopRepository.upsertRecovery(d1Db, workosId, mapWhoopRecoveryToDb(recovery, workosId));
-            }
-            synced.recoveries = recoveriesResult.value.length;
-          }
-
-          if (workoutsResult.status === 'fulfilled') {
-            for (const workout of workoutsResult.value) {
-              await whoopRepository.upsertWorkout(d1Db, workosId, mapWhoopWorkoutToDb(workout, workosId));
-            }
-            synced.workouts = workoutsResult.value.length;
-          }
+          await Promise.all([
+            (async () => {
+              if (cyclesResult.status === 'fulfilled') {
+                for (const cycle of cyclesResult.value) {
+                  await whoopRepository.upsertCycle(d1Db, workosId, mapWhoopCycleToDb(cycle, workosId));
+                }
+                synced.cycles = cyclesResult.value.length;
+              }
+            })(),
+            (async () => {
+              if (sleepsResult.status === 'fulfilled') {
+                for (const sleep of sleepsResult.value) {
+                  await whoopRepository.upsertSleep(d1Db, workosId, mapWhoopSleepToDb(sleep, workosId));
+                }
+                synced.sleeps = sleepsResult.value.length;
+              }
+            })(),
+            (async () => {
+              if (recoveriesResult.status === 'fulfilled') {
+                for (const recovery of recoveriesResult.value) {
+                  await whoopRepository.upsertRecovery(d1Db, workosId, mapWhoopRecoveryToDb(recovery, workosId));
+                }
+                synced.recoveries = recoveriesResult.value.length;
+              }
+            })(),
+            (async () => {
+              if (workoutsResult.status === 'fulfilled') {
+                for (const workout of workoutsResult.value) {
+                  await whoopRepository.upsertWorkout(d1Db, workosId, mapWhoopWorkoutToDb(workout, workosId));
+                }
+                synced.workouts = workoutsResult.value.length;
+              }
+            })(),
+          ]);
 
           const hadAnySuccess =
             cyclesResult.status === 'fulfilled' ||

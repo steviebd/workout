@@ -1,11 +1,22 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
+import { useMemo, useState } from 'react'
 import { Dumbbell, ArrowLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useAuth } from './__root'
 import { Card } from '~/components/ui/Card'
 import { PageLayout } from '~/components/ui/PageLayout'
 import { Button } from '~/components/ui/Button'
 import { Input } from '~/components/ui/Input'
 import { useToast } from '@/components/app/ToastProvider'
+import { getSession } from '~/lib/auth'
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 const LIFTS = [
   { key: 'squat', name: 'Squat', description: 'Back Squat' },
@@ -25,7 +36,7 @@ interface LiftTest {
 function OneRMTest() {
   const navigate = useNavigate()
   const toast = useToast()
-  const [weightUnit, setWeightUnit] = useState('kg')
+  const auth = useAuth()
   const [lifts, setLifts] = useState<LiftTest[]>(() =>
     LIFTS.map((lift) => ({
       ...lift,
@@ -39,20 +50,17 @@ function OneRMTest() {
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    async function loadPreferences() {
-      try {
-        const response = await fetch('/api/user/preferences')
-        if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg')
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error)
-      }
-    }
-    void loadPreferences()
-  }, [])
+  const { data: preferencesData } = useQuery<{ weightUnit?: string }>({
+    queryKey: ['user-preferences'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch preferences');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const weightUnit = useMemo(() => preferencesData?.weightUnit ?? 'kg', [preferencesData?.weightUnit]);
 
   const handleLiftToggle = (key: string) => {
     setSelectedLifts((prev) => {
@@ -100,19 +108,27 @@ function OneRMTest() {
 
       const workout = await workoutResponse.json() as { id: string };
 
-      for (const lift of testedLifts) {
+      const failedLifts: string[] = [];
+
+      await Promise.all(testedLifts.map(async (lift) => {
         const weight = parseFloat(lift.weight)
-        if (isNaN(weight)) continue
+        if (isNaN(weight)) return
 
         const exerciseRes = await fetch(`/api/exercises?search=${encodeURIComponent(lift.name)}`, {
           method: 'GET',
           credentials: 'include',
         })
 
-        if (!exerciseRes.ok) continue
+        if (!exerciseRes.ok) {
+          failedLifts.push(lift.name);
+          return;
+        }
 
         const exercises = await exerciseRes.json() as Array<{ id: string }>;
-        if (exercises.length === 0) continue;
+        if (exercises.length === 0) {
+          failedLifts.push(lift.name);
+          return;
+        }
 
         const exerciseId = exercises[0].id
 
@@ -128,8 +144,12 @@ function OneRMTest() {
         })
 
         if (!exerciseRes2.ok) {
-          console.error(`Failed to add ${lift.name} to workout`)
+          failedLifts.push(lift.name);
         }
+      }));
+
+      if (failedLifts.length > 0) {
+        toast.warning(`Some exercises failed to save: ${failedLifts.join(', ')}`);
       }
 
       toast.success('1RM test saved!')
@@ -297,7 +317,7 @@ function OneRMTest() {
                     <p className="text-xs text-muted-foreground">{lift.description}</p>
                   </div>
                   {lift.tested ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3">
@@ -340,6 +360,10 @@ function OneRMTest() {
 }
 
 export const Route = createFileRoute('/1rm-test')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: OneRMTest,
 })
 

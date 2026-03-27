@@ -1,5 +1,3 @@
-'use client'
-
 import { Link, useLocation } from '@tanstack/react-router'
 import { Home, Dumbbell, TrendingUp, Trophy, FileText } from 'lucide-react'
 import { cn } from '~/lib/cn'

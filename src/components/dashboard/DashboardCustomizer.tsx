@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { useDashboard, type WidgetType } from '@/lib/context/DashboardContext';

@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useCallback } from 'react'
 import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import { SetLogger } from './SetLogger'
@@ -50,8 +48,8 @@ export function ExerciseLogger({
     const lastSet = sets[sets.length - 1]
     const newSet: WorkoutSetData = {
       id: crypto.randomUUID(),
-      reps: lastSet.reps,
-      weight: lastSet.weight,
+      reps: lastSet?.reps ?? 0,
+      weight: lastSet?.weight ?? 0,
       completed: false,
     }
 

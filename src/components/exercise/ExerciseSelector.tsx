@@ -1,5 +1,3 @@
-'use client';
-
 import { Search } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer';
 import { Input } from '@/components/ui/Input';

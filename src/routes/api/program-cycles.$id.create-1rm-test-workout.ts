@@ -27,11 +27,10 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
           { name: 'Overhead Press', muscleGroup: 'Shoulders' },
         ];
 
-        let orderIndex = 0;
-        for (const lift of mainLifts) {
+        await Promise.all(mainLifts.map(async (lift) => {
           const exercises = await getExercisesByWorkosId(d1Db, session.sub, { search: lift.name, limit: 1 });
           let exercise = exercises.find(e => e.name.toLowerCase() === lift.name.toLowerCase());
-          
+
           exercise ??= await createExercise(d1Db, {
             workosId: session.sub,
             name: lift.name,
@@ -43,7 +42,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
             workout.id,
             session.sub,
             exercise.id,
-            orderIndex
+            0
           );
 
           if (workoutExercise) {
@@ -56,9 +55,7 @@ export const Route = createFileRoute('/api/program-cycles/$id/create-1rm-test-wo
               1
             );
           }
-
-          orderIndex++;
-        }
+        }));
 
         return Response.json({ workoutId: workout.id, workoutName: workout.name }, { status: 201 });
       }),

@@ -22,13 +22,21 @@ export const Route = createFileRoute('/api/templates/$id/exercises')({
         if (!body) {
           return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
         }
-        const { exerciseId, orderIndex } = body;
 
         await addExerciseToTemplate(
           d1Db,
           params.id,
-          exerciseId,
-          orderIndex ?? 0
+          body.exerciseId,
+          body.orderIndex ?? 0,
+          body.targetWeight,
+          body.addedWeight,
+          body.sets,
+          body.reps,
+          body.repsRaw,
+          body.isAmrap,
+          body.isAccessory,
+          body.isRequired,
+          body.setNumber
         );
 
         return Response.json({ success: true }, { status: 201 });

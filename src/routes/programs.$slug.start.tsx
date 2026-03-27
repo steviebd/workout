@@ -1,6 +1,11 @@
-import { createFileRoute, Link, useNavigate, useParams } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, Link, redirect, useNavigate, useParams } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from './__root';
 import { getProgramBySlug } from '~/lib/programs';
+import { getSession } from '~/lib/auth';
 import { DayOfWeek, DAYS_OF_WEEK } from '~/lib/programs/scheduler';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
@@ -9,6 +14,12 @@ import { useDateFormat } from '@/lib/context/UserPreferencesContext';
 import { OneRMInput } from '@/components/programs/OneRMInput';
 import { ScheduleSelector } from '@/components/programs/ScheduleSelector';
 import { ProgramReview } from '@/components/programs/ProgramReview';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 function getFirstGymDayInWeek(startDate: Date, preferredGymDays: DayOfWeek[]): Date {
   if (preferredGymDays.length === 0) return startDate;
@@ -41,6 +52,7 @@ function shouldShowStartModeToggle(
 function ProgramStart() {
   const params = useParams({ from: '/programs/$slug/start' });
   const navigate = useNavigate();
+  const auth = useAuth();
   const program = getProgramBySlug(params.slug);
   const toast = useToast();
   const { formatDate } = useDateFormat();
@@ -63,78 +75,63 @@ function ProgramStart() {
   const [programStartDate, setProgramStartDate] = useState<string | null>(null);
   const [startMode, setStartMode] = useState<'smart' | 'strict' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoadedPrevious, setHasLoadedPrevious] = useState(false);
-  const [weightUnit, setWeightUnit] = useState('kg');
+
+  const { data: preferencesData } = useQuery<{ weightUnit?: string }>({
+    queryKey: ['user-preferences'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch preferences');
+      return res.json();
+    },
+    enabled: !!auth.user,
+  });
+
+  const weightUnit = useMemo(() => preferencesData?.weightUnit ?? 'kg', [preferencesData?.weightUnit]);
+
+  const { data: oneRmData } = useQuery<{ squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number }>({
+    queryKey: ['user-1rm'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/1rm', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch 1RM data');
+      return res.json();
+    },
+    enabled: !!auth.user && !preferencesData,
+  });
 
   useEffect(() => {
-    async function loadPreferences() {
-      try {
-        const response = await fetch('/api/user/preferences');
-        if (response.ok) {
-          const prefs = await response.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg');
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error);
+    if (oneRmData && !prefilled.squat1rm && !prefilled.bench1rm && !prefilled.deadlift1rm && !prefilled.ohp1rm) {
+      const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
+      const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
+      let hasAnyValues = false;
+
+      if (oneRmData.squat1rm) {
+        newValues.squat1rm = oneRmData.squat1rm.toString();
+        prefilledValues.squat1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.bench1rm) {
+        newValues.bench1rm = oneRmData.bench1rm.toString();
+        prefilledValues.bench1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.deadlift1rm) {
+        newValues.deadlift1rm = oneRmData.deadlift1rm.toString();
+        prefilledValues.deadlift1rm = true;
+        hasAnyValues = true;
+      }
+      if (oneRmData.ohp1rm) {
+        newValues.ohp1rm = oneRmData.ohp1rm.toString();
+        prefilledValues.ohp1rm = true;
+        hasAnyValues = true;
+      }
+
+      if (hasAnyValues) {
+        setFormData(newValues);
+        setPrefilled(prefilledValues);
+        toast.info('Loaded 1RMs from your previous cycle');
       }
     }
-
-    void loadPreferences();
-  }, []);
-
-  useEffect(() => {
-    async function loadData() {
-      const [prefsRes, oneRmRes] = await Promise.all([
-        fetch('/api/user/preferences'),
-        fetch('/api/user/1rm'),
-      ]);
-
-      if (prefsRes.ok) {
-        const prefs = await prefsRes.json() as { weightUnit?: string };
-        setWeightUnit(prefs.weightUnit ?? 'kg');
-      }
-
-      if (hasLoadedPrevious) return;
-
-      if (oneRmRes.ok) {
-        const data = await oneRmRes.json() as { squat1rm?: number; bench1rm?: number; deadlift1rm?: number; ohp1rm?: number };
-        
-        let hasAnyValues = false;
-        const newValues: typeof formData = { squat1rm: '', bench1rm: '', deadlift1rm: '', ohp1rm: '' };
-        const prefilledValues: typeof prefilled = { squat1rm: false, bench1rm: false, deadlift1rm: false, ohp1rm: false };
-
-        if (data.squat1rm) {
-          newValues.squat1rm = data.squat1rm.toString();
-          prefilledValues.squat1rm = true;
-          hasAnyValues = true;
-        }
-        if (data.bench1rm) {
-          newValues.bench1rm = data.bench1rm.toString();
-          prefilledValues.bench1rm = true;
-          hasAnyValues = true;
-        }
-        if (data.deadlift1rm) {
-          newValues.deadlift1rm = data.deadlift1rm.toString();
-          prefilledValues.deadlift1rm = true;
-          hasAnyValues = true;
-        }
-        if (data.ohp1rm) {
-          newValues.ohp1rm = data.ohp1rm.toString();
-          prefilledValues.ohp1rm = true;
-          hasAnyValues = true;
-        }
-
-        if (hasAnyValues) {
-          setFormData(newValues);
-          setPrefilled(prefilledValues);
-          setHasLoadedPrevious(true);
-          toast.info('Loaded 1RMs from your previous cycle');
-        }
-      }
-    }
-
-    void loadData();
-  }, [hasLoadedPrevious, toast]);
+  }, [oneRmData, prefilled.squat1rm, prefilled.bench1rm, prefilled.deadlift1rm, prefilled.ohp1rm, toast]);
 
   if (!program) {
     return (
@@ -334,6 +331,10 @@ function ProgramStart() {
 }
 
 export const Route = createFileRoute('/programs/$slug/start')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: ProgramStart,
 });
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface UseSetLoggerStateOptions {
@@ -16,6 +14,7 @@ function sanitizeReps(value: number): number {
 
 export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerStateOptions) {
   const [weight, setWeight] = useState(initialWeight)
+  const [weightInput, setWeightInput] = useState(String(initialWeight))
   const [reps, setReps] = useState(() => sanitizeReps(initialReps))
   const [isEditingWeight, setIsEditingWeight] = useState(false)
   const [isEditingReps, setIsEditingReps] = useState(false)
@@ -27,7 +26,11 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
   const repsInputRef = useRef<HTMLInputElement>(null)
 
   const adjustWeight = useCallback((delta: number) => {
-    setWeight(prev => Math.max(0, prev + delta))
+    setWeight(prev => {
+      const next = Math.max(0, prev + delta)
+      setWeightInput(String(next))
+      return next
+    })
   }, [])
 
   const adjustReps = useCallback((delta: number) => {
@@ -37,7 +40,9 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
   const handleWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setWeight(value === '' ? 0 : parseFloat(value))
+      setWeightInput(value)
+      const parsed = parseFloat(value)
+      setWeight(value === '' || Number.isNaN(parsed) ? 0 : parsed)
     }
   }, [])
 
@@ -67,9 +72,10 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
   }, [initialReps])
 
   const startEditingWeight = useCallback(() => {
+    setWeightInput(String(weight))
     setIsEditingWeight(true)
     setTimeout(() => weightInputRef.current?.focus(), 0)
-  }, [])
+  }, [weight])
 
   const startEditingReps = useCallback(() => {
     setIsEditingReps(true)
@@ -77,8 +83,9 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
   }, [])
 
   const handleWeightBlur = useCallback(() => {
+    setWeightInput(String(weight))
     setIsEditingWeight(false)
-  }, [])
+  }, [weight])
 
   const handleRepsBlur = useCallback(() => {
     setIsEditingReps(false)
@@ -123,6 +130,7 @@ export function useSetLoggerState({ initialWeight, initialReps }: UseSetLoggerSt
 
   return {
     weight,
+    weightInput,
     reps,
     isEditingWeight,
     isEditingReps,

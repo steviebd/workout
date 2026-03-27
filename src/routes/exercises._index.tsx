@@ -1,61 +1,45 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { Plus } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from './__root';
 import type { Exercise } from '~/lib/db/exercise/types';
+import { getSession } from '~/lib/auth';
 import { EmptyExercises } from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '~/components/ui/Button';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { PageLayout } from '~/components/ui/PageLayout';
-import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm, ExerciseItemProps } from '@/components/exercises';
+import { ExerciseListSimple, ExerciseSearchSimple, ExerciseForm } from '@/components/exercises';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest();
+  const session = await getSession(request);
+  return session?.sub ? { sub: session.sub, email: session.email } : null;
+});
 
 function Exercises() {
   const auth = useAuth();
-  const [redirecting] = useState(false);
-  const [exercises, setExercises] = useState<ExerciseItemProps[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const fetchExercises = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data: exercisesData, isLoading } = useQuery({
+    queryKey: ['exercises', search],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-
       const response = await fetch(`/api/exercises?${params.toString()}`, {
         credentials: 'include',
       });
-
-      if (response.ok) {
-        const data: Exercise[] = await response.json();
-        setExercises(data.map(e => ({
-          id: e.id,
-          name: e.name,
-          muscleGroup: e.muscleGroup,
-          description: e.description,
-          createdAt: e.createdAt ?? '',
-        })));
-      }
-    } catch (error) {
-      console.error('Failed to fetch exercises:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
-  useEffect(() => {
-    if (!auth.loading && !auth.user) {
-      window.location.href = '/auth/signin';
-    }
-  }, [auth.loading, auth.user]);
-
-  useEffect(() => {
-    if (!auth.loading && auth.user) {
-      void fetchExercises();
-    }
-  }, [auth.loading, auth.user, fetchExercises]);
+      if (!response.ok) throw new Error('Failed to fetch exercises');
+      return response.json() as Promise<Exercise[]>;
+    },
+    enabled: !!auth.user,
+  });
 
   const handleCreateClick = useCallback(() => {
     setShowCreateForm(true);
@@ -66,13 +50,30 @@ function Exercises() {
   }, []);
 
   const handleCreateSuccess = useCallback((id: string) => {
-    window.location.href = `/exercises/${id}`;
-  }, []);
+    void navigate({ to: '/exercises/$id', params: { id } });
+  }, [navigate]);
 
-  if (auth.loading || redirecting) {
+  const handleRefresh = useCallback(async () => {
+    if (!auth.loading && auth.user) {
+      await queryClient.invalidateQueries({ queryKey: ['exercises'] });
+    }
+  }, [auth.loading, auth.user, queryClient]);
+
+  const exercises = useMemo(() =>
+    exercisesData?.map(e => ({
+      id: e.id,
+      name: e.name,
+      muscleGroup: e.muscleGroup,
+      description: e.description,
+      createdAt: e.createdAt ?? '',
+    })) ?? [],
+    [exercisesData]
+  );
+
+  if (auth.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Redirecting to sign in...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -95,8 +96,8 @@ function Exercises() {
 
       <ExerciseSearchSimple value={search} onChange={setSearch} />
 
-      <PullToRefresh onRefresh={fetchExercises}>
-        {loading ? (
+      <PullToRefresh onRefresh={handleRefresh}>
+        {isLoading ? (
           <SkeletonList count={6} />
         ) : exercises.length === 0 ? (
           <EmptyExercises onCreate={handleCreateClick} />
@@ -109,5 +110,9 @@ function Exercises() {
 }
 
 export const Route = createFileRoute('/exercises/_index')({
+  loader: async () => {
+    const session = await getSessionServerFn();
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }); // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: Exercises,
 });

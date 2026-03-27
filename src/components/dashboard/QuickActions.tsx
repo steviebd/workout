@@ -1,5 +1,3 @@
-'use client'
-
 import { Play, Plus, Loader2, History, Dumbbell, Calendar, Sparkles, ChevronRight } from 'lucide-react'
 import { useRouter, Link } from '@tanstack/react-router'
 import { useState, type MouseEvent } from 'react'
@@ -73,7 +71,7 @@ export function QuickActions({ templates }: QuickActionsProps) {
   if (!hasTemplates) {
     return (
       <Card className="overflow-hidden">
-        <CardHeader className="p-6 pb-4">
+        <CardHeader className="p-6 pb-5">
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
               <Play className="h-4 w-4 text-primary-foreground" />

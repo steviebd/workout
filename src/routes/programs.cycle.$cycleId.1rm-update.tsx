@@ -1,5 +1,10 @@
-import { createFileRoute, Link, useParams, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createFileRoute, Link, redirect, useParams, useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { getRequest } from '@tanstack/react-start/server';
+import { createServerFn } from '@tanstack/react-start';
+import { useAuth } from './__root';
+import { getSession } from '~/lib/auth';
 import { Card } from '~/components/ui/Card';
 import { PageLayout } from '~/components/ui/PageLayout';
 import { Button } from '~/components/ui/Button';
@@ -7,6 +12,12 @@ import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { useToast } from '@/components/app/ToastProvider';
 import { LoadingForm } from '~/components/ui/LoadingSkeleton';
+
+const getSessionServerFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = await getRequest()
+  const session = await getSession(request)
+  return session?.sub ? { sub: session.sub, email: session.email } : null
+})
 
 interface CycleData {
   id: string;
@@ -22,46 +33,37 @@ function Update1RM() {
   const params = useParams({ from: '/programs/cycle/$cycleId/1rm-update' });
   const navigate = useNavigate();
   const toast = useToast();
-  const [cycle, setCycle] = useState<CycleData | null>(null);
-  const [weightUnit, setWeightUnit] = useState('kg');
+  const auth = useAuth();
   const [formData, setFormData] = useState({
     squat1rm: '',
     bench1rm: '',
     deadlift1rm: '',
     ohp1rm: '',
   });
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const response = await fetch(`/api/program-cycles/${params.cycleId}`);
-        if (response.ok) {
-          const data = await response.json() as CycleData;
-          setCycle(data);
-          setFormData({
-            squat1rm: data.squat1rm?.toString() ?? '',
-            bench1rm: data.bench1rm?.toString() ?? '',
-            deadlift1rm: data.deadlift1rm?.toString() ?? '',
-            ohp1rm: data.ohp1rm?.toString() ?? '',
-          });
-        }
+  const { data: cycle, isLoading: isLoadingCycle } = useQuery<CycleData | null>({
+    queryKey: ['cycle', params.cycleId],
+    queryFn: async () => {
+      const res = await fetch(`/api/program-cycles/${params.cycleId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch cycle');
+      return res.json();
+    },
+    enabled: !!auth.user && !!params.cycleId,
+  });
 
-        const prefsResponse = await fetch('/api/user/preferences');
-        if (prefsResponse.ok) {
-          const prefs = await prefsResponse.json() as { weightUnit?: string };
-          setWeightUnit(prefs.weightUnit ?? 'kg');
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const { data: weightUnit = 'kg' } = useQuery<string>({
+    queryKey: ['preferences'],
+    queryFn: async () => {
+      const res = await fetch('/api/user/preferences', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch preferences');
+      const data = await res.json() as { weightUnit?: string };
+      return data.weightUnit ?? 'kg';
+    },
+    enabled: !!auth.user,
+  });
 
-    void loadData();
-  }, [params.cycleId]);
+  const isLoading = isLoadingCycle;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -207,6 +209,10 @@ function Update1RM() {
 }
 
 export const Route = createFileRoute('/programs/cycle/$cycleId/1rm-update')({
+  loader: async () => {
+    const session = await getSessionServerFn()
+    if (!session?.sub) throw redirect({ to: '/auth/signin' }) // eslint-disable-line @typescript-eslint/only-throw-error
+  },
   component: Update1RM,
 });
 

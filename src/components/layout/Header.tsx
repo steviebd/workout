@@ -1,7 +1,6 @@
-'use client'
-
 import { useState, useEffect, useRef } from 'react'
 import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target, Heart } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 import { Button } from '../ui/Button'
 import { ThemeToggleCompact } from '../ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
@@ -9,6 +8,7 @@ import { useUnit, useDateFormat } from '@/lib/context/UserPreferencesContext'
 import { useStreak } from '@/lib/context/StreakContext'
 
 export function Header() {
+  const navigate = useNavigate()
   const { user, loading: authLoading, signOut, isOnline, isSyncing, pendingCount } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -261,7 +261,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { window.location.href = '/auth/signin' }}
+                onClick={() => { void navigate({ to: '/auth/signin' }) }}
                 className="rounded-xl"
               >
                 Sign In
