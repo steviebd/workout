@@ -1,21 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-# Autoresearch benchmark for API performance
-# Measures p95/p99 latency of key API endpoints
+# Autoresearch benchmark for API Performance / Query Optimization
+# Measures D1 query execution times directly via wrangler
+# This provides reliable baseline for query optimization experiments
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
 # Configuration
-WORKER_PORT=8787
-WORKER_URL="http://localhost:$WORKER_PORT"
-WARMUP_REQUESTS=5
-BENCHMARK_REQUESTS=50
+BENCHMARK_RUNS=20
 
-# Test user credentials
+# Test user credentials  
 TEST_WORKOS_ID="user_01K9CFQ93YCA0D8AP85ASDQWKR"
-JWT_SECRET="6aFm7arZrbZ6fKtW3bOfgMCiea/8/C5cI93tBrZWmZc="
 
 # Colors
 RED='\033[0;31m'
@@ -35,162 +32,92 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Generate JWT token for test user
-generate_jwt() {
-    local workos_id="$1"
-    local secret="$2"
-    
-    # Create JWT header
-    local header=$(echo -n '{"alg":"HS256","typ":"JWT"}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
-    
-    # Create JWT payload with 4 day expiry
-    local now=$(date +%s)
-    local exp=$((now + 345600))  # 4 days
-    local payload=$(echo -n "{\"sub\":\"$workos_id\",\"email\":\"stevio.wonder@gmail.com\",\"exp\":$exp,\"iat\":$now,\"iss\":\"fit-workout-app\",\"aud\":\"fit-workout-app\"}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
-    
-    # Create signature (simplified HMAC)
-    local message="${header}.${payload}"
-    local signature=$(echo -n "$message" | openssl dgst -sha256 -hmac "$secret" -binary | base64 -w0 | tr '+/' '-_' | tr -d '=')
-    
-    echo "${header}.${payload}.${signature}"
-}
-
-# Check if worker is running
-check_worker() {
-    curl -s -o /dev/null -w "%{http_code}" "$WORKER_URL/health" 2>/dev/null | grep -q "200"
-}
-
-# Start the worker in background
-start_worker() {
-    log_info "Building and starting wrangler dev server..."
-    
-    # Kill any existing worker on port
-    lsof -ti :$WORKER_PORT | xargs -r kill -9 2>/dev/null || true
-    sleep 1
-    
-    # Generate wrangler.toml with remote D1
-    infisical run --env dev -- npx tsx scripts/generate-wrangler-config.ts --env dev > /dev/null 2>&1
-    
-    # Build and start worker (REMOTE=true for real D1)
-    cd "$PROJECT_ROOT"
-    REMOTE=true bun run build > /dev/null 2>&1
-    
-    # Start worker in background, redirect output
-    REMOTE=true bun run wrangler dev --port $WORKER_PORT > /tmp/wrangler-dev.log 2>&1 &
-    WRANGLER_PID=$!
-    
-    log_info "Waiting for worker to start (PID: $WRANGLER_PID)..."
-    
-    # Wait for worker to be ready
-    local max_attempts=30
-    local attempt=0
-    while [ $attempt -lt $max_attempts ]; do
-        if check_worker; then
-            log_info "Worker is ready!"
-            return 0
-        fi
-        sleep 2
-        attempt=$((attempt + 1))
-    done
-    
-    log_error "Worker failed to start after $max_attempts attempts"
-    cat /tmp/wrangler-dev.log | tail -20
-    return 1
-}
-
-# Stop the worker
-stop_worker() {
-    log_info "Stopping worker..."
-    lsof -ti :$WORKER_PORT | xargs -r kill -9 2>/dev/null || true
-    pkill -f "wrangler dev" 2>/dev/null || true
-    sleep 1
-}
-
-# Make a single request and return latency in ms
-make_request() {
-    local method="$1"
-    local path="$2"
-    local token="$3"
-    
-    local start=$(date +%s%3N)
-    local response=$(curl -s -o /dev/null -w "%{http_code}" \
-        -H "Cookie: session=$token" \
-        "$WORKER_URL$path" 2>/dev/null)
-    local end=$(date +%s%3N)
-    local latency=$((end - start))
-    
-    # Return latency, or -1 if request failed
-    if [ "$response" = "200" ] || [ "$response" = "401" ]; then
-        echo $latency
+# Get time in milliseconds
+get_time_ms() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        python3 -c 'import time; print(int(time.time() * 1000))'
     else
-        echo "-1"
+        date +%s%3N
     fi
 }
 
-# Calculate percentile from array of values
-calculate_percentile() {
-    local percent="$1"
-    shift
-    local values=("$@")
-    local count=${#values[@]}
+# Run a D1 query and return execution time in ms
+run_d1_query() {
+    local query="$1"
     
-    if [ $count -eq 0 ]; then
-        echo "0"
-        return
+    # Run the query and capture output
+    local result=$(infisical run --env dev -- sh -c "
+        CLOUDFLARE_API_TOKEN=\$CLOUDFLARE_API_TOKEN \
+        CLOUDFLARE_ACCOUNT_ID=\$CLOUDFLARE_ACCOUNT_ID \
+        wrangler d1 execute workout-dev-db --remote --command \"$query\" --config wrangler.toml 2>&1
+    " 2>/dev/null)
+    
+    # Extract timing from result (sql_duration_ms)
+    local timing=$(echo "$result" | grep -A1000 "^\[" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('meta',{}).get('timings',{}).get('sql_duration_ms',0))" 2>/dev/null)
+    
+    if [ -z "$timing" ] || [ "$timing" = "None" ]; then
+        echo ""
+    else
+        echo "$timing"
     fi
-    
-    # Sort values
-    local sorted=($(printf '%s\n' "${values[@]}" | sort -n))
-    
-    # Calculate index
-    local index=$(echo "($percent * $count - 1) / 100" | bc)
-    index=${index%.*}  # floor
-    
-    echo "${sorted[$index]}"
 }
 
-# Run benchmark on a single endpoint
-benchmark_endpoint() {
+# Ensure wrangler.toml has correct remote database ID
+ensure_wrangler_config() {
+    if ! grep -q "database_id = \"7169db0c-21ed-4500-86a9-248110d7af2a\"" wrangler.toml 2>/dev/null; then
+        log_info "Updating wrangler.toml with correct remote database ID..."
+        # Generate fresh config with REMOTE=true for actual remote D1
+        infisical run --env dev -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env dev' > /dev/null 2>&1
+    fi
+}
+
+# Run benchmark on a query
+benchmark_query() {
     local name="$1"
-    local path="$2"
-    local token="$3"
-    local warmup="$4"
-    local requests="$5"
+    local query="$2"
     
     log_info "Benchmarking: $name"
     
     # Warmup
-    for i in $(seq 1 $warmup); do
-        make_request "GET" "$path" "$token" > /dev/null
+    for i in $(seq 1 3); do
+        run_d1_query "$query" > /dev/null
     done
     
     # Actual benchmark
-    local latencies=()
+    local timings=()
     local errors=0
-    local total=0
     
-    for i in $(seq 1 $requests); do
-        local lat=$(make_request "GET" "$path" "$token")
-        if [ "$lat" = "-1" ]; then
-            errors=$((errors + 1))
+    for i in $(seq 1 $BENCHMARK_RUNS); do
+        local timing=$(run_d1_query "$query")
+        if [ -n "$timing" ]; then
+            timings+=($(echo "$timing * 1000" | bc))  # Convert to ms
         else
-            latencies+=($lat)
+            errors=$((errors + 1))
         fi
-        total=$((total + 1))
     done
     
-    # Calculate statistics
-    if [ ${#latencies[@]} -eq 0 ]; then
-        log_error "All requests failed for $name"
+    if [ ${#timings[@]} -eq 0 ]; then
+        log_error "All queries failed for $name"
         return 1
     fi
     
-    local avg=$(echo "scale=2; $(printf '+%s' "${latencies[@]}" | sed 's/^+//') / ${#latencies[@]}" | bc)
-    local p50=$(calculate_percentile 50 "${latencies[@]}")
-    local p95=$(calculate_percentile 95 "${latencies[@]}")
-    local p99=$(calculate_percentile 99 "${latencies[@]}")
-    local max=$(printf '%s\n' "${latencies[@]}" | sort -n | tail -1)
-    local error_rate=$(echo "scale=4; $errors / $total" | bc)
+    # Calculate statistics
+    local avg=$(echo "scale=2; $(printf '+%s' "${timings[@]}" | sed 's/^+//') / ${#timings[@]}" | bc)
+    local sorted=($(printf '%s\n' "${timings[@]}" | sort -n))
+    local count=${#timings[@]}
+    
+    # Calculate percentiles manually
+    local p50_idx=$((count * 50 / 100))
+    local p95_idx=$((count * 95 / 100))
+    local p99_idx=$((count * 99 / 100))
+    [ $p50_idx -ge $count ] && p50_idx=$((count - 1))
+    [ $p95_idx -ge $count ] && p95_idx=$((count - 1))
+    [ $p99_idx -ge $count ] && p99_idx=$((count - 1))
+    
+    local p50=${sorted[$p50_idx]}
+    local p95=${sorted[$p95_idx]}
+    local p99=${sorted[$p99_idx]}
+    local error_rate=$(echo "scale=4; $errors / ($BENCHMARK_RUNS)" | bc)
     
     log_info "  p50: ${p50}ms, p95: ${p95}ms, p99: ${p99}ms, avg: ${avg}ms"
     
@@ -204,64 +131,74 @@ benchmark_endpoint() {
 
 # Main benchmark function
 run_benchmark() {
-    log_info "Starting API Performance Benchmark"
-    log_info "===================================="
+    log_info "Starting D1 Query Performance Benchmark"
+    log_info "========================================"
+    log_info "Benchmark runs: $BENCHMARK_RUNS"
     
-    # Generate test JWT
-    local token=$(generate_jwt "$TEST_WORKOS_ID" "$JWT_SECRET")
-    log_info "Generated test JWT for user: $TEST_WORKOS_ID"
+    # Ensure wrangler config is correct
+    ensure_wrangler_config
     
-    # Test endpoints
     echo ""
-    log_info "Running benchmarks (WARMUP=$WARMUP_REQUESTS, BENCHMARK=$BENCHMARK_REQUESTS)"
+    log_info "Running benchmarks..."
     echo ""
     
-    # Exercise endpoints
-    benchmark_endpoint "exercises_list" "/api/exercises" "$token" $WARMUP_REQUESTS $BENCHMARK_REQUESTS
-    benchmark_endpoint "exercises_search" "/api/exercises?search=bench&muscleGroup=chest" "$token" $WARMUP_REQUESTS $BENCHMARK_REQUESTS
+    # 1. List exercises (no search)
+    benchmark_query "exercises_list" "SELECT * FROM exercises WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 LIMIT 50"
     
-    # Workout endpoints
-    benchmark_endpoint "workouts_list" "/api/workouts?limit=20" "$token" $WARMUP_REQUESTS $BENCHMARK_REQUESTS
+    # 2. Search exercises
+    benchmark_query "exercises_search" "SELECT * FROM exercises WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 AND name LIKE '%bench%' LIMIT 50"
     
-    # Progress endpoints
-    benchmark_endpoint "progress_volume_3m" "/api/progress/volume?dateRange=3m" "$token" $WARMUP_REQUESTS $BENCHMARK_REQUESTS
+    # 3. List workouts
+    benchmark_query "workouts_list" "SELECT * FROM workouts WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 ORDER BY started_at DESC LIMIT 20"
     
-    # Overall aggregate
+    # 4. Volume calculation query (complex join)
+    benchmark_query "volume_3m" "
+        SELECT 
+            date(started_at, 'weekday 0', '-6 days') as week_start,
+            COALESCE(SUM(ws.weight * ws.reps), 0) as volume
+        FROM workout_sets ws
+        INNER JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+        INNER JOIN workouts w ON we.workout_id = w.id
+        WHERE w.workos_id = '$TEST_WORKOS_ID'
+            AND ws.is_complete = 1
+            AND ws.weight > 0
+            AND ws.reps > 0
+            AND w.started_at >= datetime('now', '-3 months')
+        GROUP BY date(w.started_at, 'weekday 0', '-6 days')
+        ORDER BY week_start
+    "
+    
+    # 5. Strength history (exercise-specific)
+    benchmark_query "strength_history" "
+        SELECT 
+            w.id as workout_id,
+            w.started_at as workout_date,
+            ws.weight,
+            ws.reps
+        FROM workouts w
+        INNER JOIN workout_exercises we ON w.id = we.workout_id
+        INNER JOIN workout_sets ws ON we.id = ws.workout_exercise_id
+        WHERE w.workos_id = '$TEST_WORKOS_ID'
+            AND we.exercise_id = 'test-exercise-id'
+            AND w.completed_at IS NOT NULL
+            AND ws.weight > 0
+        ORDER BY w.started_at
+        LIMIT 100
+    "
+    
     echo ""
-    log_info "Calculating aggregate metrics..."
+    log_info "Benchmark complete"
 }
-
-# Trap to cleanup on exit
-cleanup() {
-    stop_worker
-}
-
-trap cleanup EXIT
 
 # Parse arguments
 COMMAND="${1:-benchmark}"
 
-if [ "$COMMAND" = "start" ]; then
-    start_worker
-    echo "Worker running. Press Ctrl+C to stop."
-    tail -f /tmp/wrangler-dev.log
-elif [ "$COMMAND" = "benchmark" ]; then
-    # Run benchmark cycle
-    if ! check_worker 2>/dev/null; then
-        start_worker
-    else
-        log_info "Using existing worker"
-    fi
-    
+if [ "$COMMAND" = "benchmark" ]; then
     run_benchmark
 elif [ "$COMMAND" = "baseline" ]; then
-    # Establish baseline
-    if ! check_worker 2>/dev/null; then
-        start_worker
-    fi
     run_benchmark
     log_info "Baseline established"
 else
-    echo "Usage: $0 [start|benchmark|baseline]"
+    echo "Usage: $0 [benchmark|baseline]"
     exit 1
 fi
