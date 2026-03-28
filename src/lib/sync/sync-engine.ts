@@ -114,6 +114,10 @@ async function resolveEntityServerIds(entity: string, data: Record<string, unkno
 class SyncEngine {
   private syncInProgress: Promise<SyncResult> | null = null;
 
+  reset(): void {
+    this.syncInProgress = null;
+  }
+
   private readonly entityPriority: Record<string, number> = {
     exercise: 0,
     template: 1,

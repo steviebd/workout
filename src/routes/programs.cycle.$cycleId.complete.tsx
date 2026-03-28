@@ -184,4 +184,4 @@ export const Route = createFileRoute('/programs/cycle/$cycleId/complete')({
   component: CompleteProgram,
 });
 
-export default CompleteProgram;
+;

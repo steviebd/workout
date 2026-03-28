@@ -71,4 +71,4 @@ export const Route = createFileRoute('/programs/_index')({
   component: ProgramsIndex,
 });
 
-export default ProgramsIndex;
+;

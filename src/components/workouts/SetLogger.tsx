@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import type { WorkoutSet } from '~/lib/db/workout/types'
 import { Button } from '~/components/ui/Button'
@@ -201,6 +201,8 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
     initialReps: set.reps,
   })
 
+  const [localCompleted, setLocalCompleted] = useState(set.completed)
+
   const handleWeightDecrease = useCallback(() => {
     adjustWeight(-2.5)
   }, [adjustWeight])
@@ -225,9 +227,9 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
       ...set,
       weight,
       reps,
-      completed: set.completed,
+      completed: localCompleted,
     })
-  }, [handleWeightBlur, onUpdate, set, weight, reps])
+  }, [handleWeightBlur, onUpdate, set, weight, reps, localCompleted])
 
   const handleRepsBlurWrapper = useCallback(() => {
     handleRepsBlur()
@@ -235,27 +237,31 @@ export function SetLogger({ setNumber, set, onUpdate, onDelete }: SetLoggerProps
       ...set,
       weight,
       reps,
-      completed: set.completed,
+      completed: localCompleted,
     })
-  }, [handleRepsBlur, onUpdate, set, weight, reps])
+  }, [handleRepsBlur, onUpdate, set, weight, reps, localCompleted])
 
   const handleToggleComplete = useCallback(() => {
+    const newCompleted = !localCompleted
+    setLocalCompleted(newCompleted)
     onUpdate({
       ...set,
       weight,
       reps,
-      completed: !set.completed,
+      completed: newCompleted,
     })
-  }, [onUpdate, set, weight, reps])
+  }, [onUpdate, set, weight, reps, localCompleted])
 
   const handleCompleteWithSwipe = useCallback(() => {
+    const newCompleted = !localCompleted
+    setLocalCompleted(newCompleted)
     onUpdate({
       ...set,
       weight,
       reps,
-      completed: !set.completed,
+      completed: newCompleted,
     })
-  }, [onUpdate, set, weight, reps])
+  }, [onUpdate, set, weight, reps, localCompleted])
 
   const swipeHandlers = isSwiping ? {} : {
     onTouchStart: (e: React.TouchEvent) => {

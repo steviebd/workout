@@ -546,4 +546,4 @@ export const Route = createFileRoute('/programs/cycle/$cycleId_')({
   component: ProgramDashboard,
 });
 
-export default ProgramDashboard;
+;

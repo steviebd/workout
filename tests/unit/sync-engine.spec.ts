@@ -16,7 +16,8 @@ vi.stubGlobal('fetch', mockFetch);
 
 describe('Sync Engine', () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    syncEngine.reset();
     await localDB.exercises.clear();
     await localDB.templates.clear();
     await localDB.workouts.clear();

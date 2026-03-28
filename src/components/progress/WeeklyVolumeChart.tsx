@@ -24,14 +24,15 @@ function SimpleBarChart({
   height: number
   barColor?: string
 }) {
-  if (data.length === 0 || width <= 0 || height <= 0) return null
-
   const padding = { top: 10, right: 10, bottom: 30, left: 45 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
 
+  if (data.length === 0 || chartWidth <= 0 || chartHeight <= 0) return null
+
   const volumes = data.map(d => d.volume)
   const maxVolume = Math.max(...volumes)
+  if (maxVolume <= 0) return null
 
   const barWidth = Math.min(40, (chartWidth / data.length) * 0.7)
   const barGap = (chartWidth - barWidth * data.length) / (data.length + 1)

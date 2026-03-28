@@ -93,7 +93,7 @@ function ProgressPage() {
   const navigate = useNavigate();
   const { formatVolume } = useUnit();
   const { formatDate } = useDateFormat();
-  const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
+  const [selectedExerciseId, setSelectedExerciseId] = useState('');
   const [dateRange, setDateRange] = useState<DateRange>('3m');
   const [volumeScope, setVolumeScope] = useState<VolumeScope>('all');
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 // eslint-disable-next-line import/extensions
@@ -122,8 +122,11 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
     }
   }, [workout?.completedAt, workoutId]);
 
+  const pendingUpdatesRef = useRef(0);
+
   const updateSetMutation = useMutation({
     mutationFn: async ({ setId, updates }: { setId: string; updates: Partial<WorkoutSet> }) => {
+      pendingUpdatesRef.current++;
       const res = await fetch(`/api/workouts/sets/${setId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -132,6 +135,9 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
       });
       if (!res.ok) throw new Error('Failed to update set');
       return res.json();
+    },
+    onSettled: () => {
+      pendingUpdatesRef.current--;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['workout-exercises', workoutId] });
@@ -262,6 +268,10 @@ export function useWorkoutSession({ workoutId }: UseWorkoutSessionOptions) {
   }, [exercises, addExerciseMutation]);
 
   const handleCompleteWorkout = useCallback(() => {
+    if (pendingUpdatesRef.current > 0) {
+      return { pending: true };
+    }
+
     const incompleteSetsCount = exercises.reduce((acc, e) => {
       return acc + e.sets.filter((s) => !s.isComplete).length;
     }, 0);

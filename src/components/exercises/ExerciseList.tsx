@@ -38,7 +38,7 @@ export function ExerciseList({
   const [swipeState] = useState<SwipeState>({ id: null, offset: 0, direction: null });
   const dragOverIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+  const itemRefs = useRef(new Map());
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
 
   const getSwipeStyles = (id: string) => {
