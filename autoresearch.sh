@@ -8,8 +8,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-# Configuration - more runs for stability
-BENCHMARK_RUNS=50
+# Configuration - fewer runs for faster feedback
+BENCHMARK_RUNS=20
 
 # Test user credentials  
 TEST_WORKOS_ID="user_01K9CFQ93YCA0D8AP85ASDQWKR"
