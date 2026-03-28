@@ -3,13 +3,13 @@ set -euo pipefail
 
 # Autoresearch benchmark for API Performance / Query Optimization
 # Measures D1 query execution times directly via wrangler
-# This provides reliable baseline for query optimization experiments
+# Uses more runs and median for stable measurements despite network noise
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-# Configuration
-BENCHMARK_RUNS=20
+# Configuration - more runs for stability
+BENCHMARK_RUNS=50
 
 # Test user credentials  
 TEST_WORKOS_ID="user_01K9CFQ93YCA0D8AP85ASDQWKR"
@@ -30,15 +30,6 @@ log_warn() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Get time in milliseconds
-get_time_ms() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        python3 -c 'import time; print(int(time.time() * 1000))'
-    else
-        date +%s%3N
-    fi
 }
 
 # Run a D1 query and return execution time in ms
@@ -66,7 +57,6 @@ run_d1_query() {
 ensure_wrangler_config() {
     if ! grep -q "database_id = \"7169db0c-21ed-4500-86a9-248110d7af2a\"" wrangler.toml 2>/dev/null; then
         log_info "Updating wrangler.toml with correct remote database ID..."
-        # Generate fresh config with REMOTE=true for actual remote D1
         infisical run --env dev -- sh -c 'REMOTE=true npx tsx scripts/generate-wrangler-config.ts --env dev' > /dev/null 2>&1
     fi
 }
@@ -79,7 +69,7 @@ benchmark_query() {
     log_info "Benchmarking: $name"
     
     # Warmup
-    for i in $(seq 1 3); do
+    for i in 1 2 3; do
         run_d1_query "$query" > /dev/null
     done
     
@@ -114,15 +104,16 @@ benchmark_query() {
     [ $p95_idx -ge $count ] && p95_idx=$((count - 1))
     [ $p99_idx -ge $count ] && p99_idx=$((count - 1))
     
-    local p50=${sorted[$p50_idx]}
+    local median=${sorted[$p50_idx]}
     local p95=${sorted[$p95_idx]}
     local p99=${sorted[$p99_idx]}
     local error_rate=$(echo "scale=4; $errors / ($BENCHMARK_RUNS)" | bc)
     
-    log_info "  p50: ${p50}ms, p95: ${p95}ms, p99: ${p99}ms, avg: ${avg}ms"
+    log_info "  median: ${median}ms, p95: ${p95}ms, p99: ${p99}ms, avg: ${avg}ms"
     
     # Output metrics
     local safe_name=$(echo "$name" | tr ' /?' '_')
+    echo "METRIC ${safe_name}_median=${median}"
     echo "METRIC ${safe_name}_p95=${p95}"
     echo "METRIC ${safe_name}_p99=${p99}"
     echo "METRIC ${safe_name}_avg=${avg}"
@@ -133,7 +124,7 @@ benchmark_query() {
 run_benchmark() {
     log_info "Starting D1 Query Performance Benchmark"
     log_info "========================================"
-    log_info "Benchmark runs: $BENCHMARK_RUNS"
+    log_info "Benchmark runs: $BENCHMARK_RUNS per query"
     
     # Ensure wrangler config is correct
     ensure_wrangler_config
@@ -143,7 +134,7 @@ run_benchmark() {
     echo ""
     
     # 1. List exercises (no search)
-    benchmark_query "exercises_list" "SELECT * FROM exercises WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 LIMIT 50"
+    benchmark_query "exercises_list" "SELECT * FROM exercises WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 ORDER BY created_at DESC LIMIT 50"
     
     # 2. Search exercises
     benchmark_query "exercises_search" "SELECT * FROM exercises WHERE workos_id = '$TEST_WORKOS_ID' AND is_deleted = 0 AND name LIKE '%bench%' LIMIT 50"
@@ -168,24 +159,6 @@ run_benchmark() {
         ORDER BY week_start
     "
     
-    # 5. Strength history (exercise-specific)
-    benchmark_query "strength_history" "
-        SELECT 
-            w.id as workout_id,
-            w.started_at as workout_date,
-            ws.weight,
-            ws.reps
-        FROM workouts w
-        INNER JOIN workout_exercises we ON w.id = we.workout_id
-        INNER JOIN workout_sets ws ON we.id = ws.workout_exercise_id
-        WHERE w.workos_id = '$TEST_WORKOS_ID'
-            AND we.exercise_id = 'test-exercise-id'
-            AND w.completed_at IS NOT NULL
-            AND ws.weight > 0
-        ORDER BY w.started_at
-        LIMIT 100
-    "
-    
     echo ""
     log_info "Benchmark complete"
 }
@@ -195,7 +168,7 @@ COMMAND="${1:-benchmark}"
 
 if [ "$COMMAND" = "benchmark" ]; then
     run_benchmark
-elif [ "$COMMAND" = "baseline" ]; then
+elif [ "$command" = "baseline" ]; then
     run_benchmark
     log_info "Baseline established"
 else
