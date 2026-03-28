@@ -260,6 +260,7 @@ export const _workoutSetsExerciseCompleteIdx = index('idx_workout_sets_exercise_
 
 // Composite index for volume queries (autoresearch optimization)
 export const _workoutSetsCompleteWeightRepsIdx = index('idx_workout_sets_complete').on(workoutSets.isComplete, workoutSets.weight, workoutSets.reps);
+export const _workoutSetsCoveringIdx = index('idx_workout_sets_covering').on(workoutSets.workoutExerciseId, workoutSets.isComplete, workoutSets.weight, workoutSets.reps);
 
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);
