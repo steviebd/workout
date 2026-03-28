@@ -221,6 +221,9 @@ export const _exercisesLocalIdIdx = index('idx_exercises_local_id').on(exercises
 export const _exercisesUpdatedAtIdx = index('idx_exercises_updated_at').on(exercises.updatedAt);
 export const _exercisesLibraryIdIdx = index('idx_exercises_library_id').on(exercises.libraryId);
 
+// Composite index for exercise list queries (autoresearch optimization)
+export const _exercisesWorkosIdIsDeletedIdx = index('idx_exercises_workos_id_is_deleted').on(exercises.workosId, exercises.isDeleted);
+
 export const _templatesWorkosIdIdx = index('idx_templates_workos_id').on(templates.workosId);
 export const _templatesWorkosIdUpdatedAtIdx = index('idx_templates_workos_id_updated_at').on(templates.workosId, templates.updatedAt);
 export const _templatesIsDeletedIdx = index('idx_templates_is_deleted').on(templates.isDeleted);
@@ -238,6 +241,8 @@ export const _workoutsIsDeletedIdx = index('idx_workouts_is_deleted').on(workout
 // Composite indexes for common queries
 export const _workoutsWorkosIdIsDeletedCompletedAtIdx = index('idx_workouts_workos_id_is_deleted_completed_at').on(workouts.workosId, workouts.isDeleted, workouts.completedAt);
 export const _workoutsWorkosIdIsDeletedUpdatedAtIdx = index('idx_workouts_workos_id_is_deleted_updated_at').on(workouts.workosId, workouts.isDeleted, workouts.updatedAt);
+// Composite index for workout list queries (autoresearch optimization)
+export const _workoutsWorkosIdIsDeletedStartedAtIdx = index('idx_workouts_workos_id_is_deleted_started_at').on(workouts.workosId, workouts.isDeleted, workouts.startedAt);
 
 export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
 export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
@@ -251,6 +256,9 @@ export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(work
 export const _workoutSetsUpdatedAtIdx = index('idx_workout_sets_updated_at').on(workoutSets.updatedAt);
 export const _workoutSetsExerciseCompleteIdx = index('idx_workout_sets_exercise_complete')
   .on(workoutSets.workoutExerciseId, workoutSets.isComplete);
+
+// Composite index for volume queries (autoresearch optimization)
+export const _workoutSetsCompleteWeightRepsIdx = index('idx_workout_sets_complete').on(workoutSets.isComplete, workoutSets.weight, workoutSets.reps);
 
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);
