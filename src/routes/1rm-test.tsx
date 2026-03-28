@@ -367,4 +367,4 @@ export const Route = createFileRoute('/1rm-test')({
   component: OneRMTest,
 })
 
-export default OneRMTest
+

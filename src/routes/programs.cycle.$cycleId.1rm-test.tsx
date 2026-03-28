@@ -339,4 +339,4 @@ export const Route = createFileRoute('/programs/cycle/$cycleId/1rm-test')({
   component: OneRMTest,
 });
 
-export default OneRMTest;
+;

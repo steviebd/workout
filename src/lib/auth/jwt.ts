@@ -88,7 +88,7 @@ export async function refreshTokenIfNeeded(
 ): Promise<{ token: string; refreshed: boolean }> {
   try {
     const decoded = await verifyToken(token);
-    if (!decoded || !decoded.exp) {
+    if (!decoded?.exp) {
       const newToken = await createToken(user, workosId);
       return { token: newToken, refreshed: true };
     }

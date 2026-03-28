@@ -199,78 +199,6 @@ async function completeWorkout(page: Page): Promise<void> {
 	}
 }
 
-async function completeWorkoutWithWeight(page: Page, weight: number, reps: number = 5): Promise<void> {
-	await page.waitForTimeout(2000);
-
-	const exerciseCards = page.locator('[class*="bg-card"]').filter({
-		has: page.locator('text=/Squat|Bench|Deadlift|Overhead Press|Row/i')
-	});
-
-	const cardCount = await exerciseCards.count();
-	console.log(`Found ${cardCount} exercise cards with weight ${weight}kg`);
-
-	for (let i = 0; i < cardCount; i++) {
-		const card = exerciseCards.nth(i);
-		const addSetBtn = card.locator('button:has-text("Add Set")').first();
-
-		if (await addSetBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-			for (let s = 0; s < 5; s++) {
-				if (await addSetBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-					await addSetBtn.click();
-					await page.waitForTimeout(200);
-				}
-			}
-
-			const rows = card.locator('tbody tr');
-			const rowCount = await rows.count();
-
-			for (let r = 0; r < Math.min(rowCount, 5); r++) {
-				const row = rows.nth(r);
-				const inputs = row.locator('input[type="text"]');
-				const inputCount = await inputs.count();
-
-				if (inputCount >= 2) {
-					const weightInput = inputs.first();
-					const repsInput = inputs.nth(1);
-					
-					await weightInput.fill(weight.toString());
-					await weightInput.blur();
-					await page.waitForTimeout(100);
-					
-					await repsInput.fill(reps.toString());
-					await repsInput.blur();
-					await page.waitForTimeout(100);
-					
-					// Click the Check button to mark set as complete
-					const checkBtn = row.locator('button[size="icon"]').filter({ has: page.locator('svg') }).first();
-					if (await checkBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-						await checkBtn.click();
-						await page.waitForTimeout(100);
-					}
-				}
-			}
-		}
-	}
-
-	// Wait for any pending API calls to complete
-	await page.waitForTimeout(1000);
-
-	const completeBtn = page.locator('button:has-text("Complete Workout")').first();
-	if (await completeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-		await completeBtn.click();
-		await page.waitForTimeout(3000);
-
-		const incompleteModal = page.locator('text=Incomplete Sets').first();
-		if (await incompleteModal.isVisible({ timeout: 2000 }).catch(() => false)) {
-			await page.click('button:has-text("Continue")');
-			await page.waitForTimeout(2000);
-		}
-
-		await expect(page.locator('text=/Workout Complete|Completed|All done/i').first()).toBeVisible({ timeout: 15000 });
-		console.log(`Workout completed with ${weight}kg x ${reps}`);
-	}
-}
-
 async function deleteProgramCycle(page: Page, cycleId: string): Promise<void> {
 	try {
 		await page.goto(`${BASE_URL}/programs/cycle/${cycleId}`, { waitUntil: 'load', timeout: 60000 });
@@ -422,6 +350,8 @@ test.describe('Comprehensive Program Flow', () => {
 	});
 
 	test('4. End program and test 1RM - Two Program Progression', async ({ page }) => {
+		test.setTimeout(600000);
+
 		const today = new Date();
 
 		// ==================== PROGRAM A ====================
@@ -450,18 +380,35 @@ test.describe('Comprehensive Program Flow', () => {
 			await page.waitForTimeout(2000);
 		}
 
-		// End Program A and test 1RM with +5kg (105kg)
-		console.log('Program A - Ending and testing 1RM at 105kg');
+		// End Program A and test 1RM
+		console.log('Program A - Ending and testing 1RM');
 		const endProgramBtn = page.locator('button:has-text("End Program & Test 1RM")').first();
 		await expect(endProgramBtn).toBeVisible({ timeout: 10000 });
 		await endProgramBtn.click();
 
+		// Navigate to 1RM test page
 		await page.waitForURL(/\/workouts\/[a-z0-9-]+/, { timeout: 30000 });
-		console.log('Redirected to 1RM test workout');
+		const workoutId = page.url().match(/\/workouts\/([a-z0-9-]+)/)?.[1];
+		console.log('1RM test workout ID:', workoutId);
 
-		await page.waitForTimeout(2000);
-		await completeWorkoutWithWeight(page, 105, 1); // 1RM test with 105kg
-		console.log('Program A - 1RM test completed at 105kg');
+		// Get exercises for this workout
+		const exercisesRes = await page.request.get(`${BASE_URL}/api/workouts/${workoutId}/exercises`);
+		const exercises = await exercisesRes.json() as Array<{ id: string; sets: Array<{ id: string }> }>;
+		console.log(`Found ${exercises.length} exercises with ${exercises.reduce((acc, e) => acc + e.sets.length, 0)} total sets`);
+
+		// Update each set with weight=105 and mark complete
+		for (const ex of exercises) {
+			for (const set of ex.sets) {
+				await page.request.put(`${BASE_URL}/api/workouts/sets/${set.id}`, {
+					data: { weight: 105, reps: 1, isComplete: true }
+				});
+			}
+		}
+		console.log('Updated all sets with weight=105, reps=1, marked complete');
+
+		// Complete the workout via API
+		const completeRes = await page.request.put(`${BASE_URL}/api/workouts/${workoutId}/complete`);
+		console.log('Complete workout API response:', completeRes.status);
 
 		await page.goto(`${BASE_URL}/programs/cycle/${cycleIdA}`, { waitUntil: 'load', timeout: 60000 });
 		await page.waitForTimeout(2000);
@@ -470,22 +417,129 @@ test.describe('Comprehensive Program Flow', () => {
 		await expect(programCompleteA).toBeVisible({ timeout: 10000 });
 		console.log('Program A marked as complete');
 
-		// ==================== VERIFY 1RM TEST STORED ====================
-		console.log('\n=== Verifying 1RM test was stored correctly ===');
+		// Verify 1RM values stored
+		const oneRmResponse = await page.request.get(`${BASE_URL}/api/user/1rm`);
+		const oneRmData = await oneRmResponse.json();
+		console.log('API /api/user/1rm response:', JSON.stringify(oneRmData));
 
-		// Check the workout history for the 1RM test workout
+		expect(oneRmData.squat1rm).toBe(105);
+		expect(oneRmData.bench1rm).toBe(105);
+		expect(oneRmData.deadlift1rm).toBe(105);
+		expect(oneRmData.ohp1rm).toBe(105);
+		console.log('SUCCESS: 1RM values correctly stored as 105kg');
+
+		// ==================== PROGRAM B ====================
+		console.log('\n=== Starting Program B - should have 105kg prefilled ===');
+
+		// Go to program start page and verify 105kg is prefilled
+		await page.goto(`${BASE_URL}/programs/${PROGRAM_SLUG}/start`, { waitUntil: 'load', timeout: 60000 });
+		await page.waitForTimeout(2000);
+
+		// Verify 105kg values are prefilled
+		const squatInput = page.locator('input[name="squat1rm"]');
+		const benchInput = page.locator('input[name="bench1rm"]');
+		const deadliftInput = page.locator('input[name="deadlift1rm"]');
+		const ohpInput = page.locator('input[name="ohp1rm"]');
+
+		await expect(squatInput).toHaveValue('105');
+		await expect(benchInput).toHaveValue('105');
+		await expect(deadliftInput).toHaveValue('105');
+		await expect(ohpInput).toHaveValue('105');
+		console.log('Verified 105kg values are prefilled in Program B');
+
+		// Create Program B with next week's start date
+		const nextWeek = new Date();
+		nextWeek.setDate(nextWeek.getDate() + 7);
+		const cycleIdB = await createProgramWith1RMs(
+			page,
+			{ squat: 105, bench: 105, deadlift: 105, ohp: 105 },
+			{ days: ['Mon', 'Wed', 'Fri'], time: 'Morning', startDate: nextWeek.toISOString().split('T')[0] },
+			'smart'
+		);
+
+		await expect(page.locator('text=Week').first()).toBeVisible({ timeout: 10000 });
+		await page.waitForTimeout(2000);
+
+		// Complete 3 workouts for Program B
+		for (let workoutNum = 1; workoutNum <= 3; workoutNum++) {
+			console.log(`Program B - Starting workout ${workoutNum}/3`);
+			const startBtn = page.locator('button:has-text("Start")').first();
+			if (await startBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+				await startBtn.click();
+				await page.waitForURL(/\/workouts\/[a-z0-9-]+/, { timeout: 30000 });
+				await completeWorkout(page);
+				console.log(`Program B - Completed workout ${workoutNum}/3`);
+			}
+			await page.goto(`${BASE_URL}/programs/cycle/${cycleIdB}`, { waitUntil: 'load', timeout: 60000 });
+			await page.waitForTimeout(2000);
+		}
+
+		// End Program B and test 1RM with 110kg
+		console.log('Program B - Ending and testing 1RM at 110kg');
+		const endProgramBtnB = page.locator('button:has-text("End Program & Test 1RM")').first();
+		await expect(endProgramBtnB).toBeVisible({ timeout: 10000 });
+		await endProgramBtnB.click();
+
+		await page.waitForURL(/\/workouts\/[a-z0-9-]+/, { timeout: 30000 });
+		const workoutIdB = page.url().match(/\/workouts\/([a-z0-9-]+)/)?.[1];
+		console.log('Program B 1RM test workout ID:', workoutIdB);
+
+		// Get exercises for Program B 1RM test
+		const exercisesResB = await page.request.get(`${BASE_URL}/api/workouts/${workoutIdB}/exercises`);
+		const exercisesB = await exercisesResB.json() as Array<{ id: string; sets: Array<{ id: string }> }>;
+		console.log(`Found ${exercisesB.length} exercises with ${exercisesB.reduce((acc, e) => acc + e.sets.length, 0)} total sets`);
+
+		// Update each set with weight=110 and mark complete
+		for (const ex of exercisesB) {
+			for (const set of ex.sets) {
+				await page.request.put(`${BASE_URL}/api/workouts/sets/${set.id}`, {
+					data: { weight: 110, reps: 1, isComplete: true }
+				});
+			}
+		}
+		console.log('Updated all sets with weight=110, reps=1, marked complete');
+
+		// Complete the workout via API
+		await page.request.put(`${BASE_URL}/api/workouts/${workoutIdB}/complete`);
+		console.log('Program B 1RM test workout completed');
+
+		await page.goto(`${BASE_URL}/programs/cycle/${cycleIdB}`, { waitUntil: 'load', timeout: 60000 });
+		await page.waitForTimeout(2000);
+
+		const programCompleteB = page.locator('text=Program Complete').first();
+		await expect(programCompleteB).toBeVisible({ timeout: 10000 });
+		console.log('Program B marked as complete');
+
+		// Verify final 1RM values
+		const oneRmResponseB = await page.request.get(`${BASE_URL}/api/user/1rm`);
+		const oneRmDataB = await oneRmResponseB.json();
+		console.log('Final API /api/user/1rm response:', JSON.stringify(oneRmDataB));
+
+		expect(oneRmDataB.squat1rm).toBe(110);
+		expect(oneRmDataB.bench1rm).toBe(110);
+		expect(oneRmDataB.deadlift1rm).toBe(110);
+		expect(oneRmDataB.ohp1rm).toBe(110);
+		console.log('SUCCESS: Final 1RM values correctly stored as 110kg');
+
+		// ==================== VERIFY PROGRESSION ON PROGRESS PAGE ====================
+		console.log('\n=== Verifying progression on Progress page ===');
 		await page.goto(`${BASE_URL}/progress`, { waitUntil: 'load', timeout: 60000 });
 		await page.waitForTimeout(3000);
 
-		// The 1RM Progress section should show progression from 100 to 105
-		// Note: Due to a bug where 1RM test workouts have completedAt=null,
-		// the progression may not show correctly. This test verifies the bug exists.
-
-		console.log('NOTE: 1RM values from 1RM test may not be stored correctly due to a bug.');
-		console.log('The test completes successfully but progression may not show.');
+		// Look for 1RM Progress section
+		const progressionText = page.locator('text=/1RM Progress/').first();
+		const progressionVisible = await progressionText.isVisible({ timeout: 5000 }).catch(() => false);
+		
+		if (progressionVisible) {
+			const content = await progressionText.textContent();
+			console.log('1RM Progress content:', content);
+		} else {
+			console.log('1RM Progress section not visible - checking workout history');
+		}
 
 		// Cleanup
 		await deleteProgramCycle(page, cycleIdA);
-		console.log('\n=== Test completed - 1RM storage bug needs investigation ===');
+		await deleteProgramCycle(page, cycleIdB);
+		console.log('\n=== Test completed successfully ===');
 	});
 });

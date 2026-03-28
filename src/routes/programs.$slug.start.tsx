@@ -338,4 +338,4 @@ export const Route = createFileRoute('/programs/$slug/start')({
   component: ProgramStart,
 });
 
-export default ProgramStart;
+;

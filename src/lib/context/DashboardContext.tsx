@@ -41,7 +41,7 @@ interface DashboardProviderProps {
 }
 
 export function DashboardProvider({ children }: DashboardProviderProps) {
-  const [widgets, setWidgetsState] = useState<WidgetConfig[]>(defaultWidgets);
+  const [widgets, setWidgetsState] = useState(defaultWidgets);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [mounted, setMounted] = useState(false);
 

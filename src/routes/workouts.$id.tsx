@@ -469,6 +469,10 @@ function WorkoutSession() {
             className="flex-1"
             disabled={completeWorkoutMutation.isPending || totalSetsCount === 0}
             onClick={() => {
+              if (updateSetMutation.isPending) {
+                return;
+              }
+
               const incompleteSetsCount = exercises.reduce((acc, e) => {
                 return acc + e.sets.filter((s) => !s.isComplete).length;
               }, 0);

@@ -216,4 +216,4 @@ export const Route = createFileRoute('/programs/cycle/$cycleId/1rm-update')({
   component: Update1RM,
 });
 
-export default Update1RM;
+;
