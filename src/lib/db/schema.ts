@@ -243,6 +243,7 @@ export const _workoutsWorkosIdIsDeletedCompletedAtIdx = index('idx_workouts_work
 export const _workoutsWorkosIdIsDeletedUpdatedAtIdx = index('idx_workouts_workos_id_is_deleted_updated_at').on(workouts.workosId, workouts.isDeleted, workouts.updatedAt);
 // Composite index for workout list queries (autoresearch optimization)
 export const _workoutsWorkosIdIsDeletedStartedAtIdx = index('idx_workouts_workos_id_is_deleted_started_at').on(workouts.workosId, workouts.isDeleted, workouts.startedAt);
+export const _workoutsWorkosIdStartedAtIdx = index('idx_workouts_workos_id_started_at').on(workouts.workosId, workouts.startedAt);
 
 export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
 export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
