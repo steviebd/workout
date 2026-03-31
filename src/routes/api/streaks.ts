@@ -30,10 +30,6 @@ export const Route = createFileRoute('/api/streaks' as const)({
           thirtyDayStreak,
           totalWorkouts,
           rolling30Days,
-        }, {
-          headers: {
-            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-          },
         });
       }),
     },

@@ -87,6 +87,8 @@ const getThisMonthRange = () => ({
   to: getMonthEnd().toISOString(),
 });
 
+type QuickFilter = 'allTime' | 'thisWeek' | 'thisMonth';
+
 function ProgressPage() {
   const auth = useAuth();
   const router = useRouter();
@@ -96,6 +98,7 @@ function ProgressPage() {
   const [selectedExerciseId, setSelectedExerciseId] = useState('');
   const [dateRange, setDateRange] = useState<DateRange>('3m');
   const [volumeScope, setVolumeScope] = useState<VolumeScope>('all');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('allTime');
 
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -293,7 +296,8 @@ function ProgressPage() {
     setSortOrder(order as 'ASC' | 'DESC');
   }, []);
 
-  const handleQuickFilter = useCallback((filter: string) => {
+  const handleQuickFilter = useCallback((filter: QuickFilter) => {
+    setQuickFilter(filter);
     if (filter === 'thisWeek') {
       const { from, to } = getThisWeekRange();
       setFromDate(from);
@@ -329,18 +333,6 @@ function ProgressPage() {
   const handleThisMonthStatClick = useCallback(() => {
     handleStatCardClick('thisMonth');
   }, [handleStatCardClick]);
-
-  const handleAllTimeClick = useCallback(() => {
-    handleQuickFilter('allTime');
-  }, [handleQuickFilter]);
-
-  const handleThisWeekClick = useCallback(() => {
-    handleQuickFilter('thisWeek');
-  }, [handleQuickFilter]);
-
-  const handleThisMonthClick = useCallback(() => {
-    handleQuickFilter('thisMonth');
-  }, [handleQuickFilter]);
 
   const handleStartWorkout = useCallback(() => {
     void navigate({ to: '/workouts' });
@@ -511,12 +503,8 @@ function ProgressPage() {
                 { value: 'thisWeek', label: 'This Week' },
                 { value: 'thisMonth', label: 'This Month' },
               ]}
-              value={!fromDate && !toDate ? 'allTime' : fromDate === getThisWeekRange().from ? 'thisWeek' : 'thisMonth'}
-              onChange={(value) => {
-                if (value === 'allTime') handleAllTimeClick();
-                else if (value === 'thisWeek') handleThisWeekClick();
-                else if (value === 'thisMonth') handleThisMonthClick();
-              }}
+              value={quickFilter}
+              onChange={(value) => handleQuickFilter(value as QuickFilter)}
             />
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">

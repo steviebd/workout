@@ -211,55 +211,49 @@ export const programCycleWorkouts = sqliteTable('program_cycle_workouts', {
 // ============================================
 // INDEXES
 // ============================================
-export const _exercisesWorkosIdIdx = index('idx_exercises_workos_id').on(exercises.workosId);
 export const _exercisesNameMuscleGroupIdx = index('idx_exercises_name_muscle_group').on(exercises.name, exercises.muscleGroup);
 export const _exercisesWorkosIdUpdatedAtIdx = index('idx_exercises_workos_id_updated_at').on(exercises.workosId, exercises.updatedAt);
 export const _exercisesMuscleGroupIdx = index('idx_exercises_muscle_group').on(exercises.muscleGroup);
-export const _exercisesNameIdx = index('idx_exercises_name').on(exercises.name);
-export const _exercisesIsDeletedIdx = index('idx_exercises_is_deleted').on(exercises.isDeleted);
 export const _exercisesLocalIdIdx = index('idx_exercises_local_id').on(exercises.localId);
 export const _exercisesUpdatedAtIdx = index('idx_exercises_updated_at').on(exercises.updatedAt);
-export const _exercisesLibraryIdIdx = index('idx_exercises_library_id').on(exercises.libraryId);
 
-export const _templatesWorkosIdIdx = index('idx_templates_workos_id').on(templates.workosId);
+// Composite index for exercise list queries (autoresearch optimization)
+export const _exercisesWorkosIdIsDeletedIdx = index('idx_exercises_workos_id_is_deleted').on(exercises.workosId, exercises.isDeleted);
+
 export const _templatesWorkosIdUpdatedAtIdx = index('idx_templates_workos_id_updated_at').on(templates.workosId, templates.updatedAt);
-export const _templatesIsDeletedIdx = index('idx_templates_is_deleted').on(templates.isDeleted);
 export const _templatesLocalIdIdx = index('idx_templates_local_id').on(templates.localId);
 export const _templatesUpdatedAtIdx = index('idx_templates_updated_at').on(templates.updatedAt);
 
-export const _workoutsWorkosIdIdx = index('idx_workouts_workos_id').on(workouts.workosId);
 export const _workoutsWorkosIdStartedAtIdx = index('idx_workouts_workos_id_started_at').on(workouts.workosId, workouts.startedAt);
 export const _workoutsTemplateIdIdx = index('idx_workouts_template_id').on(workouts.templateId);
 export const _workoutsStartedAtIdx = index('idx_workouts_started_at').on(workouts.startedAt);
 export const _workoutsCompletedAtIdx = index('idx_workouts_completed_at').on(workouts.completedAt);
 export const _workoutsLocalIdIdx = index('idx_workouts_local_id').on(workouts.localId);
-export const _workoutsIsDeletedIdx = index('idx_workouts_is_deleted').on(workouts.isDeleted);
 
 // Composite indexes for common queries
 export const _workoutsWorkosIdIsDeletedCompletedAtIdx = index('idx_workouts_workos_id_is_deleted_completed_at').on(workouts.workosId, workouts.isDeleted, workouts.completedAt);
 export const _workoutsWorkosIdIsDeletedUpdatedAtIdx = index('idx_workouts_workos_id_is_deleted_updated_at').on(workouts.workosId, workouts.isDeleted, workouts.updatedAt);
+// Composite index for workout list queries (autoresearch optimization)
+export const _workoutsWorkosIdIsDeletedStartedAtIdx = index('idx_workouts_workos_id_is_deleted_started_at').on(workouts.workosId, workouts.isDeleted, workouts.startedAt);
 
-export const _workoutExercisesWorkoutIdIdx = index('idx_workout_exercises_workout_id').on(workoutExercises.workoutId);
 export const _workoutExercisesOrderIdx = index('idx_workout_exercises_order').on(workoutExercises.workoutId, workoutExercises.orderIndex);
 export const _workoutExercisesExerciseIdIdx = index('idx_workout_exercises_exercise_id').on(workoutExercises.exerciseId);
 export const _workoutExercisesLocalIdIdx = index('idx_workout_exercises_local_id').on(workoutExercises.localId);
 export const _workoutExercisesUpdatedAtIdx = index('idx_workout_exercises_updated_at').on(workoutExercises.updatedAt);
 
-export const _workoutSetsWorkoutExerciseIdIdx = index('idx_workout_sets_workout_exercise_id').on(workoutSets.workoutExerciseId);
 export const _workoutSetsCompletedAtIdx = index('idx_workout_sets_completed_at').on(workoutSets.completedAt);
 export const _workoutSetsLocalIdIdx = index('idx_workout_sets_local_id').on(workoutSets.localId);
 export const _workoutSetsUpdatedAtIdx = index('idx_workout_sets_updated_at').on(workoutSets.updatedAt);
-export const _workoutSetsExerciseCompleteIdx = index('idx_workout_sets_exercise_complete')
-  .on(workoutSets.workoutExerciseId, workoutSets.isComplete);
+
+// Covering index for volume queries (autoresearch optimization)
+export const _workoutSetsCoveringIdx = index('idx_workout_sets_covering').on(workoutSets.workoutExerciseId, workoutSets.isComplete, workoutSets.weight, workoutSets.reps);
 
 export const _userStreaksWorkosIdIdx = index('idx_user_streaks_workos_id').on(userStreaks.workosId);
 export const _userStreaksLastWorkoutDateIdx = index('idx_user_streaks_last_workout_date').on(userStreaks.lastWorkoutDate);
 
 export const _userProgramCyclesWorkosIdIdx = index('idx_user_program_cycles_workos_id').on(userProgramCycles.workosId);
-export const _userProgramCyclesStatusIdx = index('idx_user_program_cycles_status').on(userProgramCycles.status);
 export const _userProgramCyclesUpdatedAtIdx = index('idx_user_program_cycles_updated_at').on(userProgramCycles.updatedAt);
 
-export const _programCycleWorkoutsCycleIdIdx = index('idx_program_cycle_workouts_cycle_id').on(programCycleWorkouts.cycleId);
 export const _programCycleWorkoutsCycleIdIsCompleteIdx = index('idx_program_cycle_workouts_cycle_id_is_complete').on(programCycleWorkouts.cycleId, programCycleWorkouts.isComplete);
 export const _programCycleWorkoutsTemplateIdIdx = index('idx_program_cycle_workouts_template_id').on(programCycleWorkouts.templateId);
 export const _programCycleWorkoutsScheduledDateIdx = index('idx_program_cycle_workouts_scheduled_date').on(programCycleWorkouts.scheduledDate);
@@ -409,7 +403,7 @@ export const _whoopRecoveriesWorkosDateIdx = index('idx_whoop_recoveries_workos_
 export const _whoopCyclesWorkosDateIdx = index('idx_whoop_cycles_workos_date').on(whoopCycles.workosId, whoopCycles.date);
 export const _whoopCyclesWorkosStartIdx = index('idx_whoop_cycles_workos_start').on(whoopCycles.workosId, whoopCycles.startTime);
 export const _whoopWorkoutsWorkosStartIdx = index('idx_whoop_workouts_workos_start').on(whoopWorkouts.workosId, whoopWorkouts.startTime);
-export const _whoopWebhookEventsTypeIdx = index('idx_whoop_webhook_events_type').on(whoopWebhookEvents.eventType);
+
 
 // ============================================
 // TYPE EXPORTS
