@@ -36,6 +36,7 @@ export const users = sqliteTable('users', {
 export const userPreferences = sqliteTable('user_preferences', {
   workosId: text('workos_id').primaryKey().references(() => users.workosId, { onDelete: 'cascade' }),
   weightUnit: text('weight_unit').default('kg'),
+  energyUnit: text('energy_unit').default('kcal'),
   dateFormat: text('date_format').default('dd/mm/yyyy'),
   theme: text('theme').default('light'),
   weeklyWorkoutTarget: integer('weekly_workout_target').default(3),
@@ -406,6 +407,66 @@ export const _whoopWorkoutsWorkosStartIdx = index('idx_whoop_workouts_workos_sta
 
 
 // ============================================
+// AI NUTRITION TRACKER
+// ============================================
+export const nutritionEntries = sqliteTable('nutrition_entries', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  mealType: text('meal_type'),
+  name: text('name'),
+  calories: real('calories'),
+  proteinG: real('protein_g'),
+  carbsG: real('carbs_g'),
+  fatG: real('fat_g'),
+  aiAnalysis: text('ai_analysis'),
+  loggedAt: text('logged_at').notNull(),
+  date: text('date').notNull(),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const nutritionChatMessages = sqliteTable('nutrition_chat_messages', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  date: text('date').notNull(),
+  role: text('role').notNull(),
+  content: text('content').notNull(),
+  hasImage: integer('has_image', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+});
+
+export const userBodyStats = sqliteTable('user_body_stats', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().unique().references(() => users.workosId, { onDelete: 'cascade' }),
+  bodyweightKg: real('bodyweight_kg'),
+  heightCm: real('height_cm'),
+  targetCalories: integer('target_calories'),
+  targetProteinG: integer('target_protein_g'),
+  targetCarbsG: integer('target_carbs_g'),
+  targetFatG: integer('target_fat_g'),
+  recordedAt: text('recorded_at'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const nutritionTrainingContext = sqliteTable('nutrition_training_context', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  workosId: text('workos_id').notNull().references(() => users.workosId, { onDelete: 'cascade' }),
+  date: text('date').notNull(),
+  trainingType: text('training_type').notNull(),
+  customLabel: text('custom_label'),
+  createdAt: text('created_at').$defaultFn(() => nowISO()),
+  updatedAt: text('updated_at').$defaultFn(() => nowISO()),
+});
+
+export const _nutritionEntriesWorkosDateIdx = index('idx_nutrition_entries_workos_date').on(nutritionEntries.workosId, nutritionEntries.date);
+export const _nutritionEntriesWorkosDeletedIdx = index('idx_nutrition_entries_workos_deleted').on(nutritionEntries.workosId, nutritionEntries.isDeleted);
+export const _nutritionChatMessagesWorkosDateIdx = index('idx_nutrition_chat_messages_workos_date').on(nutritionChatMessages.workosId, nutritionChatMessages.date);
+export const _userBodyStatsWorkosIdx = index('idx_user_body_stats_workos').on(userBodyStats.workosId);
+export const _nutritionTrainingContextWorkosDateIdx = index('idx_nutrition_training_context_workos_date').on(nutritionTrainingContext.workosId, nutritionTrainingContext.date);
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 export type User = typeof users.$inferSelect;
@@ -425,6 +486,10 @@ export type WhoopRecovery = typeof whoopRecoveries.$inferSelect;
 export type WhoopCycle = typeof whoopCycles.$inferSelect;
 export type WhoopWorkout = typeof whoopWorkouts.$inferSelect;
 export type WhoopWebhookEvent = typeof whoopWebhookEvents.$inferSelect;
+export type NutritionEntry = typeof nutritionEntries.$inferSelect;
+export type NutritionChatMessage = typeof nutritionChatMessages.$inferSelect;
+export type UserBodyStat = typeof userBodyStats.$inferSelect;
+export type NutritionTrainingContext = typeof nutritionTrainingContext.$inferSelect;
 
 export type NewUser = typeof users.$inferInsert;
 export type NewExercise = typeof exercises.$inferInsert;
@@ -443,6 +508,10 @@ export type NewWhoopRecovery = typeof whoopRecoveries.$inferInsert;
 export type NewWhoopCycle = typeof whoopCycles.$inferInsert;
 export type NewWhoopWorkout = typeof whoopWorkouts.$inferInsert;
 export type NewWhoopWebhookEvent = typeof whoopWebhookEvents.$inferInsert;
+export type NewNutritionEntry = typeof nutritionEntries.$inferInsert;
+export type NewNutritionChatMessage = typeof nutritionChatMessages.$inferInsert;
+export type NewUserBodyStat = typeof userBodyStats.$inferInsert;
+export type NewNutritionTrainingContext = typeof nutritionTrainingContext.$inferInsert;
 
 export default {
   generateId,
@@ -463,4 +532,8 @@ export default {
   whoopCycles,
   whoopWorkouts,
   whoopWebhookEvents,
+  nutritionEntries,
+  nutritionChatMessages,
+  userBodyStats,
+  nutritionTrainingContext,
 };

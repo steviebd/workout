@@ -85,6 +85,9 @@ function generateConfig(
     WHOOP_CLIENT_SECRET: env.WHOOP_CLIENT_SECRET ?? "",
     WHOOP_API_URL: env.WHOOP_API_URL ?? "https://api.prod.whoop.com",
     WHOOP_TOKEN_ENCRYPTION_KEY: env.WHOOP_TOKEN_ENCRYPTION_KEY ?? "",
+    CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID ?? "",
+    AI_GATEWAY_NAME: env.AI_GATEWAY_NAME ?? "",
+    AI_MODEL_NAME: env.AI_MODEL_NAME ?? "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
   };
 
   const sortedKeys = Object.keys(envVars).sort();

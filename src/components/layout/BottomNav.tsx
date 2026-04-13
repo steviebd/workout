@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { Home, Dumbbell, TrendingUp, Trophy, FileText } from 'lucide-react'
+import { Home, Dumbbell, TrendingUp, Trophy, FileText, Utensils } from 'lucide-react'
 import { cn } from '~/lib/cn'
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { href: '/programs', icon: FileText, label: 'Programs' },
   { href: '/progress', icon: TrendingUp, label: 'Progress' },
   { href: '/achievements', icon: Trophy, label: 'Badges' },
+  { href: '/nutrition', icon: Utensils, label: 'Nutrition' },
 ]
 
 export function BottomNav() {

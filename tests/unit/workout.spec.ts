@@ -71,6 +71,7 @@ const mockUserPreferenceData: Omit<UserPreference, 'id'> = {
   dateFormat: 'dd/mm/yyyy',
   theme: 'light',
   weeklyWorkoutTarget: 3,
+  energyUnit: 'kcal',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };

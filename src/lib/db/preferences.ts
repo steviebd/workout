@@ -13,6 +13,7 @@ export interface UpdatePreferencesData {
   theme?: Theme;
   dateFormat?: DateFormat;
   weeklyWorkoutTarget?: number;
+  energyUnit?: 'kcal' | 'kj';
 }
 
 /**

@@ -94,9 +94,11 @@ Add these secrets to Infisical in both `staging` and `prod` environments:
 
 | Secret | Description |
 |--------|-------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers and D1 permissions |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, D1, and AI Gateway permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 | `CLOUDFLARE_D1_DATABASE_ID` | D1 database ID for the environment |
+| `AI_GATEWAY_NAME` | AI Gateway name (e.g., `workout-staging`, `workout-prod`) |
+| `AI_MODEL_NAME` | Default model name (optional, defaults to CF Workers AI) |
 | `WORKOS_API_KEY` | WorkOS API key |
 | `WORKOS_CLIENT_ID` | WorkOS client ID |
 
@@ -118,7 +120,60 @@ Add redirect URLs to your WorkOS OAuth application:
 - Staging: `https://staging.fit.stevenduong.com/auth/callback`
 - Production: `https://fit.stevenduong.com/auth/callback`
 
-#### 5. WHOOP Developer Dashboard Setup
+#### 5. Cloudflare AI Gateway Setup
+
+The app uses Cloudflare AI Gateway with BYOK (Bring Your Own Keys) for AI-powered nutrition chat.
+
+**Create AI Gateways:**
+
+1. Go to **Cloudflare Dashboard → AI → AI Gateway**
+2. Create a gateway for each environment:
+   - `workout-dev`
+   - `workout-staging`
+   - `workout-prod`
+3. Note the gateway name for each environment
+
+**Configure Provider Keys (BYOK):**
+
+1. Select your gateway → **Provider Keys**
+2. Add API keys for providers you want to use:
+   - **xAI**: For Grok models (`xai/grok-4`)
+   - **OpenAI**: For GPT models (`openai/gpt-4o`)
+   - **Google**: For Gemini models (`google/gemini-2.5-pro`)
+3. Keys are stored securely in Cloudflare (not in Infisical)
+
+**Set Up Dynamic Routing:**
+
+1. Go to **Dynamic Routes** in your gateway
+2. Configure routes to route model names to providers:
+   - Route `@cf/*` → Workers AI (no provider key needed)
+   - Route `xai/*` → xAI
+   - Route `openai/*` → OpenAI
+   - Route `google/*` → Google
+
+**Add Secrets to Infisical:**
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with AI Gateway permissions |
+| `AI_GATEWAY_NAME` | Gateway name per environment (e.g., `workout-prod`) |
+| `AI_MODEL_NAME` | Default model (optional, defaults to `@cf/meta/llama-3.3-70b-instruct-fp8-fast`) |
+
+**API Token Permissions:**
+
+Create a Cloudflare API token with:
+- `AI Gateway - Read`
+- `AI Gateway - Edit`
+- `Workers & R2` (if using Workers AI)
+
+**Switching Models:**
+
+To switch models, either:
+1. Change `AI_MODEL_NAME` in Infisical
+2. Configure dynamic routing rules in Cloudflare dashboard to intercept model names
+
+#### 6. WHOOP Developer Dashboard Setup
 
 To receive webhooks from WHOOP:
 

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target, Heart } from 'lucide-react'
+import { WifiOff, Flame, User, LogOut, Settings, Loader2, CloudUpload, Target, Heart, Scale } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../ui/Button'
+import { Input } from '../ui/Input'
 import { ThemeToggleCompact } from '../ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
-import { useUnit, useDateFormat } from '@/lib/context/UserPreferencesContext'
+import { useUnit, useDateFormat, useUserPreferences } from '@/lib/context/UserPreferencesContext'
 import { useStreak } from '@/lib/context/StreakContext'
 
 export function Header() {
@@ -16,8 +18,49 @@ export function Header() {
   const settingsRef = useRef<HTMLDivElement>(null)
   const { weightUnit, setWeightUnit } = useUnit()
   const { dateFormat, loading: dateLoading, setDateFormat } = useDateFormat()
+  const { energyUnit, setEnergyUnit } = useUserPreferences()
   const { weeklyCount, weeklyTarget, loading: streakLoading, refetch: refetchStreak } = useStreak()
+  const queryClient = useQueryClient()
   const [savingTarget, setSavingTarget] = useState(false)
+  const [bodyweight, setBodyweight] = useState('')
+  const [savingBodyweight, setSavingBodyweight] = useState(false)
+
+  const { data: bodyStats } = useQuery<{ bodyweightKg: number | null }>({
+    queryKey: ['body-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/nutrition/body-stats', { credentials: 'include' })
+      if (!res.ok) throw new Error('Failed to fetch body stats')
+      return res.json()
+    },
+    enabled: !!user,
+  })
+
+  useEffect(() => {
+    if (bodyStats?.bodyweightKg) {
+      setBodyweight(String(bodyStats.bodyweightKg))
+    }
+  }, [bodyStats])
+
+  const saveBodyweight = async () => {
+    const weight = parseFloat(bodyweight)
+    if (isNaN(weight) || weight <= 0) return
+    setSavingBodyweight(true)
+    try {
+      await fetch('/api/nutrition/body-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bodyweight_kg: weight,
+          recorded_at: new Date().toISOString(),
+        }),
+      })
+      await queryClient.invalidateQueries({ queryKey: ['body-stats'] })
+    } catch (error) {
+      console.error('Failed to save bodyweight:', error)
+    } finally {
+      setSavingBodyweight(false)
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -45,6 +88,11 @@ export function Header() {
 
   const handleDateFormatChange = (format: 'dd/mm/yyyy' | 'mm/dd/yyyy') => {
     void setDateFormat(format)
+  }
+
+  const handleEnergyUnitToggle = () => {
+    const newUnit = energyUnit === 'kcal' ? 'kj' : 'kcal'
+    void setEnergyUnit(newUnit)
   }
 
   const handleWeeklyTargetChange = async (target: number) => {
@@ -203,6 +251,31 @@ export function Header() {
                   )}
                 </div>
                 <div className="px-4 py-3 border-t border-border/60">
+                  <p className="text-sm text-muted-foreground mb-2.5">Energy Unit</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleEnergyUnitToggle}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
+                        energyUnit === 'kcal'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          }`}
+                    >
+                          Kilocalories (kcal)
+                    </button>
+                          <button
+                          onClick={handleEnergyUnitToggle}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 pressable ${
+                          energyUnit === 'kj'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      }`}
+                          >
+                      Kilojoules (kJ)
+                          </button>
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-t border-border/60">
                   <p className="text-sm text-muted-foreground mb-2.5">Weekly Workout Target</p>
                   <div className="flex items-center gap-2">
                     <button
@@ -233,6 +306,32 @@ export function Header() {
                       +
                     </button>
                     <span className="text-sm text-muted-foreground">per week</span>
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-t border-border/60">
+                  <p className="text-sm text-muted-foreground mb-2.5 flex items-center gap-2">
+                    <Scale className="h-4 w-4" />
+                    Bodyweight
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="kg"
+                      value={bodyweight}
+                      onChange={(e) => setBodyweight(e.target.value)}
+                      className="w-24 h-9 text-center"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => void saveBodyweight()}
+                      disabled={!bodyweight || savingBodyweight}
+                    >
+                      {savingBodyweight ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : 'Save'}
+                    </Button>
                   </div>
                 </div>
               </div>

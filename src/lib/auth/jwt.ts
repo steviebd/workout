@@ -113,7 +113,7 @@ export function getTokenFromCookie(cookieHeader: string | null, cookieName: stri
 
   if (!sessionCookie) return null;
 
-  return sessionCookie.split('=')[1];
+  return sessionCookie.slice(`${cookieName}=`.length);
 }
 
 export function extractSessionIdFromAccessToken(accessToken: string): string | null {

@@ -8,7 +8,7 @@ function getStateFromCookie(cookieHeader: string | null): string | null {
   const cookies = cookieHeader.split(';').map(c => c.trim());
   const stateCookie = cookies.find(c => c.startsWith('oauth_state='));
   if (!stateCookie) return null;
-  return stateCookie.split('=')[1];
+  return stateCookie.slice('oauth_state='.length);
 }
 
 function createErrorRedirect(error: string): Response {
