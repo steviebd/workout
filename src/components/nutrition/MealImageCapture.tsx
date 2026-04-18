@@ -78,13 +78,15 @@ export function MealImageCapture({ onCapture }: MealImageCaptureProps) {
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 relative">
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleFileInputChange}
-        className="hidden"
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
       />
       <input
         ref={cameraInputRef}
@@ -92,7 +94,9 @@ export function MealImageCapture({ onCapture }: MealImageCaptureProps) {
         accept="image/*"
         capture="environment"
         onChange={handleCameraInputChange}
-        className="hidden"
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
       />
       <Button
         variant="outline"

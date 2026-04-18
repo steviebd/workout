@@ -95,10 +95,11 @@ Add these secrets to Infisical in both `staging` and `prod` environments:
 | Secret | Description |
 |--------|-------------|
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, D1, and AI Gateway permissions |
+| `CF_AI_GATEWAY_TOKEN` | Runtime token for authenticated AI Gateway requests |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 | `CLOUDFLARE_D1_DATABASE_ID` | D1 database ID for the environment |
-| `AI_GATEWAY_NAME` | AI Gateway name (e.g., `workout-staging`, `workout-prod`) |
-| `AI_MODEL_NAME` | Default model name (optional, defaults to CF Workers AI) |
+| `AI_GATEWAY_NAME` | AI Gateway ID from Cloudflare AI Gateway (for example `workout-ai-staging`) |
+| `AI_MODEL_NAME` | Default model name (optional, defaults to `workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast`) |
 | `WORKOS_API_KEY` | WorkOS API key |
 | `WORKOS_CLIENT_ID` | WorkOS client ID |
 
@@ -128,16 +129,17 @@ The app uses Cloudflare AI Gateway with BYOK (Bring Your Own Keys) for AI-powere
 
 1. Go to **Cloudflare Dashboard → AI → AI Gateway**
 2. Create a gateway for each environment:
-   - `workout-dev`
-   - `workout-staging`
-   - `workout-prod`
-3. Note the gateway name for each environment
+   - `workout-ai-dev`
+   - `workout-ai-staging`
+   - `workout-ai-prod`
+3. Save the gateway ID for each environment in `AI_GATEWAY_NAME`
+4. Do not assume the gateway ID matches the Worker name
 
 **Configure Provider Keys (BYOK):**
 
 1. Select your gateway → **Provider Keys**
 2. Add API keys for providers you want to use:
-   - **xAI**: For Grok models (`xai/grok-4`)
+   - **xAI**: For Grok models (`grok/grok-4`)
    - **OpenAI**: For GPT models (`openai/gpt-4o`)
    - **Google**: For Gemini models (`google/gemini-2.5-pro`)
 3. Keys are stored securely in Cloudflare (not in Infisical)
@@ -146,8 +148,8 @@ The app uses Cloudflare AI Gateway with BYOK (Bring Your Own Keys) for AI-powere
 
 1. Go to **Dynamic Routes** in your gateway
 2. Configure routes to route model names to providers:
-   - Route `@cf/*` → Workers AI (no provider key needed)
-   - Route `xai/*` → xAI
+   - Route `workers-ai/@cf/*` → Workers AI (no provider key needed)
+   - Route `grok/*` → xAI
    - Route `openai/*` → OpenAI
    - Route `google/*` → Google
 
@@ -156,9 +158,10 @@ The app uses Cloudflare AI Gateway with BYOK (Bring Your Own Keys) for AI-powere
 | Secret | Description |
 |--------|-------------|
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with AI Gateway permissions |
-| `AI_GATEWAY_NAME` | Gateway name per environment (e.g., `workout-prod`) |
-| `AI_MODEL_NAME` | Default model (optional, defaults to `@cf/meta/llama-3.3-70b-instruct-fp8-fast`) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token for Cloudflare API, Wrangler, D1, and gateway management |
+| `CF_AI_GATEWAY_TOKEN` | Gateway runtime token used in `cf-aig-authorization` |
+| `AI_GATEWAY_NAME` | Gateway ID per environment (e.g., `workout-ai-prod`) |
+| `AI_MODEL_NAME` | Default model (optional, defaults to `workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast`) |
 
 **API Token Permissions:**
 

@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import {
   exercises,
+  generateId,
   userProgramCycles,
   workoutExercises,
   workoutSets,
@@ -398,6 +399,7 @@ export async function createWorkoutWithDetails(
     const templateExercises = await getTemplateExercises(db, data.templateId, data.workosId);
 
     workoutExercisesData = templateExercises.map((te) => ({
+      id: generateId(),
       workoutId: workout.id,
       exerciseId: te.exerciseId,
       orderIndex: te.orderIndex,
@@ -406,6 +408,7 @@ export async function createWorkoutWithDetails(
     }));
   } else {
     workoutExercisesData = data.exerciseIds.map((exerciseId, index) => ({
+      id: generateId(),
       workoutId: workout.id,
       exerciseId,
       orderIndex: index,
@@ -417,7 +420,11 @@ export async function createWorkoutWithDetails(
   let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
 
   if (workoutExercisesData.length > 0) {
-    newWorkoutExercises = await insertWithAutoBatching(db, workoutExercises, workoutExercisesData, { returning: true }) as typeof newWorkoutExercises;
+    await insertWithAutoBatching(db, workoutExercises, workoutExercisesData);
+    newWorkoutExercises = workoutExercisesData.map((exercise) => ({
+      id: exercise.id!,
+      exerciseId: exercise.exerciseId,
+    }));
   }
 
   const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');

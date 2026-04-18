@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { ThemeToggleCompact } from '../ui/ThemeToggle'
 import { useAuth } from '@/routes/__root'
+import { toast } from '@/components/app/ToastProvider'
 import { useUnit, useDateFormat, useUserPreferences } from '@/lib/context/UserPreferencesContext'
 import { useStreak } from '@/lib/context/StreakContext'
 
@@ -38,6 +39,8 @@ export function Header() {
   useEffect(() => {
     if (bodyStats?.bodyweightKg) {
       setBodyweight(String(bodyStats.bodyweightKg))
+    } else {
+      setBodyweight('')
     }
   }, [bodyStats])
 
@@ -46,17 +49,23 @@ export function Header() {
     if (isNaN(weight) || weight <= 0) return
     setSavingBodyweight(true)
     try {
-      await fetch('/api/nutrition/body-stats', {
+      const response = await fetch('/api/nutrition/body-stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          bodyweight_kg: weight,
-          recorded_at: new Date().toISOString(),
+          bodyweightKg: weight,
+          recordedAt: new Date().toISOString(),
         }),
       })
+      if (!response.ok) {
+        throw new Error('Failed to save bodyweight')
+      }
       await queryClient.invalidateQueries({ queryKey: ['body-stats'] })
+      toast.success('Bodyweight saved')
     } catch (error) {
       console.error('Failed to save bodyweight:', error)
+      toast.error('Failed to save bodyweight')
     } finally {
       setSavingBodyweight(false)
     }
