@@ -1,6 +1,7 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { userProgramCycles, programCycleWorkouts, generateId } from '../schema';
 import { getDb, type DbOrTx } from '../index';
+import { insertWithAutoBatching } from '../utils';
 import type { UserProgramCycle, ProgramCycleWorkout, ProgramCycleWithWorkouts, CreateProgramCycleData } from './types';
 
 export type { UserProgramCycle, ProgramCycleWorkout, ProgramCycleWithWorkouts, CreateProgramCycleData };
@@ -67,23 +68,19 @@ export async function createProgramCycle(
     .get();
 
   if (data.workouts && data.workouts.length > 0) {
-    const CHUNK_SIZE = 4;
-    for (let i = 0; i < data.workouts.length; i += CHUNK_SIZE) {
-      const chunk = data.workouts.slice(i, i + CHUNK_SIZE);
-      const workoutInserts = chunk.map((workout) => ({
-        id: generateId(),
-        cycleId: cycle.id,
-        templateId: null,
-        weekNumber: workout.weekNumber,
-        sessionNumber: workout.sessionNumber,
-        sessionName: workout.sessionName,
-        targetLifts: workout.targetLifts ?? null,
-        isComplete: false,
-        scheduledDate: workout.scheduledDate,
-        scheduledTime: workout.scheduledTime ?? null,
-      }));
-      await db.insert(programCycleWorkouts).values(workoutInserts).run();
-    }
+    const workoutInserts = data.workouts.map((workout) => ({
+      id: generateId(),
+      cycleId: cycle.id,
+      templateId: null,
+      weekNumber: workout.weekNumber,
+      sessionNumber: workout.sessionNumber,
+      sessionName: workout.sessionName,
+      targetLifts: workout.targetLifts ?? null,
+      isComplete: false,
+      scheduledDate: workout.scheduledDate,
+      scheduledTime: workout.scheduledTime ?? null,
+    }));
+    await insertWithAutoBatching(db, programCycleWorkouts, workoutInserts);
   }
 
   return cycle;

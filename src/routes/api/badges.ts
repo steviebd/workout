@@ -4,7 +4,7 @@ import { apiRoute } from '~/lib/api/handler';
 import { workouts } from '~/lib/db/schema';
 import { calculateAllBadges, countWorkoutsInRange } from '~/lib/gamification';
 
-export const Route = createFileRoute('/api/badges' as const)({
+export const Route = createFileRoute('/api/badges')({
   server: {
     handlers: {
       GET: apiRoute('Get badges', async ({ session, db: drizzleDb, d1Db }) => {

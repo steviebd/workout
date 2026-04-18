@@ -6,7 +6,8 @@ import {
   workoutSets,
   workouts,
 } from '../schema';
-import { getDb, calculateChunkSize } from '../index';
+import { getDb } from '../index';
+import { insertWithAutoBatching } from '../utils';
 import { applyPagination } from '../base-repository';
 import type {
   DbOrTx,
@@ -416,11 +417,7 @@ export async function createWorkoutWithDetails(
   let newWorkoutExercises: Array<{ id: string; exerciseId: string }> = [];
 
   if (workoutExercisesData.length > 0) {
-    newWorkoutExercises = await db
-      .insert(workoutExercises)
-      .values(workoutExercisesData)
-      .returning()
-      .all();
+    newWorkoutExercises = await insertWithAutoBatching(db, workoutExercises, workoutExercisesData, { returning: true }) as typeof newWorkoutExercises;
   }
 
   const { getLastWorkoutSetsForExercises, getWorkoutExercises } = await import('./exercises');
@@ -454,14 +451,7 @@ export async function createWorkoutWithDetails(
   }
 
   if (setsToInsert.length > 0) {
-    const CHUNK_SIZE = calculateChunkSize(7);
-    const statements = [];
-    for (let i = 0; i < setsToInsert.length; i += CHUNK_SIZE) {
-      const chunk = setsToInsert.slice(i, i + CHUNK_SIZE);
-      statements.push(db.insert(workoutSets).values(chunk));
-    }
-    // Drizzle types don't expose .orderBy() at compile time but D1 supports it at runtime
-    await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
+    await insertWithAutoBatching(db, workoutSets, setsToInsert);
   }
 
   const exercisesWithSets = await getWorkoutExercises(db, workout.id, data.workosId);

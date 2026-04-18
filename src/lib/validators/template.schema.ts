@@ -81,4 +81,5 @@ export const updatePreferencesSchema = z.object({
   theme: z.enum(['light', 'dark']).optional(),
   dateFormat: z.enum(['dd/mm/yyyy', 'mm/dd/yyyy']).optional(),
   weeklyWorkoutTarget: z.number().int().min(0).max(7).optional(),
+  energyUnit: z.enum(['kcal', 'kj']).optional(),
 });

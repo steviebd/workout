@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as NutritionRouteImport } from './routes/nutrition'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as R1rmTestRouteImport } from './routes/1rm-test'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as NutritionIndexRouteImport } from './routes/nutrition.index'
 import { Route as WorkoutsNewRouteImport } from './routes/workouts.new'
 import { Route as WorkoutsIndexRouteImport } from './routes/workouts._index'
 import { Route as WorkoutsIdRouteImport } from './routes/workouts.$id'
@@ -21,6 +23,7 @@ import { Route as TemplatesNewRouteImport } from './routes/templates.new'
 import { Route as TemplatesIndexRouteImport } from './routes/templates._index'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
 import { Route as ProgramsIndexRouteImport } from './routes/programs._index'
+import { Route as NutritionChatRouteImport } from './routes/nutrition.chat'
 import { Route as ExercisesNewRouteImport } from './routes/exercises.new'
 import { Route as ExercisesIndexRouteImport } from './routes/exercises._index'
 import { Route as ExercisesIdRouteImport } from './routes/exercises.$id'
@@ -54,6 +57,11 @@ import { Route as ApiProgressVolumeRouteImport } from './routes/api/progress.vol
 import { Route as ApiProgressStrengthRouteImport } from './routes/api/progress.strength'
 import { Route as ApiProgressPrsRouteImport } from './routes/api/progress.prs'
 import { Route as ApiProgramCyclesIdRouteImport } from './routes/api/program-cycles.$id'
+import { Route as ApiNutritionTrainingContextRouteImport } from './routes/api/nutrition/training-context'
+import { Route as ApiNutritionEntriesRouteImport } from './routes/api/nutrition/entries'
+import { Route as ApiNutritionDailySummaryRouteImport } from './routes/api/nutrition/daily-summary'
+import { Route as ApiNutritionChatRouteImport } from './routes/api/nutrition/chat'
+import { Route as ApiNutritionBodyStatsRouteImport } from './routes/api/nutrition/body-stats'
 import { Route as ApiHealthDataRouteImport } from './routes/api/health.data'
 import { Route as ApiExercisesCopyFromLibraryRouteImport } from './routes/api/exercises.copy-from-library'
 import { Route as ApiExercisesIdRouteImport } from './routes/api/exercises.$id'
@@ -75,6 +83,7 @@ import { Route as ApiProgramCyclesIdStartWorkoutRouteImport } from './routes/api
 import { Route as ApiProgramCyclesIdCurrentWorkoutRouteImport } from './routes/api/program-cycles.$id.current-workout'
 import { Route as ApiProgramCyclesIdCreate1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$id.create-1rm-test-workout'
 import { Route as ApiProgramCyclesCycleId1rmTestWorkoutRouteImport } from './routes/api/program-cycles.$cycleId.1rm-test-workout'
+import { Route as ApiNutritionEntriesIdRouteImport } from './routes/api/nutrition/entries.$id'
 import { Route as ApiIntegrationsWhoopSyncRouteImport } from './routes/api/integrations.whoop.sync'
 import { Route as ApiIntegrationsWhoopStatusRouteImport } from './routes/api/integrations.whoop.status'
 import { Route as ApiIntegrationsWhoopDisconnectRouteImport } from './routes/api/integrations.whoop.disconnect'
@@ -88,6 +97,11 @@ const ProgressRoute = ProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/progress.lazy').then((d) => d.Route))
+const NutritionRoute = NutritionRouteImport.update({
+  id: '/nutrition',
+  path: '/nutrition',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
@@ -107,6 +121,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const NutritionIndexRoute = NutritionIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => NutritionRoute,
 } as any)
 const WorkoutsNewRoute = WorkoutsNewRouteImport.update({
   id: '/workouts/new',
@@ -142,6 +161,11 @@ const ProgramsIndexRoute = ProgramsIndexRouteImport.update({
   id: '/programs/_index',
   path: '/programs',
   getParentRoute: () => rootRouteImport,
+} as any)
+const NutritionChatRoute = NutritionChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => NutritionRoute,
 } as any)
 const ExercisesNewRoute = ExercisesNewRouteImport.update({
   id: '/exercises/new',
@@ -308,6 +332,33 @@ const ApiProgramCyclesIdRoute = ApiProgramCyclesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiProgramCyclesRoute,
 } as any)
+const ApiNutritionTrainingContextRoute =
+  ApiNutritionTrainingContextRouteImport.update({
+    id: '/api/nutrition/training-context',
+    path: '/api/nutrition/training-context',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiNutritionEntriesRoute = ApiNutritionEntriesRouteImport.update({
+  id: '/api/nutrition/entries',
+  path: '/api/nutrition/entries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNutritionDailySummaryRoute =
+  ApiNutritionDailySummaryRouteImport.update({
+    id: '/api/nutrition/daily-summary',
+    path: '/api/nutrition/daily-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiNutritionChatRoute = ApiNutritionChatRouteImport.update({
+  id: '/api/nutrition/chat',
+  path: '/api/nutrition/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNutritionBodyStatsRoute = ApiNutritionBodyStatsRouteImport.update({
+  id: '/api/nutrition/body-stats',
+  path: '/api/nutrition/body-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthDataRoute = ApiHealthDataRouteImport.update({
   id: '/api/health/data',
   path: '/api/health/data',
@@ -422,6 +473,11 @@ const ApiProgramCyclesCycleId1rmTestWorkoutRoute =
     path: '/$cycleId/1rm-test-workout',
     getParentRoute: () => ApiProgramCyclesRoute,
   } as any)
+const ApiNutritionEntriesIdRoute = ApiNutritionEntriesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiNutritionEntriesRoute,
+} as any)
 const ApiIntegrationsWhoopSyncRoute =
   ApiIntegrationsWhoopSyncRouteImport.update({
     id: '/api/integrations/whoop/sync',
@@ -470,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/health': typeof HealthRoute
+  '/nutrition': typeof NutritionRouteWithChildren
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
@@ -486,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
+  '/nutrition/chat': typeof NutritionChatRoute
   '/programs': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
@@ -493,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/nutrition/': typeof NutritionIndexRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -500,6 +559,11 @@ export interface FileRoutesByFullPath {
   '/api/exercises/$id': typeof ApiExercisesIdRoute
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/health/data': typeof ApiHealthDataRoute
+  '/api/nutrition/body-stats': typeof ApiNutritionBodyStatsRoute
+  '/api/nutrition/chat': typeof ApiNutritionChatRoute
+  '/api/nutrition/daily-summary': typeof ApiNutritionDailySummaryRoute
+  '/api/nutrition/entries': typeof ApiNutritionEntriesRouteWithChildren
+  '/api/nutrition/training-context': typeof ApiNutritionTrainingContextRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -523,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
+  '/api/nutrition/entries/$id': typeof ApiNutritionEntriesIdRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -561,6 +626,7 @@ export interface FileRoutesByTo {
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
+  '/nutrition/chat': typeof NutritionChatRoute
   '/programs': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates': typeof TemplatesIndexRoute
@@ -568,6 +634,7 @@ export interface FileRoutesByTo {
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts': typeof WorkoutsIndexRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/nutrition': typeof NutritionIndexRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -575,6 +642,11 @@ export interface FileRoutesByTo {
   '/api/exercises/$id': typeof ApiExercisesIdRoute
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/health/data': typeof ApiHealthDataRoute
+  '/api/nutrition/body-stats': typeof ApiNutritionBodyStatsRoute
+  '/api/nutrition/chat': typeof ApiNutritionChatRoute
+  '/api/nutrition/daily-summary': typeof ApiNutritionDailySummaryRoute
+  '/api/nutrition/entries': typeof ApiNutritionEntriesRouteWithChildren
+  '/api/nutrition/training-context': typeof ApiNutritionTrainingContextRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -598,6 +670,7 @@ export interface FileRoutesByTo {
   '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
+  '/api/nutrition/entries/$id': typeof ApiNutritionEntriesIdRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -621,6 +694,7 @@ export interface FileRoutesById {
   '/1rm-test': typeof R1rmTestRoute
   '/achievements': typeof AchievementsRoute
   '/health': typeof HealthRoute
+  '/nutrition': typeof NutritionRouteWithChildren
   '/progress': typeof ProgressRoute
   '/api/badges': typeof ApiBadgesRoute
   '/api/exercises': typeof ApiExercisesRouteWithChildren
@@ -637,6 +711,7 @@ export interface FileRoutesById {
   '/exercises/$id': typeof ExercisesIdRouteWithChildren
   '/exercises/_index': typeof ExercisesIndexRoute
   '/exercises/new': typeof ExercisesNewRoute
+  '/nutrition/chat': typeof NutritionChatRoute
   '/programs/_index': typeof ProgramsIndexRoute
   '/templates/$id': typeof TemplatesIdRouteWithChildren
   '/templates/_index': typeof TemplatesIndexRoute
@@ -644,6 +719,7 @@ export interface FileRoutesById {
   '/workouts/$id': typeof WorkoutsIdRoute
   '/workouts/_index': typeof WorkoutsIndexRoute
   '/workouts/new': typeof WorkoutsNewRoute
+  '/nutrition/': typeof NutritionIndexRoute
   '/api/analytics/track': typeof ApiAnalyticsTrackRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -651,6 +727,11 @@ export interface FileRoutesById {
   '/api/exercises/$id': typeof ApiExercisesIdRoute
   '/api/exercises/copy-from-library': typeof ApiExercisesCopyFromLibraryRoute
   '/api/health/data': typeof ApiHealthDataRoute
+  '/api/nutrition/body-stats': typeof ApiNutritionBodyStatsRoute
+  '/api/nutrition/chat': typeof ApiNutritionChatRoute
+  '/api/nutrition/daily-summary': typeof ApiNutritionDailySummaryRoute
+  '/api/nutrition/entries': typeof ApiNutritionEntriesRouteWithChildren
+  '/api/nutrition/training-context': typeof ApiNutritionTrainingContextRoute
   '/api/program-cycles/$id': typeof ApiProgramCyclesIdRouteWithChildren
   '/api/progress/prs': typeof ApiProgressPrsRoute
   '/api/progress/strength': typeof ApiProgressStrengthRoute
@@ -674,6 +755,7 @@ export interface FileRoutesById {
   '/api/integrations/whoop/disconnect': typeof ApiIntegrationsWhoopDisconnectRoute
   '/api/integrations/whoop/status': typeof ApiIntegrationsWhoopStatusRoute
   '/api/integrations/whoop/sync': typeof ApiIntegrationsWhoopSyncRoute
+  '/api/nutrition/entries/$id': typeof ApiNutritionEntriesIdRoute
   '/api/program-cycles/$cycleId/1rm-test-workout': typeof ApiProgramCyclesCycleId1rmTestWorkoutRoute
   '/api/program-cycles/$id/create-1rm-test-workout': typeof ApiProgramCyclesIdCreate1rmTestWorkoutRoute
   '/api/program-cycles/$id/current-workout': typeof ApiProgramCyclesIdCurrentWorkoutRoute
@@ -698,6 +780,7 @@ export interface FileRouteTypes {
     | '/1rm-test'
     | '/achievements'
     | '/health'
+    | '/nutrition'
     | '/progress'
     | '/api/badges'
     | '/api/exercises'
@@ -714,6 +797,7 @@ export interface FileRouteTypes {
     | '/exercises/$id'
     | '/exercises'
     | '/exercises/new'
+    | '/nutrition/chat'
     | '/programs'
     | '/templates/$id'
     | '/templates'
@@ -721,6 +805,7 @@ export interface FileRouteTypes {
     | '/workouts/$id'
     | '/workouts'
     | '/workouts/new'
+    | '/nutrition/'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -728,6 +813,11 @@ export interface FileRouteTypes {
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/health/data'
+    | '/api/nutrition/body-stats'
+    | '/api/nutrition/chat'
+    | '/api/nutrition/daily-summary'
+    | '/api/nutrition/entries'
+    | '/api/nutrition/training-context'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -751,6 +841,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
     | '/api/integrations/whoop/sync'
+    | '/api/nutrition/entries/$id'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -789,6 +880,7 @@ export interface FileRouteTypes {
     | '/exercises/$id'
     | '/exercises'
     | '/exercises/new'
+    | '/nutrition/chat'
     | '/programs'
     | '/templates/$id'
     | '/templates'
@@ -796,6 +888,7 @@ export interface FileRouteTypes {
     | '/workouts/$id'
     | '/workouts'
     | '/workouts/new'
+    | '/nutrition'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -803,6 +896,11 @@ export interface FileRouteTypes {
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/health/data'
+    | '/api/nutrition/body-stats'
+    | '/api/nutrition/chat'
+    | '/api/nutrition/daily-summary'
+    | '/api/nutrition/entries'
+    | '/api/nutrition/training-context'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -826,6 +924,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
     | '/api/integrations/whoop/sync'
+    | '/api/nutrition/entries/$id'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -848,6 +947,7 @@ export interface FileRouteTypes {
     | '/1rm-test'
     | '/achievements'
     | '/health'
+    | '/nutrition'
     | '/progress'
     | '/api/badges'
     | '/api/exercises'
@@ -864,6 +964,7 @@ export interface FileRouteTypes {
     | '/exercises/$id'
     | '/exercises/_index'
     | '/exercises/new'
+    | '/nutrition/chat'
     | '/programs/_index'
     | '/templates/$id'
     | '/templates/_index'
@@ -871,6 +972,7 @@ export interface FileRouteTypes {
     | '/workouts/$id'
     | '/workouts/_index'
     | '/workouts/new'
+    | '/nutrition/'
     | '/api/analytics/track'
     | '/api/auth/callback'
     | '/api/auth/me'
@@ -878,6 +980,11 @@ export interface FileRouteTypes {
     | '/api/exercises/$id'
     | '/api/exercises/copy-from-library'
     | '/api/health/data'
+    | '/api/nutrition/body-stats'
+    | '/api/nutrition/chat'
+    | '/api/nutrition/daily-summary'
+    | '/api/nutrition/entries'
+    | '/api/nutrition/training-context'
     | '/api/program-cycles/$id'
     | '/api/progress/prs'
     | '/api/progress/strength'
@@ -901,6 +1008,7 @@ export interface FileRouteTypes {
     | '/api/integrations/whoop/disconnect'
     | '/api/integrations/whoop/status'
     | '/api/integrations/whoop/sync'
+    | '/api/nutrition/entries/$id'
     | '/api/program-cycles/$cycleId/1rm-test-workout'
     | '/api/program-cycles/$id/create-1rm-test-workout'
     | '/api/program-cycles/$id/current-workout'
@@ -924,6 +1032,7 @@ export interface RootRouteChildren {
   R1rmTestRoute: typeof R1rmTestRoute
   AchievementsRoute: typeof AchievementsRoute
   HealthRoute: typeof HealthRoute
+  NutritionRoute: typeof NutritionRouteWithChildren
   ProgressRoute: typeof ProgressRoute
   ApiBadgesRoute: typeof ApiBadgesRoute
   ApiExercisesRoute: typeof ApiExercisesRouteWithChildren
@@ -952,6 +1061,11 @@ export interface RootRouteChildren {
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthSignoutRoute: typeof ApiAuthSignoutRoute
   ApiHealthDataRoute: typeof ApiHealthDataRoute
+  ApiNutritionBodyStatsRoute: typeof ApiNutritionBodyStatsRoute
+  ApiNutritionChatRoute: typeof ApiNutritionChatRoute
+  ApiNutritionDailySummaryRoute: typeof ApiNutritionDailySummaryRoute
+  ApiNutritionEntriesRoute: typeof ApiNutritionEntriesRouteWithChildren
+  ApiNutritionTrainingContextRoute: typeof ApiNutritionTrainingContextRoute
   ApiProgressPrsRoute: typeof ApiProgressPrsRoute
   ApiProgressStrengthRoute: typeof ApiProgressStrengthRoute
   ApiProgressVolumeRoute: typeof ApiProgressVolumeRoute
@@ -982,6 +1096,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nutrition': {
+      id: '/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof NutritionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/health': {
       id: '/health'
       path: '/health'
@@ -1009,6 +1130,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/nutrition/': {
+      id: '/nutrition/'
+      path: '/'
+      fullPath: '/nutrition/'
+      preLoaderRoute: typeof NutritionIndexRouteImport
+      parentRoute: typeof NutritionRoute
     }
     '/workouts/new': {
       id: '/workouts/new'
@@ -1058,6 +1186,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/programs'
       preLoaderRoute: typeof ProgramsIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/nutrition/chat': {
+      id: '/nutrition/chat'
+      path: '/chat'
+      fullPath: '/nutrition/chat'
+      preLoaderRoute: typeof NutritionChatRouteImport
+      parentRoute: typeof NutritionRoute
     }
     '/exercises/new': {
       id: '/exercises/new'
@@ -1290,6 +1425,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesIdRouteImport
       parentRoute: typeof ApiProgramCyclesRoute
     }
+    '/api/nutrition/training-context': {
+      id: '/api/nutrition/training-context'
+      path: '/api/nutrition/training-context'
+      fullPath: '/api/nutrition/training-context'
+      preLoaderRoute: typeof ApiNutritionTrainingContextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nutrition/entries': {
+      id: '/api/nutrition/entries'
+      path: '/api/nutrition/entries'
+      fullPath: '/api/nutrition/entries'
+      preLoaderRoute: typeof ApiNutritionEntriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nutrition/daily-summary': {
+      id: '/api/nutrition/daily-summary'
+      path: '/api/nutrition/daily-summary'
+      fullPath: '/api/nutrition/daily-summary'
+      preLoaderRoute: typeof ApiNutritionDailySummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nutrition/chat': {
+      id: '/api/nutrition/chat'
+      path: '/api/nutrition/chat'
+      fullPath: '/api/nutrition/chat'
+      preLoaderRoute: typeof ApiNutritionChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nutrition/body-stats': {
+      id: '/api/nutrition/body-stats'
+      path: '/api/nutrition/body-stats'
+      fullPath: '/api/nutrition/body-stats'
+      preLoaderRoute: typeof ApiNutritionBodyStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health/data': {
       id: '/api/health/data'
       path: '/api/health/data'
@@ -1437,6 +1607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProgramCyclesCycleId1rmTestWorkoutRouteImport
       parentRoute: typeof ApiProgramCyclesRoute
     }
+    '/api/nutrition/entries/$id': {
+      id: '/api/nutrition/entries/$id'
+      path: '/$id'
+      fullPath: '/api/nutrition/entries/$id'
+      preLoaderRoute: typeof ApiNutritionEntriesIdRouteImport
+      parentRoute: typeof ApiNutritionEntriesRoute
+    }
     '/api/integrations/whoop/sync': {
       id: '/api/integrations/whoop/sync'
       path: '/api/integrations/whoop/sync'
@@ -1488,6 +1665,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface NutritionRouteChildren {
+  NutritionChatRoute: typeof NutritionChatRoute
+  NutritionIndexRoute: typeof NutritionIndexRoute
+}
+
+const NutritionRouteChildren: NutritionRouteChildren = {
+  NutritionChatRoute: NutritionChatRoute,
+  NutritionIndexRoute: NutritionIndexRoute,
+}
+
+const NutritionRouteWithChildren = NutritionRoute._addFileChildren(
+  NutritionRouteChildren,
+)
 
 interface ApiExercisesRouteChildren {
   ApiExercisesIdRoute: typeof ApiExercisesIdRoute
@@ -1658,11 +1849,23 @@ const TemplatesIdRouteWithChildren = TemplatesIdRoute._addFileChildren(
   TemplatesIdRouteChildren,
 )
 
+interface ApiNutritionEntriesRouteChildren {
+  ApiNutritionEntriesIdRoute: typeof ApiNutritionEntriesIdRoute
+}
+
+const ApiNutritionEntriesRouteChildren: ApiNutritionEntriesRouteChildren = {
+  ApiNutritionEntriesIdRoute: ApiNutritionEntriesIdRoute,
+}
+
+const ApiNutritionEntriesRouteWithChildren =
+  ApiNutritionEntriesRoute._addFileChildren(ApiNutritionEntriesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R1rmTestRoute: R1rmTestRoute,
   AchievementsRoute: AchievementsRoute,
   HealthRoute: HealthRoute,
+  NutritionRoute: NutritionRouteWithChildren,
   ProgressRoute: ProgressRoute,
   ApiBadgesRoute: ApiBadgesRoute,
   ApiExercisesRoute: ApiExercisesRouteWithChildren,
@@ -1691,6 +1894,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthSignoutRoute: ApiAuthSignoutRoute,
   ApiHealthDataRoute: ApiHealthDataRoute,
+  ApiNutritionBodyStatsRoute: ApiNutritionBodyStatsRoute,
+  ApiNutritionChatRoute: ApiNutritionChatRoute,
+  ApiNutritionDailySummaryRoute: ApiNutritionDailySummaryRoute,
+  ApiNutritionEntriesRoute: ApiNutritionEntriesRouteWithChildren,
+  ApiNutritionTrainingContextRoute: ApiNutritionTrainingContextRoute,
   ApiProgressPrsRoute: ApiProgressPrsRoute,
   ApiProgressStrengthRoute: ApiProgressStrengthRoute,
   ApiProgressVolumeRoute: ApiProgressVolumeRoute,

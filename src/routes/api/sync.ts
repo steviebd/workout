@@ -83,7 +83,7 @@ function buildSyncResponse(
   };
 }
 
-export const Route = createFileRoute('/api/sync' as const)({
+export const Route = createFileRoute('/api/sync')({
   server: {
     handlers: {
       GET: apiRoute('Sync', async ({ session, db, request }) => {

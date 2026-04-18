@@ -8,7 +8,7 @@ import {
 } from '~/lib/gamification';
 import { getUserPreferences } from '~/lib/db/preferences';
 
-export const Route = createFileRoute('/api/streaks' as const)({
+export const Route = createFileRoute('/api/streaks')({
   server: {
     handlers: {
       GET: apiRoute('Get streaks', async ({ session, d1Db }) => {

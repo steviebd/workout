@@ -18,13 +18,14 @@ export const Route = createFileRoute('/api/preferences')({
         if (!body) {
           return createApiError('Invalid request body', 400, API_ERROR_CODES.VALIDATION_ERROR);
         }
-        const { weightUnit, theme, dateFormat, weeklyWorkoutTarget } = body;
+        const { weightUnit, theme, dateFormat, weeklyWorkoutTarget, energyUnit } = body;
 
         const preferences = await upsertUserPreferences(d1Db, session.sub, {
           weightUnit,
           theme,
           dateFormat,
           weeklyWorkoutTarget,
+          energyUnit,
         });
 
         return Response.json(preferences);

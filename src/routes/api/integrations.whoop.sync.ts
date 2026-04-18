@@ -4,7 +4,7 @@ import { whoopRepository } from '~/lib/whoop/repository';
 import { WhoopApiClient, mapWhoopSleepToDb, mapWhoopRecoveryToDb, mapWhoopCycleToDb, mapWhoopWorkoutToDb } from '~/lib/whoop/api';
 import { addDays } from '~/lib/programs/scheduler';
 
-export const Route = createFileRoute('/api/integrations/whoop/sync' as const)({
+export const Route = createFileRoute('/api/integrations/whoop/sync')({
   server: {
     handlers: {
       POST: apiRoute('Whoop sync', async ({ session, d1Db, request }) => {

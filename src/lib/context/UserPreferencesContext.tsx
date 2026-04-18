@@ -7,6 +7,7 @@ interface PreferencesApiData {
   dateFormat?: DateFormat;
   theme?: Theme;
   weeklyWorkoutTarget?: number;
+  energyUnit?: 'kcal' | 'kj';
 }
 
 interface UserPreferencesContextType {
@@ -26,6 +27,10 @@ interface UserPreferencesContextType {
   setTheme: (theme: Theme | 'system') => void;
   weeklyWorkoutTarget: number;
   setWeeklyWorkoutTarget: (target: number) => Promise<void>;
+  energyUnit: 'kcal' | 'kj';
+  setEnergyUnit: (unit: 'kcal' | 'kj') => Promise<void>;
+  formatEnergy: (kcal: number) => string;
+  convertEnergy: (kcal: number) => number;
   loading: boolean;
 }
 
@@ -84,6 +89,7 @@ export function UserPreferencesProvider({ children, initialUnit = 'kg', userId }
   const weightUnit = data?.weightUnit ?? initialUnit;
   const dateFormat = data?.dateFormat ?? 'dd/mm/yyyy';
   const weeklyWorkoutTarget = data?.weeklyWorkoutTarget ?? 3;
+  const energyUnit = data?.energyUnit ?? 'kcal';
 
   const [theme, setThemeState] = useState<Theme | 'system'>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
@@ -186,6 +192,36 @@ export function UserPreferencesProvider({ children, initialUnit = 'kg', userId }
       console.error('Failed to update weekly workout target:', err);
     }
   }, [queryClient]);
+
+  const setEnergyUnit = useCallback(async (unit: 'kcal' | 'kj') => {
+    try {
+      const res = await fetch('/api/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ energyUnit: unit }),
+      });
+      if (res.ok) {
+        queryClient.setQueryData<PreferencesApiData>(['preferences'], (old) => ({
+          ...old,
+          energyUnit: unit,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to update energy unit:', err);
+    }
+  }, [queryClient]);
+
+  const formatEnergy = useCallback((kcal: number): string => {
+    if (energyUnit === 'kj') {
+      return `${Math.round(kcal * 4.184)} kJ`;
+    }
+    return `${kcal} kcal`;
+  }, [energyUnit]);
+
+  const convertEnergy = useCallback((kcal: number): number => {
+    return kcal * 4.184;
+  }, []);
 
   const setTheme = useCallback((newTheme: Theme | 'system') => {
     setThemeState(newTheme);
@@ -297,6 +333,10 @@ export function UserPreferencesProvider({ children, initialUnit = 'kg', userId }
         setTheme,
         weeklyWorkoutTarget,
         setWeeklyWorkoutTarget,
+        energyUnit,
+        setEnergyUnit,
+        formatEnergy,
+        convertEnergy,
         loading: isLoading,
       }}
     >

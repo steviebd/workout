@@ -12,7 +12,7 @@ export async function getSession(request: Request): Promise<SessionPayload | nul
   const sessionCookie = cookies.find(c => c.startsWith('session='));
   if (!sessionCookie) return null;
 
-  const token = sessionCookie.split('=')[1];
+  const token = sessionCookie.slice('session='.length);
 
   const { verifyToken } = await import('./jwt');
   return await verifyToken(token);
@@ -23,10 +23,11 @@ export function createSessionResponse(token: string, request: Request, redirectP
   const url = new URL(request.url);
   const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   const securePart = isLocalhost ? '' : ' Secure;';
+  const redirectUrl = new URL(redirectPath, url.origin).toString();
   return new Response(null, {
     status: 302,
     headers: {
-      Location: redirectPath,
+      Location: redirectUrl,
       'Set-Cookie': `session=${tokenToSet}; HttpOnly;${securePart} Path=/; SameSite=Lax; Max-Age=${SESSION_COOKIE_MAX_AGE}`,
     },
   });
