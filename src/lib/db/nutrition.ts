@@ -67,6 +67,11 @@ export interface SystemPromptContext {
   macroTargets: MacroTargets;
 }
 
+export interface NutritionAssistantContext extends SystemPromptContext {
+  date: string;
+  hasActiveProgram: boolean;
+}
+
 export async function saveChatMessage(
   dbOrTx: DbOrTx,
   workosId: string,

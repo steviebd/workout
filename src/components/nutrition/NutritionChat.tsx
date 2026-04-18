@@ -91,8 +91,10 @@ function useChat({ apiUrl, date }: { apiUrl: string; date: string }): UseChatRet
 
         for (const line of lines) {
           if (!line.trim()) continue
+          const data = line.startsWith('data: ') ? line.slice(6) : line
+          if (data === '[DONE]') break
           try {
-            const delta = JSON.parse(line)
+            const delta = JSON.parse(data)
             if (delta.type === 'text-delta' && delta.text) {
               assistantMessage.content += delta.text
             }

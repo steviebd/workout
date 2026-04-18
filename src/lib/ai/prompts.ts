@@ -1,4 +1,8 @@
-import type { SystemPromptContext, TrainingContext } from '~/lib/db/nutrition';
+import type {
+  NutritionAssistantContext,
+  SystemPromptContext,
+  TrainingContext,
+} from '~/lib/db/nutrition';
 
 function buildTrainingSection(tc: TrainingContext | null): string {
   if (!tc) {
@@ -142,5 +146,32 @@ ${intakeSection}
 ${targetsSection}
 
 When analysing food images, return structured estimates for calories, protein, carbs, and fat in a conversational response.
-Always respond in the user's preferred energy unit.`.trim();
+Always respond in the user's preferred energy unit.
+If the structured nutrition context includes a non-null bodyweightKg, treat bodyweight as recorded and do not ask the user for their weight.`.trim();
+}
+
+export function assembleStructuredNutritionContext(
+  context: NutritionAssistantContext
+): string {
+  return [
+    'NUTRITION_CONTEXT_JSON:',
+    JSON.stringify(
+      {
+        date: context.date,
+        user: {
+          bodyweightKg: context.bodyweightKg,
+          energyUnit: context.energyUnit,
+          weightUnit: context.weightUnit,
+          hasActiveProgram: context.hasActiveProgram,
+        },
+        trainingContext: context.trainingContext,
+        whoopData: context.whoopData,
+        dailyIntake: context.dailyIntake,
+        macroTargets: context.macroTargets,
+      },
+      null,
+      2
+    ),
+    'Use this structured context when reasoning about recommendations. Preserve it so future tool/function calls can consume the same fields.',
+  ].join('\n');
 }
