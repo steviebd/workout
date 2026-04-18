@@ -11,6 +11,11 @@ import {
 } from './schema';
 import { getDb, type DbOrTx } from './index';
 
+function isMissingTableOrColumnError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('no such table') || message.includes('no such column');
+}
+
 export interface ChatMessage {
   id: string;
   workosId: string;
@@ -131,11 +136,24 @@ export async function getUserBodyStats(
 ): Promise<{ bodyweightKg: number | null; targetCalories: number | null; targetProteinG: number | null; targetCarbsG: number | null; targetFatG: number | null } | null> {
   const db = getDb(dbOrTx);
 
-  const stats = await db
-    .select()
-    .from(userBodyStats)
-    .where(eq(userBodyStats.workosId, workosId))
-    .get();
+  let stats: typeof userBodyStats.$inferSelect | undefined;
+
+  try {
+    stats = await db
+      .select()
+      .from(userBodyStats)
+      .where(eq(userBodyStats.workosId, workosId))
+      .get();
+  } catch (error) {
+    // Nutrition tables were added after the core app. If a deployment reaches prod
+    // before its D1 migration does, treat missing schema as "no saved stats" instead
+    // of taking down the header request.
+    if (isMissingTableOrColumnError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 
   if (!stats) return null;
 
