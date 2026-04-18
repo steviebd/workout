@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { type NewProgramCycleWorkout, programCycleWorkouts, templates, templateExercises, generateId } from '../schema';
-import { getDb, calculateChunkSize, type DbOrTx } from '../index';
+import { getDb, type DbOrTx } from '../index';
+import { insertWithAutoBatching } from '../utils';
 import type { UserProgramCycle, ProgramCycleWorkout, TargetLift, TargetLiftWorkout } from './types';
 
 function getBaseExerciseName(name: string): string {
@@ -44,12 +45,7 @@ export async function createProgramCycleWorkouts(
     };
   });
 
-  const BATCH_SIZE = 4;
-
-  for (let i = 0; i < workoutData.length; i += BATCH_SIZE) {
-    const batch = workoutData.slice(i, i + BATCH_SIZE);
-    await db.insert(programCycleWorkouts).values(batch).run();
-  }
+  await insertWithAutoBatching(db, programCycleWorkouts, workoutData);
 }
 
 /**
@@ -140,12 +136,7 @@ export async function generateTemplateFromWorkout(
     orderIndex++;
   }
 
-  const CHUNK_SIZE = calculateChunkSize(12);
-
-  for (let i = 0; i < templateExercisesData.length; i += CHUNK_SIZE) {
-    const batch = templateExercisesData.slice(i, i + CHUNK_SIZE);
-    await db.insert(templateExercises).values(batch).run();
-  }
+  await insertWithAutoBatching(db, templateExercises, templateExercisesData);
 
   await db
     .update(programCycleWorkouts)
