@@ -39,7 +39,7 @@ function getWhoopRedirectUri(requestUrl: string): string {
   return `${url.origin}/api/integrations/whoop/callback`;
 }
 
-export const Route = createFileRoute('/api/integrations/whoop/connect' as const)({
+export const Route = createFileRoute('/api/integrations/whoop/connect')({
   server: {
     handlers: {
       GET: apiRoute('Connect Whoop', async ({ session, request }) => {

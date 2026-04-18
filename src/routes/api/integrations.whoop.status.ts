@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { apiRoute } from '~/lib/api/handler';
 import { whoopRepository } from '~/lib/whoop/repository';
 
-export const Route = createFileRoute('/api/integrations/whoop/status' as const)({
+export const Route = createFileRoute('/api/integrations/whoop/status')({
   server: {
     handlers: {
       GET: apiRoute('Whoop status', async ({ session, d1Db }) => {

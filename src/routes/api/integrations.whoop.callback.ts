@@ -69,7 +69,7 @@ async function getWhoopUserId(accessToken: string): Promise<string> {
   return data.user_id.toString();
 }
 
-export const Route = createFileRoute('/api/integrations/whoop/callback' as const)({
+export const Route = createFileRoute('/api/integrations/whoop/callback')({
   server: {
     handlers: {
       GET: async (ctx) => {
